@@ -1,6 +1,7 @@
-= Create a Child Field With The UI
+= Create A Child Field with the Capella UI
 :page-topic-type: guide
-:tabs:
+
+Create a child field with the Couchbase Capella UI to add or remove specific fields from documents in a Search Index.
 
 == Prerequisites 
 
@@ -10,30 +11,13 @@ For more information, see xref:search/create-search-index-ui.adoc[].
 * You've created a type mapping. 
 For more information about how to create a type mapping on an index, see xref:search/create-type-mapping.adoc[].
 
-* You've logged in to the Couchbase Server Web Console or Capella UI. 
+* You've logged in to the Couchbase Capella UI. 
  
 
 == Procedure 
 
-[{tabs}]
-====
-Couchbase Server::
-+
---
-. Go to *Search*.
-. Click the index where you want to create a child field.
-. Click btn:[Edit].
-. Expand *Customize Index*. 
-. Expand *Mappings*. 
-. Point to an existing mapping and click btn:[+].
-. Click *insert child field*. 
-include::partial$create-child-field-steps.adoc[] 
-. Click btn:[OK].
---
+To create a child field: 
 
-Couchbase Capella::
-+
---
 . From your organization page, select the database where you want to create a child field. 
 . Go to menu:Data Tools[Search].
 . Click the name of the index where you want to create a child field. 
@@ -41,7 +25,77 @@ Couchbase Capella::
 . Expand *Type Mappings*. 
 . Click the *More Options* (&vellip;) menu. 
 . Click *Insert Child Field*. 
-include::partial$create-child-field-steps.adoc[] 
+. In the *Field* field, enter the name of a field in your documents that you want to add or remove from the index.
++
+NOTE: The field must contain either a single value or an array. 
+. In the *Type* list, select the data type for the field: 
++
+For more information about the available data types, see xref:search/field-data-types-reference.adoc[].
+
+. Configure optional settings for the child field: 
++
+|====
+|Option |Description 
+
+|Searchable As a|
+
+Set a different name that you can use to search the field's contents in a query. 
+
+The default value is the value set in *Field*.
+
+|Analyzer a|
+
+Choose an analyzer for the content in the child field. 
+
+You can choose a default analyzer or a custom analyzer. 
+
+For more information about the available default analyzers, see xref:search/default-analyzers-reference.adoc[].
+
+For more information about how to create a custom analyzer, see xref:search/create-custom-analyzer.adoc[].
+
+|Index a|
+
+To include the child field in the index, select *Index*. 
+
+To remove the child field from the index, clear *Index*. 
+
+|[[store]]Store a|
+
+To store the values from the field in the index and return them in search results, select *Store*.
+This increases your index's size and indexing time.  
+
+To remove the field's values from the index, clear *Store*.
+
+|Include in _all field a|
+
+The `_all` field is a composite field that has the content from multiple fields in an index. 
+It allows searches to query the content of a field without specifying the field's name. 
+
+To include this field in the `_all` field, select *Include in _all field*. 
+
+To exclude this field from the `_all` field, clear *Include in _all field*. 
+
+TIP: To change the name of the `_all` field, see xref:search/set-advanced-settings.adoc#all-field[Default Field].
+
+|Include Term Vectors a|
+
+Term vectors store the location of terms in a field for an index. 
+You can use term vectors to highlighting matching search terms in search results, and perform phrase searches.
+Term vectors increase your index's size and indexing time.  
+
+To enable term vectors for this field, select *Include Term Vectors*.
+
+To turn off term vectors, clear *Include Term Vectors*. 
+
+NOTE: To enable term vectors, you must also enable <<store,Store>>. 
+
+|Doc Values a|
+
+Doc values are the value for each instance of the field in an index. 
+Use doc values for Search xref:[Facets] and sorting search results. 
+
+To store doc values, select *Doc Values*. 
+
+To exclude doc values from the index, clear *Doc Values*. 
+|====
 . Click btn:[Submit].
---
-====
