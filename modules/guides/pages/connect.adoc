@@ -1,5 +1,5 @@
-= Connecting to Couchbase
-:description: How to connect to a Couchbase Cluster.
+= Connecting to Couchbase Server
+:description: How to connect to Couchbase Server.
 :page-topic-type: guide
 :page-toclevels: 2
 :tabs:
@@ -26,28 +26,30 @@ include::partial$before-you-begin.adoc[]
 
 include::partial$clients.adoc[tags=!refs-ui]
 
-== Connecting to Couchbase Server
+== Connecting via the Web Console
 
-Couchbase Server can be configured to run with _unencrypted_ or _encrypted_ network access. 
-When running Couchbase in a production environment, the latter is always recommended.
-
-=== Basic Auth
-
-To connect to a standalone or Docker installation with _unencrypted_ network access, set up a user with xref:learn:security/roles.adoc[appropriate access levels] and a secure password.
-
-
-[{tabs}]
-====
-Web Console::
-+
---
-To access a cluster via the Couchbase Server Web Console over an _unencrypted_ connection, navigate to the Web Console address with your browser (by default, `localhost:8091`) and enter your credentials.
+To access a cluster via the Couchbase Server Web Console over an _unencrypted_ connection, navigate to the Web Console address with your browser (by default, `pass:[http://localhost:8091]`) and enter your credentials.
 
 image::login.png["The Couchbase Admin"]
 
 See xref:manage:manage-ui/manage-ui.adoc#authenticating-with-the-console[Authenticating with the Console] for more information.
---
 
+To access a cluster via the Couchbase Server Web Console over an _encrypted_ connection, navigate to the secure Web Console address with your browser (by default, `pass:[https://localhost:18091]`) and enter your credentials.
+
+See xref:manage:manage-security/manage-console-access.adoc[Manage Console Access] for more information.
+
+== Connecting via Client
+
+Couchbase Server can be configured to run with _unencrypted_ or _encrypted_ network access. 
+When running Couchbase in a production environment, the latter is always recommended.
+
+[#basic-auth]
+=== Basic Authentication
+
+To connect to a standalone or Docker installation with _unencrypted_ network access, set up a user with xref:learn:security/roles.adoc[appropriate access levels] and a secure password.
+
+[{tabs}]
+====
 cbc::
 + 
 -- 
@@ -172,7 +174,8 @@ For further details, refer to {python-api-url}#cluster-object[Cluster^].
 --
 ====
 
-=== TLS 
+[#tls]
+=== TLS Authentication
 
 To connect to a cluster configured with TLS (Transport Layer Security), for _encrypted_ network access, you must supply an xref:learn:security/certificates.adoc[X.509 certificate].
 Before using X.509 certificate based authentication, you should run through the following:
@@ -183,16 +186,6 @@ Before using X.509 certificate based authentication, you should run through the 
 
 [{tabs}]
 ====
-Web Console::
-+
---
-To access a cluster via the Couchbase Server Web Console over an _encrypted_ connection, navigate to the secure Web Console address with your browser (by default, `https://localhost:18091`) and enter your credentials.
-
-image::login.png["The Couchbase Admin"]
-
-See xref:manage:manage-security/manage-console-access.adoc[Manage Console Access] for more information.
---
-
 cbc::
 + 
 -- 
@@ -309,149 +302,13 @@ For further details, refer to {python-api-url}#cluster-object[Cluser^].
 --
 ====
 
-== Connecting to Couchbase Capella
-
-To connect to the database via Couchbase Capella, create a valid account and set up some xref:cloud:get-started:cluster-and-data.adoc#credentials[database credentials]. 
-
-image::capella-security-cert.png["The Security Certificate"]
-
-Download a security certificate to xref:cloud:get-started:cluster-and-data.adoc#connect[connect] an SDK or CLI client to Capella.
-
-[{tabs}]
-====
-Web Console::
-+
---
-
-Navigate to https://cloud.couchbase.com/login to access the Capella Web Console.
-
-image::capella-login.png["The Couchbase Capella Login"]
-
-See xref:cloud:get-started:cluster-and-data.adoc[Cluster and Data] for more information.
---
-
-cbc::
-+ 
---
-. To connect to Couchbase Capella using `cbc`, pass `-u` for the username, `-P` for the password and `-U` for the connection URL immediately after a sub-command.
-
-. Provide the bucket name required in the connection URL (i.e., cb.<your endpoint address>.dp.cloud.couchbase.com/<bucket-name>).
-
-'''
-
-The example below connects to a bucket on Couchbase Capella with a client certificate, and performs a `ping` to check what services are running.
-
-[source,shell]
-----
-include::example$connect/connect-cbc.sh[tag=cbc-connect-capella]
-----
-
-.Result
-[source,console]
-----
------------------------------------------------------------------------------------------------------------------------------------
-| type  | id             | status | latency, us | remote                                                      | local             |
------------------------------------------------------------------------------------------------------------------------------------
-| fts   | 0x7fecf9407a70 | ok     |      198657 | evb8loulphaibjnn.oawlpi4audpc6jp5.cloud.couchbase.com:18094 | 172.20.10.6:54394 |
-| kv    | 0x7fecfb00d110 | ok     |       69737 | evb8loulphaibjnn.oawlpi4audpc6jp5.cloud.couchbase.com:11207 | 172.20.10.6:54391 |
-| n1ql  | 0x7fecfb0110f0 | ok     |      210735 | evb8loulphaibjnn.oawlpi4audpc6jp5.cloud.couchbase.com:18093 | 172.20.10.6:54392 |
-| views | 0x7fecf961e2e0 | ok     |      330057 | evb8loulphaibjnn.oawlpi4audpc6jp5.cloud.couchbase.com:18092 | 172.20.10.6:54393 |
------------------------------------------------------------------------------------------------------------------------------------
-----
-
-{cbc-api-url}
---
-
-.NET::
-+ 
---
-
-Call the `Cluster.ConnectAsync()` method with a Couchbase Capella endpoint, username, password, and client certificate.
-
-'''
-
-{connect-cloud-example}
-
-[source,csharp]
-----
-include::dotnet-sdk:devguide:example$dotnet/Cloud.cs[]
-----
-
-{github}
-
-For further details, refer to {dotnet-api-url}/Couchbase.Cluster.html[Cluster^].
---
-
-Java::
-+ 
---
-
-Call the `Cluster.connect()` method method with a Couchbase Capella endpoint, username, password, and client certificate.
-
-'''
-
-{connect-cloud-example}
-
-[source,java]
-----
-include::java-sdk:devguide:example$Cloud.java[]
-----
-
-{github}
-
-For further details, refer to {java-api-url}/Cluster.html[Cluster^].
---
-
-Node.js::
-+ 
---
-Call the `connect()` function with a Couchbase Capella endpoint, and a `ConnectOptions` object containing the username, password and client certificate.
-
-'''
-
-{connect-cloud-example}
-
-[source,nodejs]
-----
-include::nodejs-sdk:devguide:example$nodejs/cloud.js[]
-----
-
-{github}
-
-For further details, refer to {nodejs-api-url}/Cluster.html[Cluster^].
---
-
-Python::
-+ 
---
-. Call the `Cluster.connect()` function with a Couchbase Capella endpoint, and a `ClusterOptions` object containing a `PasswordAutheticator`.
-
-. Provide a username and password to the `PasswordAutheticator`.
-
-. Provide a client certificate path to the `PasswordAutheticator`.
-
-'''
-
-{connect-cloud-example}
-
-[source,python]
-----
-include::python-sdk:hello-world:example$cloud.py[]
-----
-
-{github}
-
-For further details, refer to {python-api-url}#cluster-object[Cluster^].
---
-====
-
 == Related Links
 
 Reference and explanation:
 
 * xref:learn:security/security-overview.adoc[Security Overview]
 * xref:learn:clusters-and-availability/clusters-and-availability.adoc[Clusters and Availability]
-* xref:cloud:get-started:connect-to-cluster.adoc[Couchbase Capella]
+* xref:manage:manage-security/security-management-overview.adoc[Manage Security]
 
 Connecting with SDKs:
 
