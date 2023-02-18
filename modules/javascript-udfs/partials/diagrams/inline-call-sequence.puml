@@ -1,0 +1,26 @@
+@startuml
+ 
+ skinparam actorStyle Awesome
+
+ actor Dev
+ participant JSEngine
+ participant QueryEngine
+ database Bucket
+ 
+ Dev ->> JSEngine: JS: var q = select …
+ activate JSEngine
+ JSEngine ->> QueryEngine : {sqlpp}(…) call
+ activate QueryEngine
+ QueryEngine ->> JSEngine  : return query
+ deactivate QueryEngine
+ JSEngine ->> Dev : return q
+ deactivate JSEngine
+
+    loop Every document in q
+      Dev ->> JSEngine   : operate on document
+      JSEngine ->> QueryEngine ++ : get document
+      QueryEngine ->> Bucket ++ : get document
+      Bucket ->> QueryEngine -- : retrieved document
+      QueryEngine ->> JSEngine -- : retrieved document
+    end
+@enduml
