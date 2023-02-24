@@ -19,8 +19,8 @@ This helps performance, predominantly, in two ways:
 
 .Examples on this Page
 ****
-The examples in this topic use the travel-sample dataset which is shipped with Couchbase Server.
-For instructions on how to install the sample bucket, see xref:manage:manage-settings/install-sample-buckets.adoc[Sample Buckets].
+The examples in this topic use the travel-sample dataset which is supplied with Couchbase Capella.
+For instructions on how to install the sample data, see xref:clusters:data-service/import-data-documents.adoc#import-overview[Import Sample Data].
 
 include::ROOT:partial$query-context.adoc[tag=statement]
 ****
@@ -29,8 +29,7 @@ include::ROOT:partial$query-context.adoc[tag=statement]
 
 When processing a SELECT or DML with a WHERE clause, the Query engine picks one or more qualified indexes to be used for the query.
 Note that each index will have document field names explicitly specified as index-keys, and some metadata fields, such as `meta().id`, implicitly stored in the index.
-In earlier releases, the Indexer used to return all index-keys available in the index for the matching documents.
-From Couchbase Server 5.0, the Query engine requests the exact list of fields needed for the query.
+The Query engine requests the exact list of fields needed for the query.
 For a covered query, it is the fields referred in projection, predicate, GROUP BY clauses, ORDER BY clauses, HAVING clauses, ON key, and subqueries of the query.
 For non-covered queries, it is just `META().id`.
 
@@ -139,7 +138,7 @@ Queries with predicates such as `(age = 20) AND (name BETWEEN "joe" and "mark")`
 ====
 
 In general, when the predicate has a range condition on prefixing index-keys (such as `age`) may produce unwanted results from the range-scan index-lookups.
-In Couchbase Server, the Query service and Indexer are enhanced with complete and accurate predicate pushdown to filter such unnecessary results in the Indexer itself.
+In Couchbase Capella, the Query service and Indexer are enhanced with complete and accurate predicate pushdown to filter such unnecessary results in the Indexer itself.
 This improves query performance as it saves the additional overhead in transferring the unwanted data/results to query nodes and subsequently filtering the results.
 This is explained with an example in the following section: <<range-scan-prefix>>.
 
@@ -183,7 +182,7 @@ include::example$services-and-indexes/indexes/pushdown-comp-explain.jsonc[tag=ex
 <.> The second element of `range[]` corresponds to the index-key `sourceairport` with (`low`, `high`) values (`"LAX"`, `"LAX"`) representing equals condition.
 
 The Indexer processes the lookup request and exactly returns only the documents matching the predicate conditions.
-For example, when you xref:manage:monitor/monitoring-n1ql-query.adoc[enable monitoring] with the configuration parameter `profile = "timings"` for this query, you can see that the indexer returns 165 documents, which is the same as the final result set of the query.
+For example, when you xref:server:manage:monitor/monitoring-n1ql-query.adoc[enable monitoring] with the configuration parameter `profile = "timings"` for this query, you can see that the indexer returns 165 documents, which is the same as the final result set of the query.
 
 [source,json]
 ----
@@ -194,7 +193,7 @@ include::example$services-and-indexes/indexes/pushdown-comp-plan.jsonc[tags=inde
 === Composite Predicate with Skip-Key Range Scan
 
 In <<example-comp-explain>> above, the query has a composite predicate on continuous leading index-keys, namely the index-keys `distance` and `sourceairport`, which occur together at the start of the index definition.
-In Couchbase Server 6.5 and later, it is possible to push down a composite predicate on non-continuous leading index-keys.
+In Couchbase Capella, it is possible to push down a composite predicate on non-continuous leading index-keys.
 There must be a predicate on the first key in the index definition, and then on any of the subsequent index-keys.
 
 Consider the following query, which is a variant of the query in <<example-comp-explain>> above, and uses the same index.
@@ -448,8 +447,7 @@ In such cases, the Query engine pushes down necessary hints or options to the In
 
 This function returns the highest value of the input field based on the default collation rules. (For details, see xref:n1ql:n1ql-language-reference/datatypes.adoc[Data types] and xref:n1ql:n1ql-language-reference/comparisonops.adoc[Comparison Operators].)
 
-Prior to Couchbase Server 5.5, MAX() could be pushed to the Indexer only when the index was created with matching index keys in descending order.
-This limitation has been removed in Couchbase Server 5.5 and later.
+MAX() can be pushed to the Indexer even if the index was not created with matching index keys or sort order.
 
 .MAX of a String Field
 ====
@@ -482,8 +480,7 @@ include::example$services-and-indexes/indexes/pushdown-max.jsonc[tag=excerpt]
 
 This function returns the lowest value of the input field based on the default collation rules. (For details, see xref:n1ql:n1ql-language-reference/datatypes.adoc[Data types] and xref:n1ql:n1ql-language-reference/comparisonops.adoc[Comparison Operators].)
 
-Prior to Couchbase Server 5.5, MIN() could be pushed to the Indexer only when the index was created with matching index keys in ascending order.
-This limitation has been removed in Couchbase Server 5.5 and later.
+MIN() can be pushed to the Indexer even if the index was not created with matching index keys or sort order.
 
 .MIN of a String Field
 ====

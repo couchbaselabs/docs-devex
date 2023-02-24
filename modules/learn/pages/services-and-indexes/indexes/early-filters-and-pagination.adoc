@@ -7,8 +7,8 @@
 
 .Examples on this Page
 ****
-The examples in this topic use the travel-sample dataset which is shipped with Couchbase Server.
-For instructions on how to install the sample bucket, see xref:manage:manage-settings/install-sample-buckets.adoc[Sample Buckets].
+The examples in this topic use the travel-sample dataset which is supplied with Couchbase Capella.
+For instructions on how to install the sample data, see xref:clusters:data-service/import-data-documents.adoc#import-overview[Import Sample Data].
 
 include::ROOT:partial$query-context.adoc[tag=statement]
 ****
@@ -101,7 +101,7 @@ Limit ..r..> end
 Fetching data from the Data service can be expensive.
 Any feature that can reduce the amount of data to be fetched will improve the query response time.
 It would obviously be inefficient to fetch an entire dataset, and then discard a large portion of it by applying filters and pagination.
-Couchbase Server therefore attempts to apply filters, order, and pagination _before_ fetching data, wherever possible.
+Couchbase Capella therefore attempts to apply filters, order, and pagination _before_ fetching data, wherever possible.
 
 Index xref:learn:services-and-indexes/indexes/index_pushdowns.adoc[pushdowns] provide one way to reduce the amount of data to be fetched.
 Some filters, ordering, and pagination may be pushed down to the Index service, along with grouping and aggregates.
@@ -153,10 +153,10 @@ Fetch ..r..> end
 
 However, there are some operations that cannot be pushed down to the Index service: for example, a filter that uses a function or a LIKE operator on top of an index term.
 These operations must be performed by the Query service.
-In versions prior to Couchbase Server 7.1.2, the Query Service first performs a fetch from the Data service, and then applies any operations that could not be pushed down to the Index service.
-This still leads to some inefficient queries.
+If the Query Service has to perform a fetch from the Data service, and then apply any operations that could not be pushed down to the Index service,
+this may still lead to some inefficient queries.
 
-In Couchbase Server 7.1.2 and later, [def]_early filtering_, [def]_early ordering_, and [def]_early pagination_ provide another line of defense, in cases where covering indexes and index pushdowns are not available.
+In Couchbase Capella, [def]_early filtering_, [def]_early ordering_, and [def]_early pagination_ provide another line of defense, in cases where covering indexes and index pushdowns are not available.
 With this feature, the Query service may apply filtering, ordering, and pagination directly to the results returned by the Index service, before performing the fetch.
 
 .Early filters, order, and pagination
