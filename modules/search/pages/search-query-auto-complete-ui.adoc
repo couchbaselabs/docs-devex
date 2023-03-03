@@ -1,21 +1,79 @@
-= Add Autocomplete To A Search Query In The UI
+= Test Autocomplete with A Search Query in the Capella UI
 :page-topic-type: guide 
+:description: Create a Search index and run a Search query with the Capella UI to test autocomplete with the Search Service.
+
+[abstract]
+{description}
 
 == Prerequisites 
 
-* You've logged in to the Capella UI. 
+* You've deployed the Search Service on a node in your database. 
+
+* You have a bucket with scopes and collections in your database. 
+
+* Your user account has the *Search Admin* role for the bucket where you want to create the index. 
+
+* You've logged in to the Couchbase Capella UI. 
  
 
 == Procedure 
 
 To use autocomplete with the Search Service, you need to create a Search index with two custom analyzers.
 
+Then, you can run a test Search query from the Capella UI. 
+
+[#search-index]
 === Create the Autocomplete Search Index
 
 To create the Search index:
 
-. From your organization page, select the database where you want to create a child field. 
-. Go to menu:Data Tools[Search].
+. On the *Databases* page, select the database where you want to create the index. 
+. Go to menu:Data Tools[Search]. 
+. Click btn:[Create Search Index].
+. In the *Index Name* field, enter a name for the new index. 
+. In the *Bucket* list, select the bucket where you want to create the index. 
+. In the *Scope* list, select the scope where you want to create the index.
+. Expand *Analyzers*. 
+. xref:create-custom-analyzer.adoc[] with the following settings:
+.. In the *Name* field, enter `keyword_to_lower`.
+.. In the *Tokenizer* list, select *single*. 
+.. In the *Token Filters* list, select and add the *to_lower* token filter. 
+. Expand *Custom Filters*. 
+. xref:create-custom-token-filter.adoc#edge-ngram[Create a custom token filter] with the following settings: 
+.. In the *Name* field, enter `edge_ngram_2_8`. 
+.. In the *Type* list, select *edge_ngram*.
+.. In the *Min* field, enter `2`.
+.. In the *Max* field, enter `8`.
+. xref:create-custom-analyzer.adoc[Create another custom analyzer] with the following settings:
+.. In the *Name* field, enter `edge_ngram`.
+.. In the *Tokenizer* list, select *unicode*.  
+.. In the *Token Filters* list, click both the *to_lower* and your custom *edge_ngram_2_8* token filter.
+. xref:create-type-mapping.adoc[] with the following settings:
+.. In the *Collection* field, select a collection.
+.. Clear *Index all contained fields*. 
+. xref:create-child-field.adoc[] with the following settings:
+.. In the *Field* field, enter the name of a text field in a document from your selected scope and collection. 
+.. In the *Analyzer* list, select your *edge_ngram* analyzer. 
+.. Select *Index*.
+.. Select *Store*. 
+.. Select *Include in _all field*. 
+. Expand *General Settings*. 
+. In the *Default Analyzer* list, select your *keyword_to_lower* analyzer. 
+. Click btn:[Create Index]
 
-=== Run A Search 
+=== Run A Search Query
 
+To run a search query against the Search index from the Capella UI: 
+
+. On the *Databases* page, select the database where you created your <<search-index,Autocomplete Search index>>. 
+. Go to menu:Data Tools[Search]. 
+. Next to your Search index, click the *More Options* (&vellip;) menu.
+. Click btn:[Search].
+. In the *Search* field, enter 2-8 characters that you'd like the Search Service to use to generate auto-completed search results. 
+. Press kbd:[Enter].
+
+The Search Service returns documents that could autocomplete the query you entered in the *Search* field. 
+
+== Next Steps
+
+To add an autocomplete feature to your application, see Step 2 in xref:search-query-auto-complete-code.adoc[] for example code. 
