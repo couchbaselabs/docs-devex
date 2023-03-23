@@ -1,6 +1,6 @@
 # docs-devex
 
-This repository contains the Devex documentation shared across Server, Capella, and Elixir.
+This repository contains the Devex documentation shared across Server and Capella.
 
 Right now, that documentation is the new Developer Guides for specific services. 
 
@@ -8,7 +8,7 @@ This repository is the implementation of the striping strategy that the Document
 
 ## How Does This Work? 
 
-The goal of this repository is to create a consistent experience for shared content across Server, Capella, and Elixir. 
+The goal of this repository is to create a consistent experience for shared content across Server and Capella. 
 
 This repository contains branches for the different products and versions you would need to support with devex docs. 
 
