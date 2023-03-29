@@ -32,8 +32,7 @@ In deferred build mode, `CREATE PRIMARY INDEX` creates the index definition, but
 You can then build the index using the {build-index}[BUILD INDEX] command.
 
 You can create multiple identical primary indexes on a keyspace and place them on separate nodes for better index availability.
-In Couchbase Server Enterprise Edition, the recommended way to do this is using the `num_replicas` option.
-In Couchbase Server Community Edition, you need to create multiple identical indexes and place them using the `nodes` option.
+The recommended way to do this is using the `num_replicas` option.
 Refer to <<index-with,WITH Clause>> below for more details.
 
 == Prerequisites
@@ -188,25 +187,13 @@ An object with the following properties:
 nodes;;
 [Optional] An array of strings, each of which represents a node name.
 +
-****
-[.edition]#{community}#
-
-In Couchbase Server Community Edition, a single primary index of type `GSI` can be placed on a single node that runs the indexing service.
-The `nodes` property allows you to specify the node that the index is placed on.
-(((default index placement)))If `nodes` is not specified, one of the nodes running the indexing service is randomly picked for the index.
-****
-+
-****
-[.edition]#{enterprise}#
-
-In Couchbase Server Enterprise Edition, you can specify multiple nodes to distribute replicas of an index across nodes running the indexing service: for example, `WITH {"nodes": ["node1:8091", "node2:8091", "node3:8091"]}`.
+You can specify multiple nodes to distribute replicas of an index across nodes running the indexing service: for example, `WITH {"nodes": ["node1:8091", "node2:8091", "node3:8091"]}`.
 For details and examples, refer to {index-replication}[Index Replication].
-
++
 If specifying both [.var]`nodes` and [.var]`num_replica`, the number of nodes in the array must be one greater than the specified number of replicas otherwise the index creation will fail.
-
++
 (((default index placement)))If [.var]`nodes` is not specified, then the system chooses nodes on which to place the new index and any replicas, in order to achieve the best resource utilization across nodes running the indexing service.
 This is done by taking into account the current resource usage statistics of index nodes.
-****
 +
 IMPORTANT: A node name passed to the `nodes` property must include the cluster administration port, by default 8091.
 For example `WITH {"nodes": ["192.0.2.0:8091"]}` instead of `WITH {"nodes": ["192.0.2.0"]}`.
@@ -225,18 +212,12 @@ When set to `false`, the `CREATE PRIMARY INDEX` operation queues the task for bu
 
 num_replica;;
 +
-****
-[.edition]#{enterprise}#
-
-This property is only available in Couchbase Server Enterprise Edition.
-
 [Optional] Integer that specifies the number of {index-replication}[replicas] of the index to create.
-
++
 The indexer will automatically distribute these replicas amongst index nodes in the cluster for load-balancing and high availability purposes.
 The indexer will attempt to distribute the replicas based on the server groups in use in the cluster where possible.
-
++
 If the value of this property is not less than the number of index nodes in the cluster, then the index creation will fail.
-****
 
 == Usage
 
