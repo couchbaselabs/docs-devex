@@ -108,6 +108,83 @@ include::python-sdk:hello-world:example$n1ql_hello_world.py[tag=n1ql-query,inden
 
 For more information and examples, refer to xref:n1ql:n1ql-language-reference/selectclause.adoc[SELECT Clause].
 
+[#query-context]
+== Setting the Query Context
+
+The query context enables you to specify a scope to resolve partial keyspace references within your queries.
+When the query context is set, you can specify the data source in your queries using the collection name only.
+This enhances the portability of your queries.
+
+NOTE: The query context is only used to resolve partial keyspace references.
+When a query specifies a data source using the full path to a keyspace, the query context is not used to resolve that keyspace.
+
+[tabs]
+====
+Query Workbench::
++
+--
+To set the query context:
+
+. Go to *Data Tools* > *Query*.
+. In the *context* drop down, expand the bucket where you want to run your query.
+. Select a scope.
+
+image::elixir-query-context-set.png["The query context menu with `my-db.samples` selected"]
+--
+
+//CBQ Shell::
+//+
+//--
+//To set the query context, use the `\SET` command with the `query_context` parameter.
+
+//'''
+
+//For example, the following command sets the query context to `travel-sample.inventory`.
+
+//[source,sqlpp]
+//----
+//include::example$query/context-set.n1ql[]
+//----
+//--
+====
+
+Some legacy queries contain keyspace references consisting of the bucket name only, referring to the default collection in the default scope.
+To specify the data source using the bucket name only, you must unset the query context.
+
+[tabs]
+====
+Query Workbench::
++
+--
+To unset the query context:
+
+. Go to *Data Tools* > *Query*.
+. In the *context* drop down, expand the currently selected bucket.
+. Click the currently selected scope.
+
+The context drop down menu will disappear.
+
+image::elixir-query-context-unset.png["The query context menu with the query context unset"]
+--
+
+//CBQ Shell::
+//+
+//--
+//To unset the query context, use `\UNSET` command with the `query_context` parameter.
+
+//'''
+
+//For example, the following command unsets the query context.
+
+//[source,sqlpp]
+//----
+//include::example$query/context-unset.n1ql[]
+//----
+//--
+====
+
+For more information and examples, refer to xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
 == Specifying a Data Source
 
 To specify the data source for a query, use the FROM clause.
@@ -120,7 +197,7 @@ NOTE: Before you can query a data source, there must be an index on that data so
 The sample dataset already contains all the indexes you need to run the example queries in this guide.
 
 ====
-The following query gets the name and city of every airport.
+The following query gets the name and city of every airport. Note that this assumes the query context is set to `samples`.
 
 .Query
 [source,sqlpp]
@@ -136,81 +213,6 @@ include::example$query/from-clause.jsonc[tags=extract;ellipsis]
 ====
 
 For more information and examples, refer to xref:n1ql:n1ql-language-reference/from.adoc[FROM Clause].
-
-[#query-context]
-== Setting the Query Context
-
-The query context enables you to specify a bucket and scope to resolve partial keyspace references within your queries.
-When the query context is set, you can specify the data source in your queries using the collection name only.
-This enhances the portability of your queries.
-
-NOTE: The query context is only used to resolve partial keyspace references.
-When a query specifies a data source using the full path to a keyspace, the query context is not used to resolve that keyspace.
-
-[tabs]
-====
-Query Workbench::
-+
---
-To set the query context:
-
-. Using the *context* controls at the top right of the Query Editor, open the bucket drop-down menu and select the required bucket.
-+
-When a bucket is selected, a scope drop-down menu is displayed to the right.
-
-. Open the scope drop-down menu and select the required scope.
-
-image::tools:query-workbench-context.png["The query context menu with `travel-sample.inventory` selected"]
---
-
-CBQ Shell::
-+
---
-To set the query context, use the `\SET` command with the `query_context` parameter.
-
-'''
-
-For example, the following command sets the query context to `travel-sample.inventory`.
-
-[source,sqlpp]
-----
-include::example$query/context-set.n1ql[]
-----
---
-====
-
-Some legacy queries contain keyspace references consisting of the bucket name only, referring to the default collection in the default scope.
-To specify the data source using the bucket name only, you must unset the query context.
-
-[tabs]
-====
-Query Workbench::
-+
---
-To unset the query context, using the *context* controls at the top right of the Query Editor, open the bucket drop-down menu and select `unset`.
-
-The scope drop-down menu disappears.
-
-image::tools:query-workbench-context-unset.png["The context controls with the query context unset"]
---
-
-CBQ Shell::
-+
---
-To unset the query context, use `\UNSET` command with the `query_context` parameter.
-
-'''
-
-For example, the following command unsets the query context.
-
-[source,sqlpp]
-----
-include::example$query/context-unset.n1ql[]
-----
---
-====
-
-For more information and examples, refer to xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
 
 == Filtering
 
