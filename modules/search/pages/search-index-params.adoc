@@ -1,12 +1,11 @@
 = Search Index JSON Properties
 :page-topic-type: reference
-:description: You can control the settings for a Search index with a JSON payload. 
-:page-toclevels: 3
+:description: Use a JSON payload to control the settings for a Search index. 
 
 [abstract]
 {description}
 
-When you xref:create-search-index-rest-api.adoc[create a Search index with the REST API], you need to create a JSON payload with the settings for the new Search index.
+When you xref:create-search-index-rest-api.adoc[create a Search index with the REST API], you must give a JSON payload with the settings for the new Search index.
 
 Your JSON payload must contain the properties described in <<initial,>>, including the <<params,>>.
 
@@ -17,16 +16,18 @@ The start of the JSON payload for a Search index contains important settings for
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=initial]
+include::example$simple-search-index-payload.jsonc[lines=1..14]
 ----
 
-It contains the following properties: 
+TIP: To view the entire JSON payload, click btn:[View].
+
+All Search index payloads have the following properties: 
 
 [cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description
 
-|name |String |Yes |The name of the index.
+|name |String |Yes |The name of the Search index.
 
 |type |String |Yes a|
 
@@ -38,18 +39,18 @@ For more information about Search index aliases, see xref:server:fts:fts-creatin
 
 |uuid |String |No a|
 
-The UUID for the index. 
+The UUID for the Search index. 
 
-The Search Service automatically generates a UUID for an index.
+The Search Service automatically generates a UUID for a Search index.
 
 |sourceType |String |Yes |The `sourceType` is always `"gocbcore"`.
 
 |sourceName |String |Yes a|
-The name of the bucket where you want to create the index. 
+The name of the bucket where you want to create the Search index. 
 
 The Search Service automatically finds the UUID for the bucket.
 
-|sourceUUID |String |No |The UUID of the bucket where you want to create the index.
+|sourceUUID |String |No |The UUID of the bucket where you want to create the Search index.
 
 |sourceParams |Object |No a|
 
@@ -57,39 +58,40 @@ This object contains advanced settings for index behavior.
 
 Don't add content into this object unless instructed by Couchbase Support.
 
-|planParams |Object |Yes |An object that sets the index's partitions and replications. 
+|planParams |Object |Yes |An object that sets the Search index's partitions and replications. 
 For more information, see <<planparams,>>.
 
-|params |Object |Yes |An object that sets the index's type identifier, type mappings, and analyzers. 
+|params |Object |Yes |An object that sets the Search index's type identifier, type mappings, and analyzers. 
 For more information, see <<params,>>.
 
 |====
 
 [#planparams]
-
 == planParams Object 
 
-The `planParams` object sets an index's partition and replication settings:
+The `planParams` object sets a Search index's partition and replication settings:
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=planparams]
+include::example$simple-search-index-payload.jsonc[lines=9..13]
 ----
 
-It contains the following properties: 
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `planParams` object contains the following properties: 
 
 [cols="2,1,1,4"]
 |====
 |Property |Type |Required? |Description
 
 |maxPartitionsPerPIndex |n/a |No |This setting is deprecated. Use `indexPartitions`, instead.
-|indexPartitions |Number |Yes |The number of partitions to split the index into, across the nodes you have available with the Search Service enabled. 
+|indexPartitions |Number |Yes |The number of partitions to split the Search index into, across the nodes you have available in your database with the Search Service enabled. 
 |numReplicas |Number |Yes a|
 
-For high-availability, set the number of replicas the Search Service creates for the index.
+For high-availability, set the number of replicas the Search Service creates for the Search index.
 
-You can create up to three replicas for an index. 
-To turn off replication for the index, set `numReplicas` to `0`.
+You can create up to three replicas for a Search index. 
+To turn off replication for the Search index, set `numReplicas` to `0`.
 
 The number of replicas you can create depends on the number of nodes you have available with the Search Service enabled. 
 
@@ -97,32 +99,35 @@ The number of replicas you can create depends on the number of nodes you have av
 [#params]
 == Params Object 
 
-The `params` object sets an index's type identifier, type mappings, and analyzers.
+The `params` object sets a Search index's xref:customize-index.adoc#type-identifiers[type identifier], xref:customize-index.adoc#type-mappings[type mappings], and xref:customize-index.adoc#analyzers[analyzers].
+
 It contains the following properties:
 
 [cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description 
 
-|doc_config |Object |Yes |An object that sets how the index sets a document's type.
+|doc_config |Object |Yes |An object that sets how the Search index sets a document's type.
 For more information, see <<doc-config,>>.
 
-|mapping |Object |Yes |An object that sets the analyzers and type mappings for an index. 
+|mapping |Object |Yes |An object that sets the analyzers and type mappings for a Search index. 
 For more information, see <<mapping,>>.
 
 |====
 
 [#doc-config]
-== Doc_config Object
+=== Doc_config Object
 
-The `doc_config` object sets how the index sets a document's type:
+The `doc_config` object sets how the Search index sets a document's type:
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=doc_config]
+include::example$simple-search-index-payload.jsonc[lines=15..20]
 ----
 
-It contains the following properties: 
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `doc_config` object is a child object of the <<params,>>. It contains the following properties: 
 
 [cols="1,1,1,2"]
 |====
@@ -130,13 +135,13 @@ It contains the following properties:
 
 |mode |String |Yes a|
 
-Set how the index identifies a document's type: 
+Set how the Search index identifies a document's type: 
 
 * `type_field`: Use the value from a specific field in the documents. 
 * `docid_prefix_delim`: Use the characters in the documents' ID values, up to but not including a specified separator.
 * `docid_regexp`: Use a regular expression on the documents' ID values.
 
-NOTE: If your index uses a specific collection, the `mode` value must be `"scope.collection.\{mode\}"`.
+NOTE: If you want your Search index to only include documents from a specific collection, the `mode` value must be `"scope.collection.\{mode\}"`.
 
 |docid_prefix_delim |String |Yes |If `mode` is `docid_prefix_delim`, set the separator character to use on a document's ID value to determine its type.
 
@@ -147,87 +152,102 @@ NOTE: If your index uses a specific collection, the `mode` value must be `"scope
 |====
 
 [#mapping]
-== Mapping Object 
+=== Mapping Object 
 
-The `mapping` object contains a Search index's analyzers and other xref:set-advanced-settings.adoc[advanced settings from the UI].
+The `mapping` object contains a Search index's xref:customize-index.adoc#analyzers[analyzers] and other xref:set-advanced-settings.adoc[advanced settings from the UI]:
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=mapping]
+include::example$simple-search-index-payload.jsonc[lines=21..96]
 ----
 
-It contains the following properties:
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `mapping` object is a child object of the <<params,>>. It contains the following properties:
 
 [cols="2,1,1,4"]
 |====
 |Property |Type |Required? |Description
 
-|analysis |Object |Yes |An object that contains the <<analyzers,analyzers>>, <<char_filters,char_filters>>, tokenizers, token_filters, <<token_maps,token_maps>>, and <<date_time_parsers,date_time_parsers>> objects.
+|[[analysis]]analysis |Object |Yes a|
+
+An object that contains the following child objects: 
+
+* <<analyzers,>> 
+* <<char_filters,>>
+* <<tokenizers,>> 
+* <<token_filters,>> 
+* <<token_maps,>>
+* <<date_time_parsers,>>
 
 |default_analyzer |String |Yes a|
 
-The name of the default analyzer to use for the type mapping.
+The name of the default analyzer to use for the Search index.
 
 For more information about analyzers, see xref:customize-index.adoc#analyzers[Analyzers].
 
 |default_datetime_parser |String |Yes a|
-The name of the default date/time parser to use for the type mapping. 
+The name of the default date/time parser to use for the Search index. 
 
 For more information about date/time parsers, see xref:customize-index.adoc#date-time[Date/Time Parsers].
 
 |default_field |String |Yes a|
-Set a name for the type mapping's `all` field.
+Set a name for the `all` field in the Search index.
 
 If you enable `include_in_all` for a child field, the contents of that child field can be searched by specifying this field's name in your search. 
 
 |default_mapping |Object |No a|
 
-An object that contains settings for the default type mapping on the index. 
+An object that contains settings for the default type mapping on the Search index. 
 
 The default type mapping contains all documents under the `_default` scope and `_default` collection in the bucket.
 
 This type mapping is included for compatibility only. 
 
-For more information on the properties inside the `default_mapping` object, see <<default-mapping,>>.
+For more information about the properties inside the `default_mapping` object, see <<default-mapping,>>.
 
-|default_type |String |No |This setting is included for compatibility with older indexes only. 
+|default_type |String |No |This setting is included for compatibility with earlier indexes only. 
 
 |docvalues_dynamic |Boolean |Yes a|
-To include the values for an indexed field in the index, set `docvalues_dynamic` to `true`.
+To include the values for an indexed field in the Search index, set `docvalues_dynamic` to `true`.
 
 To exclude the values for an indexed field in the index, set `docvalues_dynamic` to `false`.
 
 |index_dynamic |Boolean |Yes a| 
 
-To index any fields in the index where `dynamic` is `true`, set `index_dynamic` to `true`.
+To index any fields in the Search index where `dynamic` is `true`, set `index_dynamic` to `true`.
 
 To exclude dynamic fields from the index, set `index_dynamic` to `false`.
 
 |store_dynamic |Boolean |Yes a|
 
-To return the content from an indexed field in the index, set `store_dynamic` to `true`.
+To return the content from an indexed field in the Search index, set `store_dynamic` to `true`.
 
 To exclude field content from the index, set `store_dynamic` to `false`.
 
 |type_field |String |No |Use the same value assigned to the `type_field` in `doc_config`, if applicable.
 
-|types |Object |No a| An object that contains any additional user-defined type mappings for the index, as `\{scope\}.\{collection\}` objects. For more information, see <<types,>>.
+|types |Object |No a| 
+
+An object that contains any user-defined type mappings for the Search index, as `\{scope\}.\{collection\}` objects inside a `types` object. 
+
+For more information, see <<types,>>.
 
 |====
 
 [#analyzers]
 == Analyzers Object 
 
-The `analyzers` object contains any custom analyzers defined for an index.
-
-It contains any number of `\{analyzer_name\}` objects: 
+The `analyzers` object contains any custom analyzers defined for a Search index.
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=analyzers]
+include::example$simple-search-index-payload.jsonc[lines=23..37]
 ----
 
-The following table describes the available properties for the `analyzers` object:
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `analyzers` object is a child object of the <<analysis,analysis object>>. It contains any number of <<analyzer-name,{analyzer_name} objects>>:
 
 [cols="1,1,1,2"]
 |====
@@ -235,13 +255,44 @@ The following table describes the available properties for the `analyzers` objec
 
 |\{analyzer_name\} |Object |Yes a|
 
-The name of this object matches the name of the custom analyzer.
+Set the name of this object to the name you want for your custom analyzer. 
 
-NOTE: The \{analyzer_name\} object contains the `token_filters`, `char_filters`, `type`, and `tokenizer` properties described in the following rows.
+You can reference the `\{analyzer_name\}` object elsewhere in your Search index definition to use the analyzer. 
 
-|token_filters |Array |Yes |An array of strings that contains the token filters for the custom analyzer. 
+For more information about the properties in an `\{analyzer_name\}` object, see <<analyzer-name,>>.
+|====
 
-|char_filters |Array |Yes |An array of strings that contains the character filters for the custom analyzer. 
+[#analyzer-name]
+=== \{Analyzer_name\} Object
+
+The `\{analyzer_name\}` object defines a custom analyzer for a Search index: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[lines=24..36]
+----
+
+An `\{analyzer_name\}` object is a child object of the <<analyzers,>>. It contains the following properties:
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|token_filters |Array |Yes a|
+
+An array of strings that contains the token filters for the custom analyzer. 
+
+For more information about the token filters you can define in a Search index JSON payload, see <<token_filters,>>.
+
+You can also use one of the xref:default-token-filters-reference.adoc[default token filters].
+
+|char_filters |Array |Yes a|
+
+An array of strings that contains the character filters for the custom analyzer. 
+
+For more information about the character filters you can define in a Search index JSON payload, see <<char_filters,>>.
+
+You can also use one of the xref:default-character-filters-reference.adoc[default character filters] available. 
 
 |type |String |Yes |The `type` is always `"custom"`.
 
@@ -252,16 +303,16 @@ NOTE: The \{analyzer_name\} object contains the `token_filters`, `char_filters`,
 [#char_filters]
 == Char_filters Object 
 
-The `char_filters` object contains any custom character filters defined for an index. 
-
-It contains any number of `\{char_filter_name\}` objects: 
+The `char_filters` object contains any custom character filters defined for a Search index:
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=char_filter]
+include::example$simple-search-index-payload.jsonc[lines=38..44]
 ----
 
-The following table describes the available properties for the `char_filters` object: 
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `char_filters` object is a child object of the <<analysis,analysis object>>. It contains any number of <<char-name,{char_filter_name} objects>>: 
 
 [cols="1,1,1,2"]
 |====
@@ -269,9 +320,29 @@ The following table describes the available properties for the `char_filters` ob
 
 |\{char_filter_name\} |Object |Yes a|
 
-The name of this object matches the name of the custom character filter. 
+Set the name of this object to the name you want for your custom character filter. 
 
-NOTE: The \{char_filter_name\} object contains the `regexp`, `replace`, and `type` properties described in the following rows. 
+You can reference the `\{char_filter_name\}` object elsewhere in your Search index definition to use the character filter. 
+
+For more information about the properties in an `\{char_filter_name\}` object, see <<char-name,>>. 
+|====
+
+[#char-name]
+=== \{Char_filter_name\} Object
+
+The `\{char_filter_name\}` object defines a specific custom character filter for a Search index:
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[lines=39..43]
+----
+
+A `\{char_filter_name\}` object is a child object of the <<char_filters,>>. 
+It contains the following properties: 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
 
 |regexp |String |Yes |The regular expression to use to filter characters from search queries and documents. 
 
@@ -284,16 +355,17 @@ NOTE: The \{char_filter_name\} object contains the `regexp`, `replace`, and `typ
 [#tokenizers]
 == Tokenizers Object 
 
-The `tokenizers` object contains any custom tokenizers defined for an index. 
-
-It contains any number of `\{tokenizer_name\}` objects: 
+The `tokenizers` object contains any custom xref:customize-index.adoc#tokenizers[tokenizers] defined for a Search index:
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=tokenizers]
+include::example$simple-search-index-payload.jsonc[lines=45..57]
 ----
 
-The following table describes the available properties for the `tokenizers` object: 
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `tokenizers` object is a child object of the <<analysis,analysis object>>.
+It contains any number of <<tokenizer-name,{tokenizer_name objects}>>:
 
 [cols="1,1,1,2"]
 |====
@@ -301,19 +373,41 @@ The following table describes the available properties for the `tokenizers` obje
 
 |\{tokenizer_name\} |Object |Yes a|
 
-The name of this object matches the name of the custom tokenizer. 
+Set the name of this object to the name you want for your custom tokenizer. 
 
-NOTE: The \{tokenizer_name\} object contains the `type`, `regexp`, `exceptions`, and `tokenizer` properties described in the following rows. 
+You can reference the `\{tokenizer_name\}` object elsewhere in your Search index definition to use the tokenizer. 
+
+For more information about the properties in an `\{tokenizer_name\}` object, see <<tokenizer-name,>>. 
+ 
+|====
+
+[#tokenizer-name]
+=== \{Tokenizer_name\} Object
+
+The `\{tokenizer_name\}` object defines a specific custom tokenizer for a Search index.
+For example, the following `My_Tokenizer_Excep` object defines an `exception` tokenizer:
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[lines=46..52]
+----
+
+A `\{tokenizer_name\}` object is a child object of the <<tokenizers,>>. 
+It contains the following properties:
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
 
 |exceptions |Array |Yes a| 
 
-If the tokenizer's `type` value is `exception`, define an array of regular expressions to remove from text input to create tokens. 
+If the tokenizer's <<tokenizer_type,`type` value>> is `exception`, define an array of regular expressions to remove from text input to create tokens. 
 
-For example, if you add the characters `sh` as a string to the `exceptions` array, an input string of `shHadshToshGo` has the tokens `Had`, `To`, and `Go`. 
+For example, if you add the characters `sh` as a string to the `exceptions` array, an input string of `shTimeshToshGo` has the tokens `Time`, `To`, and `Go`. 
 
 |regexp |String |Yes a| 
 
-If the tokenizer's `type` value is `regexp`, set the regular expression that the tokenizer uses to divide input into tokens. 
+If the tokenizer's <<tokenizer_type,`type` value>> is `regexp`, set the regular expression that the tokenizer uses to divide input into tokens. 
 
 The tokenizer takes any matches for the regular expression from the input text stream and uses them as tokens. 
 
@@ -321,9 +415,11 @@ For example, if you use the regular expression `\w*\w`, an input string of `Full
 
 |tokenizer |String |Yes a|
 
-If the tokenizer's `type` value is `exception`, give a xref:customize-index.adoc#tokenizers[default tokenizer] to apply to the tokens created with the `exceptions` array.
+If the tokenizer's `type` value is `exception`, give a default tokenizer to apply to the tokens created with the `exceptions` array.
 
-|type |String |Yes a|
+You can choose a xref:default-tokenizers-reference.adoc[default tokenizer] or use a tokenizer defined in the `tokenizers` object.
+
+|[[tokenizer_type]]type |String |Yes a|
 
 The tokenizer's type. Can be one of: 
 
@@ -337,16 +433,17 @@ The tokenizer uses any matches to the regular expressions and creates tokens fro
 [#token_filters]
 == Token_filters Object 
 
-The `token_filters` object contains any custom token filters defined for an index. 
-
-It contains any number of `\{token_filter__name\}` objects: 
+The `token_filters` object contains any custom token filters defined for a Search index. 
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=token_filters]
+include::example$simple-search-index-payload.jsonc[lines=58..64]
 ----
 
-The following table describes the available properties for the `token_filters` object: 
+TIP: To view the entire JSON payload, click btn:[View].
+ 
+The `token_filters` object is a child object of the <<analysis,analysis object>>.
+It contains any number of <<token-filter-name,{token_filter_name} objects>>: 
 
 [cols="1,1,1,2"]
 |====
@@ -354,9 +451,30 @@ The following table describes the available properties for the `token_filters` o
 
 |\{token_filter_name\} |Object |Yes a|
 
-The name of this object matches the name of the custom token filter. 
+Set the name of this object to the name you want for your custom token filter. 
 
-NOTE: The \{token_filter_name\} object contains the `type` property described in the following row. The other properties depend on the value assigned to `type`.
+You can reference the `\{token_filter_name\}` object elsewhere in your Search index definition to use the token filter. 
+
+For more information about the properties in an `\{token_filter_name\}` object, see <<token-filter-name,>>.
+|====
+
+[#token-filter-name]
+=== \{Token_filter_name\} Object
+
+The `\{token_filter_name\}` object defines a custom token filter for a Search index.
+For example, the following `My_Token_Filter` object defines a custom `length` token filter:
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[lines=59..63]
+----
+
+A `\{token_filter_name\}` object is a child object of the <<token_filters,>>. 
+It contains the following properties:
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
 
 |type |String |Yes a|
 
@@ -376,7 +494,7 @@ The token filter's type. Can be one of:
 |====
 
 [#dict_compound]
-=== Dict_compound Token Filters 
+==== Dict_compound Token Filters 
 
 include::partial$custom-token-filters-descriptions.adoc[tag=dict]
 
@@ -384,12 +502,16 @@ include::partial$custom-token-filters-descriptions.adoc[tag=dict]
 |====
 |Property |Type |Required? |Description
 
-|dict_token_map |String |Yes |The wordlist to use to find subwords in existing tokens. 
+|dict_token_map |String |Yes a|
+
+The wordlist to use to find subwords in existing tokens. 
+
+You can use a xref:default-wordlists-reference.adoc[default wordlist] or one defined in the <<token_maps,>>.
 
 |====
 
 [#edge_ngram]
-=== Edge_ngram Token Filters 
+==== Edge_ngram Token Filters 
 
 include::partial$custom-token-filters-descriptions.adoc[tag=edge]
 
@@ -414,7 +536,7 @@ Set the maximum character length for a new token.
 |====
 
 [#elision]
-=== Elision Token Filters
+==== Elision Token Filters
 
 include::partial$custom-token-filters-descriptions.adoc[tag=elision]
 
@@ -422,12 +544,16 @@ include::partial$custom-token-filters-descriptions.adoc[tag=elision]
 |====
 |Property |Type |Required? |Description
 
-|articles_token_map |String |Yes |The wordlist to use to find and remove elisions in existing tokens. 
+|articles_token_map |String |Yes a|
+
+The wordlist to use to find and remove elisions in existing tokens. 
+
+You can use a xref:default-wordlists-reference.adoc[default wordlist] or one defined in the <<token_maps,>>.
 
 |====
 
 [#keyword_marker]
-=== Keyword_marker Token Filters 
+==== Keyword_marker Token Filters 
 
 include::partial$custom-token-filters-descriptions.adoc[tag=keyword]
 
@@ -435,12 +561,16 @@ include::partial$custom-token-filters-descriptions.adoc[tag=keyword]
 |====
 |Property |Type |Required? |Description
 
-|keywords_token_map |String |Yes |The wordlist to use to find keywords in existing tokens.
+|keywords_token_map |String |Yes a|
+
+The wordlist to use to find keywords in existing tokens.
+
+You can use a xref:default-wordlists-reference.adoc[default wordlist] or one defined in the <<token_maps,>>.
 
 |====
 
 [#length]
-=== Length Token Filters 
+==== Length Token Filters 
 
 include::partial$custom-token-filters-descriptions.adoc[tag=length]
 
@@ -455,7 +585,7 @@ include::partial$custom-token-filters-descriptions.adoc[tag=length]
 |====
 
 [#ngram]
-=== Ngram Token Filters 
+==== Ngram Token Filters 
 
 include::partial$custom-token-filters-descriptions.adoc[tag=ngram]
 
@@ -470,7 +600,7 @@ include::partial$custom-token-filters-descriptions.adoc[tag=ngram]
 |====
 
 [#normalize]
-=== Normalize_unicode Token Filters 
+==== Normalize_unicode Token Filters 
 
 include::partial$custom-token-filters-descriptions.adoc[tag=normalize]
 
@@ -487,12 +617,12 @@ Select the form of Unicode Normalization to use on input tokens:
 * `nfkc`: Use compatibility decomposition to normalize characters. The token filter converts unicode characters to remove variants.
 * `nfkd`: Use compatibility decomposition and canonical composition to normalize characters. The token filter removes variants, then separates combined unicode characters to merge them into a single character.
 
-For more information on Unicode Normalization, see the Unicode Consortium's https://unicode.org/reports/tr15/#Introduction[Unicode Normalization Forms^] report.
+For more information about Unicode Normalization, see the Unicode Consortium's https://unicode.org/reports/tr15/#Introduction[Unicode Normalization Forms^] report.
 
 |====
 
 [#shingle]
-=== Shingle Token Filters 
+==== Shingle Token Filters 
 
 include::partial$custom-token-filters-descriptions.adoc[tag=shingle]
 
@@ -517,7 +647,7 @@ To exclude the original token from the token filter's output, set `output_origin
 |====
 
 [#stop_token]
-=== Stop_tokens Token Filters 
+==== Stop_tokens Token Filters 
 
 include::partial$custom-token-filters-descriptions.adoc[tag=stop]
 
@@ -525,13 +655,18 @@ include::partial$custom-token-filters-descriptions.adoc[tag=stop]
 |====
 |Property |Type |Required? |Description
 
-|stop_token_map |String |Yes |The wordlist to use to filter tokens. 
+|stop_token_map |String |Yes a|
+
+The wordlist to use to filter tokens.
+
 The token filter removes any tokens from input that match an entry in the wordlist.
+
+You can use a xref:default-wordlists-reference.adoc[default wordlist] or one defined in the <<token_maps,>>.
 
 |====
 
 [#truncate_token]
-=== Truncate_token Token Filters 
+==== Truncate_token Token Filters 
 
 include::partial$custom-token-filters-descriptions.adoc[tag=truncate]
 
@@ -539,23 +674,24 @@ include::partial$custom-token-filters-descriptions.adoc[tag=truncate]
 |====
 |Property |Type |Required? |Description
 
-|length |Integer |Yes a|The maximum character length for an output token. 
+|length |Integer |Yes |The maximum character length for an output token. 
 
 |====
 
 [#token_maps]
 == Token_maps Object 
 
-The `token_maps` object contains any custom wordlists defined for an index. 
-
-It contains any number of `\{wordlist_name\}` objects: 
+The `token_maps` object contains any custom wordlists defined for a Search index: 
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=token_maps]
+include::example$simple-search-index-payload.jsonc[lines=65..74]
 ----
 
-The following table describes the available properties for the `token_maps` object: 
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `token_maps` object is a child object of the <<analysis,analysis object>>. 
+It contains any number of <<wordlist-name,{wordlist_name} objects>>: 
 
 [cols="1,1,1,2"]
 |====
@@ -563,9 +699,29 @@ The following table describes the available properties for the `token_maps` obje
 
 |\{wordlist_name\} |Object |Yes a|
 
-The name of this object matches the name of the custom wordlist. 
+Set the name of this object to the name you want for your custom wordlist. 
 
-NOTE: The \{wordlist_name\} object contains the `type` and `tokens` properties described in the following rows. 
+You can reference the `\{wordlist_name\}` object elsewhere in your Search index definition to use the wordlist. 
+
+For more information about the properties in an `\{wordlist_name\}` object, see <<wordlist-name,>>. 
+|====
+
+[#wordlist-name]
+=== \{Wordlist_name\} Object
+
+The `\{wordlist_name\}` object defines a custom wordlist for a Search index:
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[lines=66..73]
+----
+
+A `\{wordlist_name\}` object is a child object of the <<token_maps,>>. 
+It contains the following properties:
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
 
 |type |String |Yes |The `type` is always `"custom"`.
 
@@ -576,16 +732,17 @@ NOTE: The \{wordlist_name\} object contains the `type` and `tokens` properties d
 [#date_time_parsers]
 == Date_time_parsers Object 
 
-The `date_time_parsers` object contains any custom date/time parsers defined for an index. 
-
-It contains any number of `\{date_time_parser_name\}` objects: 
+The `date_time_parsers` object contains any custom date/time parsers defined for a Search index: 
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=date_time]
+include::example$simple-search-index-payload.jsonc[lines=75..82]
 ----
 
-The following table describes the available properties for the `date_time_parsers` object: 
+TIP: To view the entire JSON payload, click btn:[View]. 
+
+The `date_time_parsers` object is a child object of the <<analysis,analysis object>>. 
+It contains any number of <<dt-parser-name,{date_time_parser_name} objects>>: 
 
 [cols="2,1,1,2"]
 |====
@@ -593,9 +750,30 @@ The following table describes the available properties for the `date_time_parser
 
 |\{date_time_parser_name\} |Object |Yes a|
 
-The name of the custom date/time parser. 
+Set the name of this object to the name you want for your custom date/time parser. 
 
-NOTE: The `\{date_time_parser_name\}` object contains the `type` and `layouts` properties described in the following rows.
+You can reference the `\{date_time_parser_name\}` object elsewhere in your Search index definition to use the date/time parser. 
+
+For more information about the properties in an `\{date_time_parser_name\}` object, see <<dt-parser-name,>>. 
+
+|====
+
+[#dt-parser-name]
+=== \{date_time_parser_name\} Object
+
+The `\{date_time_parser_name\}` object defines a custom date/time parser for a Search index:
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[lines=76..81]
+----
+
+A `\{date_time_parser_name\}` object is a child object of the <<date_time_parsers,>>. 
+It contains the following properties:
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
 
 |type |String |Yes |The `type` is always `"flexiblego"`.
 
@@ -610,15 +788,18 @@ Use a layout from the https://pkg.go.dev/time#pkg-constants[Go Programming Langu
 [#default-mapping]
 == Default_mapping Object  
 
-The `default_mapping` object contains settings for the default type mapping on the index.
+The `default_mapping` object contains settings for the default type mapping on the Search index.
 The default type mapping is a legacy feature and only included for compatibility.  
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=default_mapping]
+include::example$simple-search-index-payload.jsonc[lines=87..90]
 ----
 
-The following table describes the available properties for the `default_mapping` object: 
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `default_mapping` object is a child object of the <<mapping,>>. 
+It contains the following properties: 
 
 [cols="1,1,1,2"]
 |====
@@ -632,7 +813,7 @@ To only index the fields you specify in the type mapping, set `dynamic` to `fals
 |enabled |Boolean |Yes a|
 To enable the Search Service's default type mapping, set `enabled` to `true`. 
 
-The default type mapping includes all documents in the bucket in the index, even if they don't match another configured type mapping.
+The default type mapping includes all documents in the bucket in the Search index, even if they don't match another configured type mapping.
 This can increase index size and indexing time. 
 
 To disable the default type mapping, set `enabled` to `false`.
@@ -642,24 +823,47 @@ To disable the default type mapping, set `enabled` to `false`.
 [#types]
 == Types Object
 
-The `types` object contains any additional user-defined type mappings for an index. 
-
-It contains any number of `\{scope\}.\{collection\}` objects: 
+The `types` object contains any additional user-defined type mappings for a Search index. 
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=types]
+include::example$simple-search-index-payload.jsonc[lines=96..140]
 ----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `types` object is a child object of the <<mapping,>>. 
+It contains any number of <<scope-collection,{scope}.{collection} objects>>: 
 
 [cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description
 
-|`\{scope\}.\{collection\}` |Object |Yes a|
+|\{scope\}.\{collection\} |Object |Yes a|
 
-The name of the type mapping. Corresponds to the selected scope and collection where the type mapping applies. For example, `inventory.airline`. 
+The name of the type mapping. 
+Corresponds to the selected scope and collection where the type mapping applies. 
+For example, `inventory.airline`. 
 
-NOTE: The `\{scope\}.\{collection\}` object contains the `enabled`, `dynamic`, and `properties` properties described in the following rows.
+For more information about the properties in an `\{scope\}.\{collection\}` object, see <<scope-collection,>>. 
+|====
+
+[#scope-collection]
+=== \{Scope\}.\{collection\} Object
+
+The `\{scope\}.\{collection\}` object defines a custom type mapping for a Search index:
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[lines=97..139]
+----
+
+A `\{scope\}.\{collection\}` object is a child object of the <<types,>>.
+It contains the following properties:
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
 
 |dynamic |Boolean |Yes a|
 
@@ -669,11 +873,11 @@ To only index the fields you specify and enable the `properties` block, set `dyn
 
 |enabled |Boolean |Yes a| 
 
-To enable the type mapping and include any documents that match it in the index, set `enabled` to `true`. 
+To enable the type mapping and include any documents that match it in the Search index, set `enabled` to `true`. 
 
-To remove any documents that match this type mapping from the index, set `enabled` to `false`.
+To remove any documents that match this type mapping from the Search index, set `enabled` to `false`.
 
-|properties |Object |No a|
+|[[properties]]properties |Object |No a|
 
 The `properties` object is only enabled if `dynamic` is set to `false`. 
 
@@ -686,12 +890,17 @@ For more information, see <<child-fields,>>
 [#child-fields]
 === \{field_name\} Object
 
-The `\{field_name\}` object contains settings and an array for a child field in a type mapping. You can have multiple `\{field_name\}` objects in a `properties` object.
+The `\{field_name\}` object contains properties and an array for a child field in a type mapping.
+You can have multiple `\{field_name\}` objects in a <<properties,properties object>>.
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=child_field]
+include::example$simple-search-index-payload.jsonc[lines=101..122]
 ----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+The name of the object corresponds to the name of the field you want to include or exclude from your Search index. 
 
 A `\{field_name\}` object contains the following properties:
 
@@ -699,15 +908,9 @@ A `\{field_name\}` object contains the following properties:
 |====
 |Property |Type |Required? |Description
 
-|\{field_name\} |Object |Yes a|
-
-The name of the child field you want to index in the type mapping. For example, `city`. 
-
-NOTE: The \{field_name\} object contains the `enabled`, `dynamic`, and `fields` properties described in the following rows.
-
 |enabled |Boolean |Yes a|
 
-To add this child field to the index, set `enabled` to `true`.
+To add this child field to the Search index, set `enabled` to `true`.
 
 To remove this child field from the index, set `enabled` to `false`.
 
@@ -728,9 +931,12 @@ The `fields` array contains objects with settings for each child field to index 
 
 [source,json]
 ----
-include::example$complex-search-index-payload.jsonc[tag=fields]
+include::example$simple-search-index-payload.jsonc[lines=108..119]
 ----
 
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `fields` array is located inside a <<child-fields,{field_name} object>>.
 It contains the following properties: 
 
 [cols="1,1,1,2"]
@@ -739,7 +945,7 @@ It contains the following properties:
 
 |docvalues |Boolean |Yes a|
 
-To include the value for each instance of the field in the index to support xref:[Facets] and sorting search results, set `docvalues` to `true`.
+To include the value for each instance of the field in the Search index to support xref:search-request-params.adoc#facet-name[facets] and sorting search results, set `docvalues` to `true`.
 
 To exclude the values for each instance of this field from the index, set `docvalues` to `false`.
 
@@ -763,7 +969,7 @@ To disable term highlighting and reduce index size, set `include_term_vectors` t
 
 |index |Boolean |Yes a|
 
-To include the child field in the index, set `index` to `true`.
+To include the child field in the Search index, set `index` to `true`.
 
 To exclude the child field from the index, set `index` to `false`.
 
@@ -771,7 +977,7 @@ To exclude the child field from the index, set `index` to `false`.
 
 |store |Boolean |Yes a|
 
-To include the content of the child field in the index and allow its content to be viewed in search results, set `store` to `true`.
+To include the content of the child field in the Search index and allow its content to be viewed in search results, set `store` to `true`.
 
 To exclude the content of the child field from the index, set `store` to `false`.
 
@@ -787,7 +993,7 @@ The child field's type. Can be one of:
 * `geoshape`
 * `disabled`
 
-For more information on the available field data types, see xref:field-data-types-reference.adoc[].
+For more information about the available field data types, see xref:field-data-types-reference.adoc[].
 
 |analyzer |String |No a|
 
