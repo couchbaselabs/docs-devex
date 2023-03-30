@@ -3,9 +3,9 @@ using Couchbase.Search.Queries.Simple;
 
 await using var cluster = await Cluster.ConnectAsync(new ClusterOptions
 {
-    ConnectionString = "$CB_HOSTNAME$",
-    UserName = "$CB_USERNAME$",
-    Password = "$CB_PASSWORD$",
+    ConnectionString = "CB_HOSTNAME", //
+    UserName = "CB_USERNAME",
+    Password = "CB_PASSWORD",
     Buckets = new List<string>{"travel-sample"}
 }.ApplyProfile("wan-development"));
 

@@ -11,11 +11,11 @@ import (
 
 func main() {
     cluster, err := gocb.Connect(
-	os.Getenv("$CB_HOSTNAME$"),                    
+	os.Getenv("CB_HOSTNAME"),                    
 	gocb.ClusterOptions{
         Authenticator: gocb.PasswordAuthenticator{
-            Username: os.Getenv("$CB_USERNAME$"),      
-            Password: os.Getenv("$CB_PASSWORD$"),      
+            Username: os.Getenv("CB_USERNAME"),      
+            Password: os.Getenv("CB_PASSWORD"),      
         },
     })
     if err != nil {

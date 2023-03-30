@@ -4,9 +4,9 @@ from couchbase.exceptions import CouchbaseException
 import couchbase.search as search
 import os
 
-username = os.getenv("$CB_USERNAME$", default=None)
-password = os.getenv("$CB_PASSWORD$", default=None)
-hostname = os.getenv("$CB_HOSTNAME$", default=None)
+username = os.getenv("CB_USERNAME", default=None)
+password = os.getenv("CB_PASSWORD", default=None)
+hostname = os.getenv("CB_HOSTNAME", default=None)
 
 cluster = Cluster.connect(
     "couchbase://" + hostname,

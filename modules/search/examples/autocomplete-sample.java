@@ -6,9 +6,9 @@ import com.couchbase.client.java.search.result.SearchResult;
 import com.couchbase.client.java.search.result.SearchRow;
 
 public class MockTypeAheadEnGram {
-  static String connstrn = System.getenv("$CB_HOSTNAME$"); 
-  static String username = System.getenv("$CB_USERNAME$"); 
-  static String password = System.getenv("$CB_PASSWORD$"); 
+  static String connstrn = System.getenv("CB_HOSTNAME"); 
+  static String username = System.getenv("CB_USERNAME"); 
+  static String password = System.getenv("CB_PASSWORD"); 
   
   public static void main(String... args) {
     Cluster cluster = Cluster.connect(connstrn, username, password);
