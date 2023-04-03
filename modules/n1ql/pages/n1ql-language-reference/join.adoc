@@ -14,16 +14,16 @@ The `JOIN` clause enables you to create new input objects by combining two or mo
 
 The `JOIN` clause is used within the xref:n1ql-language-reference/from.adoc[FROM] clause.
 It creates an input object by combining two or more source objects.
-Couchbase Server supports three types of `JOIN` clause, which are described in the sections below: <<section_ek1_jnx_1db,ANSI JOIN>>, <<lookup-join-clause,Lookup JOIN>>, and <<index-join-clause,Index JOIN>>.
+Couchbase Capella supports three types of `JOIN` clause, which are described in the sections below: <<section_ek1_jnx_1db,ANSI JOIN>>, <<lookup-join-clause,Lookup JOIN>>, and <<index-join-clause,Index JOIN>>.
 
-In Couchbase Server 7.1 and later, you may also use comma-separated joins.
+In Couchbase Capella, you may also use comma-separated joins.
 For further details, refer to xref:n1ql-language-reference/comma.adoc[].
 
 == Prerequisites
 
 For you to select data from keyspace or expression, you must have the [.param]`query_select` privilege on that keyspace.
 For more details about user roles, see
-xref:learn:security/authorization-overview.adoc[Authorization].
+xref:server:learn:security/authorization-overview.adoc[Authorization].
 
 == Syntax
 
@@ -137,7 +137,7 @@ WHERE route.sourceairport = "SFO";
 
 [NOTE]
 --
-In Couchbase Server 6.5 and later, if you create either of the following:
+In Couchbase Capella, if you create either of the following:
 
 * A LEFT OUTER JOIN where all the NULL or MISSING results on the right-hand side are filtered out by the xref:n1ql-language-reference/where.adoc[WHERE clause] or by the ON clause of a subsequent INNER JOIN, or
 * A RIGHT OUTER JOIN where all the NULL or MISSING results on the left-hand side are filtered out by the xref:n1ql-language-reference/where.adoc[WHERE clause] or by the ON clause of a subsequent INNER JOIN,
@@ -290,7 +290,7 @@ include::partial$grammar/dql.ebnf[tag=ansi-join-rhs]
 
 image::n1ql-language-reference/ansi-join-rhs.png["Syntax diagram", align=left]
 
-In Couchbase Server 6.5 and later, the right-hand side of an ANSI join may be a keyspace reference, a subquery, or a generic expression term.
+In Couchbase Capella, the right-hand side of an ANSI join may be a keyspace reference, a subquery, or a generic expression term.
 
 [horizontal.compact]
 rhs-keyspace:: <<ansi-rhs-keyspace>> icon:caret-down[]
@@ -443,7 +443,7 @@ use-hash-hint:: <<use-hash-hint>> icon:caret-down[]
 use-nl-hint:: <<use-nl-hint>> icon:caret-down[]
 multiple-hints:: <<multiple-hints>> icon:caret-down[]
 
-Couchbase Server Enterprise Edition supports two join methods for performing ANSI join: nested-loop join and hash join.
+There are two join methods for performing ANSI join: nested-loop join and hash join.
 Two corresponding join hints are introduced: `USE HASH` and `USE NL`.
 
 The ANSI join hints are similar to the xref:n1ql-language-reference/hints.adoc#use-index-clause[USE INDEX] or xref:n1ql-language-reference/hints.adoc#use-keys-clause[USE KEYS] hints.
@@ -452,16 +452,14 @@ The ANSI join hints can be specified after the right-hand side of an ANSI join s
 NOTE: The join hint for the first join should be specified on the first join's right-hand side, and the join hint for the second join should be specified on the second join's right-hand side, etc.
 If a join hint is specified on the first FROM term, i.e. the first join's left-hand side, an error is returned.
 
-TIP: In Couchbase Server 7.1 and later, you can also supply a join hint within a specially-formatted xref:n1ql-language-reference/optimizer-hints.adoc[hint comment].
+TIP: In Couchbase Capella, you can also supply a join hint within a specially-formatted xref:n1ql-language-reference/optimizer-hints.adoc[hint comment].
 Note that you cannot specify a join hint for the same keyspace using both the `USE` clause and a hint comment.
 If you do this, the `USE` clause and the hint comment are both marked as erroneous and ignored by the optimizer.
 
 [#default-join-method]
 .Default Join Method
-****
-[.edition]#{enterprise}#
 
-In Enterprise Edition, for an ANSI join with a subquery or a generic expression as the right-hand side, the default method is hash.
+For an ANSI join with a subquery or a generic expression as the right-hand side, the default method is hash.
 In this case:
 
 * The subquery or expression on the right-hand side of the join is used as the <<use-hash-hint,build side>> of the hash join.
@@ -483,11 +481,6 @@ If the hash join cannot be generated, then the planner will further consider nes
 * If no join hint is specified, or the `USE NL` hint is specified, then nested-loop join is considered.
 
 '''
-
-[.edition]#{community}#
-
-For Community Edition (CE), only nested-loop join is considered by the planner, and any specified `USE HASH` hint will be silently ignored.
-****
 
 [#use-hash-hint]
 === USE HASH Hint
@@ -519,7 +512,7 @@ Typically, this means you want the build side to be used on the smaller of the t
 However, you can only supply one hash hint, and only to the right side of the join.
 So if you specify `BUILD` on the right side, then you are implicitly using `PROBE` on the left side (and vice versa).
 
-In Couchbase Server 7.1 and later, this clause is equivalent to the `USE_HASH` optimizer hint.
+In Couchbase Capella, this clause is equivalent to the `USE_HASH` optimizer hint.
 For more details, refer to xref:n1ql-language-reference/keyspace-hints.adoc#use-hash[Keyspace Hints].
 
 [#use-nl-hint]
@@ -542,7 +535,7 @@ image::n1ql-language-reference/use-nl-term.png["Syntax diagram", align=left]
 
 This join hint instructs the planner to use nested-loop join (NL join) for the join being considered.
 
-In Couchbase Server 7.1 and later, this clause is equivalent to the `USE_NL` optimizer hint.
+In Couchbase Capella, this clause is equivalent to the `USE_NL` optimizer hint.
 For more details, refer to xref:n1ql-language-reference/keyspace-hints.adoc#use-hash[Keyspace Hints].
 
 [#multiple-hints]
@@ -901,8 +894,7 @@ WHERE b1.c11 = 10
 === Purpose
 
 A _lookup join_ is a legacy syntax for joins.
-It enables you to join a foreign key field on the left-hand side of the join with the primary xref:learn:data/data.adoc#keys[document key] on the right-hand side of the join.
-Couchbase Server version 4.1 and earlier supported only lookup joins.
+It enables you to join a foreign key field on the left-hand side of the join with the primary xref:server:learn:data/data.adoc#keys[document key] on the right-hand side of the join.
 
 In the join predicate for a lookup join, the `ON KEYS` expression must refer to the foreign key in the left-hand side keyspace.
 This is then used to retrieve documents from the right-hand side keyspace.
@@ -1047,7 +1039,7 @@ include::example$select/lookup-join-left.jsonc[]
 === Purpose
 
 An _index join_ is another legacy syntax for joins which reverses the direction of a lookup join.
-It enables you to join the primary xref:learn:data/data.adoc#keys[document key] on the left-hand side of the join with a foreign key field on the right-hand side of the join.
+It enables you to join the primary xref:server:learn:data/data.adoc#keys[document key] on the left-hand side of the join with a foreign key field on the right-hand side of the join.
 
 You can use an index join when a lookup join would be inefficient, and you need to flip the relationship so the join predicate is on the right-hand side of the join.
 
