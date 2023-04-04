@@ -5,26 +5,38 @@
       "#operator": "Sequence",
       "~children": [
         {
-          "#operator": "PrimaryScan3",
+          "#operator": "IndexScan3",
           "as": "t",
-          "bucket": "travel-sample",
-          "index": "def_inventory_landmark_primary", // <1>
+          "bucket": "my-db-p4xox4",
+          "index": "def_samples_landmark_city",
 // end::excerpt[]
+          "index_id": "d120b180aa3eec1b",
           "index_projection": {
             "primary_key": true
           },
           "keyspace": "landmark",
           "namespace": "default",
-          "scope": "inventory",
+          "scope": "samples",
+          "spans": [
+            {
+              "exact": true,
+              "range": [
+                {
+                  "inclusion": 0,
+                  "index_key": "`city`"
+                }
+              ]
+            }
+          ],
           "using": "gsi"
         },
         {
           "#operator": "Fetch",
           "as": "t",
-          "bucket": "travel-sample",
+          "bucket": "my-db-p4xox4",
           "keyspace": "landmark",
           "namespace": "default",
-          "scope": "inventory"
+          "scope": "samples"
         },
         {
           "#operator": "Parallel",
@@ -37,6 +49,8 @@
               },
               {
                 "#operator": "InitialProject",
+                "discard_original": true,
+                "preserve_order": true,
                 "result_terms": [
                   {
                     "expr": "(meta(`t`).`id`)"
@@ -48,6 +62,6 @@
         }
       ]
     },
-    "text": "SELECT META(t).id FROM `travel-sample`.inventory.landmark t WHERE t.geo.alt > 1000 AND t.activity = \"see\";"
+    "text": "SELECT META(t).id FROM landmark t\nWHERE t.geo.alt > 1000 AND t.activity = \"see\";"
   }
 ]
