@@ -1,0 +1,504 @@
+= Search Request JSON Properties 
+:page-topic-type: reference
+:description: You can add additional properties to a Search request to control how the Search Service returns results. 
+:page-toclevels: 3
+
+[abstract]
+{description}
+
+The following is an example Search request: 
+
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=full]
+----
+
+A Search request can contain the following properties: 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|[[query]]query |Object |Yes a|
+
+An object that contains the properties for one of the supported query types: 
+
+* xref:server:fts:fts-supported-queries-query-string-query.adoc[]
+* xref:server:fts:fts-supported-queries-match.adoc[]
+* xref:server:fts:fts-supported-queries-match-phrase.adoc[]
+* xref:server:fts:fts-supported-queries-non-analytic-query.adoc[]
+* xref:server:fts:fts-supported-queries-compound-query.adoc[]
+* xref:server:fts:fts-supported-queries-range-query.adoc[]
+* xref:server:fts:fts-supported-queries-geospatial.adoc[]
+* xref:server:fts:fts-supported-queries-special-query.adoc[]
+
+|ctl |Object |No a|
+
+An object that contains properties for query consistency. 
+
+For more information about how to configure Search query consistency inside the `ctl` object, see <<ctl,>>.
+
+|size/limit |Integer |No a|
+
+Set the total number of results to return for a single page of search results. 
+
+If you provide both the `size` and `limit` properties, the Search Service uses the `size` value.
+
+|from/offset |Integer |No a|
+
+Set an offset value to change where pagination starts for search results, based on the Search query's <<sort,>>. 
+
+For example, if you set a `size` value of `5` and a `from` value of `10`, the Search query returns results 11 through 15 on a page. 
+
+If you provide both the `from` and `offset` properties, the Search Service uses the `from` value.
+
+|highlight |Object |No a|
+
+Contains properties to control search result highlighting.
+
+For more information about how to configure highlighting in Search results, see <<highlight,>>.
+
+|fields |Array |No a|
+
+An array of strings to specify each indexed field you want to return in search results. 
+
+You must add a field and its contents to a Search index to view it in search results or add it to the `fields` array.
+
+|[[facets]]facets |Object |No a|
+
+Contains `\{facet-name\}` objects to define each facet you want to return with search results. 
+
+The Search Service supports the following facet types: 
+
+* *Term Facet*: Counts the documents that have the same value for a specified field. 
+* *Numeric Range Facet*: Counts the documents with numeric field values that are greater than or less than a specified range or ranges. 
+* *Date Range Facet*: Counts the documents with date field values that are earlier or later than a specified range or ranges. 
+
+For more information, about how to configure the different facet types inside the `facets` object, see <<facet-name,>>.
+
+|explain |Boolean |No a|
+
+To create an explanation for a search result's score in search results, set `explain` to `true`.
+
+To turn off explanations for search result scoring, set `explain` to `false`.
+
+|sort |Array |No a|
+
+Contains an array of strings or JSON objects to set how to sort search results. 
+
+The strings can be: 
+
+* `{field_name}`: Specify the name of a field to use to sort the search results.
+* `_id`: Use the document's identifier to sort the search results. 
+* `_score`: Use the document's score from the Search query to sort the search results.
+
+For more information about the properties for a `sort` JSON object, see <<sort,>>.
+
+|[[includelocations]]includeLocations |Boolean |No a|
+
+To return the position of each occurrence of a search term inside a document, set `includeLocations` to `true`. 
+
+NOTE: You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on a field to use `includeLocations`.
+
+To turn off term locations, set `includeLocations` to `false`.
+
+|score |String |No a|
+
+To turn off document relevancy scoring in search results, set `score` to `none`.
+
+To turn on document relevancy scoring in search results, remove the `score` property.
+
+|search_after |Array |No a|
+
+NOTE: If you use `search_after` in a search request, you can't use `search_before`. Both properties are included in the example code to show the correct syntax.
+
+Use `search_after` with `from/offset` and `sort` to control pagination in search results. 
+
+Give a value for each string or JSON object in the `sort` array to the `search_after` array.
+The Search Service starts search result pagination after the document with those values. 
+
+You must provide the values in the same order that they appear in the `sort` array. 
+
+For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_after` set to `8`, documents 9-10 appear on the same page. 
+
+|search_before |Array |No a|
+
+NOTE: If you use `search_before` in a search request, you can't use `search_after`. Both properties are included in the example code to show the correct syntax.
+
+Use `search_before` with `from/offset` and `sort` to control pagination in search results.
+
+Give a value for each string or JSON object in the `sort` array to the `search_before` array.
+The Search Service starts search result pagination before the document with those values. 
+
+You must provide the values in the same order that they appear in the `sort` array. 
+
+For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_before` set to `8`, documents 2-6 appear on the same page. 
+
+|collections |Array |No |Contains an array of strings that specify the collections where you want to run the query. 
+
+|====
+
+[#ctl]
+== Ctl Object 
+
+Use the `ctl` object to make sure that the Search Service runs your Search query against the latest version of the documents in your database. 
+
+The `ctl` object and its properties cause the Search Service to run your query against the latest version of a document written to a xref:server:learn:buckets-memory-and-storage/vbuckets.adoc[vBucket].  
+The Search Service uses a consistency vector to synchronize the last document write to a vBucket from the Data Service with the Search index.
+
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=ctl]
+----
+
+The `ctl` object contains the following properties:
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|timeout |Integer |No a|
+
+Set the maximum time, in milliseconds, that a Search query can execute on a Search index partition. 
+
+If the query time exceeds the `timeout`, the Search Service cancels the query. 
+The query might return partial results if any index partitions responded before the timeout.
+
+|consistency |Object |Yes a|
+
+An object that contains a `vectors` object and the `level` and `results` properties.
+
+For more information, see <<consistency,>>.
+
+|====
+
+[#consistency]
+=== Consistency Object 
+
+Use the `consistency` object to control the consistency behavior for a Search index: 
+
+[source,json]
+include::example$run-search-full-request.jsonc[tag=consistency]
+
+A `consistency` object has the following properties:
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|vectors |Object |Yes a|
+
+An object that contains a `\{search-index-name\}` object for each Search index in the query.
+
+For more information about the `\{search-index-name\}` object, see <<vectors,>>.
+
+|level |String |Yes a|
+
+Set the consistency to bounded or unbounded consistency: 
+
+* `at_plus`: The Search query executes but requires that the Search index matches the timestamp of the last document update. 
+You must provide a `vectors` object 
+* `not_bounded`: The Search query executes without a consistency requirement. 
+`not_bounded` is faster than `at_plus`, as it doesn't rely on a `vectors` object or wait for the Search index to match the Data Service index.
+
+|results |String |No a|
+
+To display an error instead of partial results if any index partitions are unavailable on a node, set `results` to `complete`.
+
+To return partial results from a query if a node is unreachable, remove the `results` property.
+
+|====
+
+[#vectors]
+==== \{search-index-name\} Object 
+
+Use a `\{search-index-name\}` object to set the Search index and consistency vectors for a Search query.
+
+The `\{search-index-name\}` object contains a vBucket mapping and UUID property with the sequence number for each update to a vBucket's data that you want to include in your search results.
+For example, the `SearchIndexName` object contains 2 vBucket mappings, UUIDs, and sequence numbers:
+
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=vectors]
+----
+
+If your Search query uses an xref:server:fts:fts-creating-full-text-aliases.adoc[index alias] that references multiple Search indexes, you must include a `\{search-index-name\}` object for each Search index in the alias. 
+
+To get the vBucket mapping, UUID, and the sequence number for a data write, use a `MutationToken` from a Data Service `MutationResult`. 
+The Data Service returns a `MutationResult` object or promise for CRUD operations.
+For more information, see xref:server:guides:kv-operations.adoc[].
+
+For examples on how to obtain and use a `MutationToken` with the Couchbase SDKs, see: 
+
+* xref:dotnet-sdk:howtos:full-text-searching-with-sdk.adoc#consistency[.NET] 
+ | xref:go-sdk:howtos:full-text-searching-with-sdk.adoc#consistency[Go]
+ | xref:java-sdk:howtos:full-text-searching-with-sdk.adoc#consistency[Java]
+ | xref:kotlin-sdk:howtos:full-text-search.adoc#scan-consistency[Kotlin]
+ | xref:nodejs-sdk:howtos:full-text-searching-with-sdk.adoc#scan-consistency-and-consistentwith[Node.js]
+ | xref:php-sdk:howtos:full-text-searching-with-sdk.adoc#consistency[PHP]
+ | xref:python-sdk:howtos:full-text-searching-with-sdk.adoc#scan-consistency-and-consistent-with[Python]
+ | xref:ruby-sdk:howtos:full-text-searching-with-sdk.adoc#consistency[Ruby]
+ | xref:scala-sdk:howtos:full-text-searching-with-sdk.adoc#consistency[Scala]
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|\{search-index-name\} |Object |Yes a|
+
+The name of the Search index that you want to search and use with consistency. 
+
+The `\{search-index-name\}` object contains a `\{vBucketMapping\}/\{vBucketUUID\}` property for each document write operation that you want in your search results.
+
+Set the value of the property to the sequence number for the write operation. 
+
+For example, if you had a property of `607/205096593892159": 2`, the Search Service looks for a write operation on vBucket `607`, with a UUID of `205096593892159`, with sequence number `2`.
+
+|====
+
+
+[#highlight]
+== Highlight Object 
+
+Use the `highlight` object to control how the Search Service highlights matches in search results. 
+
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=highlight]
+----
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|style |String |No a|
+
+Sets how the Search Service highlights a match from a search query: 
+
+* `ansi`: The Search Service highlights matches with a yellow background (`\u001b[43m`).
+* `html`: The Search Service surrounds matches with `<mark>` and `</mark>` HTML tags. 
+
+|fields |Array |No a|
+
+Contains an array of strings for each field name where you want to highlight a search query match. 
+
+If you include the `fields` array, the Search Service only highlights fields that are in the array.
+
+|====
+
+[#facet-name]
+== \{facet-name\} Object
+
+Use a `\{facet-name\}` object to create a search facet.
+
+You can have multiple `\{facet-name\}` objects inside the <<facets,facets object>> in your search query.
+
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=facets]
+----
+
+A `\{facet-name\}` object contains the following properties: 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|size |Integer |Yes a|
+
+Set the total number of categories to return with the search results for a Term facet. 
+
+The Search Service orders facet categories from values with the most occurrences to the least occurrences. 
+
+For Numeric Range and Date Range facets, the total number of categories returned depends on the number of ranges defined for the facet. 
+
+|field |String |Yes |The name of the field to use to collect facet information. 
+
+|numeric_ranges |Array |No a|
+
+If you want to collect a Numeric Range facet, add a `numeric_ranges` array. 
+
+A `numeric_ranges` array contains objects that define each numeric range you want to collect with your search results. 
+
+For more information, see <<numeric,>>.
+
+|date_ranges |Array |No a|
+
+If you want to collect a Date Range facet, add a `date_ranges` array. 
+
+A `date_ranges` array contains objects that define each date range you want to collect with your search results. 
+
+For more information, see <<date,>>.
+
+|====
+
+[#numeric]
+=== Numeric_ranges Array Objects
+
+The objects in a `numeric_ranges` array specify the range or ranges for a Numeric Range facet. 
+
+For example, the following `numeric_ranges` array sets two ranges, `high` and `low`, to collect for a Numeric Range facet: 
+
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=numeric_ranges]
+----
+
+The Search query increments the `count` property for `high` when the value of the `field` in the <<facet-name,>> is greater than 7 but less than 10. 
+
+If the document's `field` value is less than 7 but greater than 0, the query increments the `count` value for `low`.
+ 
+You can set both a `min` and `max` for a range, or just a `min` or `max`.
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|name |String |Yes |The name for the numeric range. 
+
+|min |Integer |No a|
+
+The minimum value to compare against the value of the `field` in the <<facet-name,>>. 
+
+If a document's value for the field is greater than `min`, the Search Service increments the `count` value returned in the Search query results.
+
+You can also define a `max` property to set an upper limit for your numeric range. 
+
+|max |Integer |No a|
+
+The maximum value to compare against the value of the `field` in the <<facet-name,>>. 
+
+If a document's value for the field is less than `max`, the Search Service increments the `count` value returned in the Search query results.
+
+You can also define a `min` property to set a lower limit for your numeric range.
+
+|====
+
+[#date]
+=== Date_ranges Array Objects
+
+The objects in a `date_ranges` array specify the range or ranges for a Date Range facet. 
+
+For example, the following `date_ranges` array sets two ranges, `old` and `new`, to collect for a Date Range facet: 
+
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=date_ranges]
+----
+
+The Search query increments the `count` property for `old` when the value of the `field` in the <<facet-name,>> is later than `2020-12-31` but earlier than `2023-12-31`. 
+
+If the document's `field` value is later than `2023-12-31` but earlier than `2024-12-31`, the query increments the `count` value for `new`.
+ 
+You can set both a `start` and `end` for a range, or just a `start` or `end`.
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|name |String |Yes |The name for the date range. 
+
+|start |RFC-3339 formatted Date String |No a|
+
+The starting date value to compare against the value of the `field` in the <<facet-name,>>. 
+
+If a document's value for the field is later than `start`, the Search Service increments the `count` value returned in the Search query results.
+
+You can also define a `end` property to set an upper limit for your date range. 
+
+|end |RFC-3339 formatted Date String |No a|
+
+The ending date value to compare against the value of the `field` in the <<facet-name,>>. 
+
+If a document's value for the field is earlier than `end`, the Search Service increments the `count` value returned in the Search query results.
+
+You can also define a `start` property to set a lower limit for your date range.
+
+|====
+
+[#sort]
+== Sort Object 
+
+Use the `sort` object to control how the Search Service sorts search results. 
+
+The following `sort` object orders search results by the values in `field1`, then by `field2`, the document's score, and then the document's ID value: 
+
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=sort]
+----
+
+The `sort` object can contain the following string values: 
+
+[cols="1,2"]
+|====
+|Value |Description 
+
+|\{field_name\} a|
+
+The name of a field in the Search index. The Search Service sorts documents based on the value of the field, in ascending order.  
+
+To sort in descending order based on a `{field-name}`, add a hyphen (-) to the start of the field name string.
+
+|_id a|
+
+The Search Service sorts documents based on their identifier value, in ascending order. 
+
+To sort in descending order based on a document's ID value, add a hyphen (-) before the underscore (_) in the `_id` string. 
+
+|_score a|
+
+The Search Service sorts documents based on their score value, in ascending order. 
+
+To sort in descending order based on a document's score, add a hyphen (-) before the underscore (_) in the `_score` string. 
+
+|====
+
+To customize search result sorting beyond ascending and descending values, use a JSON object. 
+
+JSON objects in a `sort` object can contain the following properties: 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description 
+
+|by |String |Yes a|
+
+Sets what value to use for the sort: 
+
+* `id`: Uses the document's ID value. 
+* `score`: Uses the document's score. 
+* `field`: Uses the value of a specific field to sort. See <<field,field>>.
+
+|[[field]]field |String |No |When `by` is set to `field`, specify the name of the field to use to sort search results.
+
+|desc |Boolean |Yes a|
+
+To sort the values in the field in descending order, set `desc` to `true`.
+
+To sort the values in the field in ascending order, set `desc` to `false`.
+
+|mode |String |Yes a|
+
+Set the order for search results when the `field` contains multiple values, such as an array: 
+
+* `default`: Use the first value in the field as the sort key. 
+* `min`: Use the smallest value in the field as the sort key. 
+* `max`: Use the largest value in the field as the sort key. 
+
+|missing |String |Yes a|
+
+Set how the Search Service sorts documents that don't have a value for the field specified in `field`:
+
+* `first`: Documents with a missing value appear first and before other results in search results. 
+* `last`: Documents with a missing value appear last and after other results in search results. 
+
+|type |String |Yes a|
+
+Set the data type of the field specified in `field`:
+
+* `string`: The field contains a string. 
+* `date`: The field contains date/time data. 
+* `number`: The field contains a number or geographic data, like a latitude or longitude value. 
+
+|====
