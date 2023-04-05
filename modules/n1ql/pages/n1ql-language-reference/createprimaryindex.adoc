@@ -1,3 +1,4 @@
+// Needs editing to relate to elixir -- replicas and placement no longer relevant.
 = CREATE PRIMARY INDEX
 :page-topic-type: reference
 :imagesdir: ../../assets/images
@@ -20,7 +21,7 @@ Primary indexes are optional and are only required for running ad hoc queries on
 
 == Purpose
 
-In Couchbase Server 7.0 and later, `CREATE PRIMARY INDEX` allows you to make multiple concurrent index creation requests.
+`CREATE PRIMARY INDEX` allows you to make multiple concurrent index creation requests.
 The command starts a task to create the primary index definition in the background.
 If there is an index creation task already running, the Index Service queues the incoming index creation request.
 `CREATE PRIMARY INDEX` returns as soon as the index creation phase is complete.
@@ -32,8 +33,8 @@ In deferred build mode, `CREATE PRIMARY INDEX` creates the index definition, but
 You can then build the index using the {build-index}[BUILD INDEX] command.
 
 You can create multiple identical primary indexes on a keyspace and place them on separate nodes for better index availability.
-In Couchbase Server Enterprise Edition, the recommended way to do this is using the `num_replicas` option.
-In Couchbase Server Community Edition, you need to create multiple identical indexes and place them using the `nodes` option.
+In Couchbase Capella, the recommended way to do this is using the `num_replicas` option.
+In Couchbase Capella, you need to create multiple identical indexes and place them using the `nodes` option.
 Refer to <<index-with,WITH Clause>> below for more details.
 
 == Prerequisites
@@ -131,9 +132,9 @@ collection::
 If omitted, the default collection in the bucket's default scope is used.
 
 ====
-For example, `default:{backtick}travel-sample{backtick}` indicates the default collection in the default scope in the `travel-sample` bucket in the `default` namespace.
+For example, `default:{backtick}my-db{backtick}` indicates the default collection in the default scope in the `my-db` bucket in the `default` namespace.
 
-Similarly, `default:{backtick}travel-sample{backtick}.inventory.airline` indicates the `airline` collection in the `inventory` scope in the `travel-sample` bucket in the `default` namespace.
+Similarly, `default:{backtick}my-db{backtick}.samples.airline` indicates the `airline` collection in the `samples` scope in the `my-db` bucket in the `default` namespace.
 ====
 
 [[keyspace-partial,keyspace partial]]
@@ -166,7 +167,7 @@ include::partial$grammar/ddl.ebnf[tag=index-using]
 
 image::n1ql-language-reference/index-using.png["Syntax diagram: refer to source code listing", align=left]
 
-In Couchbase Server 6.5 and later, the index type for a primary index must be Global Secondary Index (GSI).
+In Couchbase Capella, the index type for a primary index must be Global Secondary Index (GSI).
 The `USING GSI` keywords are optional and may be omitted.
 
 [[index-with]]
@@ -282,7 +283,9 @@ To try the examples in this section, you must set the query context as described
 ====
 include::ROOT:partial$query-context.adoc[tag=unset]
 
-Create a named primary index on the default collection in the default scope within the `travel-sample` bucket.
+Create a named primary index on the default collection in the default scope within the bucket.
+
+NOTE: Replace <bucket> with the name of the bucket in your database.
 
 [source,sqlpp]
 ----
