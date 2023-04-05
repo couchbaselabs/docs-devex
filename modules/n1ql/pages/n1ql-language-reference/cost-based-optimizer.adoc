@@ -1,6 +1,5 @@
 = Cost-Based Optimizer
 :page-topic-type: concept
-:page-edition: Enterprise Edition
 :imagesdir: ../../assets/images
 :description: The cost-based optimizer takes into account the cost of memory, CPU, network transport, and disk usage when choosing the optimal plan to execute a query.
 
@@ -25,10 +24,10 @@
 :use-nl-hint: {keyspace-hints}#use_nl
 :use-hash-hint: {keyspace-hints}#use_hash
 :collation: {n1ql}/datatypes.adoc#collation
-:query-service: xref:learn:services-and-indexes/services/query-service.adoc
+:query-service: xref:server:learn:services-and-indexes/services/query-service.adoc
 :query-service-architecture: {query-service}#query-service-architecture
 :query-execution: {query-service}#query-execution
-:query-settings: xref:manage:manage-settings/general-settings.adoc#query-settings
+:query-settings: xref:server:manage:manage-settings/general-settings.adoc#query-settings
 
 [abstract]
 {description}
@@ -36,7 +35,7 @@
 [[overview]]
 == Overview
 
-The _cost-based optimizer_ (CBO) is a feature available in Couchbase Capella that enables the Query service to create the most efficient plan to execute a query.
+The _cost-based optimizer_ (CBO) enables the Query service to create the most efficient plan to execute a query.
 
 The execution of a query involves {query-execution}[many possible operations]: scan, fetch, join, filter, and so on.
 When the query processor is planning the query execution, there may be several possible choices for each operation: for example, there may be different possible indexes, or a choice of join types.
@@ -99,7 +98,7 @@ Refer to {index-hint}[INDEX] for an example.
 [[join-method]]
 === Join Method
 
-In Couchbase Capella, two join methods are supported: nested-loop join and hash join.
+Two join methods are supported: nested-loop join and hash join.
 With the legacy {query-service-architecture}[rules-based optimizer], nested-loop join is used by default, and hash join is only considered when a USE HASH hint is specified.
 With the cost-based optimizer, both join methods are considered, and the optimizer chooses a join method based on cost information.
 
@@ -107,10 +106,6 @@ Refer to {use-nl-hint}[USE_NL] and {use-hash-hint}[USE_HASH] for examples.
 
 [[join-enumeration]]
 === Join Enumeration
-
-ifeval::['{page-component-version}' == '7.1']
-_(Introduced in Couchbase Server 7.1)_
-endif::[]
 
 With the legacy {query-service-architecture}[rules-based optimizer], joins are performed in the order in which they are specified in the query, and no reordering of joins is considered.
 With the cost-based optimizer, different join orders can be considered, and the optimizer chooses the optimal join order based on cost information.
@@ -271,17 +266,13 @@ It defaults to `true`.
 
 * The {queryUseCBO}[cluster-level] `queryUseCBO` setting enables you to specify the node-level setting for all the nodes in the cluster.
 
-You can also enable or disable the cost-based optimizer using the {query-settings}[Query Settings] in the Couchbase Web Console.
+You can also enable or disable the cost-based optimizer using the {query-settings}[Query Settings] in the Capella UI.
 
 If the cost-based optimizer is not enabled, the Query service falls back on the {query-service-architecture}[rules-based {sqlpp} optimizer].
 
 === Optimizer Hints
 
-ifeval::['{page-component-version}' == '7.1']
-_(Introduced in Couchbase Server 7.1)_
-endif::[]
-
-In Couchbase Server 7.1 and later, you can supply hints to the optimizer within a specially-formatted hint comment.
+In Couchbase Capella, you can supply hints to the optimizer within a specially-formatted hint comment.
 For example, you can specify a particular index; specify a join method for a particular join; or request that the query should use the join order as written.
 For further details, refer to {optimizer-hints}[Optimizer Hints].
 

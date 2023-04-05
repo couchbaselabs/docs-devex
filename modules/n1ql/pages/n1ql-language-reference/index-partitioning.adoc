@@ -1,6 +1,4 @@
-// This page should not exist for elixir
 = Index Partitioning
-:page-edition: Enterprise Edition
 :imagesdir: ../../assets/images
 :description: Index Partitioning enables you to increase aggregate query performance by dividing and spreading a large index of documents across multiple nodes, horizontally scaling out an index as needed.
 :page-topic-type: reference
@@ -8,7 +6,7 @@
 :createindex: xref:n1ql-language-reference/createindex.adoc
 :gbap: xref:n1ql-language-reference/groupby-aggregate-performance.adoc
 :index-with: {createindex}#index-with
-:rebalancing-the-index-service: xref:learn:clusters-and-availability/rebalance.adoc#rebalancing-the-index-service
+:rebalancing-the-index-service: xref:clusters:scale-database.adoc#rebalance
 
 {description}
 The system partitions the index across a number of index nodes using a hash partitioning strategy in a way that is transparent to queries.
@@ -22,12 +20,13 @@ Benefits of a partitioned index include:
 * Reduction of query latency for large aggregated queries since each partition can be scanned in parallel.
 * Provides a low-latency range query while allowing indexes to be scaled out as needed.
 --
-
+////
 Partitioned indexes are displayed in the Couchbase Web Console with a `partitioned` indicator:
 
 image::manage:manage-indexes/index-indicators.png[]
+////
 
-For further details, refer to xref:manage:manage-indexes/manage-indexes.adoc[Manage Indexes].
+For further details, refer to xref:server:manage:manage-indexes/manage-indexes.adoc[Manage Indexes].
 
 == Syntax
 
@@ -597,7 +596,7 @@ For example:
 * A cluster has a mix of non-partitioned indexes and partitioned indexes.
 * There is data skew in the partitions.
 
-In Couchbase Server 7.0 and later, the [def]_index redistribution_ setting enables you to specify how Couchbase Server redistributes indexes on rebalance.
+In Couchbase Capella, the [def]_index redistribution_ setting enables you to specify how Couchbase Capella redistributes indexes on rebalance.
 For further details, refer to {rebalancing-the-index-service}[Rebalancing the Index Service].
 
 == Repairing Failed Partitions
@@ -616,14 +615,9 @@ The lost partitions cannot be repaired when the number of remaining nodes is les
 
 Along with aggregate pushdown optimization, an application can further enhance the aggregate query performance by computing aggregation in parallel for each partition in the index service.
 This can be controlled by specifying the parameter `max_parallelism` when issuing a query.
-Starting with Couchbase Server 6.5, `max_parallelism` is set by default to match the number of partitions of the index.
+In Couchbase Capella, `max_parallelism` is set by default to match the number of partitions of the index.
 Note that when `max_parallelism` is set to the default value, the index service uses more CPU and memory since the query traffic is increased.
 
-****
-[.edition]#{community}#
-
-In Couchbase Server Community Edition, `max_parallelism` cannot be greater than 4.
-****
 
 === OFFSET Pushdown
 

@@ -17,16 +17,16 @@
 :execute: xref:n1ql:n1ql-language-reference/execute.adoc
 
 // Learn cross-references
-:transactions: xref:learn:data/transactions.adoc
-:roles: xref:learn:security/roles.adoc
+:transactions: xref:server:learn:data/transactions.adoc
+:roles: xref:server:learn:security/roles.adoc
 
 // Manage cross-references
-:install-sample-buckets: xref:manage:manage-settings/install-sample-buckets.adoc
-:sys-transactions: xref:manage:monitor/monitoring-n1ql-query.adoc#sys-transactions
+:install-sample-buckets: xref:clusters:data-service/import-data-documents.adoc#import-overview
+:sys-transactions: xref:server:manage:monitor/monitoring-n1ql-query.adoc#sys-transactions
 
 // Tools cross-references
-:query-workbench: xref:tools:query-workbench.adoc
-:cbq-shell: xref:tools:cbq-shell.adoc
+:query-workbench: xref:clusters:query-service/query-workbench.adoc
+:cbq-shell: xref:server:tools:cbq-shell.adoc
 :n1ql-rest-api: xref:n1ql:n1ql-rest-api/index.adoc
 
 // Settings cross-references
@@ -62,7 +62,7 @@
 [abstract]
 {sqlpp} offers full support for Couchbase ACID transactions.
 
-Starting with Couchbase Server 7.0, {sqlpp} offers full support for Couchbase ACID transactions based on optimistic concurrency.
+Couchbase Capella {sqlpp} offers full support for Couchbase ACID transactions based on optimistic concurrency.
 Refer to {transactions}[Transactions] for an overview of Couchbase transactions.
 
 include::partial$n1ql-language-reference/transaction-restrictions.adoc[]
@@ -78,6 +78,8 @@ Refer to the documentation for each statement for more information and examples.
 * To rollback a transaction, refer to {rollback-transaction}[ROLLBACK TRANSACTION].
 * To commit a transaction, refer to {commit-transaction}[COMMIT TRANSACTION].
 
+
+ifdef::flag-query-settings[]
 == Settings and Parameters
 
 The Query service provides settings and parameters in support of Couchbase transactions.
@@ -129,7 +131,16 @@ Refer to the documentation for each parameter for more information and examples.
 
 In addition, the {scan_consistency}[scan-consistency] request-level parameter is used to specify the transactional scan consistency.
 Refer to {transactional-scan-consistency}[Transactional Scan Consistency] for details.
+endif::flag-query-settings[]
 
+ifndef::flag-devex-command-line[]
+== Query Tools
+
+To create a Couchbase transaction using {sqlpp}, you can use the {query-workbench}[Query Workbench].
+endif::flag-devex-command-line[]
+
+
+ifdef::flag-devex-command-line[]
 == Query Tools
 
 To create a Couchbase transaction using {sqlpp}, you can use any of the tools that you use to run a {sqlpp} query: the {query-workbench}[Query Workbench], the {cbq-shell}[cbq shell], or the {n1ql-rest-api}[Query REST API].
@@ -138,6 +149,8 @@ These are explained in the sections below.
 
 Note that some Couchbase SDKs provide APIs to support Couchbase transactions.
 For further details, refer to {transactions}[Transactions].
+
+endif::flag-devex-command-line[]
 
 === Couchbase Transactions with the Query Workbench
 
@@ -151,7 +164,8 @@ You can then click btn:[Execute] to execute the transaction.
 * In either case, you do not need to specify the `txid` parameter or the `tximplicit` parameter.
 If you need to specify any other parameters for the Couchbase transaction, you can use the query run-time preferences window.
 
-=== Couchbase Transactions with the cbq shell
+ifdef::flag-devex-command-line[]
+ Couchbase Transactions with the cbq shell
 
 * To execute a transaction containing multiple statements, you can create the transaction one statement at a time.
 Once you have started a transaction, all statements within the cbq shell session are assumed to be part of the same transaction until you rollback or commit the transaction.
@@ -173,16 +187,24 @@ In this case, you do not need to specify the `txid` parameter.
 
 * You can specify parameters for the Couchbase transaction as body parameters or query parameters alongside the query statement.
 
+endif::flag-devex-command-line[]
+
+
 == Monitoring
 
 You can monitor active Couchbase transactions using the `system:transactions` catalog.
 For more information, refer to {sys-transactions}[system:transactions].
+
+ifdef::flag-devex-command-line[]
 
 == Permissions
 
 When developing a transaction with an SDK, the transaction may contain a mixture of key-value operations and query statements.
 
 include::learn:partial$transaction-privileges.adoc[]
+
+endif::flag-devex-command-line[]
+
 
 == Worked Example
 
@@ -227,6 +249,7 @@ Query Workbench::
 
 . Choose btn:[Save Preferences] to save the preferences and return to the Query Workbench.
 --
+ifdef::flag-devex-command-line[]
 
 CBQ Shell::
 +
@@ -243,15 +266,29 @@ include::example$transactions/multiple.n1ql[tag=settings]
 No scan consistency is set for individual statements within the transaction; they inherit from the transaction scan consistency.
 <.> Durability level of all the mutations within the transaction.
 --
+endif::flag-devex-command-line[]
 ====
 
 === Transaction
 
 [[ex-1]]
+
+ifndef::flag-devex-command-line[]
+.Transaction using the Query Workbench
+====
+endif::flag-devex-command-line[]
+
+ifdef::flag-devex-command-line[]
 .Transaction using the Query Workbench or cbq shell
 ====
 Copy the entire sequence below and paste it into either the {query-workbench}[Query Workbench] or the {cbq-shell}[cbq shell].
 Note that you must be using cbq shell version 2.0 or above.
+endif::flag-devex-command-line[]
+
+ifndef::flag-devex-command-line[]
+Copy the entire sequence below and paste it into the {query-workbench}[Query Workbench].
+endif::flag-devex-command-line[]
+
 
 .Transaction
 [source,sqlpp]
@@ -259,8 +296,11 @@ Note that you must be using cbq shell version 2.0 or above.
 include::example$transactions/multiple.n1ql[tags=transaction;!begin-mark;!set-mark;!savepoint-mark;!rollback-mark;!commit-mark]
 ----
 
+
 The results of running the transaction in the Query Workbench are shown below.
+ifdef::flag-devex-command-line[]
 If you are using the cbq shell, the results are formatted differently, but contain the same information.
+endif::flag-devex-command-line[]
 
 .Results
 [source,json]
@@ -273,6 +313,7 @@ include::example$transactions/results.jsonc[tags=!ellipsis]
 <.> After setting the second savepoint and performing an update, the booking document has user `"1"`, name `"Rigoberto Bernier"`.
 <.> After rolling back to the second savepoint, the booking document again has user `"0"`, name `"Keon Hoppe"`.
 ====
+ifdef::flag-devex-command-line[]
 
 [[ex-2]]
 .Check the results of <<ex-1>>
@@ -372,6 +413,7 @@ include::example$transactions/multiple.sh[tag=commit]
 
 <.> After beginning the transaction, each subsequent statement in the transaction must specify the transaction ID that was generated when the transaction began.
 ====
+endif::flag-devex-command-line[]
 
 == Related Links
 

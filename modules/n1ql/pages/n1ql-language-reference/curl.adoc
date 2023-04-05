@@ -1,4 +1,3 @@
-// Still needs updating for Elixir
 = CURL Function
 :description: The CURL() function implements a subset of cURL functionality and enables {sqlpp} queries to interact and integrate with external JSON data sources available over HTTP/REST.
 :page-topic-type: reference
@@ -14,7 +13,7 @@ This allows federated queries against external data sources, such as the {url-go
 The federated queries can leverage full querying capabilities of {sqlpp}, including functions, expressions, sub-queries, JOINs, NESTs, UNNESTs etc.
 
 The `CURL()` function can be used in various {sqlpp} expressions and in various clauses of the DML statements such as projection, WHERE predicates, FROM data source, and so on.
-For example, you can use the CURL function with the INSERT-SELECT statement to import external data into Couchbase Server.
+For example, you can use the CURL function with the INSERT-SELECT statement to import external data into Couchbase Capella.
 
 
 == Syntax
@@ -173,10 +172,12 @@ See <<table_security_options>> for the list of security options that can be used
 In addition to the security options, a Full Administrator can also list URLs and REST endpoints that can be accessed by the `CURL()` function.
 The `CURL()` function can access URLs that satisfy a prefix match, which means only URLs specified on the list or the prefixes.
 
+////
 Consider the following use case where a deployment of Couchbase Server and Mobile Sync Gateway exist on the same machine, and the user has access to the query service but not the Sync Gateway admin endpoint.
 Let's assume that the user has been granted QUERY_EXTERNAL_ACCESS role by the Full Administrator.
 This means that the user can write queries using the CURL() function and potentially use CURL to access the Mobile Sync Gateway admin endpoint.
 To avoid this, the Full Administrator can create an access list for CURL() access and add the Admin endpoint of Sync Gateway to the `disallowed_urls` list.
+////
 
 For more details on creating the access list and the structure of the access list file, see <<curl-access-list>>.
 
@@ -234,13 +235,13 @@ From a CBQ prompt, you can send a CURL() command to allow or disallow specific U
 
 [source,sh]
 ----
-include::rest-api:example$query-settings-post-access.sh[]
+include::server:rest-api:example$query-settings-post-access.sh[]
 ----
 
 The access list file command structure is described in the following table.
 
 .Structure of Access List for CURL()
-include::rest-api:partial$query-settings/definitions.adoc[tag=access]
+include::server:rest-api:partial$query-settings/definitions.adoc[tag=access]
 
 == Design Considerations
 
@@ -527,7 +528,7 @@ LIMIT 4;
 Note that the results from the `CURL()` output are embedded in the `results[]` array under the keyspace alias `t` used in the remote query.
 So, we extract the result documents appropriately with the expression `+CURL(...).results[*].t+` and alias it to `route` as the left side keyspace for the `JOIN`.
 
-RBAC credentials are required when CURL() is accessing Couchbase Server version 5.0 or later.
+RBAC credentials are required when CURL() is accessing Couchbase Capella.
 
 .Results
 [source,json]
@@ -547,10 +548,10 @@ RBAC credentials are required when CURL() is accessing Couchbase Server version 
 [[Ex4]]
 .Full text search (FTS) in a {sqlpp} query
 ====
-The following example shows how to use the `CURL()` function to include a full text search from the xref:fts:full-text-intro.adoc[Search service] in a {sqlpp} query.
+The following example shows how to use the `CURL()` function to include a full text search from the xref:server:fts:full-text-intro.adoc[Search service] in a {sqlpp} query.
 Assuming the FTS index `fts_travel` is created on the default collection in the default scope of the travel sample dataset, running the following {sqlpp} query finds all documents that have "sanfrancisco" anywhere in the document.
 
-Note that in Couchbase Server 6.5 and later, you can use xref:n1ql-language-reference/searchfun.adoc[search functions] to use a full text search in a {sqlpp} query, as long as the Search service is available on the cluster.
+You can use xref:n1ql-language-reference/searchfun.adoc[search functions] to use a full text search in a {sqlpp} query, as long as the Search service is available on the cluster.
 You can still use the `CURL()` function if you need to access the Search service on another cluster.
 
 .Query
