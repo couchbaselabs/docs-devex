@@ -44,9 +44,8 @@ The INSERT statement can compute and return any expression based on the actual i
 
 TIP: Use the {upsert}[UPSERT] statement if you want to overwrite a document with the same key, in case it already exists.
 
-WARNING: Please note that the examples below will alter the data in your sample buckets.
-To restore your sample data, remove and reinstall the `travel-sample` bucket.
-Refer to xref:server:manage:manage-settings/install-sample-buckets.adoc[Sample Buckets] for details.
+WARNING: Please note that the examples below will alter the data the sample dataset.
+To restore your sample data, remove and reinstall the sample dataset.
 
 [#insert-prerequisites]
 == Prerequisites
@@ -1043,10 +1042,10 @@ RETURNING *;
                             {
                                 "#operator": "SendInsert",
                                 "alias": "airline",
-                                "bucket": "travel-sample",
+                                "bucket": "my-db",
                                 "keyspace": "airline",
                                 "namespace": "default",
-                                "scope": "inventory"
+                                "scope": "samples"
                             },
                             {
                                 "#operator": "InitialProject",
@@ -1102,17 +1101,17 @@ EXPLAIN INSERT INTO airport (key UUID(), value airport)
           "~children": [
             {
               "#operator": "IndexScan3", // <1>
-              "bucket": "travel-sample",
-              "index": "def_inventory_airport_airportname",
+              "bucket": "my-db",
+              "index": "def_samples_airport_airportname_city_faa",
               "index_id": "14b05d2b21bd6eee",
 // ...
             },
             {
               "#operator": "Fetch", // <2>
-              "bucket": "travel-sample",
+              "bucket": "my-db",
               "keyspace": "airport",
               "namespace": "default",
-              "scope": "inventory"
+              "scope": "samples"
             },
             {
               "#operator": "Parallel",
@@ -1137,11 +1136,11 @@ EXPLAIN INSERT INTO airport (key UUID(), value airport)
               {
                 "#operator": "SendInsert", // <4>
                 "alias": "airport",
-                "bucket": "travel-sample",
+                "bucket": "my-db",
                 "key": "uuid()",
                 "keyspace": "airport",
                 "namespace": "default",
-                "scope": "inventory",
+                "scope": "samples",
                 "value": "`airport`"
               },
 // ...
@@ -1157,7 +1156,7 @@ EXPLAIN INSERT INTO airport (key UUID(), value airport)
 
 The Query Engine first executes the `SELECT` statement and then uses the projection to insert into the `airport` keyspace, performing the operations in the order listed:
 
-<1> An `IndexScan` to search for documents using the `def_inventory_airport_airportname` index.
+<1> An `IndexScan` to search for documents using the `def_samples_airport_airportname_city_faa` index.
 <2> A `Fetch` for the document in the `airport` keyspace.
 <3> A `Filter` for documents with `airportname="Heathrow"`.
 <4> An `Insert` of the value along with the auto-generated key into the `airport` keyspace.
