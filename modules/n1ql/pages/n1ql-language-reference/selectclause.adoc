@@ -288,64 +288,13 @@ In this case, `SELECT DISTINCT` takes about twice as long to execute as `SELECT 
 .Query
 [source,sqlpp]
 ----
-EXPLAIN SELECT DISTINCT city FROM landmark;
+include::example$select/selectclause-q5.n1ql[]
 ----
 
 .Results
 [source,json]
 ----
-[
-  {
-    "plan": {
-      "#operator": "Sequence",
-      "~children": [
-        {
-          "#operator": "PrimaryScan3",
-          "bucket": "travel-sample",
-          "index": "def_inventory_landmark_primary",
-          "index_projection": {
-            "primary_key": true
-          },
-          "keyspace": "landmark",
-          "namespace": "default",
-          "scope": "inventory",
-          "using": "gsi"
-        },
-        {
-          "#operator": "Fetch",
-          "bucket": "travel-sample",
-          "keyspace": "landmark",
-          "namespace": "default",
-          "scope": "inventory"
-        },
-        {
-          "#operator": "Parallel",
-          "~child": {
-            "#operator": "Sequence",
-            "~children": [
-              {
-                "#operator": "InitialProject",
-                "distinct": true,
-                "result_terms": [
-                  {
-                    "expr": "(`landmark`.`city`)"
-                  }
-                ]
-              },
-              {
-                "#operator": "Distinct" // <1>
-              }
-            ]
-          }
-        },
-        {
-          "#operator": "Distinct" // <1>
-        }
-      ]
-    },
-    "text": "SELECT DISTINCT city FROM landmark;"
-  }
-]
+include::example$select/selectclause-r5.jsonc[]
 ----
 <1> Lines using the `DISTINCT` operator
 ====

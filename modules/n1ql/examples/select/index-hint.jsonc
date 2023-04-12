@@ -1,119 +1,123 @@
-{
-  "cardinality": 1,
-  "cost": 25.48328348473815,
-  "optimizer_hints": {
-    "hints_followed": [
-      "INDEX(route def_inventory_route_route_src_dst_day)"
-    ]
-  },
-  "plan": {
-    "#operator": "Sequence",
-    "~children": [
-      {
-        "#operator": "Sequence",
-        "~children": [
-          {
-            "#operator": "DistinctScan",
-            "limit": "1",
-            "optimizer_estimates": {
-              "cardinality": 1681.2723543436066,
-              "cost": 395.71744847285015,
-              "fr_cost": 12.220147704229976,
-              "size": 11
-            },
-// tag::index[]
-            "scan": {
-              "#operator": "IndexScan3",
-              "bucket": "travel-sample",
-              "index": "def_inventory_route_route_src_dst_day",
-// end::index[]
-              "index_id": "e0105bdd794dda39",
-              "index_projection": {
-                "primary_key": true
+[
+  {
+    "cardinality": 1,
+    "cost": 30.946612007857688,
+    "optimizer_hints": {
+      "hints_followed": [
+        "INDEX(route def_samples_route_route_src_dst_day)"
+      ]
+    },
+    "plan": {
+      "#operator": "Sequence",
+      "~children": [
+        {
+          "#operator": "Sequence",
+          "~children": [
+            {
+              "#operator": "DistinctScan",
+              "limit": "1",
+              "optimizer_estimates": {
+                "cardinality": 249,
+                "cost": 9928.010826065869,
+                "fr_cost": 17.689048092980993,
+                "size": 11
               },
+// tag::index[]
+              "scan": {
+                "#operator": "IndexScan3",
+                "bucket": "my-db-7of81g",
+                "index": "def_samples_route_route_src_dst_day",
+// end::index[]
+                "index_id": "1b887ff96f2a6c19",
+                "index_projection": {
+                  "primary_key": true
+                },
+                "keyspace": "route",
+                "namespace": "default",
+                "optimizer_estimates": {
+                  "cardinality": 1743,
+                  "cost": 9886.653582601151,
+                  "fr_cost": 17.665320471945584,
+                  "size": 11
+                },
+                "scope": "samples",
+                "spans": [
+                  {
+                    "exact": true,
+                    "range": [
+                      {
+                        "high": "\"SFO\"",
+                        "inclusion": 3,
+                        "index_key": "`sourceairport`",
+                        "low": "\"SFO\""
+                      }
+                    ]
+                  }
+                ],
+                "using": "gsi"
+              }
+            },
+            {
+              "#operator": "Fetch",
+              "bucket": "my-db-7of81g",
               "keyspace": "route",
               "namespace": "default",
               "optimizer_estimates": {
-                "cardinality": 1743,
-                "cost": 354.17696421953406,
-                "fr_cost": 12.196314953654351,
-                "size": 11
+                "cardinality": 249,
+                "cost": 10235.419707956715,
+                "fr_cost": 30.87542914475146,
+                "size": 563
               },
-              "scope": "inventory",
-              "spans": [
-                {
-                  "exact": true,
-                  "range": [
-                    {
-                      "high": "\"SFO\"",
-                      "inclusion": 3,
-                      "index_key": "`sourceairport`",
-                      "low": "\"SFO\""
-                    }
-                  ]
-                }
-              ],
-              "using": "gsi"
-            }
-          },
-          {
-            "#operator": "Fetch",
-            "bucket": "travel-sample",
-            "keyspace": "route",
-            "namespace": "default",
-            "optimizer_estimates": {
-              "cardinality": 1681.2723543436066,
-              "cost": 2411.1846820111814,
-              "fr_cost": 25.411785233011273,
-              "size": 568
+              "scope": "samples"
             },
-            "scope": "inventory"
-          },
-          {
-            "#operator": "Parallel",
-            "~child": {
-              "#operator": "Sequence",
-              "~children": [
-                {
-                  "#operator": "Filter",
-                  "condition": "((`route`.`sourceairport`) = \"SFO\")",
-                  "optimizer_estimates": {
-                    "cardinality": 1681.2723543436066,
-                    "cost": 2451.254026681948,
-                    "fr_cost": 25.435617983586898,
-                    "size": 568
-                  }
-                },
-                {
-                  "#operator": "InitialProject",
-                  "optimizer_estimates": {
-                    "cardinality": 1681.2723543436066,
-                    "cost": 2491.3233713527143,
-                    "fr_cost": 25.459450734162523,
-                    "size": 568
-                  },
-                  "result_terms": [
-                    {
-                      "expr": "(`route`.`id`)"
+            {
+              "#operator": "Parallel",
+              "~child": {
+                "#operator": "Sequence",
+                "~children": [
+                  {
+                    "#operator": "Filter",
+                    "condition": "((`route`.`sourceairport`) = \"SFO\")",
+                    "optimizer_estimates": {
+                      "cardinality": 249,
+                      "cost": 10241.327885594532,
+                      "fr_cost": 30.89915676578687,
+                      "size": 563
                     }
-                  ]
-                }
-              ]
+                  },
+                  {
+                    "#operator": "InitialProject",
+                    "discard_original": true,
+                    "optimizer_estimates": {
+                      "cardinality": 249,
+                      "cost": 10247.236063232349,
+                      "fr_cost": 30.92288438682228,
+                      "size": 563
+                    },
+                    "preserve_order": true,
+                    "result_terms": [
+                      {
+                        "expr": "(`route`.`id`)"
+                      }
+                    ]
+                  }
+                ]
+              }
             }
+          ]
+        },
+        {
+          "#operator": "Limit",
+          "expr": "1",
+          "optimizer_estimates": {
+            "cardinality": 1,
+            "cost": 30.946612007857688,
+            "fr_cost": 30.946612007857688,
+            "size": 563
           }
-        ]
-      },
-      {
-        "#operator": "Limit",
-        "expr": "1",
-        "optimizer_estimates": {
-          "cardinality": 1,
-          "cost": 25.48328348473815,
-          "fr_cost": 25.48328348473815,
-          "size": 568
         }
-      }
-    ]
-  },
-  "text": "\nSELECT /*+ INDEX (route def_inventory_route_route_src_dst_day) */ id -- <.>\nFROM `travel-sample`.inventory.route -- <.>\nWHERE sourceairport = \"SFO\"\nLIMIT 1;"
-}
+      ]
+    },
+    "text": "SELECT /*+ INDEX (route def_samples_route_route_src_dst_day) */ id \nFROM route \nWHERE sourceairport = \"SFO\"\nLIMIT 1;"
+  }
+]

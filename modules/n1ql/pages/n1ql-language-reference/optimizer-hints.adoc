@@ -53,7 +53,7 @@ Therefore, if the hint comment is a line comment, the next part of the query mus
 .Query
 [source,sqlpp]
 ----
-SELECT /*+ INDEX(airport def_inventory_airport_city) */ airportname
+SELECT /*+ INDEX(airport def_samples_airport_airportname_city_faa) */ airportname
 FROM airport
 WHERE city = "San Francisco";
 ----
@@ -65,7 +65,7 @@ WHERE city = "San Francisco";
 .Equivalent to <<ex-block-hint>>
 [source,sqlpp]
 ----
-SELECT --+ INDEX(airport def_inventory_airport_city)
+SELECT --+ INDEX(airport def_samples_airport_airportname_city_faa)
        airportname
 FROM airport
 WHERE city = "San Francisco";
@@ -89,7 +89,7 @@ However, the hint comment may contain one or more hints.
 [source,sqlpp]
 ----
 SELECT /*+ USE_HASH(r) */
-       /*+ INDEX(a def_inventory_airport_city) */
+       /*+ INDEX(a def_samples_airport_airportname_city_faa) */
        a.airportname, r.airline
 FROM airport a
 JOIN route r
@@ -141,7 +141,7 @@ To use multiple hints with the JSON syntax, specify each hint as a property with
 .Query
 [source,sqlpp]
 ----
-SELECT /*+ INDEX(airport def_inventory_airport_city) */
+SELECT /*+ INDEX(airport def_samples_airport_airportname_city_faa) */
        airportname, faa
 FROM airport
 WHERE city = "San Francisco";
@@ -155,7 +155,7 @@ WHERE city = "San Francisco";
 [source,sqlpp]
 ----
 SELECT /*+ {"index": {"keyspace": "airport",
-                      "indexes": "def_inventory_airport_city"}} */
+                      "indexes": "def_samples_airport_airportname_city_faa"}} */
        airportname, faa
 FROM airport
 WHERE city = "San Francisco";
@@ -168,7 +168,7 @@ WHERE city = "San Francisco";
 .Query
 [source,sqlpp]
 ----
-SELECT /*+ INDEX(a def_inventory_airport_city) USE_HASH(r) */
+SELECT /*+ INDEX(a def_samples_airport_airportname_city_faa) USE_HASH(r) */
        a.airportname, r.airline
 FROM airport a
 JOIN route r
@@ -184,7 +184,7 @@ WHERE a.city = "San Francisco";
 [source,sqlpp]
 ----
 SELECT /*+ {"index": {"keyspace": "a",
-                      "indexes": "def_inventory_airport_city"},
+                      "indexes": "def_samples_airport_airportname_city_faa"},
             "use_hash": {"keyspace": "r"}} */
        a.airportname, r.airline
 FROM airport a
@@ -212,7 +212,7 @@ If you do this, the hint comment and the `USE` clause are marked as erroneous an
 ----
 SELECT airportname, faa
 FROM airport
-USE INDEX (def_inventory_airport_city)
+USE INDEX (def_samples_airport_airportname_city_faa)
 WHERE city = "San Francisco";
 ----
 ====
@@ -231,7 +231,7 @@ When the optimizer follows a simple hint, the hint is shown in the explain plan.
 .Explain plan for <<ex-simple-hint>>
 [source,sqlpp]
 ----
-EXPLAIN SELECT /*+ INDEX(airport def_inventory_airport_city) */
+EXPLAIN SELECT /*+ INDEX(airport def_samples_airport_airportname_city_faa) */
                airportname, faa
 FROM airport
 WHERE city = "San Francisco";
@@ -244,7 +244,7 @@ WHERE city = "San Francisco";
   {
     "optimizer_hints": {
       "hints_followed": [
-        "INDEX(airport def_inventory_airport_city)"
+        "INDEX(airport def_samples_airport_airportname_city_faa)"
       ]
     },
 // ...
@@ -262,7 +262,7 @@ When the optimizer follows a JSON hint, the hint is shown in the explain plan in
 [source,sqlpp]
 ----
 EXPLAIN SELECT /*+ {"index": {"keyspace": "airport",
-                              "indexes": "def_inventory_airport_city"}} */
+                              "indexes": "def_samples_airport_airportname_city_faa"}} */
                airportname, faa
 FROM airport
 WHERE city = "San Francisco";
@@ -275,7 +275,7 @@ WHERE city = "San Francisco";
   {
     "optimizer_hints": {
       "hints_followed": [
-        "hint": "{\"index\":{\"indexes\":[\"def_inventory_airport_city\"],\"keyspace\":\"airport\"}}"
+        "hint": "{\"index\":{\"indexes\":[\"def_samples_airport_airportname_city_faa\"],\"keyspace\":\"airport\"}}"
       ]
     },
 // ...
@@ -292,7 +292,7 @@ When the optimizer follows multiple hints, all the followed hints are shown in t
 .Explain plan for <<ex-multi-simple>>
 [source,sqlpp]
 ----
-EXPLAIN SELECT /*+ USE_HASH(r) INDEX(a def_inventory_airport_city) */
+EXPLAIN SELECT /*+ USE_HASH(r) INDEX(a def_samples_airport_airportname_city_faa) */
                a.airportname, r.airline
 FROM airport a
 JOIN route r
@@ -308,7 +308,7 @@ WHERE a.city = "San Francisco";
     "optimizer_hints": {
       "hints_followed": [
         "USE_HASH(r)",
-        "INDEX(a def_inventory_airport_city)"
+        "INDEX(a def_samples_airport_airportname_city_faa)"
       ]
     },
 // ...
@@ -327,7 +327,7 @@ When the optimizer follows a hint specified using the legacy `USE` clause, the h
 ----
 EXPLAIN SELECT airportname, faa
 FROM airport
-USE INDEX (def_inventory_airport_city)
+USE INDEX (def_samples_airport_airportname_city_faa)
 WHERE city = "San Francisco";
 ----
 
@@ -338,7 +338,7 @@ WHERE city = "San Francisco";
   {
     "optimizer_hints": {
       "hints_followed": [
-        "INDEX(airport def_inventory_airport_city)"
+        "INDEX(airport def_samples_airport_airportname_city_faa)"
       ]
     },
 // ...
@@ -355,7 +355,7 @@ When the optimizer cannot follow a hint, any hints that cannot be followed are s
 .Explain plan
 [source,sqlpp]
 ----
-EXPLAIN SELECT /*+ USE_HASH(r) INDEX(a def_inventory_airport_city) */
+EXPLAIN SELECT /*+ USE_HASH(r) INDEX(a def_samples_airport_airportname_city_faa) */
                a.airportname, r.airline
 FROM airport a
 JOIN route r
@@ -373,7 +373,7 @@ WHERE a.city IS MISSING;
         "USE_HASH(r)"
       ],
       "hints_not_followed": [
-        "INDEX(a def_inventory_airport_city): INDEX hint cannot be followed"
+        "INDEX(a def_samples_airport_airportname_city_faa): INDEX hint cannot be followed"
       ]
     },
 // ...
@@ -390,7 +390,7 @@ When you specify an invalid hint, any invalid hints are shown in the explain pla
 .Explain plan
 [source,sqlpp]
 ----
-EXPLAIN SELECT /*+ USE_HASH(r) INDEX_SS(a def_inventory_airport_city) */
+EXPLAIN SELECT /*+ USE_HASH(r) INDEX_SS(a def_samples_airport_airportname_city_faa) */
                a.airportname, r.airline
 FROM airport a
 JOIN route r
@@ -408,7 +408,7 @@ WHERE a.city = "San Francisco";
         "USE_HASH(r)"
       ],
       "invalid_hints": [
-        "INDEX_SS(a def_inventory_airport_city): Invalid hint name"
+        "INDEX_SS(a def_samples_airport_airportname_city_faa): Invalid hint name"
       ]
     },
 // ...

@@ -35,17 +35,14 @@ To execute the following statement, user must have the _Query Select_ privilege 
 
 [source,sqlpp]
 ----
-PREPARE SELECT * FROM airport
-WHERE city = (SELECT RAW city FROM landmark)
+include::example$n1ql-language-reference/prepare-rbac-select.n1ql[]
 ----
 
 To execute the following statement, user must have the _Query Update_ and _Query Select_ privileges on `pass:c[hotel]`.
 
 [source,sqlpp]
 ----
-PREPARE UPDATE hotel
-SET city = "San Francisco" WHERE lower(city) = "sanfrancisco"
-RETURNING *
+include::example$n1ql-language-reference/prepare-rbac-update.n1ql[]
 ----
 ======
 ====
@@ -234,96 +231,13 @@ include::ROOT:partial$query-context.adoc[tag=section]
 .Query
 [source,sqlpp]
 ----
-PREPARE SELECT * FROM route
-WHERE airline = "FL";
+include::example$n1ql-language-reference/prepare-q1.n1ql[]
 ----
 
 .Result
 [source,JSON]
 ----
-[
-  {
-    "encoded_plan": "H4sIAAAAAAAA/wEAAP//AAAAAAAAAAA=",
-    "featureControls": 12,
-    "indexApiVersion": 4,
-    "indexScanKeyspaces": {
-      "default:travel-sample.inventory.route": false
-    },
-    "name": "[127.0.0.1:8091]26898aa0-04b2-518c-aa11-2fd13cd377b1",
-    "namespace": "default",
-    "operator": {
-      "#operator": "Authorize",
-      "privileges": {
-        "List": [
-          {
-            "Priv": 7,
-            "Props": 0,
-            "Target": "default:travel-sample.inventory.route"
-          }
-        ]
-      },
-      "~child": {
-        "#operator": "Sequence",
-        "~children": [
-          {
-            "#operator": "Sequence",
-            "~children": [
-              {
-                "#operator": "PrimaryScan3",
-                "bucket": "travel-sample",
-                "index": "def_inventory_route_primary",
-                "index_projection": {
-                  "primary_key": true
-                },
-                "keyspace": "route",
-                "namespace": "default",
-                "scope": "inventory",
-                "using": "gsi"
-              },
-              {
-                "#operator": "Fetch",
-                "bucket": "travel-sample",
-                "keyspace": "route",
-                "namespace": "default",
-                "scope": "inventory"
-              },
-              {
-                "#operator": "Parallel",
-                "~child": {
-                  "#operator": "Sequence",
-                  "~children": [
-                    {
-                      "#operator": "Filter",
-                      "condition": "((`route`.`airline`) = \"FL\")"
-                    },
-                    {
-                      "#operator": "InitialProject",
-                      "result_terms": [
-                        {
-                          "expr": "self",
-                          "star": true
-                        }
-                      ]
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "#operator": "Stream"
-          }
-        ]
-      }
-    },
-    "queryContext": "",
-    "signature": {
-      "*": "*"
-    },
-    "text": "PREPARE SELECT * FROM route\nWHERE airline = \"FL\";",
-    "useCBO": true
-  }
-]
+include::example$n1ql-language-reference/prepare-r1.jsonc[]
 ----
 ====
 

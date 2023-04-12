@@ -1,0 +1,137 @@
+[
+  {
+    "encoded_plan": "H4sIAAAAAAAA/wEAAP//AAAAAAAAAAA=",
+    "featureControls": 76,
+    "indexApiVersion": 4,
+    "indexScanKeyspaces": {
+      "default:my-db-7of81g.samples.route": false
+    },
+    "name": "[7f6d6222f6fb230915a17b106f204461]ebfd4aef-4f44-597b-9667-f54e1a27ee10",
+    "namespace": "default",
+    "operator": {
+      "#operator": "Authorize",
+      "privileges": {
+        "List": [
+          {
+            "Priv": 7,
+            "Props": 0,
+            "Target": "default:my-db-7of81g.samples.route"
+          }
+        ]
+      },
+      "~child": {
+        "#operator": "Sequence",
+        "~children": [
+          {
+            "#operator": "Sequence",
+            "~children": [
+              {
+                "#operator": "DistinctScan",
+                "optimizer_estimates": {
+                  "cardinality": 24024,
+                  "cost": 956727.8397004276,
+                  "fr_cost": 17.689048092980993,
+                  "size": 11
+                },
+                "scan": {
+                  "#operator": "IndexScan3",
+                  "bucket": "my-db-7of81g",
+                  "index": "def_samples_route_route_src_dst_day",
+                  "index_id": "1b887ff96f2a6c19",
+                  "index_projection": {
+                    "primary_key": true
+                  },
+                  "keyspace": "route",
+                  "namespace": "default",
+                  "optimizer_estimates": {
+                    "cardinality": 168168,
+                    "cost": 952737.6131261449,
+                    "fr_cost": 17.665320471945584,
+                    "size": 11
+                  },
+                  "scope": "samples",
+                  "spans": [
+                    {
+                      "exact": true,
+                      "range": [
+                        {
+                          "inclusion": 0,
+                          "index_key": "`sourceairport`"
+                        }
+                      ]
+                    }
+                  ],
+                  "using": "gsi"
+                }
+              },
+              {
+                "#operator": "Fetch",
+                "bucket": "my-db-7of81g",
+                "keyspace": "route",
+                "namespace": "default",
+                "optimizer_estimates": {
+                  "cardinality": 24024,
+                  "cost": 985241.4580881613,
+                  "fr_cost": 30.87542914475146,
+                  "size": 563
+                },
+                "scope": "samples"
+              },
+              {
+                "#operator": "Parallel",
+                "~child": {
+                  "#operator": "Sequence",
+                  "~children": [
+                    {
+                      "#operator": "Filter",
+                      "condition": "((`route`.`airline`) = \"FL\")",
+                      "optimizer_estimates": {
+                        "cardinality": 2402.4,
+                        "cost": 985811.490455916,
+                        "fr_cost": 31.112705355105554,
+                        "size": 563
+                      }
+                    },
+                    {
+                      "#operator": "InitialProject",
+                      "discard_original": true,
+                      "optimizer_estimates": {
+                        "cardinality": 2402.4,
+                        "cost": 985868.4936926916,
+                        "fr_cost": 31.136432976140963,
+                        "size": 563
+                      },
+                      "preserve_order": true,
+                      "result_terms": [
+                        {
+                          "expr": "self",
+                          "star": true
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "#operator": "Stream",
+            "optimizer_estimates": {
+              "cardinality": 2402.4,
+              "cost": 985868.4936926916,
+              "fr_cost": 31.136432976140963,
+              "size": 563
+            }
+          }
+        ]
+      }
+    },
+    "queryContext": "default:`my-db-7of81g`.`samples`",
+    "reqType": "SELECT",
+    "signature": {
+      "*": "*"
+    },
+    "text": "PREPARE SELECT * FROM route\nWHERE airline = \"FL\";",
+    "useCBO": true
+  }
+]
