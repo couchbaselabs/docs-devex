@@ -289,7 +289,7 @@ WHERE  tz = "America/Anchorage"
 You can use the SELECT statement to query across relationships using the JOIN clause or subqueries.
 
 ==== JOIN Clause
-Before delving into examples, take a look at a simplified representation of the data model of the `inventory` scope in the `travel-sample` bucket, which is used in the following examples.
+Before delving into examples, take a look at a simplified representation of the data model of the `samples` scope in the sample dataset, which is used in the following examples.
 For more details about the data model, see xref:java-sdk:ref:travel-app-data-model.adoc[Travel App Data Model].
 
 .Data model of inventory scope, simplified
@@ -706,59 +706,16 @@ ORDER BY t.country, t.tz;
 The optimizer attempts to select an appropriate secondary index for a query based on the filters in the WHERE clause.
 If it cannot select a secondary query, the query service falls back on the primary index for the keyspace.
 
-Secondary indexes do not index a document if the leading index key is MISSING in the document.
-This means that when a query selects a field which is MISSING in some documents, the optimizer will not be able to choose a secondary index
-which uses that field as a leading key.
+By default, secondary indexes do not index a document if the leading index key is MISSING in the document.
+This means that when a query selects a field which is MISSING in some documents, the optimizer will not be able to choose a secondary index which uses that field as a leading key. There are two ways to resolve this:
 
-To enable the optimizer to choose the required index, you must use a WHERE clause of some kind to filter out any documents in which the required field is MISSING.
+* You can add the `INCLUDE MISSING` modifier to a leading index key in the index definition, in order to index documents in which the specified key is missing. For more information, see xref:n1ql:n1ql-language-reference/createindex.adoc#include-missing[INCLUDE MISSING]
+
+* You can use a WHERE clause of some kind to filter out any documents in which the required field is MISSING.
 The minimum filter you can use to do this is `IS NOT MISSING`.
 This is usually only necessary in queries which do not otherwise have a WHERE clause; for example, some GROUP BY and aggregate queries.
 
 (((sargable)))
 A query is said to be _sargable_ if the optimizer is able to select an index to speed up the execution of the query.
-
-.Field with MISSING values -- cannot choose the secondary index
-====
-This example uses an index `idx_image_direct_url` that is defined by following statement.
-
-.Index
-[source,sqlpp]
-----
-include::example$n1ql-language-reference/create-idx-predicate.n1ql[]
-----
-
-.Query
-[source,sqlpp]
-----
-include::example$n1ql-language-reference/explain-idx-predicate.n1ql[]
-----
-
-<.> The query selects the `image_direct_url` field, which is MISSING for many documents in the `landmark` keyspace.
-
-.Result
-[source,json]
-----
-include::example$n1ql-language-reference/explain-idx-predicate.jsonc[]
-----
-
-<.> Therefore the optimizer falls back on the `def_inventory_landmark_primary` index.
-====
-
-.Filter out MISSING values -- correct secondary index is chosen
-====
-[source,sqlpp]
-----
-include::example$n1ql-language-reference/explain-idx-filter.n1ql[]
-----
-
-<.> The WHERE clause filters out documents where `image_direct_url` is not MISSING.
-
-[source,json]
-----
-include::example$n1ql-language-reference/explain-idx-filter.jsonc[]
-----
-
-<.> The optimizer correctly chooses the `idx_image_direct_url` index.
-====
 
 For further examples, refer to xref:n1ql:n1ql-language-reference/groupby-aggregate-performance.adoc[Group By and Aggregate Performance].
