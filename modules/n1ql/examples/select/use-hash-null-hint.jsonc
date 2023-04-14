@@ -1,107 +1,105 @@
 [
   {
-    "cardinality": 1,
-    "cost": 38147.80957213704,
     "optimizer_hints": {
       "hints_followed": [
-        "USE_HASH(aline)"
+        "USE_HASH(rte/BUILD)"
       ]
     },
     "plan": {
       "#operator": "Sequence",
       "~children": [
         {
-          "#operator": "PrimaryScan3",
-          "as": "rte",
-          "bucket": "travel-sample",
-          "index": "def_inventory_route_primary",
+          "#operator": "IndexScan3",
+          "as": "aline",
+          "bucket": "my-db",
+          "covers": [
+            "cover ((`aline`.`name`))",
+            "cover ((meta(`aline`).`id`))"
+          ],
+          "index": "def_samples_airline_name",
+          "index_id": "2f72950da68dcf5c",
           "index_projection": {
             "primary_key": true
           },
-          "keyspace": "route",
+          "keyspace": "airline",
           "namespace": "default",
           "optimizer_estimates": {
-            "cardinality": 24024,
-            "cost": 4108.612246388904,
-            "fr_cost": 12.170521655277593,
-            "size": 11
+            "cardinality": 187,
+            "cost": 45.657645808382426,
+            "fr_cost": 12.179987410740013,
+            "size": 13
           },
-          "scope": "inventory",
+          "scope": "samples",
+          "spans": [
+            {
+              "exact": true,
+              "range": [
+                {
+                  "inclusion": 0,
+                  "index_key": "`name`"
+                }
+              ]
+            }
+          ],
           "using": "gsi"
-        },
-        {
-          "#operator": "Fetch",
-          "as": "rte",
-          "bucket": "travel-sample",
-          "keyspace": "route",
-          "namespace": "default",
-          "nested_loop": true,
-          "optimizer_estimates": {
-            "cardinality": 24024,
-            "cost": 32748.51223783082,
-            "fr_cost": 25.36215918405889,
-            "size": 568
-          },
-          "scope": "inventory"
         },
 // tag::method[]
         {
           "#operator": "HashJoin",
           "build_aliases": [
-            "aline"
+            "rte"
           ],
           "build_exprs": [
-            "cover ((meta(`aline`).`id`))"
+            "(`rte`.`airlineid`)"
           ],
-          "on_clause": "(((`rte`.`airlineid`) = cover ((meta(`aline`).`id`))))",
+          "on_clause": "((`rte`.`airlineid`) = cover ((meta(`aline`).`id`)))",
 // end::method[]
 // tag::ellipsis[]
         // ...
 // end::ellipsis[]
-          "optimizer_estimates": {
-            "cardinality": 44924.88,
-            "cost": 37698.51666819545,
-            "fr_cost": 71.43827230425512,
-            "size": 581
-          },
 // tag::method[]
           "probe_exprs": [
-            "(`rte`.`airlineid`)"
+            "cover ((meta(`aline`).`id`))"
           ],
 // end::method[]
           "~child": {
             "#operator": "Sequence",
             "~children": [
               {
-                "#operator": "IndexScan3",
-                "as": "aline",
-                "bucket": "travel-sample",
-                "covers": [
-                  "cover ((meta(`aline`).`id`))"
-                ],
-                "index": "def_inventory_airline_primary",
-                "index_id": "11aa5c3f9d710599",
-                "keyspace": "airline",
+                "#operator": "DistinctScan",
+                "scan": {
+                  "#operator": "IndexScan3",
+                  "as": "rte",
+                  "bucket": "my-db",
+                  "index": "def_samples_route_route_src_dst_day",
+                  "index_id": "ce764a0175880fa2",
+                  "index_projection": {
+                    "primary_key": true
+                  },
+                  "keyspace": "route",
+                  "namespace": "default",
+                  "scope": "samples",
+                  "spans": [
+                    {
+                      "exact": true,
+                      "range": [
+                        {
+                          "inclusion": 0,
+                          "index_key": "`sourceairport`"
+                        }
+                      ]
+                    }
+                  ],
+                  "using": "gsi"
+                }
+              },
+              {
+                "#operator": "Fetch",
+                "as": "rte",
+                "bucket": "my-db",
+                "keyspace": "route",
                 "namespace": "default",
-                "optimizer_estimates": {
-                  "cardinality": 187,
-                  "cost": 45.30545926533892,
-                  "fr_cost": 12.178104060242454,
-                  "size": 13
-                },
-                "scope": "inventory",
-                "spans": [
-                  {
-                    "exact": true,
-                    "range": [
-                      {
-                        "inclusion": 0,
-                        "low": "null"
-                      }
-                    ]
-                  }
-                ],
-                "using": "gsi"
+                "scope": "samples"
               }
             ]
           }
@@ -116,13 +114,8 @@
                 "aggregates": [
                   "count(1)"
                 ],
-                "group_keys": [],
-                "optimizer_estimates": {
-                  "cardinality": 1,
-                  "cost": 38147.76546819545,
-                  "fr_cost": 38147.76546819545,
-                  "size": 581
-                }
+                "flags": 2,
+                "group_keys": []
               }
             ]
           }
@@ -132,26 +125,16 @@
           "aggregates": [
             "count(1)"
           ],
-          "group_keys": [],
-          "optimizer_estimates": {
-            "cardinality": 1,
-            "cost": 38147.775468195454,
-            "fr_cost": 38147.775468195454,
-            "size": 581
-          }
+          "flags": 2,
+          "group_keys": []
         },
         {
           "#operator": "FinalGroup",
           "aggregates": [
             "count(1)"
           ],
-          "group_keys": [],
-          "optimizer_estimates": {
-            "cardinality": 1,
-            "cost": 38147.785468195456,
-            "fr_cost": 38147.785468195456,
-            "size": 581
-          }
+          "flags": 2,
+          "group_keys": []
         },
         {
           "#operator": "Parallel",
@@ -160,12 +143,8 @@
             "~children": [
               {
                 "#operator": "InitialProject",
-                "optimizer_estimates": {
-                  "cardinality": 1,
-                  "cost": 38147.80957213704,
-                  "fr_cost": 38147.80957213704,
-                  "size": 581
-                },
+                "discard_original": true,
+                "preserve_order": true,
                 "result_terms": [
                   {
                     "as": "Total_Count",
@@ -178,6 +157,6 @@
         }
       ]
     },
-    "text": "\n/* tag::query[] */\nSELECT /*+ USE_HASH (aline) */\n       COUNT(1) AS Total_Count\nFROM `travel-sample`.inventory.route rte\nINNER JOIN `travel-sample`.inventory.airline aline\nON rte.airlineid = META(aline).id;\n/* end::query[] */"
+    "text": "\nSELECT COUNT(1) AS Total_Count\nFROM airline aline\nINNER JOIN route rte\nUSE HASH (BUILD)\nON (rte.airlineid = META(aline).id);"
   }
 ]

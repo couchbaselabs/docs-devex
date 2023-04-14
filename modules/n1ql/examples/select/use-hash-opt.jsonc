@@ -8,8 +8,8 @@
         {
           "#operator": "PrimaryScan3",
           "as": "rte",
-          "bucket": "travel-sample",
-          "index": "def_inventory_route_primary",
+          "bucket": "my-db",
+          "index": "def_samples_route_route_src_dst_day",
           "index_projection": {
             "primary_key": true
           },
@@ -21,13 +21,13 @@
             "fr_cost": 12.170521655277593,
             "size": 11
           },
-          "scope": "inventory",
+          "scope": "samples",
           "using": "gsi"
         },
         {
           "#operator": "Fetch",
           "as": "rte",
-          "bucket": "travel-sample",
+          "bucket": "my-db",
           "keyspace": "route",
           "namespace": "default",
           "nested_loop": true,
@@ -37,7 +37,7 @@
             "fr_cost": 25.36215918405889,
             "size": 568
           },
-          "scope": "inventory"
+          "scope": "samples"
         },
 // tag::method[]
         {
@@ -70,11 +70,11 @@
               {
                 "#operator": "IndexScan3",
                 "as": "aline",
-                "bucket": "travel-sample",
+                "bucket": "my-db",
                 "covers": [
                   "cover ((meta(`aline`).`id`))"
                 ],
-                "index": "def_inventory_airline_primary",
+                "index": "def_samples_airline_name",
                 "index_id": "11aa5c3f9d710599",
                 "keyspace": "airline",
                 "namespace": "default",
@@ -84,7 +84,7 @@
                   "fr_cost": 12.178104060242454,
                   "size": 13
                 },
-                "scope": "inventory",
+                "scope": "samples",
                 "spans": [
                   {
                     "exact": true,
@@ -173,6 +173,6 @@
         }
       ]
     },
-    "text": "\n/* tag::query[] */\nSELECT COUNT(1) AS Total_Count\nFROM `travel-sample`.inventory.route rte\nINNER JOIN `travel-sample`.inventory.airline aline\nON rte.airlineid = META(aline).id;\n/* end::query[] */"
+    "text": "\n/* tag::query[] */\nSELECT COUNT(1) AS Total_Count\nFROM `my-db`.samples.route rte\nINNER JOIN `my-db`.samples.airline aline\nON rte.airlineid = META(aline).id;\n/* end::query[] */"
   }
 ]
