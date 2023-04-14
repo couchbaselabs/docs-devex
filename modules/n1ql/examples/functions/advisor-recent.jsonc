@@ -4,15 +4,15 @@
     "Recent": {
       "current_used_indexes": [
         {
-          "index": "CREATE PRIMARY INDEX def_samples_route_primary ON `default`:`my-db`.`samples`.`route`",
+          "index": "CREATE PRIMARY INDEX def_samples_route_primary ON `default`:`$DATABASE_NAME`.`samples`.`route`",
           "statements": [
             {
               "run_count": 3,
-              "statement": "SELECT * FROM `my-db`.samples.route r JOIN `my-db`.samples.airline a ON r.airlineid= META(a).id WHERE a.country = \"France\";"
+              "statement": "SELECT * FROM `$DATABASE_NAME`.samples.route r JOIN `$DATABASE_NAME`.samples.airline a ON r.airlineid= META(a).id WHERE a.country = \"France\";"
             },
             {
               "run_count": 2,
-              "statement": "SELECT d.id, d.destinationairport, RATIO_TO_REPORT(d.distance) OVER (PARTITION BY d.destinationairport) AS `distance-ratio` FROM `my-db`.samples.route AS d LIMIT 7;"
+              "statement": "SELECT d.id, d.destinationairport, RATIO_TO_REPORT(d.distance) OVER (PARTITION BY d.destinationairport) AS `distance-ratio` FROM `$DATABASE_NAME`.samples.route AS d LIMIT 7;"
             },
 // end::current[]
 // tag::ellipsis[]
@@ -20,48 +20,48 @@
 // end::ellipsis[]
             {
               "run_count": 1,
-              "statement": "SELECT sum(array_length(PAIRS(self))) FROM `my-db`.samples.route\nLIMIT 1;"
+              "statement": "SELECT sum(array_length(PAIRS(self))) FROM `$DATABASE_NAME`.samples.route\nLIMIT 1;"
             }
 // tag::recommended[]
           ]
         },
         {
-          "index": "CREATE PRIMARY INDEX def_samples_airport_primary ON `default`:`my-db`.`samples`.`airport`",
+          "index": "CREATE PRIMARY INDEX def_samples_airport_primary ON `default`:`$DATABASE_NAME`.`samples`.`airport`",
           "statements": [
             {
               "run_count": 1,
-              "statement": "SELECT airportname FROM `my-db`.samples.airport WHERE geo.alt NOT BETWEEN 0 AND 100;"
+              "statement": "SELECT airportname FROM `$DATABASE_NAME`.samples.airport WHERE geo.alt NOT BETWEEN 0 AND 100;"
             }
           ]
         }
       ],
       "recommended_covering_indexes": [
         {
-          "index": "CREATE INDEX adv_geo_alt_airportname ON `default`:`my-db`.`samples`.`airport`(`geo`.`alt`,`airportname`)",
+          "index": "CREATE INDEX adv_geo_alt_airportname ON `default`:`$DATABASE_NAME`.`samples`.`airport`(`geo`.`alt`,`airportname`)",
           "statements": [
             {
               "run_count": 1,
-              "statement": "SELECT airportname FROM `my-db`.samples.airport WHERE geo.alt NOT BETWEEN 0 AND 100;"
+              "statement": "SELECT airportname FROM `$DATABASE_NAME`.samples.airport WHERE geo.alt NOT BETWEEN 0 AND 100;"
             }
           ]
         }
       ],
       "recommended_indexes": [
         {
-          "index": "CREATE INDEX adv_geo_alt ON `default`:`my-db`.`samples`.`airport`(`geo`.`alt`)",
+          "index": "CREATE INDEX adv_geo_alt ON `default`:`$DATABASE_NAME`.`samples`.`airport`(`geo`.`alt`)",
           "statements": [
             {
               "run_count": 1,
-              "statement": "SELECT airportname FROM `my-db`.samples.airport WHERE geo.alt NOT BETWEEN 0 AND 100;"
+              "statement": "SELECT airportname FROM `$DATABASE_NAME`.samples.airport WHERE geo.alt NOT BETWEEN 0 AND 100;"
             }
           ]
         },
         {
-          "index": "CREATE INDEX adv_airlineid ON `default`:`my-db`.`samples`.`route`(`airlineid`)",
+          "index": "CREATE INDEX adv_airlineid ON `default`:`$DATABASE_NAME`.`samples`.`route`(`airlineid`)",
           "statements": [
             {
               "run_count": 3,
-              "statement": "SELECT * FROM `my-db`.samples.route r JOIN `my-db`.samples.airline a ON r.airlineid= META(a).id WHERE a.country = \"France\";"
+              "statement": "SELECT * FROM `$DATABASE_NAME`.samples.route r JOIN `$DATABASE_NAME`.samples.airline a ON r.airlineid= META(a).id WHERE a.country = \"France\";"
             }
 // end::recommended[]
 // tag::ellipsis[]
@@ -70,11 +70,11 @@
           ]
         },
         {
-          "index": "CREATE INDEX adv_country ON `default`:`my-db`.`samples`.`airline`(`country`)",
+          "index": "CREATE INDEX adv_country ON `default`:`$DATABASE_NAME`.`samples`.`airline`(`country`)",
           "statements": [
             {
               "run_count": 3,
-              "statement": "SELECT * FROM `my-db`.samples.route r JOIN `my-db`.samples.airline a ON r.airlineid= META(a).id WHERE a.country = \"France\";"
+              "statement": "SELECT * FROM `$DATABASE_NAME`.samples.route r JOIN `$DATABASE_NAME`.samples.airline a ON r.airlineid= META(a).id WHERE a.country = \"France\";"
             }
           ]
         }

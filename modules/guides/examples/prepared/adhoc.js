@@ -1,6 +1,6 @@
 async function queryNamed() {
   const query = `
-  SELECT airportname, city FROM \`<bucket>\`.samples.airport
+  SELECT airportname, city FROM \`$DATABASE_NAME\`.samples.airport
   WHERE city=$1
   `;
   var options = { adhoc: false, parameters: ['London'] }

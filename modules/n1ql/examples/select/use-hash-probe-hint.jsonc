@@ -12,7 +12,7 @@
       {
         "#operator": "IndexScan3",
         "as": "aline",
-        "bucket": "my-db",
+        "bucket": "$DATABASE_NAME",
         "covers": [
           "cover ((meta(`aline`).`id`))"
         ],
@@ -71,7 +71,7 @@
             {
               "#operator": "PrimaryScan3",
               "as": "rte",
-              "bucket": "my-db",
+              "bucket": "$DATABASE_NAME",
               "index": "def_samples_route_route_src_dst_day",
               "index_projection": {
                 "primary_key": true
@@ -90,7 +90,7 @@
             {
               "#operator": "Fetch",
               "as": "rte",
-              "bucket": "my-db",
+              "bucket": "$DATABASE_NAME",
               "keyspace": "route",
               "namespace": "default",
               "nested_loop": true,
@@ -177,5 +177,5 @@
       }
     ]
   },
-  "text": "\nSELECT /*+ USE_HASH (aline/PROBE) */ -- <.>\n       COUNT(1) AS Total_Count\nFROM `my-db`.samples.route rte\nINNER JOIN `my-db`.samples.airline aline\nON rte.airlineid = META(aline).id;"
+  "text": "\nSELECT /*+ USE_HASH (aline/PROBE) */ -- <.>\n       COUNT(1) AS Total_Count\nFROM `$DATABASE_NAME`.samples.route rte\nINNER JOIN `$DATABASE_NAME`.samples.airline aline\nON rte.airlineid = META(aline).id;"
 }

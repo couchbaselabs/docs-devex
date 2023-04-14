@@ -6,7 +6,7 @@ curl http://localhost:8093/query/service \
 -H 'Content-Type: application/json' \
 -d '{
   "statement": "CREATE PRIMARY INDEX ON bookings;",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
 }'
 # end::index[]
 
@@ -17,7 +17,7 @@ curl http://localhost:8093/query/service \
 -H 'Content-Type: application/json' \
 -d '{
   "statement": "BEGIN WORK",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txtimeout": "2m",
   "scan_consistency": "request_plus",
   "durability_level": "none"
@@ -30,7 +30,7 @@ curl http://localhost:8093/query/service \
 -H 'Content-Type: application/json' \
 -d '{
   "statement": "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51"
 }' # <1>
 # end::set[]
@@ -47,7 +47,7 @@ curl http://localhost:8093/query/service \
     \"price\": 964.13,
     \"route\": \"63986\"
 });",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51"
 }' # <1>
 # end::upsert[]
@@ -58,7 +58,7 @@ curl http://localhost:8093/query/service \
 -H 'Content-Type: application/json' \
 -d '{
   "statement": "SAVEPOINT s1;",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51"
 }' # <1>
 # end::savepoint-1[]
@@ -71,7 +71,7 @@ curl http://localhost:8093/query/service \
   "statement": "UPDATE bookings AS b
     SET b.`user` = \"0\"
     WHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51"
 }' # <1>
 # end::update-1[]
@@ -84,7 +84,7 @@ curl http://localhost:8093/query/service \
   "statement": "SELECT b.*, u.name
                 FROM bookings b JOIN users u ON b.`user` = META(u).id
                 WHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51"
 }' # <1>
 # end::check-1[]
@@ -95,7 +95,7 @@ curl http://localhost:8093/query/service \
 -H 'Content-Type: application/json' \
 -d '{
   "statement": "SAVEPOINT s2;",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51"
 }' # <1>
 # end::savepoint-2[]
@@ -108,7 +108,7 @@ curl http://localhost:8093/query/service \
   "statement": "UPDATE bookings AS b
     SET b.`user` = \"1\"
     WHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51"
 }' # <1>
 # end::update-2[]
@@ -121,7 +121,7 @@ curl http://localhost:8093/query/service \
   "statement": "SELECT b.*, u.name
                 FROM bookings b JOIN users u ON b.`user` = META(u).id
                 WHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51"
 }' # <1>
 # end::check-2[]
@@ -132,7 +132,7 @@ curl http://localhost:8093/query/service \
 -H 'Content-Type: application/json' \
 -d '{
   "statement": "ROLLBACK TRAN TO SAVEPOINT s2;",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51"
 }' # <1>
 # end::rollback[]
@@ -145,7 +145,7 @@ curl http://localhost:8093/query/service \
   "statement": "SELECT b.*, u.name
                 FROM bookings b JOIN users u ON b.`user` = META(u).id
                 WHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51"
 }' # <1>
 # end::check-3[]
@@ -156,7 +156,7 @@ curl http://localhost:8093/query/service \
 -H 'Content-Type: application/json' \
 -d '{
   "statement": "COMMIT TRANSACTION",
-  "query_context": "`my-db`.tenants",
+  "query_context": "`$DATABASE_NAME`.tenants",
   "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51"
 }' # <1>
 # end::commit[]
