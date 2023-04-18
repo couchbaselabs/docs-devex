@@ -114,45 +114,45 @@ include::partial$grammar/dql.ebnf[tag=keyspace-ref]
 image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: refer to source code listing", align=left]
 
 Specifies the keyspace for which the index needs to be created.
-The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
+//The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
+The keyspace reference may be a keyspace-path or a <<keyspace-partial>>.
 
-NOTE: If there is a hyphen (-) inside any part of the keyspace reference, you must wrap that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+include::partial$n1ql-language-reference/hyphen-in-keyspace.adoc[tag=keyspace]
 
-[[keyspace-path,keyspace path]]
-==== Keyspace Path
+//[[keyspace-path,keyspace path]]
+//==== Keyspace Path
 
-[source,ebnf]
-----
-include::partial$grammar/dql.ebnf[tag=keyspace-path]
-----
+//[source,ebnf]
+//----
+//include::partial$grammar/dql.ebnf[tag=keyspace-path]
+//----
 
-image::n1ql-language-reference/keyspace-path.png["Syntax diagram: refer to source code listing", align=left]
+//image::n1ql-language-reference/keyspace-path.png["Syntax diagram: refer to source code listing", align=left]
 
-If the keyspace is a named collection, or the default collection in the default scope within a bucket, the keyspace reference may be a keyspace path.
-In this case, the {query-context}[query context] should not be set.
+//If the keyspace is a named collection, or the default collection in the default scope within a bucket, the keyspace reference may be a keyspace path.
+//In this case, the {query-context}[query context] should not be set.
 
-namespace::
-(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[namespace] of the keyspace.
-Currently, only the `default` namespace is available.
-If the namespace name is omitted, the default namespace in the current session is used.
+//namespace::
+//(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[namespace] of the keyspace.
+//Currently, only the `default` namespace is available.
+//If the namespace name is omitted, the default namespace in the current session is used.
 
-bucket::
-(Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[bucket name] of the keyspace.
+//bucket::
+//(Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[bucket name] of the keyspace.
 
-scope::
-(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[scope name] of the keyspace.
-If omitted, the bucket's default scope is used.
+//scope::
+//(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[scope name] of the keyspace.
+//If omitted, the bucket's default scope is used.
 
-collection::
-(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
-If omitted, the default collection in the bucket's default scope is used.
+//collection::
+//(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
+//If omitted, the default collection in the bucket's default scope is used.
 
-====
-For example, `default:{backtick}$DATABASE_NAME{backtick}` indicates the default collection in the default scope in the `$DATABASE_NAME` bucket in the `default` namespace.
+//====
+//For example, `default:{backtick}$DATABASE_NAME{backtick}` indicates the default collection in the default scope in the `$DATABASE_NAME` bucket in the `default` namespace.
 
-Similarly, `default:{backtick}$DATABASE_NAME{backtick}.samples.airline` indicates the `airline` collection in the `samples` scope in the `$DATABASE_NAME` bucket in the `default` namespace.
-====
+//Similarly, `default:{backtick}$DATABASE_NAME{backtick}.samples.airline` indicates the `airline` collection in the `samples` scope in the `$DATABASE_NAME` bucket in the `default` namespace.
+//====
 
 [[keyspace-partial,keyspace partial]]
 ==== Keyspace Partial
@@ -164,8 +164,9 @@ include::partial$grammar/dql.ebnf[tag=keyspace-partial]
 
 image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
 
-Alternatively, if the keyspace is a named collection, the keyspace reference may be just the collection name with no path.
-In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
+//Alternatively, if the keyspace is a named collection, the keyspace reference may be just the collection name with no path.
+If the keyspace is a named collection, the keyspace reference can be just the collection name.
+In this case, you must first set the {query-context}[query context] to indicate the required scope.
 
 collection::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
@@ -402,25 +403,25 @@ Adding index replicas enables you to scale scan throughput, in addition to provi
 
 To try the examples in this section, you must set the query context as described in each example.
 
-[[ex-create-idx]]
-.Create an index in the default scope and collection
-====
-include::ROOT:partial$query-context.adoc[tag=unset]
+//[[ex-create-idx]]
+//.Create an index in the default scope
+//====
+//include::ROOT:partial$query-context.adoc[tag=unset]
 
-Create a secondary index that contains airports with an `alt` value greater than 1000 on the node `127.0.0.1`.
+//Create a secondary index that contains airports with an `alt` value greater than 1000.
 
-[source,sqlpp]
-----
-include::example$n1ql-language-reference/create-idx-default.n1ql[tag=query]
-----
-====
+//[source,sqlpp]
+//----
+//include::example$n1ql-language-reference/create-idx-default.n1ql[tag=query]
+//----
+//====
 
 [[ex-create-idx-collection]]
 .Create an index in a named scope and collection
 ====
 For this example, the path to the required keyspace is specified by the query, so you do not need to set the query context.
 
-Create a secondary index that contains airports with an `alt` value greater than 1000 on the node `127.0.0.1`.
+Create a secondary index that contains airports with an `alt` value greater than 1000.
 
 [source,sqlpp]
 ----
