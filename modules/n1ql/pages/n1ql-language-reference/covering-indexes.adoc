@@ -381,19 +381,19 @@ SELECT name FROM hotel
 
 .Collection Operators: FIRST, ARRAY, ANY, EVERY, and ANY AND EVERY
 ====
-For this example, first insert the following documents into the default collection in the default scope in database:
+For this example, first insert the following documents into the default collection `_default` in the default scope in database:
 
-include::ROOT:partial$replace-bucket-name.adoc[]
+include::ROOT:partial$query-context.adoc[tag=unset]
 
 [source,sqlpp]
 ----
-INSERT INTO $DATABASE_NAME VALUES ("account-customerXYZ-123456789",
+INSERT INTO _default VALUES ("account-customerXYZ-123456789",
 { "accountNumber": 123456789,
   "docId": "account-customerXYZ-123456789",
   "code": "001",
   "transDate":"2016-07-02" } );
 
-INSERT INTO $DATABASE_NAME VALUES ("codes-version-9",
+INSERT INTO _default VALUES ("codes-version-9",
 { "version": 9,
   "docId": "codes-version-9",
   "codes": [
@@ -415,7 +415,7 @@ Create an index, `idx_account_customer_xyz_transDate`:
 [source,sqlpp]
 ----
 CREATE INDEX idx_account_customer_xyz_transDate
-    ON $DATABASE_NAME (SUBSTR(transDate,0,10),code)
+    ON _default (SUBSTR(transDate,0,10),code)
     WHERE code != "" AND meta().id LIKE "account-customerXYZ%";
 ----
 
@@ -424,8 +424,8 @@ Then, run the following query:
 [source,sqlpp]
 ----
 SELECT SUBSTR(account.transDate,0,10) AS transDate, AVG(codes.weight) AS avgWeight
-FROM $DATABASE_NAME AS account
-JOIN $DATABASE_NAME AS codesDoc ON KEYS "codes-version-9"
+FROM _default AS account
+JOIN _default AS codesDoc ON KEYS "codes-version-9"
 LET codes = FIRST c FOR c IN codesDoc.codes WHEN c.code = account.code END
 WHERE account.code != "" AND meta(account).id LIKE "account-customerXYZ-%"
 AND SUBSTR(account.transDate,0,10) >= "2016-07-01"
@@ -438,8 +438,8 @@ GROUP BY SUBSTR(account.transDate,0,10);
 ----
 [
   {
-    "avgWeight": 26.2466,
-    "transDate": "2016-07-02"
+    "transDate": "2016-07-02",
+    "avgWeight": 26.2466
   }
 ]
 ----
