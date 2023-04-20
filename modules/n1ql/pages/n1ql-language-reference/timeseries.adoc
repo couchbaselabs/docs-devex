@@ -2,7 +2,6 @@
 :description: The _TIMESERIES function enables you to query time series data.
 :page-topic-type: reference
 :page-status: Couchbase Server 7.2
-:example-caption!:
 :imagesdir: ../../assets/images
 
 // Links
@@ -11,6 +10,7 @@
 :url-ts-blog: https://blog.couchbase.com
 
 :time-series: xref:n1ql-language-reference/time-series.adoc
+:unnest: xref:n1ql-language-reference/unnest.adoc
 
 {description}
 
@@ -37,7 +37,7 @@ A JSON object specifying options for the function.
 
 === Options
 
-[options="header", cols="~a,~a,~a"]
+[options="header", cols="1a,3a,1a"]
 |===
 | Name | Description | Schema
 
@@ -95,7 +95,7 @@ If `true`, the timeline is kept.
 
 | **ts_ranges** +
 __optional__
-| One or more date and time ranges, which are used to filter the time series data.
+| One or more date-time ranges, which are used to filter the time series data.
 Time series data outside the specified range or ranges is filtered out.
 
 For a single predicate range, this is an expression resolving to an array containing two integers, both representing milliseconds since the {url-unix-epoch}[Unix epoch].
@@ -134,15 +134,15 @@ _v0, _v1, ...:: The value or values at that time point.
 
 == Usage
 
-You can use the _TIMESERIES function anywhere in a query, but typically it is used as the right-hand side of an {unnest}[UNNEST] clause.
+You can use the _TIMESERIES function anywhere in a query, but typically you use it as the right-hand side of an {unnest}[UNNEST] clause.
 
 You cannot use the _TIMESERIES function in an index definition.
 
-If your query contains predicates on date and time ranges, and you are using an index for your time series documents, you should include the range predicates in the WHERE clause of the query, as well as the `ts_ranges` option of the _TIMESERIES function.
+If your query contains predicates on date-time ranges, and you are using an index for your time series documents, you should include the range predicates in the WHERE clause of the query, as well as the `ts_ranges` option of the _TIMESERIES function.
 This pushes the range predicates to the index scan.
 
-A query containing date and time range predicates in both the _TIMESERIES function and the WHERE clause may become repetitive and hard to understand, especially with complex range predicates.
-To make your queries easier to read, use a query parameter or common table expression to store the date and time range predicates.
+A query containing date-time range predicates in both the _TIMESERIES function and the WHERE clause may become repetitive and hard to understand, especially with complex range predicates.
+To make your queries easier to read, use a query parameter or common table expression to store the date-time range predicates.
 
 == Examples
 
@@ -151,7 +151,6 @@ To make your queries easier to read, use a query parameter or common table expre
 ====
 The following query selects time series data for mean temperatures in the specified time range.
 Each time series document contains a month's data.
-Note that the specified time range predicate cuts across more than one time series document.
 
 [source,sqlpp]
 ----
@@ -184,6 +183,8 @@ UNNEST _timeseries(d, {"ts_ranges": [range_start, range_end]}) AS t
 WHERE d.region = 'UK'
   AND (d.ts_start <= range_end AND d.ts_end >= range_start);
 ----
+
+Note that the specified range predicate cuts across more than one time series document.
 
 For each time point, the _TIMESERIES function calculates the date-time stamp `_t` and returns a single value `_v0`.
 
@@ -228,7 +229,6 @@ For each time point, the _TIMESERIES function calculates the date-time stamp `_t
 ====
 The following query selects time series data for daily low and high temperatures in the specified time range.
 Each time series document contains a month's data.
-Note that the specified time range predicate cuts across more than one time series document.
 
 [source,sqlpp]
 ----
@@ -270,6 +270,8 @@ UNNEST _timeseries(d, {"ts_ranges": [range_start, range_end]}) AS t
 WHERE d.region = 'UK'
   AND (d.ts_start <= range_end AND d.ts_end >= range_start);
 ----
+
+Note that the specified time range predicate cuts across more than one time series document.
 
 For each time point, the _TIMESERIES function calculates the date-time stamp `_t` and returns the values `_v0` and `_v1`.
 
@@ -335,7 +337,6 @@ image::time-series-regular.svg["Line chart showing high and low temperatures ove
 ====
 The following query selects time series data for house sales and prices in the specified time range.
 Each time series document contains a decade's data.
-Note that the specified time range cuts across more than one time series document.
 footnote:[Contains HM Land Registry data © Crown copyright and database right 2021. This data is licensed under the Open Government Licence v3.0.]
 
 [source,sqlpp]
@@ -390,6 +391,8 @@ UNNEST _timeseries(d, {"ts_ranges": [range_start, range_end]}) AS t
 WHERE d.district = 'South'
   AND (d.ts_start <= range_end AND d.ts_end >= range_start);
 ----
+
+Note that the specified time range cuts across more than one time series document.
 
 For each time point, the _TIMESERIES function returns the date-time stamp `_t` and a single value `_v0`.
 
@@ -534,5 +537,7 @@ image::time-series-window.svg["Line chart showing weekly average temperature and
 ====
 
 == Related Links
+
+* Overview: {time-series}[]
 
 * Blog post: {url-ts-blog}[Couchbase Time Series^]

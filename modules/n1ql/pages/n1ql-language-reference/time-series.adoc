@@ -55,7 +55,7 @@ If there are multiple data values at each time point, the order of values must b
 
 Each time series document must contain the following fields:
 
-[options="header", cols="~a,~a,~a"]
+[options="header", cols="1a,3a,1a"]
 |===
 | Default name | Description | Schema
 
@@ -111,11 +111,13 @@ The document may contain any other fields you require.
 
 As `ts_data` is usually the largest field, you may consider storing it after other commonly-used fields in the document for faster access.
 
-.Regular time-series data with a single data point
+=== Examples of Time Series Documents
+
+.Regular time series data with a single data point
 ====
 This document contains invented stock ticker data.
 
-[source,jsonc]
+[source,json]
 ----
 {
   "ticker": "BASE",
@@ -134,23 +136,24 @@ Within the time series data, each time point has a single value.
 The date and time for each time point is determined by the time series start and the time series interval.
 ====
 
-.Regular time-series data with multiple data points
+.Regular time series data with multiple data points
 ====
 This document contains invented stock ticker data.
 
-[source,jsonc]
+[source,json]
 ----
 {
-    "ticker": "XYZ",
-    "ts_interval": 86400000
-    "ts_start": 1359676800000,
-    "ts_end": 1362009600000,
-    "ts_data": [
-       [ 27.285, 27.595, 27.24, 27.295 ],
-       [ 27.64, 27.95, 27.365, 27.61 ],
-       // ...
-       [ 27.45, 27.605, 27.395, 27.545 ]
-  }
+  "ticker": "XYZ",
+  "ts_interval": 86400000,
+  "ts_start": 1359676800000,
+  "ts_end": 1362009600000,
+  "ts_data": [
+      [ 27.285, 27.595, 27.24, 27.295 ],
+      [ 27.64, 27.95, 27.365, 27.61 ],
+      // ...
+      [ 27.45, 27.605, 27.395, 27.545 ]
+  ]
+}
 ----
 
 Note that the document contains a time series start, a time series end, and a time series interval.
@@ -161,12 +164,12 @@ The order of values must be consistent for each time point.
 The date and time for each time point is determined by the time series start and the time series interval.
 ====
 
-.Irregular time-series data
+.Irregular time series data
 ====
 This document contains historical house price data for a neighborhood.
 footnote:ogl[Contains HM Land Registry data © Crown copyright and database right 2021. This data is licensed under the Open Government Licence v3.0.]
 
-[source,jsonc]
+[source,json]
 ----
 {
   "ts_start": 631152000000,
@@ -184,7 +187,7 @@ footnote:ogl[Contains HM Land Registry data © Crown copyright and database righ
 
 Note that the document contains a time series start and end, but no time series interval.
 
-Within the time series data, for each time point, the first value is a date and time stamp.
+Within the time series data, for each time point, the first value is a date-time stamp.
 The second value is the house price.
 ====
 
@@ -208,16 +211,16 @@ You can specify expiration at the bucket, collection, or document level, but it 
 
 Ingesting time series data into Couchbase is usually a multi-stage process, depending on the format of the original data.
 
-First, import the raw dataset from a supported format: CSV or JSON.
+. Import the raw dataset from a supported format: CSV or JSON.
 To do this, you can use the {cbimport}[cbimport] command line tool, the {import-documents}[import] feature in the Couchbase UI, or an SDK data parsing library.
 
-When the data is imported, transform the imported data to one or more documents with the <<document-structure,Couchbase time series document format>>.
+. When the data is imported, transform the imported data to one or more documents with the <<document-structure,Couchbase time series document format>>.
 To do this, use an {insert}[INSERT SELECT] query or an SDK insert operation.
 
-* Convert any dates and times to milliseconds since the {url-unix-epoch}[Unix epoch].
+** Convert any dates and times to milliseconds since the {url-unix-epoch}[Unix epoch].
 To do this, use {sqlpp} {datefun}[date-time functions], or date-time functions at the application level.
 
-* If necessary, set the expiration for the document, according to your data storage strategy.
+** If necessary, set the expiration for the document, according to your data storage strategy.
 
 [[incremental-ingestion]]
 == Incremental Time Series Data
@@ -230,11 +233,12 @@ To transform the new data into time series documents, use one of these strategie
 * If the new data does not overlap the date range of any existing time series documents, import the new data into new time series documents.
 To do this, use an {insert}[INSERT SELECT] query or an SDK insert operation, just as you did with the initial data.
 
-* If the new data falls within the date range of an existing document, and contains new and existing data, update the existing time series document.
-To do this, use an {upsert}[UPSERT SELECT] query or an SDK upsert operation.
+* If the new data falls within the date range of an existing document, update an existing time series document.
+There are two ways to do this:
 
-* If the new data falls within the date range of an existing document, but only contains new data, append the new data to an existing time series document.
-To do this, use an {update}[UPDATE] query, or an array-append SDK call using the sub-document API.
+** Use an {upsert}[UPSERT SELECT] query or an SDK upsert operation to replace an existing time series document.
+
+** Use an {update}[UPDATE] query or an array-append SDK call using the sub-document API to append the new data to an existing time series document.
 
 [[indexes]]
 == Indexing Time Series Data
@@ -258,8 +262,8 @@ For full details and examples, see {timeseries}[].
 
 For these examples, use the following links to download raw time series data to your local system.
 
-* xref:attachment$regular-time-series.csv[regular-time-series.csv] -- invented temperature data
-* xref:attachment$irregular-time-series.csv[irregular-time-series.csv] -- historical house price data
+* link:{attachmentsdir}/regular-time-series.csv[regular-time-series.csv, window=_blank] -- invented temperature data
+* link:{attachmentsdir}/irregular-time-series.csv[irregular-time-series.csv, window=_blank] -- historical house price data
 footnote:ogl[]
 
 [[ex-import]]
@@ -347,41 +351,33 @@ The following query takes the imported regular time series data and converts it 
 [source,sqlpp]
 ----
 INSERT INTO weather
-  (KEY _k, VALUE _v, OPTIONS {"expiration": 60*60*24*30}) -- <.>
+  (KEY _k, VALUE _v, OPTIONS {"expiration": 60*60*24*30})
 SELECT "temp:mean:2013" _k,
   {"region":      r.Region,
-   "ts_start":    MIN(timestamp), -- <.>
+   "ts_start":    MIN(timestamp),
    "ts_end":      MAX(timestamp),
-   "ts_interval": 1000*60*60*24, -- <.>
+   "ts_interval": 1000*60*60*24,
    "ts_data":     ARRAY t[1] FOR t IN
-                  ARRAY_AGG([timestamp, r.Mean]) -- <.><.>
+                  ARRAY_AGG([timestamp, r.Mean])
                   END} _v
 FROM regular AS r
-LET timestamp = STR_TO_MILLIS(r.Date, "YYYY-MM-DD") -- <.>
+LET timestamp = STR_TO_MILLIS(r.Date, "YYYY-MM-DD")
 WHERE timestamp
   BETWEEN STR_TO_MILLIS("2013-01-01", "YYYY-MM-DD")
-      AND STR_TO_MILLIS("2013-11-30", "YYYY-MM-DD") -- <.>
+      AND STR_TO_MILLIS("2013-11-30", "YYYY-MM-DD")
 GROUP BY r.Region
 RETURNING *;
 ----
 
-<.> The query sets the document expiration at 30 days and sets the ID of the time series document.
-
-<.> The MIN and MAX functions specify the start and end of the time series data for this document.
-
-<.> We know that the raw data is regular, with an interval of 
+The raw data is regular, with an interval of 
 1 day.
 The query sets the time series interval accordingly.
 
-<.> The ARRAY_AGG function aggregates the required time series into a single time series data array.
-Within the time series data array, each time point is constructed as a nested array, containing the date and time stamp and the mean temperature data.
+The ARRAY_AGG function aggregates the required time series into a single time series data array.
+Within the time series data array, each time point is constructed as a nested array, containing the date-time stamp and the mean temperature data.
 
-<.> As this is a regular time series, the ARRAY constructor then strips out the date and time stamps to save storage space.
-This two-step array construction process ensures that the time series data points are preserved in the correct date and time order.
-
-<.> The STR_TO_MILLIS function converts the date and time information to milliseconds since the Unix epoch.
-
-<.> The WHERE clause specifies that this document should contain data from the start of the year 2013 to the specified date.
+As this is a regular time series, the ARRAY operator then strips out the date-time stamps to save storage space.
+This two-step process ensures that the time series data points are preserved in the correct order.
 ====
 
 [[ex-irregular-insert]]
@@ -411,105 +407,22 @@ The following query takes the imported irregular time series data and converts i
 INSERT INTO housing
   (KEY _k, VALUE _v, OPTIONS {"expiration": 60*60*24*30})
 SELECT "sales:prices:2000s" _k,
-  {"district": i.District, -- <.>
+  {"district": i.District,
    "ts_start": MIN(timestamp),
    "ts_end":   MAX(timestamp),
-   "ts_data":  ARRAY_AGG([timestamp, i.Price])} _v -- <.>
+   "ts_data":  ARRAY_AGG([timestamp, i.Price])} _v
 FROM irregular AS i
 LET timestamp = STR_TO_MILLIS(i.Date, "2/1/06")
 WHERE timestamp
   BETWEEN STR_TO_MILLIS("2000", "YYYY")
-      AND STR_TO_MILLIS("2010", "YYYY") -- <.>
+      AND STR_TO_MILLIS("2009", "YYYY")
 GROUP BY i.District
 RETURNING *;
 ----
 
-<.> The raw data is irregular, so the query does not set the time series interval.
+The raw data is irregular, so the query does not set the time series interval.
 
-<.> Within the time series data array, each time point is constructed as a nested array, containing the date and time stamp and the house price data.
-
-<.> The WHERE clause specifies that this document should contain data for the decade from 2000 to 2010.
-====
-
-[[ex-update]]
-.Add time series data to an existing time series document
-====
-For this example, set the query context to the `time` scope in the travel sample dataset.
-For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
-
-The following query appends new data to an existing regular time series document.
-
-[source,sqlpp]
-----
-UPDATE weather AS w
-USE KEYS "temp:mean:2013" -- <.>
-SET w.ts_data = ARRAY_CONCAT(w.ts_data, ARRAY_FLATTEN(( -- <.>
-  SELECT RAW ARRAY t[1] FOR t IN -- <.>
-        ARRAY_AGG([timestamp, r.Mean])
-        END
-  FROM import AS r
-  LET timestamp = STR_TO_MILLIS(r.Date, "YYYY-MM-DD")
-  WHERE timestamp -- <.>
-    BETWEEN STR_TO_MILLIS("2013-12-01", "YYYY-MM-DD")
-        AND STR_TO_MILLIS("2013-12-31", "YYYY-MM-DD")), 1)),
-  w.ts_end = STR_TO_MILLIS("2013-12-31", "YYYY-MM-DD"), -- <.>
-  meta(w).expiration = meta(w).expiration -- <.>
-RETURNING *;
-----
-
-<.> The USE KEYS hint specifies the document to update.
-
-<.> The ARRAY_CONCAT and ARRAY_FLATTEN functions append the newly imported data to the existing time series data.
-
-<.> The newly imported data is converted by a subquery, which 
-aggregates the mean temperature figures into a single time series data array, as in <<ex-regular-insert>>.
-
-<.> The WHERE clause specifies that this document should contain data from the specified date to the end of the year 2013.
-
-<.> The query sets the end date and time for the time series to the end of the year 2013.
-See <<ex-regular-end>> and <<ex-irregular-end>> for other ways to set the end date and time for the time series.
-
-<.> The query specifies that the updated time series document should keep its current time-to-live.
-Note that it is also possible to preserve the document time-to-live using the request-level {preserve_expiration}}[preserve_expiry] parameter.
-====
-
-[[ex-regular-end]]
-.Update regular time series end date and time
-====
-For this example, set the query context to the `time` scope in the travel sample dataset.
-For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
-
-The following query updates the end date and time of a regular time series document to match the date and time stamp of the last time point.
-
-[source,sqlpp]
-----
-UPDATE weather AS w
-USE KEYS "temp:mean:2013"
-SET w.ts_end = w.ts_start +
- (w.ts_interval * ARRAY_LENGTH(w.ts_data))
-RETURNING w.ts_end;
-----
-
-To calculate the end date and time, the query multiplies the time series interval by the number of time points in the time series data, and adds the result to the start date and time.
-====
-
-[[ex-irregular-end]]
-.Update irregular time series end date and time
-====
-For this example, set the query context to the `time` scope in the travel sample dataset.
-For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
-
-The following query updates the end date and time of an irregular time series document to match the date and time stamp of the last time point.
-
-[source,sqlpp]
-----
-UPDATE housing AS h
-USE KEYS "sales:prices:2000s"
-SET h.ts_end = h.ts_data[-1][0]
-RETURNING h.ts_end;
-----
-
-To determine the end date and time, the query takes the first element (the date and time stamp) from the last time point in the time series data.
+Within the time series data array, each time point is constructed as a nested array, containing the date-time stamp and the house price data.
 ====
 
 [[ex-index]]
@@ -533,9 +446,85 @@ CREATE INDEX idx_sales_prices ON housing(district, ts_end, ts_start);
 ----
 ====
 
-See {timeseries}[] for examples of queries using time series data.
+[[ex-update]]
+.Add time series data to an existing time series document
+====
+For this example, set the query context to the `time` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+The following query appends new data to an existing regular time series document.
+
+[source,sqlpp]
+----
+UPDATE weather AS w
+USE KEYS "temp:mean:2013"
+SET w.ts_data = ARRAY_CONCAT(w.ts_data, ARRAY_FLATTEN((
+  SELECT RAW ARRAY t[1] FOR t IN
+        ARRAY_AGG([timestamp, r.Mean])
+        END
+  FROM import AS r
+  LET timestamp = STR_TO_MILLIS(r.Date, "YYYY-MM-DD")
+  WHERE timestamp
+    BETWEEN STR_TO_MILLIS("2013-12-01", "YYYY-MM-DD")
+        AND STR_TO_MILLIS("2013-12-31", "YYYY-MM-DD")), 1)),
+  w.ts_end = STR_TO_MILLIS("2013-12-31", "YYYY-MM-DD"),
+  meta(w).expiration = meta(w).expiration
+RETURNING *;
+----
+
+The ARRAY_CONCAT and ARRAY_FLATTEN functions append the newly imported data to the existing time series data.
+
+The newly imported data is converted by a subquery, which aggregates the mean temperature figures into a single time series data array, as in <<ex-regular-insert>>.
+
+The query sets the end date and time for the time series to the end of the year 2013.
+See <<ex-regular-end>> and <<ex-irregular-end>> for other ways to set the end date and time for the time series.
+
+The query specifies that the updated time series document should keep its current time-to-live.
+Note that it is also possible to preserve the document time-to-live using the request-level {preserve_expiration}}[preserve_expiry] parameter.
+====
+
+[[ex-regular-end]]
+.Update regular time series end date and time
+====
+For this example, set the query context to the `time` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+The following query updates the end date and time of a regular time series document to match the date-time stamp of the last time point.
+
+[source,sqlpp]
+----
+UPDATE weather AS w
+USE KEYS "temp:mean:2013"
+SET w.ts_end = w.ts_start +
+ (w.ts_interval * ARRAY_LENGTH(w.ts_data))
+RETURNING w.ts_end;
+----
+
+To calculate the end date and time, the query multiplies the time series interval by the number of time points in the time series data, and adds the result to the start date and time.
+====
+
+[[ex-irregular-end]]
+.Update irregular time series end date and time
+====
+For this example, set the query context to the `time` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+The following query updates the end date and time of an irregular time series document to match the date-time stamp of the last time point.
+
+[source,sqlpp]
+----
+UPDATE housing AS h
+USE KEYS "sales:prices:2000s"
+SET h.ts_end = h.ts_data[-1][0]
+RETURNING h.ts_end;
+----
+
+To determine the end date and time, the query takes the first element (the date-time stamp) from the last time point in the time series data.
+====
 
 == Related Links
+
+* Querying time series data: {timeseries}[]
 
 * How-to guide: xref:guides:import.adoc[]
 
