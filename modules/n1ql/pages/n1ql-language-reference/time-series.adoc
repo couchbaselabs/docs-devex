@@ -1,0 +1,542 @@
+= Time Series Data
+:page-topic-type: concept
+:page-status: Couchbase Server 7.2
+:imagesdir: ../../assets/images
+:description: Couchbase Server can store and process time series data.
+
+// Links
+:url-unix-epoch: https://en.wikipedia.org/wiki/Unix_time
+:url-maxint64: https://docs.gtk.org/glib/const.MAXINT64.html
+:url-ts-blog: https://blog.couchbase.com
+
+// Cross-references
+:cbimport: xref:tools:cbimport.adoc
+:collection-manage: xref:cli:cbcli/couchbase-cli-collection-manage.adoc
+:import-documents: xref:manage:import-documents/import-documents.adoc
+:bucket-expiration: xref:learn:data/expiration.adoc
+:document-expiration: xref:java-sdk:howtos:kv-operations.adoc#document-expiration
+:preserve_expiration: xref:settings:query-settings.adoc#preserve_expiration
+:n1ql-language-reference: xref:n1ql-language-reference
+:update: {n1ql-language-reference}/update.adoc
+:insert: {n1ql-language-reference}/insert.adoc
+:timeseries: {n1ql-language-reference}/timeseries.adoc
+:upsert: {n1ql-language-reference}/upsert.adoc
+:datefun: {n1ql-language-reference}/datefun.adoc
+
+[abstract]
+{description}
+
+Time series data is any data which changes over time.
+In the case of data management, it refers to data collected frequently, in regular or irregular intervals, from a device or a process.
+The changing data is typically numerical, and changes incrementally.
+
+[[document-type]]
+== Types of Time Series
+
+A time series may be regular or irregular.
+
+* In a regular time series, the data points occur at regular intervals.
+For example, stock ticker prices, or climate data.
+
+* In an irregular time series, the data points occur at irregular intervals.
+For example, historical earthquake data, or house sales and prices in an area over time.
+
+[[document-structure]]
+== Structure of Time Series Documents
+
+In Couchbase Server, time series data must be stored in time series documents with a specific format, which ensures compact storage and quick processing.
+Couchbase time series documents have the following general characteristics.
+
+* All date and time values associated with the time series are stored as integers, representing the number of milliseconds since the {url-unix-epoch}[Unix epoch].
+The maximum date and time is {url-maxint64}[MaxInt64] milliseconds -- that is, `(2^63)-1`, or approximately 292.5 million years.
+
+* The data values stored at each time point are stored as values in arrays, not as named fields in objects.
+If there are multiple data values at each time point, the order of values must be consistent for all time points.
+
+Each time series document must contain the following fields:
+
+[options="header", cols="~a,~a,~a"]
+|===
+| Default name | Description | Schema
+
+| **ts_start** +
+_Required_
+| The start date and time of the data in this document.
+You can use a different name for this field, but you must then specify the path to the field when you query the data.
+
+The start date and time is usually the same as the first time point in the document.
+However, this depends on the data, and your data storage strategy.
+For example, if each time series document contains a month's data, then the start date and time may be exactly at the start of the month, rather than the first time point in the document.
+
+If this field is omitted, the document is ignored by time series queries.
+| Integer (milliseconds since the {url-unix-epoch}[Unix epoch])
+
+| **ts_end** +
+_Required_
+| The end date and time of the data in this document.
+You can use a different name for this field, but you must then specify the path to the field when you query the data.
+
+The end date and time is usually the same as the last time point in the document.
+However, this depends on the data, and your data storage strategy.
+For example, if each time series document contains a month's data, then the end date and time may be exactly at the end of the month, rather than the last time point in the document.
+
+If this field is omitted, the document is ignored by time series queries.
+| Integer (milliseconds since the {url-unix-epoch}[Unix epoch])
+
+| **ts_interval** +
+_Required_ for regular time series
+| The interval between data points, in milliseconds.
+You can use a different name for this field, but you must then specify the path to the field when you query the data.
+
+If this field is omitted, the document is assumed to contain an irregular time series.
+| Integer (milliseconds)
+
+| **ts_data** +
+_Required_
+| The time series data.
+This field must be an array.
+Each element in the array represents a single time point.
+
+For a regular time series, each element may be a literal representing a single value at that time point, or a nested array containing multiple values for that time point.
+
+For an irregular time series, each element must be a nested array.
+The first value in the nested array represents the time at that time point, in milliseconds since the {url-unix-epoch}[Unix epoch].
+The other values in the nested array represent the data values at that time point.
+
+If this field is omitted, the document is ignored by time series queries.
+| Array, or array of arrays
+|===
+
+The document may contain any other fields you require.
+
+As `ts_data` is usually the largest field, you may consider storing it after other commonly-used fields in the document for faster access.
+
+.Regular time-series data with a single data point
+====
+This document contains invented stock ticker data.
+
+[source,jsonc]
+----
+{
+  "ticker": "BASE",
+  "ts_start": 1677730930000,
+  "ts_end": 1677730939000,
+  "ts_interval": 1000,
+  "ts_data": [ 16.30, 16.31, 16.32, 16.33, 16.34,
+               16.35, 16.36, 16.37, 16.38, 16.39 ]
+}
+----
+
+Note that the document contains a time series start, a time series end, and a time series interval.
+The time series interval is 1,000 milliseconds, which means the time points are 1 second apart.
+
+Within the time series data, each time point has a single value.
+The date and time for each time point is determined by the time series start and the time series interval.
+====
+
+.Regular time-series data with multiple data points
+====
+This document contains invented stock ticker data.
+
+[source,jsonc]
+----
+{
+    "ticker": "XYZ",
+    "ts_interval": 86400000
+    "ts_start": 1359676800000,
+    "ts_end": 1362009600000,
+    "ts_data": [
+       [ 27.285, 27.595, 27.24, 27.295 ],
+       [ 27.64, 27.95, 27.365, 27.61 ],
+       // ...
+       [ 27.45, 27.605, 27.395, 27.545 ]
+  }
+----
+
+Note that the document contains a time series start, a time series end, and a time series interval.
+The time series interval is 86,400,000 milliseconds, which means the time points are 1 day apart.
+
+Within the time series data, each time point has four values, representing the daily opening, high, low, and closing stock prices.
+The order of values must be consistent for each time point.
+The date and time for each time point is determined by the time series start and the time series interval.
+====
+
+.Irregular time-series data
+====
+This document contains historical house price data for a neighborhood.
+footnote:ogl[Contains HM Land Registry data © Crown copyright and database right 2021. This data is licensed under the Open Government Licence v3.0.]
+
+[source,jsonc]
+----
+{
+  "ts_start": 631152000000,
+  "ts_end": 946641600000,
+  "ts_data": [
+    // ...
+    [867715200000, 69950],
+    [875664000000, 67000],
+    [896659200000, 71500],
+    [899251200000, 73000],
+    [901929600000, 72000]
+  ]
+}
+----
+
+Note that the document contains a time series start and end, but no time series interval.
+
+Within the time series data, for each time point, the first value is a date and time stamp.
+The second value is the house price.
+====
+
+[[storage-strategy]]
+== Time Series Data Storage Strategy
+
+To reduce index sizes and increase performance, store your time series data using the largest possible arrays in the smallest number of documents.
+
+The optimum size for each time series document depends on the type of queries you need to perform.
+If you plan to query the time series data using ranges measured in days, it's most efficient to store the time series data in documents which contain a day's data.
+Likewise, if you plan to query the time series data using ranges measured in hours, you should store the time series data in documents which contain an hour's data, and so on.
+
+The maximum size of a time series document is 20MB.
+
+You should also consider data expiration when planning the optimum size for time series documents.
+To minimize your storage requirements, you can set the {bucket-expiration}[expiration] for your time series documents.
+You can specify expiration at the bucket, collection, or document level, but it applies at the document level -- when a document expires, all the time series data in that document is deleted.
+
+[[ingestion]]
+== Ingesting Time Series Data
+
+Ingesting time series data into Couchbase is usually a multi-stage process, depending on the format of the original data.
+
+First, import the raw dataset from a supported format: CSV or JSON.
+To do this, you can use the {cbimport}[cbimport] command line tool, the {import-documents}[import] feature in the Couchbase UI, or an SDK data parsing library.
+
+When the data is imported, transform the imported data to one or more documents with the <<document-structure,Couchbase time series document format>>.
+To do this, use an {insert}[INSERT SELECT] query or an SDK insert operation.
+
+* Convert any dates and times to milliseconds since the {url-unix-epoch}[Unix epoch].
+To do this, use {sqlpp} {datefun}[date-time functions], or date-time functions at the application level.
+
+* If necessary, set the expiration for the document, according to your data storage strategy.
+
+[[incremental-ingestion]]
+== Incremental Time Series Data
+
+As more time series data is generated, you can ingest new data incrementally.
+You can import the raw data just as you imported the initial data.
+
+To transform the new data into time series documents, use one of these strategies:
+
+* If the new data does not overlap the date range of any existing time series documents, import the new data into new time series documents.
+To do this, use an {insert}[INSERT SELECT] query or an SDK insert operation, just as you did with the initial data.
+
+* If the new data falls within the date range of an existing document, and contains new and existing data, update the existing time series document.
+To do this, use an {upsert}[UPSERT SELECT] query or an SDK upsert operation.
+
+* If the new data falls within the date range of an existing document, but only contains new data, append the new data to an existing time series document.
+To do this, use an {update}[UPDATE] query, or an array-append SDK call using the sub-document API.
+
+[[indexes]]
+== Indexing Time Series Data
+
+To index time series data, you only need to create an index on the time series documents, not on the nested time series data within the documents.
+This ensures that indexes of time series data are lean and efficient.
+
+If your time series documents are as large as possible, the expiration of time series documents has a minimal impact on index maintenance and index scan.
+Conversely, if your time series documents are smaller, index maintenance and scans may be much slower.
+For more information, see <<storage-strategy>>.
+
+An index on time series documents should include the `ts_end` field and the `ts_start` field, along with any other fields you need to index.
+
+[[queries]]
+== Querying Time Series Data
+
+To query time series data, Couchbase Server provides the _TIMESERIES function.
+For full details and examples, see {timeseries}[].
+
+== Examples
+
+For these examples, use the following links to download raw time series data to your local system.
+
+* xref:attachment$regular-time-series.csv[regular-time-series.csv] -- invented temperature data
+* xref:attachment$irregular-time-series.csv[irregular-time-series.csv] -- historical house price data
+footnote:ogl[]
+
+[[ex-import]]
+.Import time series data from CSV files
+====
+Use the {collection-manage}[collection-manage] tool to create a scope for the time series data.
+
+[source,sh]
+----
+couchbase-cli collection-manage \
+--cluster http://localhost:8091 \
+--username Administrator \
+--password password \
+--bucket travel-sample \
+--create-scope time
+----
+
+Use the {collection-manage}[collection-manage] tool to create collections for the raw time series data within the new scope.
+
+[source,sh]
+----
+couchbase-cli collection-manage \
+--cluster http://localhost:8091 \
+--username Administrator \
+--password password \
+--bucket travel-sample \
+--create-collection time.regular
+----
+
+[source,sh]
+----
+couchbase-cli collection-manage \
+--cluster http://localhost:8091 \
+--username Administrator \
+--password password \
+--bucket travel-sample \
+--create-collection time.irregular
+----
+
+Use the {cbimport}[cbimport] tool to import the time series data.
+
+[source,sh]
+----
+cbimport csv --infer-types \
+  -c http://localhost:8091 \
+  -u Administrator -p password \
+  -d 'file://regular-time-series.csv' \
+  -b 'travel-sample' --scope-collection-exp "time.regular" \
+  -g "#UUID#"
+----
+
+[source,sh]
+----
+cbimport csv --infer-types \
+  -c http://localhost:8091 \
+  -u Administrator -p password \
+  -d 'file://irregular-time-series.csv' \
+  -b 'travel-sample' --scope-collection-exp "time.irregular" \
+  -g "#UUID#"
+----
+====
+
+[[ex-regular-insert]]
+.Convert regular time series data to a time series document
+====
+For this example, set the query context to the `time` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+First, create a primary index on the imported regular time series data so that you can query it.
+
+[source,sqlpp]
+----
+CREATE PRIMARY INDEX ON regular;
+----
+
+Create a collection to contain the converted regular time series data.
+
+[source,sqlpp]
+----
+CREATE COLLECTION weather;
+----
+
+The following query takes the imported regular time series data and converts it to a time series document.
+
+[source,sqlpp]
+----
+INSERT INTO weather
+  (KEY _k, VALUE _v, OPTIONS {"expiration": 60*60*24*30}) -- <.>
+SELECT "temp:mean:2013" _k,
+  {"region":      r.Region,
+   "ts_start":    MIN(timestamp), -- <.>
+   "ts_end":      MAX(timestamp),
+   "ts_interval": 1000*60*60*24, -- <.>
+   "ts_data":     ARRAY t[1] FOR t IN
+                  ARRAY_AGG([timestamp, r.Mean]) -- <.><.>
+                  END} _v
+FROM regular AS r
+LET timestamp = STR_TO_MILLIS(r.Date, "YYYY-MM-DD") -- <.>
+WHERE timestamp
+  BETWEEN STR_TO_MILLIS("2013-01-01", "YYYY-MM-DD")
+      AND STR_TO_MILLIS("2013-11-30", "YYYY-MM-DD") -- <.>
+GROUP BY r.Region
+RETURNING *;
+----
+
+<.> The query sets the document expiration at 30 days and sets the ID of the time series document.
+
+<.> The MIN and MAX functions specify the start and end of the time series data for this document.
+
+<.> We know that the raw data is regular, with an interval of 
+1 day.
+The query sets the time series interval accordingly.
+
+<.> The ARRAY_AGG function aggregates the required time series into a single time series data array.
+Within the time series data array, each time point is constructed as a nested array, containing the date and time stamp and the mean temperature data.
+
+<.> As this is a regular time series, the ARRAY constructor then strips out the date and time stamps to save storage space.
+This two-step array construction process ensures that the time series data points are preserved in the correct date and time order.
+
+<.> The STR_TO_MILLIS function converts the date and time information to milliseconds since the Unix epoch.
+
+<.> The WHERE clause specifies that this document should contain data from the start of the year 2013 to the specified date.
+====
+
+[[ex-irregular-insert]]
+.Convert irregular time series data to a time series document
+====
+For this example, set the query context to the `time` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+First, create a primary index on the imported irregular time series data so that you can query it.
+
+[source,sqlpp]
+----
+CREATE PRIMARY INDEX ON irregular;
+----
+
+Create a collection to contain the converted irregular time series data.
+
+[source,sqlpp]
+----
+CREATE COLLECTION housing;
+----
+
+The following query takes the imported irregular time series data and converts it to a time series document.
+
+[source,sqlpp]
+----
+INSERT INTO housing
+  (KEY _k, VALUE _v, OPTIONS {"expiration": 60*60*24*30})
+SELECT "sales:prices:2000s" _k,
+  {"district": i.District, -- <.>
+   "ts_start": MIN(timestamp),
+   "ts_end":   MAX(timestamp),
+   "ts_data":  ARRAY_AGG([timestamp, i.Price])} _v -- <.>
+FROM irregular AS i
+LET timestamp = STR_TO_MILLIS(i.Date, "2/1/06")
+WHERE timestamp
+  BETWEEN STR_TO_MILLIS("2000", "YYYY")
+      AND STR_TO_MILLIS("2010", "YYYY") -- <.>
+GROUP BY i.District
+RETURNING *;
+----
+
+<.> The raw data is irregular, so the query does not set the time series interval.
+
+<.> Within the time series data array, each time point is constructed as a nested array, containing the date and time stamp and the house price data.
+
+<.> The WHERE clause specifies that this document should contain data for the decade from 2000 to 2010.
+====
+
+[[ex-update]]
+.Add time series data to an existing time series document
+====
+For this example, set the query context to the `time` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+The following query appends new data to an existing regular time series document.
+
+[source,sqlpp]
+----
+UPDATE weather AS w
+USE KEYS "temp:mean:2013" -- <.>
+SET w.ts_data = ARRAY_CONCAT(w.ts_data, ARRAY_FLATTEN(( -- <.>
+  SELECT RAW ARRAY t[1] FOR t IN -- <.>
+        ARRAY_AGG([timestamp, r.Mean])
+        END
+  FROM import AS r
+  LET timestamp = STR_TO_MILLIS(r.Date, "YYYY-MM-DD")
+  WHERE timestamp -- <.>
+    BETWEEN STR_TO_MILLIS("2013-12-01", "YYYY-MM-DD")
+        AND STR_TO_MILLIS("2013-12-31", "YYYY-MM-DD")), 1)),
+  w.ts_end = STR_TO_MILLIS("2013-12-31", "YYYY-MM-DD"), -- <.>
+  meta(w).expiration = meta(w).expiration -- <.>
+RETURNING *;
+----
+
+<.> The USE KEYS hint specifies the document to update.
+
+<.> The ARRAY_CONCAT and ARRAY_FLATTEN functions append the newly imported data to the existing time series data.
+
+<.> The newly imported data is converted by a subquery, which 
+aggregates the mean temperature figures into a single time series data array, as in <<ex-regular-insert>>.
+
+<.> The WHERE clause specifies that this document should contain data from the specified date to the end of the year 2013.
+
+<.> The query sets the end date and time for the time series to the end of the year 2013.
+See <<ex-regular-end>> and <<ex-irregular-end>> for other ways to set the end date and time for the time series.
+
+<.> The query specifies that the updated time series document should keep its current time-to-live.
+Note that it is also possible to preserve the document time-to-live using the request-level {preserve_expiration}}[preserve_expiry] parameter.
+====
+
+[[ex-regular-end]]
+.Update regular time series end date and time
+====
+For this example, set the query context to the `time` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+The following query updates the end date and time of a regular time series document to match the date and time stamp of the last time point.
+
+[source,sqlpp]
+----
+UPDATE weather AS w
+USE KEYS "temp:mean:2013"
+SET w.ts_end = w.ts_start +
+ (w.ts_interval * ARRAY_LENGTH(w.ts_data))
+RETURNING w.ts_end;
+----
+
+To calculate the end date and time, the query multiplies the time series interval by the number of time points in the time series data, and adds the result to the start date and time.
+====
+
+[[ex-irregular-end]]
+.Update irregular time series end date and time
+====
+For this example, set the query context to the `time` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+The following query updates the end date and time of an irregular time series document to match the date and time stamp of the last time point.
+
+[source,sqlpp]
+----
+UPDATE housing AS h
+USE KEYS "sales:prices:2000s"
+SET h.ts_end = h.ts_data[-1][0]
+RETURNING h.ts_end;
+----
+
+To determine the end date and time, the query takes the first element (the date and time stamp) from the last time point in the time series data.
+====
+
+[[ex-index]]
+.Create indexes for time series data
+====
+For this example, set the query context to the `time` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+The following query creates an index for the time series data created in <<ex-regular-insert>>.
+
+[source,sqlpp]
+----
+CREATE INDEX idx_mean_temp ON weather(region, ts_end, ts_start);
+----
+
+The following query creates an index for the time series data created in <<ex-irregular-insert>>.
+
+[source,sqlpp]
+----
+CREATE INDEX idx_sales_prices ON housing(district, ts_end, ts_start);
+----
+====
+
+See {timeseries}[] for examples of queries using time series data.
+
+== Related Links
+
+* How-to guide: xref:guides:import.adoc[]
+
+* Blog post: {url-ts-blog}[Couchbase Time Series^]
