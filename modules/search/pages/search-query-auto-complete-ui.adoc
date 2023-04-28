@@ -1,0 +1,76 @@
+= Configure and Test Autocomplete with the Web Console
+:page-topic-type: guide 
+:description: Create a Search index and run a Search query with the Web Console to test autocomplete with the Search Service.
+
+[abstract]
+{description}
+
+== Prerequisites 
+
+* You've deployed the Search Service on a node in your database. 
+
+* You have a bucket with scopes and collections in your database. 
+
+* Your user account has the *Search Admin* role for the bucket where you want to create the index. 
+
+* You've logged in to the Couchbase Server Web Console. 
+ 
+
+== Procedure 
+
+To use autocomplete with the Search Service, you need to <<search-index,create a Search index with two custom analyzers>>.
+
+Then, you can <<run-query,run a test Search query from the Web Console>>. 
+
+[#search-index]
+=== Create the Autocomplete Search Index
+
+To create the Search index with the Couchbase Server Web Console:
+
+. Go to *Search*.
+. Click btn:[Add Index].
+. In the *Index Name* field, enter a name for the new index. 
+. In the *Bucket* list, select the bucket where you want to create the index. 
+. Expand *Customize Index*. 
+. Select *Use non-default scope/collection(s)*. 
+. In the *Scope* list, select the scope where you want to create the index.
+. xref:create-custom-analyzer.adoc[] with the following settings:
+.. In the *Name* field, enter `keyword_to_lower`.
+.. In the *Tokenizer* list, select *single*. 
+.. In the *Token Filters* list, select and add the *to_lower* token filter. 
+. Expand *Custom Filters*. 
+. xref:create-custom-token-filter.adoc#edge-ngram[Create a custom token filter] with the following settings: 
+.. In the *Name* field, enter `edge_ngram_2_8`.
+.. In the *Type* list, select *edge_ngram*. 
+.. In the *Min* field, enter `2`.
+.. In the *Max* field, enter `8`.
+. xref:create-custom-analyzer.adoc[Create another custom analyzer] with the following settings:
+.. In the *Name* field, enter `edge_ngram`.
+.. In the *Tokenizer* list, select *unicode*.  
+.. In the *Token Filters* list, select and add the *to_lower* and your custom *edge_ngram_2_8* token filter.
+. Under *Mappings*, clear the *default* type mapping. 
+. xref:create-type-mapping.adoc[] with the following settings:
+.. In the *Collection* field, select a collection.
+.. Select *only index specified fields*. 
+. xref:create-child-field.adoc[] with the following settings:
+.. In the *field* field, enter the name of a text field in a document from your selected scope and collection. 
+.. In the *analyzer* list, select your *edge_ngram* analyzer. 
+.. Select *index*.
+.. Select *store*. 
+.. Select *include in _all field*. 
+. Expand *Advanced*. 
+. In the *Default Analyzer* list, select your *keyword_to_lower* analyzer. 
+. Click btn:[Create Index]
+
+[#run-query]
+=== Run A Search Query
+
+To run a search query against the Search index from the Web Console: 
+
+. xref:simple-search-ui.adoc[Run a search] with the <<search-index,Autocomplete Search index>> and enter 2-8 characters to use to generate auto-completed search results. 
+
+The Search Service returns documents that could autocomplete the query you entered in the *Search* field. 
+
+== Next Steps
+
+To add an autocomplete feature to your application, see Step 2 in xref:search-query-auto-complete-code.adoc[] for example code. 

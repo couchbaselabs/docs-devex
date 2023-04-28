@@ -1,0 +1,138 @@
+= Customize a Search Index with the Web Console
+:page-topic-type: concept
+:description: Configure additional options for a Search index to improve performance and the quality of your search results. 
+
+[abstract]
+{description}
+
+You can add the following components and configure the following options for a Search index: 
+
+[cols="1,2"]
+|====
+|Option |Description 
+
+|[[type-identifiers]]Type Identifier a|
+
+Set a type identifier to change how the Search index finds a document's type.
+
+The type identifier tells the Search Service the document field or location in the document's ID value to use as the document's type. 
+
+For more information about how to set a type identifier, see xref:set-type-identifier.adoc[].
+
+|[[type-mappings]]Mappings a|
+
+Use a type mapping to include or exclude specific documents in a scope or collection from an index, based on their type. 
+
+You can create two types of type mappings: 
+
+* *Dynamic type mappings*: Add all available fields from a matching document type to an index. 
+* *Static type mappings*: Add only specific fields from a matching document type to an index. 
+
+By default, all indexes have a dynamic type mapping that includes all documents from the *_default* scope and *_default* collection in a bucket. 
+
+Add xref:create-child-field.adoc[child fields] to a type mapping to create a static type mapping.
+Child fields set the specific fields from a document that you want to include or exclude from an index. 
+
+For more information about how to add a type mapping to an index, see xref:create-type-mapping.adoc[].
+
+|[[analyzers]]Analyzers a|
+
+Use analyzers to improve and customize the search results in your index.  
+
+Analyzers transform input text into tokens, which give you greater control over your index's text matching.  
+
+You can use one of Couchbase's built-in analyzers or create your own. 
+For more information about how to create a custom analyzer, see xref:create-custom-analyzer.adoc[].
+
+Analyzers have different components that control how text is transformed for search. 
+When you create a custom analyzer, you can choose these components. 
+
+Both custom and default analyzers can contain custom filters. 
+
+|[[custom-filters-table]]Custom Filters a|
+
+Use custom filters to add more customization to a custom analyzer.
+
+For more information about these filters, see the <<custom-filters,>> section.
+
+|[[date-time]]Date/Time Parsers a|
+
+If the documents in your index contain date and time data in a format other than RFC-3339 (ISO-8601), then you need to create a date/time parser.
+
+A custom date/time parser tells the Search index how to interpret date data from your documents. 
+
+For more information about how to add a custom date/time parser, see xref:create-custom-date-time-parser.adoc[].
+
+|Advanced a|
+
+Set advanced settings to change your index's default analyzer, replication, and more. 
+
+For more information about how to change advanced settings, see xref:set-advanced-settings.adoc[].
+
+|====
+
+[#custom-filters]
+== Custom Filters 
+
+Custom filters are components of a Search index <<analyzers,analyzer>>. 
+
+Create and add these components to a custom analyzer to improve search results and performance for an index. 
+
+You can create the following custom filters: 
+
+* <<character-filters,>>
+* <<tokenizers,>>
+* <<token-filters,>>
+* <<wordlists,>>
+
+[#character-filters]
+=== Character Filters 
+
+Character filters remove unwanted characters from the input for a search. 
+For example, the default *html* character filter removes HTML tags from your search content. 
+
+You can use a default character filter in an analyzer or create your own. 
+
+For more information about the available default character filters, see xref:default-character-filters-reference.adoc[].
+
+For more information about how to create your own custom character filter, see xref:create-custom-character-filter.adoc[].
+
+[#tokenizers]
+=== Tokenizers 
+
+Tokenizers separate input strings into individual tokens. 
+These tokens are combined into token streams. 
+The Search Service takes token streams from search queries to determine matches for token streams in search results. 
+
+You can use a default tokenizer in an analyzer or create your own. 
+
+For more information about the available default tokenizers, see xref:default-tokenizers-reference.adoc[].
+
+For more information about how to create your own tokenizer, see xref:create-custom-tokenizer.adoc[].
+
+[#token-filters]
+=== Token Filters 
+
+Token filters take the token stream from a tokenizer and modify the tokens. 
+
+A token filter can create stems from tokens to increase the matches for a search term. 
+For example, if a token filter creates the stem `play`, a search can return matches for `player`, `playing`, and `playable`.
+
+The Search Service has default tokenizers available.
+For a list of all available tokenizers, see xref:default-token-filters-reference.adoc[].
+
+You can also create your own token filters. 
+Custom token filters can use <<wordlists,>> to modify their tokens. 
+For more information about how to create your own token filter, see xref:create-custom-token-filter.adoc[].
+
+[#wordlists]
+=== Wordlists 
+
+Wordlists define a list of words that you can use with a <<token-filters,token filter>> to create tokens. 
+
+You can use a wordlist to find words and create tokens, or remove words from a tokenizer's token stream. 
+
+When you create a custom token filter, the Search Service has a set of default wordlists. 
+For more information about the available default wordlists, see xref:default-wordlists-reference.adoc[].
+
+For more information about how to create your own wordlist, see xref:create-custom-wordlist.adoc[].

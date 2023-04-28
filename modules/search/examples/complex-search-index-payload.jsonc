@@ -1,0 +1,210 @@
+{
+  "name": "travel-sample._default.gfx",
+  "type": "fulltext-index",
+  "uuid": "28b999e9e17dd4a7",
+  "sourceType": "gocbcore",
+  "sourceName": "travel-sample",
+  "sourceUUID": "d3604c0ec4792b4c6c5f7f2cc8207b80",
+  "sourceParams": {},
+  "planParams": {
+   "maxPartitionsPerPIndex": 1024,
+   "indexPartitions": 1,
+   "numReplicas": 0
+  },
+  "params": {
+   "doc_config": {
+    "docid_prefix_delim": "",
+    "docid_regexp": "",
+    "mode": "scope.collection.type_field",
+    "type_field": "type"
+   },
+   "mapping": {
+    "analysis": {
+     "analyzers": {
+      "My_Analyzer": {
+       "token_filters": [
+        "apostrophe",
+        "My_Token_Filter"
+       ],
+       "char_filters": [
+        "asciifolding",
+        "html",
+        "My_Char_Filter"
+       ],
+       "type": "custom",
+       "tokenizer": "My_Tokenizer"
+      }
+     },
+     "char_filters": {
+      "My_Char_Filter": {
+       "regexp": "[']",
+       "replace": " ",
+       "type": "regexp"
+      }
+     },
+     "tokenizers": {
+      "My_Tokenizer_Excep": {
+       "exceptions": [
+        "[*]"
+       ],
+       "tokenizer": "unicode",
+       "type": "exception"
+      },
+      "My_Tokenizer_RegExp": {
+       "regexp": "[*]",
+       "type": "regexp"
+      }
+     },
+     "token_filters": {
+      // tag::dict_compound[]
+      "My_Dict_Compound_Filter": {
+        "dict_token_map": "articles_ca",
+        "type": "dict_compound"
+      },
+      // end::dict_compound[]
+      // tag::edge_ngram[]
+      "My_Edge_ngram_Filter": {
+        "back": false,
+        "min": 4,
+        "max": 5,
+        "type": "edge_ngram"
+      },
+      // end::edge_ngram[]
+      // tag::elision[]
+      "My_Elision_Filter": {
+        "articles_token_map": "stop_fr",
+        "type": "elision"
+      },
+      // end::elision[]
+      // tag::keyword_marker[]
+      "My_Keyword_Marker_Filter": {
+        "keywords_token_map": "articles_ca",
+        "type": "keyword_marker"
+      },
+      // end::keyword_marker[]
+      // tag::length[]
+      "My_Length_Filter": {
+       "min": 2,
+       "max": 4,
+       "type": "length"
+      },
+      // end::length[]
+      // tag::ngram[]
+      "My_Ngram_Filter": {
+        "min": 4,
+        "max": 5,
+        "type": "ngram"
+      },
+      // end::ngram[]
+      // tag::normalize_unicode[]
+      "My_Normalize_Unicode_Filter": {
+        "form": "nfkd",
+        "type": "normalize_unicode"
+      },
+      // end::normalize_unicode[]
+      // tag::shingle[]
+      "My_Shingle_Filter":{
+        "min": 2,
+        "max": 3,
+        "output_original": true,
+        "separator": " ",
+        "filler": "x",
+        "type": "shingle"
+      },
+      // end::shingle[]
+      // tag::stop_tokens[]
+      "My_Stop_Tokens_Filter":{
+        "stop_token_map": "articles_ca",
+        "type": "stop_tokens"
+      },
+      // end::stop_tokens[]
+      // tag::truncate_token[]
+      "My_Truncate_Token_Filter":{
+        "length": 4,
+        "type": "truncate_token"
+      }
+      // end::truncate_token[]
+     },
+     "token_maps": {
+      "My_Wordlist": {
+       "type": "custom",
+       "tokens": [
+        "the",
+        "is",
+        "and"
+       ]
+      }
+     },
+     "date_time_parsers": {
+      "My_Date_Time_Parser": {
+       "type": "flexiblego",
+       "layouts": [
+        "RFC850"
+       ]
+      }
+     }
+    },
+    "default_analyzer": "standard",
+    "default_datetime_parser": "dateTimeOptional",
+    "default_field": "_all",
+    "default_mapping": {
+     "dynamic": false,
+     "enabled": false
+    },
+    "default_type": "_default",
+    "docvalues_dynamic": true,
+    "index_dynamic": true,
+    "store_dynamic": true,
+    "type_field": "_type",
+    "types": {
+      "inventory.hotel": {
+       "dynamic": false,
+       "enabled": true,
+       "properties": {
+        "reviews": {
+         "dynamic": false,
+         "enabled": true,
+         "properties": {
+          "content": {
+           "enabled": true,
+           "dynamic": false,
+           "fields": [
+            {
+             "docvalues": true,
+             "include_in_all": true,
+             "include_term_vectors": true,
+             "index": true,
+             "name": "content",
+             "store": true,
+             "type": "text"
+            }
+           ]
+          }
+         }
+        },
+        "city": {
+         "enabled": true,
+         "dynamic": false,
+         "fields": [
+          {
+           "docvalues": true,
+           "include_in_all": true,
+           "include_term_vectors": true,
+           "index": true,
+           "name": "city",
+           "store": true,
+           "type": "text",
+           "analyzer": "en"
+          }
+         ]
+        }
+       }
+      }
+     }
+    },
+   "store": {
+    "indexType": "scorch",
+    "segmentVersion": 15
+   }
+  }
+}
