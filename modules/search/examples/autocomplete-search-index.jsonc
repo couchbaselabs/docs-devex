@@ -1,0 +1,88 @@
+{
+    "type": "fulltext-index",
+    "name": "e-ngram-2-8",
+    "uuid": "$GENERATED_INDEX_UUID",
+    "sourceType": "gocbcore",
+    "sourceName": "$BUCKET_NAME",
+    "sourceUUID": "$BUCKET_UUID",
+    "planParams": {
+      "maxPartitionsPerPIndex": 1024,
+      "indexPartitions": 1
+    },
+    "params": {
+      "doc_config": {
+        "docid_prefix_delim": "",
+        "docid_regexp": "",
+        "mode": "scope.collection.type_field",
+        "type_field": "type"
+      },
+      "mapping": {
+        "analysis": {
+          "analyzers": {
+            "edge_ngram": {
+              "token_filters": [
+                "to_lower",
+                "edge_ngram_2_8"
+              ],
+              "tokenizer": "unicode",
+              "type": "custom"
+            },
+            "keyword_to_lower": {
+              "token_filters": [
+                "to_lower"
+              ],
+              "tokenizer": "single",
+              "type": "custom"
+            }
+          },
+          "token_filters": {
+            "edge_ngram_2_8": {
+              "back": false,
+              "max": 8,
+              "min": 2,
+              "type": "edge_ngram"
+            }
+          }
+        },
+        "default_analyzer": "keyword_to_lower",
+        "default_datetime_parser": "dateTimeOptional",
+        "default_field": "_all",
+        "default_mapping": {
+          "dynamic": true,
+          "enabled": false
+        },
+        "default_type": "_default",
+        "docvalues_dynamic": false,
+        "index_dynamic": true,
+        "store_dynamic": false,
+        "type_field": "_type",
+        "types": {
+          "$SCOPE_NAME.$COLLECTION_NAME": {
+            "dynamic": false,
+            "enabled": true,
+            "properties": {
+              "$FIELD_NAME": {
+                "dynamic": false,
+                "enabled": true,
+                "fields": [
+                  {
+                    "analyzer": "edge_ngram",
+                    "include_in_all": true,
+                    "index": true,
+                    "name": "$FIELD_NAME",
+                    "store": true,
+                    "type": "text"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "store": {
+        "indexType": "scorch",
+        "segmentVersion": 15
+      }
+    },
+    "sourceParams": {}
+  }

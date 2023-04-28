@@ -1,0 +1,113 @@
+// tag::full[]
+{
+    "query": {},
+
+    // tag::ctl[]
+    "ctl": {
+        "timeout": 10000,
+        // tag::consistency[]
+        "consistency": {
+            // tag::vectors[]
+            "vectors": {
+                "searchIndexName": {
+                    "607/205096593892159": 2,
+                    "640/298739127912798": 4  
+                }
+            },
+            // end::vectors[]
+            "level": "at_plus",
+            "results": "complete"
+        }
+        // end::consistency[]
+    },
+    // end::ctl[]
+    "size": 10,
+    "from": 0,
+    // tag::highlight[]
+    "highlight": {
+
+        "style": "html",
+        "fields": ["textField"]
+
+    },
+    // end::highlight[]
+    "fields": ["textField"],
+    // tag::facets[]
+    "facets": {
+
+        "field1": {
+            "size": 5,
+            "field": "field1"
+        },
+
+        "field2": {
+            "size": 5,
+            "field": "field2",
+            // tag::numeric_ranges[]
+            "numeric_ranges": [
+                {
+
+                    "name": "high",
+                    "min": 7,
+                    "max": 10
+
+                },
+                {
+
+                    "name": "low",
+                    "min": 0,
+                    "max": 7
+
+                }
+             ]
+             // end::numeric_ranges[]
+        },
+
+        "field3": {
+            "size": 10,
+            "field": "dateField",
+            // tag::date_ranges[]
+            "date_ranges": [
+                {
+                    "name": "old",
+                    "start": "2020-12-31",
+                    "end": "2023-12-31"
+                },
+                {
+                    "name": "new",
+                    "start": "2023-12-31",
+                    "end": "2024-12-31"
+                }  
+            ]
+            // end::date_ranges[]
+        }
+
+    },
+    // end::facets[]
+    "explain": true,
+    // tag::sort[]
+    "sort": [
+
+        "field1",
+            {
+                "by": "field",
+                "field": "field2",
+                "desc": false,
+                "mode": "max",
+                "missing": "last",
+                "type": "number"
+            },
+            "-_score",
+            "-_id"
+            
+    ],
+    // end::sort[]
+    "includeLocations": false,
+    "score": "none",
+    "search_after": ["field1Value", "5", "10.033205341869529", "1234"],
+    "search_before": ["field1Value", "5", "10.033205341869529", "1234"],
+    "limit": 10,
+    "offset": 0,
+    "collections": ["collection1", "collection2"]
+}
+// end::full[]
