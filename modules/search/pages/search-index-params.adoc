@@ -29,7 +29,7 @@ All Search index payloads have the following properties:
 |====
 |Property |Type |Required? |Description
 
-|name |String |Yes |The name of the Search index.
+|name |String |Yes |The name of the Search index.  Currently names are global across a cluster, in the future we will support "scoped indexes" where names are uniqe within a scope.
 
 |type |String |Yes a|
 
@@ -43,16 +43,16 @@ For more information about Search index aliases, see xref:server:fts:fts-creatin
 
 The UUID for the Search index. 
 
-The Search Service automatically generates a UUID for a Search index.
+The Search Service automatically generates a UUID for a Search index.  If this UUID exists and a create index operation is done the operation is an index update.  When copying an index to a different cluster or modifying and existing index definition to make a new index you should ensure that this UID is removed from the JSON payload.
 
 |sourceType |String |Yes |The `sourceType` is always `"gocbcore"`.
 
 |sourceName |String |Yes a|
 The name of the bucket where you want to create the Search index. 
 
-The Search Service automatically finds the UUID for the bucket.
+The Search Service automatically finds the UUID for the bucket.  When copying an index to a different cluster or modifying and existing index definition to make a new index you should ensure that this UID is removed from the JSON payload.
 
-|sourceUUID |String |No |The UUID of the bucket where you want to create the Search index.
+|sourceUUID |String |No |The UUID of the bucket where you want to create the Search index.  
 
 |sourceParams |Object |No a|
 
@@ -61,10 +61,10 @@ This object contains advanced settings for index behavior.
 Don't add content into this object unless instructed by Couchbase Support.
 
 |planParams |Object |Yes |An object that sets the Search index's partitions and replications. 
-For more information, see <<planparams,>>.
+For more information, see <<planparams,planParams Object>>.
 
 |params |Object |Yes |An object that sets the Search index's type identifier, type mappings, and analyzers. 
-For more information, see <<params,>>.
+For more information, see <<params,Params Object>>.
 
 |====
 
@@ -87,7 +87,7 @@ The `planParams` object contains the following properties:
 |Property |Type |Required? |Description
 
 |maxPartitionsPerPIndex |n/a |No |This setting is deprecated. Use `indexPartitions`, instead.
-|indexPartitions |Number |Yes |The number of partitions to split the Search index into, across the nodes you have available in your database with the Search Service enabled. 
+|indexPartitions |Number |Yes |The number of partitions to split the Search index into, across the nodes you have available in your database with the Search Service enabled. This setting is useful to increase both indexing and query performance on large datasets.
 |numReplicas |Number |Yes a|
 
 For high-availability, set the number of replicas the Search Service creates for the Search index.
@@ -95,7 +95,7 @@ For high-availability, set the number of replicas the Search Service creates for
 You can create up to three replicas for a Search index. 
 To turn off replication for the Search index, set `numReplicas` to `0`.
 
-The number of replicas you can create depends on the number of nodes you have available with the Search Service enabled. 
+The number of replicas you can create depends on the number of nodes you have available with the Search Service enabled. Each replica creates a full copy of the index to increase the level of high-availability.
 
 |====
 [#params]
@@ -110,10 +110,10 @@ It contains the following properties:
 |Property |Type |Required? |Description 
 
 |doc_config |Object |Yes |An object that sets how the Search index sets a document's type.
-For more information, see <<doc-config,>>.
+For more information, see <<doc-config,Doc_config Object>>.
 
 |mapping |Object |Yes |An object that sets the analyzers and type mappings for a Search index. 
-For more information, see <<mapping,>>.
+For more information, see <<mapping,Mapping Object>>.
 
 |====
 
@@ -140,7 +140,7 @@ The `doc_config` object is a child object of the <<params,>>. It contains the fo
 Set how the Search index identifies a document's type: 
 
 * `type_field`: Use the value from a specific field in the documents. 
-* `docid_prefix_delim`: Use the characters in the documents' ID values, up to but not including a specified separator.
+* `docid_prefix_delim`: Use the leading characters in the documents' ID values, up to but not including a specified separator.
 * `docid_regexp`: Use a regular expression on the documents' ID values.
 
 NOTE: If you want your Search index to only include documents from a specific collection, the `mode` value must be `"scope.collection.\{mode\}"`.
