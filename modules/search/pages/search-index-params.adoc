@@ -29,7 +29,7 @@ All Search index payloads have the following properties:
 |====
 |Property |Type |Required? |Description
 
-|name |String |Yes |The name of the Search index.  Currently names are global across a cluster, in the future we will support "scoped indexes" where names are uniqe within a scope.
+|name |String |Yes |The name of the Search index. A Search index name must be unique for each cluster.
 
 |type |String |Yes a|
 
@@ -39,20 +39,26 @@ The type of index you want to create:
 * `fulltext-alias`: Create an alias for a Search index. 
 For more information about Search index aliases, see xref:server:fts:fts-creating-full-text-aliases.adoc[].
 
-|uuid |String |No a|
+|[[uuid]]uuid |String |No a|
 
 The UUID for the Search index. 
 
-The Search Service automatically generates a UUID for a Search index.  If this UUID exists and a create index operation is done the operation is an index update.  When copying an index to a different cluster or modifying and existing index definition to make a new index you should ensure that this UID is removed from the JSON payload.
+The Search Service automatically generates a UUID for a Search index. 
+
+If you use an existing UUID, the Search Service updates the existing Search index. Don't include the `uuid` property when you want to copy an index to a different cluster or create a new index.
 
 |sourceType |String |Yes |The `sourceType` is always `"gocbcore"`.
 
 |sourceName |String |Yes a|
 The name of the bucket where you want to create the Search index. 
 
-The Search Service automatically finds the UUID for the bucket.  When copying an index to a different cluster or modifying and existing index definition to make a new index you should ensure that this UID is removed from the JSON payload.
+|[[sourceuuid]]sourceUUID |String |No a|
 
-|sourceUUID |String |No |The UUID of the bucket where you want to create the Search index.  
+The UUID of the bucket where you want to create the Search index.  
+
+The Search Service automatically finds the UUID for the bucket.
+
+Don't include the `sourceUUID` property when you want to copy an index to a different cluster, or create a new index.
 
 |sourceParams |Object |No a|
 
@@ -61,10 +67,10 @@ This object contains advanced settings for index behavior.
 Don't add content into this object unless instructed by Couchbase Support.
 
 |planParams |Object |Yes |An object that sets the Search index's partitions and replications. 
-For more information, see <<planparams,planParams Object>>.
+For more information, see <<planparams,>>.
 
 |params |Object |Yes |An object that sets the Search index's type identifier, type mappings, and analyzers. 
-For more information, see <<params,Params Object>>.
+For more information, see <<params,>>.
 
 |====
 
@@ -87,16 +93,16 @@ The `planParams` object contains the following properties:
 |Property |Type |Required? |Description
 
 |maxPartitionsPerPIndex |n/a |No |This setting is deprecated. Use `indexPartitions`, instead.
-|indexPartitions |Number |Yes |The number of partitions to split the Search index into, across the nodes you have available in your database with the Search Service enabled. This setting is useful to increase both indexing and query performance on large datasets.
+|indexPartitions |Number |Yes |The number of partitions to split the Search index into, across the nodes you have available in your database with the Search Service enabled. Use index partitions to increase index and query performance on large datasets.
 |numReplicas |Number |Yes a|
 
-For high-availability, set the number of replicas the Search Service creates for the Search index.
+For high-availability, set the number of replicas the Search Service creates for the Search index. 
 
 You can create up to three replicas for a Search index. 
+Each replica creates a full copy of the Search index to increase high-availability.
 To turn off replication for the Search index, set `numReplicas` to `0`.
 
-The number of replicas you can create depends on the number of nodes you have available with the Search Service enabled. Each replica creates a full copy of the index to increase the level of high-availability.
-
+The number of replicas you can create depends on the number of nodes you have available with the Search Service enabled.
 |====
 [#params]
 == Params Object 
@@ -110,10 +116,10 @@ It contains the following properties:
 |Property |Type |Required? |Description 
 
 |doc_config |Object |Yes |An object that sets how the Search index sets a document's type.
-For more information, see <<doc-config,Doc_config Object>>.
+For more information, see <<doc-config,>>.
 
 |mapping |Object |Yes |An object that sets the analyzers and type mappings for a Search index. 
-For more information, see <<mapping,Mapping Object>>.
+For more information, see <<mapping,>>.
 
 |====
 
