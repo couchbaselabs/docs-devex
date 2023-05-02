@@ -27,12 +27,17 @@ Then, you can <<run-query,run a test Search query from the Web Console>>.
 
 To create the Search index with the Capella UI:
 
-. On the *Databases* page, select the database where you want to create the index. 
-. Go to menu:Data Tools[Search]. 
+. On the *Databases* page, select the database where you want to create a Search index. 
+. Go to menu:Data Tools[Search].
 . Click btn:[Create Search Index].
-. In the *Index Name* field, enter a name for the new index. 
-. In the *Bucket* list, select the bucket where you want to create the index. 
-. In the *Scope* list, select the scope where you want to create the index.
+. In the *Index Name* field, enter a name for the Search index. 
++
+NOTE: Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
+ 
+. In the Data Insights area, expand the scope where you want to create a type mapping. 
+. Next to the collection where you want to create the type mapping, go to menu:More Options (&vellip;)[Map Collection to Index]. 
+. Under *Type Mappings*, next to the new type mapping, go to menu:More Options (&vellip;)[Edit], then change the following setting:
+.. Unselect *Index all contained fields*.
 . Expand *Analyzers*. 
 . xref:create-custom-analyzer.adoc[] with the following settings:
 .. In the *Name* field, enter `keyword_to_lower`.
@@ -42,15 +47,17 @@ To create the Search index with the Capella UI:
 . xref:create-custom-token-filter.adoc#edge-ngram[Create a custom token filter] with the following settings: 
 .. In the *Name* field, enter `edge_ngram_2_8`. 
 .. In the *Type* list, select *edge_ngram*.
-.. In the *Min* box, enter `2`.
-.. In the *Max* box, enter `8`.
+.. In the *Min* box, enter `2`, the minimum number of characters to perform autocomplete with.
+.. In the *Max* box, enter `8`, the maximum number of characters to perform autocomplete with.
+. Expand *Analyzers*. 
 . xref:create-custom-analyzer.adoc[Create another custom analyzer] with the following settings:
 .. In the *Name* field, enter `edge_ngram`.
 .. In the *Tokenizer* list, select *unicode*.  
 .. In the *Token Filters* list, click both the *to_lower* and your custom *edge_ngram_2_8* token filter.
-. xref:create-type-mapping.adoc[] with the following settings:
-.. Clear *Index all contained fields*. 
-. xref:create-child-field.adoc[] with the following settings:
+. Optional xref:create-child-mapping.adoc[] for each document level above the child field of interest.
+.. Under *Type Mappings*, next to the new type mapping (or a nested child mapping), go to menu:More Options (&vellip;)[Insert Child Mapping]. 
+.. Unselect *Index all contained fields*.
+. Under *Type Mappings*, next to the new type mapping (or a nested child mapping), go to menu:More Options (&vellip;)[xref:create-child-field.adoc[Insert Child Field]]  with the following settings:
 .. In the *Field* field, enter the name of a text field in a document from your selected scope and collection. 
 .. In the *Analyzer* list, select your *edge_ngram* analyzer. 
 .. Select *Index*.
