@@ -35,10 +35,11 @@ The changing data is typically numerical, and changes incrementally.
 
 A time series may be regular or irregular.
 
-* In a regular time series, the data points occur at regular intervals.
+* In a regular time series, the data points are collected at regular intervals.
 For example, stock ticker prices, or climate data.
+If no data is available to collect at that time, data can be stored as `null`.
 
-* In an irregular time series, the data points occur at irregular intervals.
+* In an irregular time series, the data points occur at irregular intervals: that is, you do not know in advance when a data point will be collected.
 For example, historical earthquake data, or house sales and prices in an area over time.
 
 [[document-structure]]
@@ -110,6 +111,10 @@ If this field is omitted, the document is ignored by time series queries.
 The document may contain any other fields you require.
 
 As `ts_data` is usually the largest field, you may consider storing it after other commonly-used fields in the document for faster access.
+
+TIP: The integers representing date-time values may, if required, represent values smaller than milliseconds.
+You are recommended to use integers representing milliseconds for compatibility with {sqlpp} date and time functions.
+If you need to use date-time values smaller than milliseconds, you must use a multiplication factor to use the date-time values with date and time functions.
 
 === Examples of Time Series Documents
 
@@ -199,6 +204,9 @@ To reduce index sizes and increase performance, store your time series data usin
 The optimum size for each time series document depends on the type of queries you need to perform.
 If you plan to query the time series data using ranges measured in days, it's most efficient to store the time series data in documents which contain a day's data.
 Likewise, if you plan to query the time series data using ranges measured in hours, you should store the time series data in documents which contain an hour's data, and so on.
+
+To expand on this: if most of your queries use ranges of 2 to 4 hours, storing your time series data in documents which contain a day's data can have an overhead of 80&ndash;90% data discard per document.
+In this case, it would be more efficient to store the time series data in documents containing 4 hours' data.
 
 The maximum size of a time series document is 20MB.
 
@@ -528,4 +536,4 @@ To determine the end date and time, the query takes the first element (the date-
 
 * How-to guide: xref:guides:import.adoc[]
 
-* Blog post: {url-ts-blog}[Couchbase Time Series^]
+// * Blog post: {url-ts-blog}[Couchbase Time Series^]
