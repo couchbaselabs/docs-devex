@@ -534,7 +534,7 @@ image::time-series-window.svg["Line chart showing weekly average temperature and
 ====
 
 [[ex-ranges]]
-.Query time series data with multiple ranges
+.Query time series data with multiple predicate ranges
 ====
 Before you try this example, you must follow all the examples in {time-series}[] to import time series data.
 
@@ -546,14 +546,14 @@ The following query returns the weekly average and four-week moving average for 
 [source,sqlpp]
 ----
 WITH datarange AS (
-  [
-    [STR_TO_MILLIS("2013-03-01", "YYYY-MM-DD"),
-     STR_TO_MILLIS("2013-03-31", "YYYY-MM-DD")],
-    [STR_TO_MILLIS("2013-05-01", "YYYY-MM-DD"),
-     STR_TO_MILLIS("2013-05-31", "YYYY-MM-DD")],
-    [STR_TO_MILLIS("2013-07-01", "YYYY-MM-DD"),
-     STR_TO_MILLIS("2013-07-31", "YYYY-MM-DD")]
-  ] ),
+     [
+       [STR_TO_MILLIS("2013-03-01", "YYYY-MM-DD"),
+        STR_TO_MILLIS("2013-03-31", "YYYY-MM-DD")],
+       [STR_TO_MILLIS("2013-05-01", "YYYY-MM-DD"),
+        STR_TO_MILLIS("2013-05-31", "YYYY-MM-DD")],
+       [STR_TO_MILLIS("2013-07-01", "YYYY-MM-DD"),
+        STR_TO_MILLIS("2013-07-31", "YYYY-MM-DD")]
+     ]),
      docs AS (
       SELECT DISTINCT RAW META(d).id
       FROM datarange AS tr
@@ -567,6 +567,93 @@ USE KEYS docs
 UNNEST _timeseries(d, {"ts_ranges": datarange }) AS t
 GROUP BY IDIV(t._t, 1000*60*60*24*7) AS week
 LETTING week_avg = AVG(t._v0);
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "four_week_mov_avg": 5.5,
+    "week_avg": 5.5,
+    "week_of": "2013-02-28T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 5.5,
+    "week_avg": 5.5,
+    "week_of": "2013-03-07T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 5.5476190476190474,
+    "week_avg": 5.642857142857143,
+    "week_of": "2013-03-14T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 5.785714285714286,
+    "week_avg": 6.5,
+    "week_of": "2013-03-21T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 5.928571428571429,
+    "week_avg": 6.5,
+    "week_of": "2013-03-28T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 7.028571428571428,
+    "week_avg": 11,
+    "week_of": "2013-04-25T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 8.128571428571428,
+    "week_avg": 11,
+    "week_of": "2013-05-02T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 9.585714285714285,
+    "week_avg": 12.928571428571429,
+    "week_of": "2013-05-09T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 10.985714285714284,
+    "week_avg": 13.5,
+    "week_of": "2013-05-16T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 12.385714285714284,
+    "week_avg": 13.5,
+    "week_of": "2013-05-23T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 12.885714285714283,
+    "week_avg": 13.5,
+    "week_of": "2013-05-30T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 14.385714285714283,
+    "week_avg": 18.5,
+    "week_of": "2013-06-27T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 15.757142857142856,
+    "week_avg": 19.785714285714285,
+    "week_of": "2013-07-04T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 17.057142857142857,
+    "week_avg": 20,
+    "week_of": "2013-07-11T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 18.057142857142857,
+    "week_avg": 18.5,
+    "week_of": "2013-07-18T00:00:00Z"
+  },
+  {
+    "four_week_mov_avg": 18.657142857142855,
+    "week_avg": 16.5,
+    "week_of": "2013-07-25T00:00:00Z"
+  }
+]
 ----
 ====
 
