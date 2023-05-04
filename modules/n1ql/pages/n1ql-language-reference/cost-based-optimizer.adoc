@@ -47,26 +47,58 @@ The cost-based optimizer uses metadata and statistics to estimate the amount of 
 It compares the cost of alternative routes, and then selects the query-execution plan with the least cost.
 
 .Query execution flow, showing the cost-based optimizer using statistics and metadata
-[mermaid,cbo_query_execution_flow,svg,subs=attributes]
+[plantuml,cbo_query_execution_flow,svg,subs=attributes]
 ....
-graph LR
-    accTitle: Query execution flow
-    A[/{sqlpp}<br>Statement/] --> B[{sqlpp}<br>Parser]
-    B --> D[Semantic<br>Analyzer]
-    C>System<br>metadata] --> D
-    E>Statistics and<br>Metadata] --> X
-    D --> X
-    X --> G(Query Explain<br>Plan)
-    X --> H("Query Execution Tree<br>(Query Plan)")
-    H --> I[Executor]
-    I --> J[/"Debug Info<br>(Query Profile)"/]
-    I --> K[/Query Results/]
+@startuml
 
-   subgraph Optimizer
-   X("Plan A #10003;<br>Scan: Cost 12 <br>Fetch: Cost 17 <br>Join: Cost 7<br>Total: 23")
-   Y("Plan B #10007;<br>Scan: Cost 20 <br>Fetch: Cost 25 <br>Join: Cost 7<br>Total: 52")
-   Z("Plan C #10007;<br>Scan: Cost 18 <br>Fetch: Cost 36 <br>Join: Cost 14<br>Total: 68")
-   end
+skinparam defaultTextAlignment center
+left to right direction
+
+queue "Statistics and\nMetadata" as E
+artifact "{sqlpp}\nStatement" as A
+agent "{sqlpp}\nParser" as B
+queue "System\nMetadata" as C
+agent "Semantic\nAnalyzer" as D
+
+rectangle Optimizer as F {
+  json "Plan A <color:limegreen><&check>" as X{
+    "Scan Cost": "12",
+    "Fetch Cost": "17",
+    "Join Cost": "7",
+    "Total": 23
+  }
+  json "Plan B <color:red><&x>" as Y{
+    "Scan Cost": 20,
+    "Fetch Cost": 25,
+    "Join Cost": 7,
+    "Total": 52
+  }
+  json "Plan C <color:red><&x>" as Z{
+    "Scan Cost": 18,
+    "Fetch Cost": 36,
+    "Join Cost": 14,
+    "Total": 68
+  }
+}
+
+file "Query Explain\nPlan" as G
+file "Query Execution Tree\n(Query Plan)" as H
+agent Executor as I
+artifact "Debug Info\n(Query Profile)" as J
+artifact "Query Results" as K
+
+A --> B
+B --> D
+C --> D
+D --> X
+E --> X
+X --> G
+X --> H
+H --> I
+I --> J
+I --> K
+
+@enduml
 ....
 
 The cost-based optimizer can generate a query plan for {select}[SELECT], {update}[UPDATE], {delete}[DELETE], {merge}[MERGE], and {insert}[INSERT INTO with SELECT] queries.
@@ -202,33 +234,87 @@ The boundary bins, distribution bins, and overflow bins for each data type are c
 This forms a histogram of statistics for the index-key expression across multiple data types.
 
 .Distribution bins and boundary bins for integers, strings, and arrays
-[mermaid,cbo_distribution_bins,svg]
+[plantuml,cbo_distribution_bins,svg]
 ....
-graph LR
-    accTitle: Distribution bins
-    D --- E
-    I --- J
-    
-    subgraph Integer Values
-    A[Size: 25%<br>Distinct: 23 <br>Max: 300] --- B
-    B[Size: 25%<br>Distinct: 49 <br>Max: 2000] --- C
-    C[Size: 25%<br>Distinct: 88 <br>Max: 8000] --- D
-    D[Size: 25%<br>Distinct: 3 <br>Max: 10000]
-    end
+@startuml
 
-    subgraph String Values
-    E[Boundary] --- F
-    F["Size: 25%<br>Distinct: 92 <br>Max: &ldquo;A232&rdquo;"] --- G
-    G["Size: 25%<br>Distinct: 23 <br>Max: &ldquo;F348&rdquo;"] --- H
-    H["Size: 25%<br>Distinct: 20 <br>Max: &ldquo;L283&rdquo;"] --- I
-    I["Size: 25%<br>Distinct: 3 <br>Max: &ldquo;Z82&rdquo;"]
-    end
+skinparam defaultTextAlignment center
+skinparam linetype ortho
 
-    subgraph Array Values
-    J[Boundary] --- K
-    K["Size: 25%<br>Distinct: 48 <br>Max: [234]"] --- L
-    L["Size: 25%<br>Distinct: 28 <br>Max: [948]"]
-    end
+rectangle "Integer Values" {
+  json " " as A {
+    "Size": "25%",
+    "Distinct": 23,
+    "Max": 300
+  }
+  json " " as B {
+    "Size": "25%",
+    "Distinct": 49,
+    "Max": 2000
+  }
+  json " " as C {
+    "Size": "25%",
+    "Distinct": 88,
+    "Max": 8000
+  }
+  json " " as D {
+    "Size": "25%",
+    "Distinct": 3,
+    "Max": 10000
+  }
+}
+
+rectangle "String Values" {
+  card "Boundary" as E
+  json " " as F {
+    "Size": "25%",
+    "Distinct": 92,
+    "Max": "A232"
+  }
+  json " " as G {
+    "Size": "25%",
+    "Distinct": 23,
+    "Max": "F348"
+  }
+  json " " as H {
+    "Size": "25%",
+    "Distinct": 20,
+    "Max": "L283"
+  }
+  json " " as I {
+    "Size": "25%",
+    "Distinct": 3,
+    "Max": "Z82"
+  }
+}
+
+rectangle "Array Values" {
+  card "Boundary" as J
+  json " " as K {
+    "Size": "25%",
+    "Distinct": 48,
+    "Max": "[234]"
+  }
+  json " " as L {
+    "Size": "25%",
+    "Distinct": 28,
+    "Max": "[948]"
+  }
+}
+
+  A . B
+  B . C
+  C . D
+  D . E
+  E . F
+  F . G
+  G . H
+  H . I
+  I . J
+  J . K
+  K . L
+
+@enduml
 ....
 
 [[resolution]]
