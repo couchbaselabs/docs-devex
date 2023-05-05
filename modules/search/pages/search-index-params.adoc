@@ -143,7 +143,7 @@ The `doc_config` object is a child object of the <<params,>>. It contains the fo
 
 |mode |String |Yes a|
 
-Set how the Search index identifies a document's type: 
+Set a xref:customize-search-index.adoc#type-identifiers[type identifier] for the Search index to filter documents from search results: 
 
 * `type_field`: Use the value from a specific field in the documents. 
 * `docid_prefix_delim`: Use the leading characters in the documents' ID values, up to but not including a specified separator.
@@ -151,11 +151,23 @@ Set how the Search index identifies a document's type:
 
 NOTE: If you want your Search index to only include documents from a specific collection, the `mode` value must be `"scope.collection.\{mode\}"`.
 
-|docid_prefix_delim |String |Yes |If `mode` is `docid_prefix_delim`, set the separator character to use on a document's ID value to determine its type.
+|docid_prefix_delim |String |Yes a|
 
-|docid_regexp |String |Yes |If `mode` is `docid_regexp`, set the regular expression to use on a document's ID value to determine its type. 
+If `mode` is `docid_prefix_delim`, set the separator character to use on a document's ID value.
 
-|type_field |String |Yes |If `mode` is `type_field`, set the name of the field to use to determine a document's type.
+For example, to filter documents based on the characters before a `_` in their ID values, set `docid_prefix_delim` to `_`.
+
+|docid_regexp |String |Yes a|
+
+If `mode` is `docid_regexp`, set the regular expression to use on a document's ID value to determine its type. 
+
+For example, to filter documents that contain the characters `_40` in their ID value, set `docid_regexp` to `_[3-5]0`.
+
+|type_field |String |Yes a|
+
+If `mode` is `type_field`, set the name of the field to use to filter documents.
+
+For example, to filter documents based on the value of their `type` field, set `type_field` to `type`.
 
 |====
 
@@ -854,6 +866,8 @@ Corresponds to the selected scope and collection where the type mapping applies.
 For example, `inventory.airline`. 
 
 For more information about the properties in an `\{scope\}.\{collection\}` object, see <<scope-collection,>>. 
+
+TIP: To add a type identifier as an additional filter to your type mapping, add the filter to the end of your `\{scope\}.\{collection\}` object. For example, to use a `type_field` filter that uses the `type` field, and add only documents with a `type` value of `hotel`, the object name would be `\{scope\}.\{collection\}.hotel`
 |====
 
 [#scope-collection]
