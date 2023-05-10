@@ -57,13 +57,9 @@ The UNNEST scan can generate index spans on other non-leading index keys when ap
 
 In order for the optimizer to select the correct array index for a SELECT, UPDATE, or DELETE statement, the query predicate which appears in the WHERE clause must be constructed to match the format of the array index key.
 See <<query-predicate-format>> for details.
+
+You can add the `INCLUDE MISSING` modifier to a leading array index key, just as you can with any other leading index key, in order to index documents in which the specified array is missing.
 ====
-
-****
-[.status]#Couchbase Server 7.1.2#
-
-In Couchbase Server 7.1.2 and later, you can add the `INCLUDE MISSING` modifier to a leading array index key, just as you can with any other leading index key, in order to index documents in which the specified array is missing.
-****
 
 [[array-expr]]
 === Array Expression
@@ -106,7 +102,7 @@ Specifies predicates to qualify the subset of documents to include in the index 
 [NOTE]
 .Variable Expression
 ====
-In Couchbase Server 7.1 and later, you can index one or more expressions _within_ the array (up to maximum of 32) by using the {flatten-keys}[FLATTEN_KEYS()] function in the `var-expr`.
+You can index one or more expressions _within_ the array (up to maximum of 32) by using the {flatten-keys}[FLATTEN_KEYS()] function in the `var-expr`.
 This function flattens expressions within the array, as if they were separate index keys; and all subsequent index keys are accordingly moved to the right.
 Queries will be {index-selection}[sargable] and will generate spans.
 Refer to <<query-predicate-format>> below.
@@ -117,13 +113,9 @@ Refer to <<example-5>> below.
 
 To create an array index involving multiple array elements or multiple arrays, you may construct the `var-expr` as a compound object constituted with different elements of the same array or multiple arrays.
 Refer to <<example-6>> below.
+
+You can add the `INCLUDE MISSING` modifier to the first argument in the {flatten-keys}[FLATTEN_KEYS()] function, in order to index array elements in which the specified field is missing.
 ====
-
-****
-[.status]#Couchbase Server 7.1.2#
-
-In Couchbase Server 7.1.2 and later, you can add the `INCLUDE MISSING` modifier to the first argument in the {flatten-keys}[FLATTEN_KEYS()] function, in order to index array elements in which the specified field is missing.
-****
 
 [[simple-array-expr,simple array expression]]
 ==== Simple Array Expression
@@ -384,8 +376,6 @@ Even though the ORDER BY key uses an array index key, it can use index order, an
 [[example-missing]]
 .Array index with missing leading key
 ====
-[.status]#Couchbase Server 7.1.2#
-
 The following statement creates an index of flight numbers from the `schedule` array for all routes.
 If the schedule array is missing from any route, that route is indexed anyway.
 
