@@ -706,12 +706,11 @@ ORDER BY t.country, t.tz;
 The optimizer attempts to select an appropriate secondary index for a query based on the filters in the WHERE clause.
 If it cannot select a secondary query, the query service falls back on the primary index for the keyspace.
 
-By default, secondary indexes don't index a document if the leading index key is MISSING in the document.
-This means that when a query selects a field which is MISSING in some documents, the optimizer will not be able to choose a secondary index which uses that field as a leading key. There are two ways to resolve this:
+Secondary indexes do not index a document if the leading index key is MISSING in the document.
+This means that when a query selects a field which is MISSING in some documents, the optimizer will not be able to choose a secondary index
+which uses that field as a leading key.
 
-* Add the `INCLUDE MISSING` modifier to a leading index key in the index definition, to index documents where the specified key is missing. For more information, see xref:n1ql:n1ql-language-reference/createindex.adoc#include-missing[INCLUDE MISSING]
-
-* Use a WHERE clause to filter out any documents where the required field is MISSING.
+To enable the optimizer to choose the required index, you must use a WHERE clause of some kind to filter out any documents in which the required field is MISSING.
 The minimum filter you can use to do this is `IS NOT MISSING`.
 This is usually only necessary in queries which do not otherwise have a WHERE clause; for example, some GROUP BY and aggregate queries.
 
