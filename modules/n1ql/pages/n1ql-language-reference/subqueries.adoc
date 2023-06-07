@@ -293,7 +293,7 @@ WHERE (SELECT RAW alt FROM t.geo.alt)[0] > 6000;
 .Q5C
 [source,sqlpp]
 ----
-SELECT count(*) FROM `$DATABASE_NAME` .samples.airport t
+SELECT count(*) FROM `<BUCKET_NAME>`.samples.airport t
 LET x = t.geo
 WHERE (SELECT RAW y.alt FROM x y)[0] > 6000;
 ----
@@ -315,7 +315,7 @@ When explicit alias is not defined, every identifier will have an implicit alias
 Implicit alias of a nested path is defined as the last component in the path.
 In above example  <<Q5D,Q5D>>, the implicit alias of the nested path `t.geo` in subquery is `geo`, and in example <<Q5B,Q5B>> the implicit alias of `t.geo.alt` is `alt`.
 
-For example, the following example <<Q6,Q6>> has no explicit alias for ``$DATABASE_NAME``.
+For example, the following example <<Q6,Q6>> has no explicit alias for ``<BUCKET_NAME>``.
 So the `airport` used in the subquery FROM clause is considered a keyspace identifier, but not an expression.
 That makes the subquery non-correlated by the FROM clause, and the subquery returns all documents from keyspace `airport`.
 
@@ -594,8 +594,8 @@ WHERE (SELECT RAW t2.alt
 [
   {
     "code": 3000,
-    "msg": "Ambiguous reference to field $DATABASE_NAME.",
-    "query_from_user": "SELECT t1.city, t1.geo.alt\nFROM `$DATABASE_NAME` t1\nWHERE t1.type = \"airport\" AND \n(SELECT RAW t2.alt \n FROM `$DATABASE_NAME`.geo t2)[0] > 4000;"
+    "msg": "Ambiguous reference to field <BUCKET_NAME>.",
+    "query_from_user": "SELECT t1.city, t1.geo.alt\nFROM `<BUCKET_NAME>` t1\nWHERE t1.type = \"airport\" AND \n(SELECT RAW t2.alt \n FROM `<BUCKET_NAME>`.geo t2)[0] > 4000;"
   }
 ]
 ----
