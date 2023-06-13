@@ -288,13 +288,104 @@ In this case, `SELECT DISTINCT` takes about twice as long to execute as `SELECT 
 .Query
 [source,sqlpp]
 ----
-include::example$select/selectclause-q5.n1ql[]
+EXPLAIN SELECT DISTINCT city FROM landmark;
 ----
 
 .Results
 [source,json]
 ----
-include::example$select/selectclause-r5.jsonc[]
+[
+  {
+    "cardinality": 2779.855582605531,
+    "cost": 2405.889898898149,
+    "plan": {
+      "#operator": "Sequence",
+      "~children": [
+        {
+          "#operator": "IndexScan3",
+          "bucket": "<BUCKET_NAME>",
+          "covers": [
+            "cover ((`landmark`.`city`))",
+            "cover ((meta(`landmark`).`id`))"
+          ],
+          "distinct": true,
+          "index": "def_samples_landmark_city",
+          "index_id": "384002e05e5e993",
+          "index_projection": {
+            "entry_keys": [
+              0
+            ]
+          },
+          "keyspace": "landmark",
+          "namespace": "default",
+          "optimizer_estimates": {
+            "cardinality": 4495,
+            "cost": 2338.614899083954,
+            "fr_cost": 12.517600644957497,
+            "size": 56
+          },
+          "scope": "samples",
+          "spans": [
+            {
+              "exact": true,
+              "range": [
+                {
+                  "inclusion": 0,
+                  "index_key": "`city`"
+                }
+              ]
+            }
+          ],
+          "using": "gsi"
+        },
+        {
+          "#operator": "Parallel",
+          "~child": {
+            "#operator": "Sequence",
+            "~children": [
+              {
+                "#operator": "InitialProject",
+                "discard_original": true,
+                "distinct": true,
+                "optimizer_estimates": {
+                  "cardinality": 4495,
+                  "cost": 2372.2523989910515,
+                  "fr_cost": 12.525083959731045,
+                  "size": 56
+                },
+                "preserve_order": true,
+                "result_terms": [
+                  {
+                    "expr": "cover ((`landmark`.`city`))"
+                  }
+                ]
+              },
+              {
+                "#operator": "Distinct",
+                "optimizer_estimates": {
+                  "cardinality": 2779.855582605531,
+                  "cost": 2405.889898898149,
+                  "fr_cost": 12.532567274504594,
+                  "size": 56
+                }
+              }
+            ]
+          }
+        },
+        {
+          "#operator": "Distinct",
+          "optimizer_estimates": {
+            "cardinality": 2779.855582605531,
+            "cost": 2405.889898898149,
+            "fr_cost": 12.532567274504594,
+            "size": 56
+          }
+        }
+      ]
+    },
+    "text": "SELECT DISTINCT city FROM landmark;"
+  }
+]
 ----
 <1> Lines using the `DISTINCT` operator
 ====
