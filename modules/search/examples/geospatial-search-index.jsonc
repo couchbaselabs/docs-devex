@@ -15,34 +15,8 @@
         "type_field": "type"
       },
       "mapping": {
-        "analysis": {
-          "analyzers": {
-            "edge_ngram": {
-              "token_filters": [
-                "to_lower",
-                "edge_ngram_2_8"
-              ],
-              "tokenizer": "unicode",
-              "type": "custom"
-            },
-            "keyword_to_lower": {
-              "token_filters": [
-                "to_lower"
-              ],
-              "tokenizer": "single",
-              "type": "custom"
-            }
-          },
-          "token_filters": {
-            "edge_ngram_2_8": {
-              "back": false,
-              "max": 8,
-              "min": 2,
-              "type": "edge_ngram"
-            }
-          }
-        },
-        "default_analyzer": "keyword_to_lower",
+        "analysis": {},
+        "default_analyzer": "standard",
         "default_datetime_parser": "dateTimeOptional",
         "default_field": "_all",
         "default_mapping": {
@@ -56,7 +30,7 @@
         "type_field": "_type",
         "types": {
           "$SCOPE_NAME.$COLLECTION_NAME": {
-            "dynamic": false,
+            "dynamic": true,
             "enabled": true,
             "properties": {
               "$FIELD_NAME": {
@@ -64,12 +38,10 @@
                 "enabled": true,
                 "fields": [
                   {
-                    "analyzer": "edge_ngram",
                     "include_in_all": true,
                     "index": true,
                     "name": "$FIELD_NAME",
-                    "store": true,
-                    "type": "text"
+                    "type": "geopoint"
                   }
                 ]
               }
@@ -79,7 +51,8 @@
       },
       "store": {
         "indexType": "scorch",
-        "segmentVersion": 15
+        "segmentVersion": 15,
+        "spatialPlugin": "s2"
       }
     },
     "sourceParams": {}
