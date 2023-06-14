@@ -1,16 +1,20 @@
 = Set a Search Index Type Identifier  
 :page-topic-type: guide 
-:description: Set a type identifier with the Couchbase Capella UI for a Search index to control how the Search Service sets a document's type.
+:description: Use a type identifier with a type mapping to add an extra filter to the documents you want to include in a Search index.
+:page-toclevels: 3
 
 [abstract]
 {description}
 
-For more information about type identifiers, see xref:customize-index.adoc#type-identifiers[Customize a Search Index with the Capella UI].
+For more information about type identifiers and type mappings, see xref:customize-index.adoc#type-identifiers[Customize a Search Index with the Capella UI].
 
 == Prerequisites 
 
 * You've created an index.
 For more information, see xref:create-search-index-ui.adoc[].
+
+* You've created at least one type mapping in your Search index. 
+For more information, see xref:create-type-mapping.adoc[]. 
  
 * You've logged in to the Couchbase Capella UI. 
 
@@ -23,11 +27,63 @@ To set a type identifier for a Search index with the Capella UI:
 . Click the index where you want to change the type identifier.
 . Expand menu:Advanced Configuration[General Settings]. 
 . Do one of the following: 
-.. To use the value of a field in the document as the document's type, select *JSON type field*.
-.. To use the document's ID value, up to a given separator, as the document's type, select *Doc ID up to separator*. 
-.. To use the document's ID value with a regular expression applied as the document's type, select *Doc ID with regex*.
-. Enter the field name, separator, or regular expression in the corresponding field. 
+.. <<json-type,>>
+.. <<doc-id-sep,>>
+.. <<doc-id-regex,>>
+
+[#json-type]
+=== Create a JSON Type Field Type Identifier 
+
+To only add documents to your Search index that contain a specific field with a specified string value: 
+
+. Click the *JSON type field* tab. 
+. In the *JSON Type Field* field, enter the name of the field in your documents that you want to use to filter documents in your Search index.
++
+For example, if your documents include a `type` field, you could enter `type` in the *JSON Type Field* field. 
++
+NOTE: You can't use a field as a type identifier if the field name contains a period (.).  
+. Under *Type Mappings*, next to the type mapping where you want to add the type identifier, go to menu:More Options (&vellip;)[Edit]. 
+. In the *Name* field, add a period (.) to the end of the current type mapping name. 
+. After the period, add the exact string from the document field that you want to use as a filter. 
++
+For example, if you wanted your Search index to only return documents that had a `type` value of `hotel`, you could enter `scope.collection.hotel` in the type mapping *Name* field.
+. Click btn:[Submit].
 . Click btn:[Update Index].
+
+[#doc-id-sep]
+=== Create a Doc ID Up To Separator Type Identifier 
+
+To only add documents to your Search index that have IDs that match a specified prefix: 
+
+. Click the *Doc ID up to Separator* tab. 
+. In the *Doc ID up to Separator* field, enter the ID prefix, up to the separator character, that you want to use to filter documents in your Search index.
++
+For example, if you know all of your document ID values are prefixed by a string and an underscore, enter `_`.
+. Under *Type Mappings*, next to the type mapping where you want to add the type identifier, go to menu:More Options (&vellip;)[Edit]. 
+. In the *Name* field, add a period (.) to the end of the current type mapping name. 
+. After the period, add the exact prefix from the document's ID value that you want to use as a filter. 
++
+For example, if you wanted your Search index to only return documents that have an prefix of `landmark_`, you could enter `scope.collection.landmark` in the type mapping *Name* field.
+. Click btn:[Submit].
+. Click btn:[Update Index].
+
+[#doc-id-regex]
+=== Create a Doc ID with Regex Type Identifier 
+
+To only add documents to your Search index that have IDs that match a specified https://github.com/google/re2/wiki/Syntax[RE2] regular expression: 
+
+. Click the *Doc ID with Regex* tab. 
+. In the *Doc ID with Regex* field, enter the regular expression that you want to use to filter documents in your Search index. 
++
+For example, if you wanted only documents with ID values that contained `_40`, you could enter `_[3-5]0` as your regular expression.
+. Under *Type Mappings*, next to the type mapping where you want to add the type identifier, go to menu:More Options (&vellip;)[Edit]. 
+. In the *Name* field, add a period (.) to the end of the current type mapping name. 
+. After the period, add a match for the regular expression from the document's ID value that you want to use as a filter. 
++
+For example, if you wanted your Search index to only return documents with ID values that contained `_40`, you could enter `scope.collection._40` in the type mapping *Name* field.
+. Click btn:[Submit].
+. Click btn:[Update Index].
+
 
 == Next Steps
 
