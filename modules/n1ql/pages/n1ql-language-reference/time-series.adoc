@@ -12,8 +12,8 @@
 // Cross-references
 :cbimport: xref:tools:cbimport.adoc
 :collection-manage: xref:cli:cbcli/couchbase-cli-collection-manage.adoc
-:import-documents: xref:manage:import-documents/import-documents.adoc
-:bucket-expiration: xref:learn:data/expiration.adoc
+:import-documents: xref:clusters:data-service/import-data-documents.adoc
+:bucket-expiration: xref:server:learn:data/expiration.adoc
 :document-expiration: xref:java-sdk:howtos:kv-operations.adoc#document-expiration
 :preserve_expiration: xref:settings:query-settings.adoc#preserve_expiration
 :n1ql-language-reference: xref:n1ql-language-reference
@@ -230,7 +230,12 @@ You can specify expiration at the bucket, collection, or document level, but it 
 Ingesting time series data into Couchbase is usually a multi-stage process, depending on the format of the original data.
 
 . Import the raw dataset from a supported format: CSV or JSON.
-To do this, you can use the {cbimport}[cbimport] command line tool, the {import-documents}[import] feature in the Couchbase UI, or an SDK data parsing library.
+To do this, you can use
+ifdef::flag-devex-command-line[]
+the {cbimport}[cbimport] command line tool,
+endif::flag-devex-command-line[]
+the {import-documents}[import] feature in the Couchbase UI,
+or an SDK data parsing library.
 
 . When the data is imported, transform the imported data to one or more documents with the <<document-structure,Couchbase time series document format>>.
 To do this, use an {insert}[INSERT SELECT] query or an SDK insert operation.
@@ -287,61 +292,39 @@ footnote:ogl[]
 [[ex-import]]
 .Import time series data from CSV files
 ====
-Use the {collection-manage}[collection-manage] tool to create a scope for the time series data.
+Create a scope for the time series data.
 
-[source,sh]
+[source,sqlpp]
 ----
-couchbase-cli collection-manage \
---cluster http://localhost:8091 \
---username Administrator \
---password password \
---bucket travel-sample \
---create-scope time
+CREATE SCOPE `travel-sample`.time IF NOT EXISTS;
 ----
 
-Use the {collection-manage}[collection-manage] tool to create collections for the raw time series data within the new scope.
+Create collections for the raw time series data within the new scope.
 
-[source,sh]
+[source,sqlpp]
 ----
-couchbase-cli collection-manage \
---cluster http://localhost:8091 \
---username Administrator \
---password password \
---bucket travel-sample \
---create-collection time.regular
+CREATE COLLECTION `travel-sample`.time.regular IF NOT EXISTS;
+CREATE COLLECTION `travel-sample`.time.irregular IF NOT EXISTS;
 ----
 
-[source,sh]
-----
-couchbase-cli collection-manage \
---cluster http://localhost:8091 \
---username Administrator \
---password password \
---bucket travel-sample \
---create-collection time.irregular
-----
+Use the {import-documents}[Import] tool to import the irregular time series data:
 
-Use the {cbimport}[cbimport] tool to import the time series data.
+. Go to menu:Data Tools[Import].
+. In the *Import* tab, select *A Single Collection*.
+. In the *travel-sample* bucket, select the *time* scope and the *irregular* collection.
+. Click btn:[Select a file] and select `irregular-time-series.csv`.
+. In *File Type*, make sure *CSV* is selected.
+. In *Document IDs*, make sure *UUID* is selected.
+. Click btn:[Import Data File].
 
-[source,sh]
-----
-cbimport csv --infer-types \
-  -c http://localhost:8091 \
-  -u Administrator -p password \
-  -d 'file://regular-time-series.csv' \
-  -b 'travel-sample' --scope-collection-exp "time.regular" \
-  -g "#UUID#"
-----
+Use the {import-documents}[Import] tool to import the regular time series data:
 
-[source,sh]
-----
-cbimport csv --infer-types \
-  -c http://localhost:8091 \
-  -u Administrator -p password \
-  -d 'file://irregular-time-series.csv' \
-  -b 'travel-sample' --scope-collection-exp "time.irregular" \
-  -g "#UUID#"
-----
+. In the *Import* tab, select *A Single Collection*.
+. In the *travel-sample* bucket, select the *time* scope and the *regular* collection.
+. Click btn:[Select a file] and select `regular-time-series.csv`.
+. In *File Type*, make sure *CSV* is selected.
+. In *Document IDs*, make sure *UUID* is selected.
+. Click btn:[Import Data File].
 ====
 
 [[ex-regular-insert]]
@@ -498,7 +481,9 @@ The query sets the end date and time for the time series to the end of the year 
 See <<ex-regular-end>> and <<ex-irregular-end>> for other ways to set the end date and time for the time series.
 
 The query specifies that the updated time series document should keep its current time-to-live.
+ifdef::flag-devex-settings[]
 Note that it is also possible to preserve the document time-to-live using the request-level {preserve_expiration}}[preserve_expiry] parameter.
+endif::flag-devex-settings[]
 ====
 
 [[ex-regular-end]]
