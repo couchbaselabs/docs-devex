@@ -22,7 +22,23 @@
   },
   {
     "_sequence_num": 3,
-    "_sequence_query": "\n\n-- Create a booking document\nUPSERT INTO `travel-sample`.tenant_agent_00.bookings\nVALUES(\"bf7ad6fa-bdb9-4099-a840-196e47179f03\", {\n  \"date\": \"07/24/2021\",\n  \"flight\": \"WN533\",\n  \"flighttime\": 7713,\n  \"price\": 964.13,\n  \"route\": \"63986\"\n});",
+    "_sequence_query": "\n\n-- Create 2 users\nUPSERT INTO users...",
+    "_sequence_query_status": "success",
+    "_sequence_result": {
+      "results": []
+    }
+  },
+  {
+    "_sequence_num": 4,
+    "_sequence_query": "\n\nUPSERT INTO users...",
+    "_sequence_query_status": "success",
+    "_sequence_result": {
+      "results": []
+    }
+  },
+  {
+    "_sequence_num": 5,
+    "_sequence_query": "\n\n-- Create a booking document\nUPSERT INTO `<BUCKET_NAME>`.tenants.bookings\nVALUES(\"bf7ad6fa-bdb9-4099-a840-196e47179f03\", {\n  \"date\": \"07/24/2021\",\n  \"flight\": \"WN533\",\n  \"flighttime\": 7713,\n  \"price\": 964.13,\n  \"route\": \"63986\"\n});",
     "_sequence_query_status": "success",
     "_sequence_result": {
       "results": []
@@ -33,7 +49,7 @@
 // ...
 // end::ellipsis[]
   {
-    "_sequence_num": 4,
+    "_sequence_num": 6,
     "_sequence_query": "\n\n-- Set a savepoint\nSAVEPOINT s1;",
     "_sequence_query_status": "success",
     "_sequence_result": {
@@ -41,16 +57,16 @@
     }
   },
   {
-    "_sequence_num": 5,
-    "_sequence_query": "\n\n-- Update the booking document to include a user\nUPDATE `travel-sample`.tenant_agent_00.bookings AS b\nSET b.`user` = \"0\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "_sequence_num": 7,
+    "_sequence_query": "\n\n-- Update the booking document to include a user\nUPDATE `<BUCKET_NAME>`.tenants.bookings AS b\nSET b.`user` = \"0\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
     "_sequence_query_status": "success",
     "_sequence_result": {
       "results": []
     }
   },
   {
-    "_sequence_num": 6,
-    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM `travel-sample`.tenant_agent_00.bookings b\nJOIN `travel-sample`.tenant_agent_00.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "_sequence_num": 8,
+    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM `<BUCKET_NAME>`.tenants.bookings b\nJOIN `<BUCKET_NAME>`.tenants.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
     "_sequence_query_status": "success",
     "_sequence_result": [
       {
@@ -65,7 +81,7 @@
     ]
   },
   {
-    "_sequence_num": 7,
+    "_sequence_num": 9,
     "_sequence_query": "\n\n-- Set a second savepoint\nSAVEPOINT s2;",
     "_sequence_query_status": "success",
     "_sequence_result": {
@@ -73,16 +89,16 @@
     }
   },
   {
-    "_sequence_num": 8,
-    "_sequence_query": "\n\n-- Update the booking documents to change the user\nUPDATE `travel-sample`.tenant_agent_00.bookings AS b\nSET b.`user` = \"1\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "_sequence_num": 10,
+    "_sequence_query": "\n\n-- Update the booking documents to change the user\nUPDATE `<BUCKET_NAME>`.tenants.bookings AS b\nSET b.`user` = \"1\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
     "_sequence_query_status": "success",
     "_sequence_result": {
       "results": []
     }
   },
   {
-    "_sequence_num": 9,
-    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM `travel-sample`.tenant_agent_00.bookings b\nJOIN `travel-sample`.tenant_agent_00.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "_sequence_num": 11,
+    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM `<BUCKET_NAME>`.tenants.bookings b\nJOIN `<BUCKET_NAME>`.tenants.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
     "_sequence_query_status": "success",
     "_sequence_result": [
       {
@@ -97,7 +113,7 @@
     ]
   },
   {
-    "_sequence_num": 10,
+    "_sequence_num": 12,
     "_sequence_query": "\n\n-- Roll back the transaction to the second savepoint\nROLLBACK TRAN TO SAVEPOINT s2;",
     "_sequence_query_status": "success",
     "_sequence_result": {
@@ -105,8 +121,8 @@
     }
   },
   {
-    "_sequence_num": 11,
-    "_sequence_query": "\n\n-- Check the content of the booking and user again\nSELECT b.*, u.name\nFROM `travel-sample`.tenant_agent_00.bookings b\nJOIN `travel-sample`.tenant_agent_00.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "_sequence_num": 13,
+    "_sequence_query": "\n\n-- Check the content of the booking and user again\nSELECT b.*, u.name\nFROM `<BUCKET_NAME>`.tenants.bookings b\nJOIN `<BUCKET_NAME>`.tenants.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
     "_sequence_query_status": "success",
     "_sequence_result": [
 // tag::check-3[]
@@ -123,7 +139,7 @@
     ]
   },
   {
-    "_sequence_num": 12,
+    "_sequence_num": 14,
     "_sequence_query": "\n\n-- Commit the transaction\nCOMMIT WORK;",
     "_sequence_query_status": "success",
     "_sequence_result": {

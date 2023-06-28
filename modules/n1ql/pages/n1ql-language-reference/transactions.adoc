@@ -157,11 +157,11 @@ endif::flag-devex-command-line[]
 * To execute a transaction containing multiple statements, compose the sequence of statements in the Query Editor.
 Each statement must be terminated with a semicolon.
 After each statement, you must press kbd:[Shift+Enter] to start a new line _without_ executing the query.
-You can then click btn:[Execute] to execute the transaction.
+Then switch the *transaction* toggle on and click btn:[Run Query]
 
-* To execute a single statement as a transaction, simply enter the statement in the Query Editor and click btn:[Run as TX].
+* To execute a single statement as a transaction, turn on the *transaction* toggle, enter the statement in the Query Editor and click btn:[Run Query].
 
-* In either case, you do not need to specify the `txid` parameter or the `tximplicit` parameter.
+In either case, you do not need to specify the `txid` parameter or the `tximplicit` parameter.
 If you need to specify any other parameters for the Couchbase transaction, you can use the query run-time preferences window.
 
 ifdef::flag-devex-command-line[]
@@ -176,7 +176,6 @@ footnote:[You must be using cbq shell version 2.0 or above to use the automatic 
 In this case, you do not need to specify the `txid` parameter either.
 
 * You can specify parameters for the Couchbase transaction using the `\SET` command.
-
 
 === Couchbase Transactions with the Query REST API
 
@@ -214,14 +213,29 @@ This worked example guides you through a complete Couchbase transaction session 
 [[preparation]]
 === Preparation
 
-The worked example assumes that the supplied `travel-sample` bucket is installed.
-Refer to {install-sample-buckets}[Sample Buckets] for installation details.
+.Keyspace
 
-.Index
-For the purposes of this worked example, you must create a primary index in the keyspace you will be using.
+Create a new keyspace for the transaction to run in:
 
 ====
-Create a primary index on `{backtick}travel-sample{backtick}.tenant_agent_00.bookings`, so that you can query and update the documents in this keyspace.
+. Next to your bucket in the Data Insights area, click menu:More Options (⋮)[Add Scope].
+. In the *Scope Name* field, enter `tenants`.
+. Click btn:[Create Scope].
+. Next to the new `tenants` scope, click menu:More Options (⋮)[Add Collection].
+. In the *Collection Name* field, enter `users`. 
+. In the *TTL* box, enter 0. 
+. Click btn:[Create Collection].
+. Create another collection in the `tenants` scope called `bookings`, with the TTL also set to 0.
+
+Set the query context to the new `tenants` scope.
+For more information, see xref:select.adoc#query-context[Setting the Query Context].
+====
+
+.Index
+For the purposes of this worked example, you must create a primary index in the new bookings collection.
+
+====
+Create a primary index on `bookings`, so that you can query and update the documents in this keyspace.
 
 [source,sqlpp]
 ----
@@ -238,17 +252,19 @@ In particular, you will turn off durability for the purposes of this example, in
 Query Workbench::
 +
 --
-. Click the cog icon icon:cog[] to display the Run-Time Preferences window.
+To specify parameters for a Couchbase transaction, use the Query Options dialog.
 
-. Open the *Scan Consistency* drop-down list and select *not_bounded*.
+. To display the Query Options dialog, click btn:[options].
 
-. In the *Transaction Timeout* box, enter `120`.
+. To specify the transaction scan consistency, in the *Scan Consistency* list, select an option.
 
-. In the *Named Parameters* section, click the btn:[+] button to add a named parameter.
+. To specify the transaction timeout, in the *Transaction Timeout* box, enter a value in seconds.
 
-. When the new named parameter appears, enter `durability_level` in the *name* box and `"none"` (with double quotes) in the *value* box.
+. To specify any other parameters, click the btn:[+] button in the corresponding *Named Parameters* or *Positional Parameters* section.
+** For named parameters, enter the name in the *name* box and a value in the *value* box.
+** For positional parameters, enter the value in the *value* box.
 
-. Choose btn:[Save Preferences] to save the preferences and return to the Query Workbench.
+. To save your preferences and return to the Query Workbench, click btn:[Save Settings] 
 --
 ifdef::flag-devex-command-line[]
 

@@ -14,6 +14,8 @@
 [abstract]
 {description}
 
+IMPORTANT: You can't use this feature with a Capella Serverless database. Custom index placement and replication is only available in Capella Provisioned or Couchbase Server Enterprise Edition databases. 
+
 == Purpose
 
 You can use the `ALTER INDEX` statement to change the placement of an existing index or replica among different GSI nodes, to increase or decrease the number of replicas, or to drop a specified index replica temporarily.
@@ -112,7 +114,7 @@ collection::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
 
 ====
-For example, `default:{backtick}travel-sample{backtick}.inventory.airline.{backtick}idx-name{backtick}` indicates the `idx-name` index on the `airline` collection in the `inventory` scope in the `default:{backtick}travel-sample{backtick}` bucket.
+For example, `default:{backtick}travel-db-abc123{backtick}.samples.airline.{backtick}idx-name{backtick}` indicates the `idx-name` index on the `airline` collection in the `samples` scope in the `travel-db-abc123` bucket.
 ====
 
 [[keyspace-prefix-index,keyspace prefix]]
@@ -137,7 +139,7 @@ bucket::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[bucket name] of the keyspace.
 
 ====
-For example, `default:{backtick}travel-sample{backtick}.def_type` indicates the `def_type` index on the default collection in the default scope in the `default:{backtick}travel-sample{backtick}` bucket.
+For example, `default:{backtick}travel-db-abc123{backtick}.def_type` indicates the `def_type` index on the default collection in the default scope in the `default:{backtick}travel-db-abc123{backtick}` bucket.
 ====
 
 [[keyspace-partial-index,keyspace partial]]
@@ -206,9 +208,9 @@ collection::
 If omitted, the default collection in the bucket's default scope is used.
 
 ====
-For example, `def_type ON default:{backtick}travel-sample{backtick}` indicates the `def_type` index on the default collection in the default scope in the `default:{backtick}travel-sample{backtick}` bucket.
+For example, `def_type ON default:{backtick}travel-db-abc123{backtick}` indicates the `def_type` index on the default collection in the default scope in the `travel-db-abc123` bucket.
 
-Similarly, `{backtick}idx-name{backtick} ON default:{backtick}travel-sample{backtick}.inventory.airline` indicates the `idx-name` index on the `airline` collection in the `inventory` scope in the `default:{backtick}travel-sample{backtick}` bucket.
+Similarly, `{backtick}idx-name{backtick} ON default:{backtick}travel-db-abc123{backtick}.samples.airline` indicates the `idx-name` index on the `airline` collection in the `samples` scope in the `travel-db-abc123` bucket.
 ====
 
 [[keyspace-partial,keyspace partial]]
@@ -384,14 +386,13 @@ a|
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
-.Move the `def_inventory_airport_faa` index from one node to another
+.Move the `def_samples_airport_airportname_city_faa` index from one node to another
 ====
 Create a cluster of 3 nodes and then go to menu:Settings[Sample buckets] to install the `travel-sample` bucket.
 The indexes are then installed in a round-robin fashion and distributed over the 3 nodes.
 
-image::alter-index_servers_step1.png["The Indexes tab showing def_inventory_airport_faa on 192.168.10.10"]
 
-Then move the `def_inventory_airport_faa` index from its original node (192.168.10.*10* in this example) to a new node (192.168.10.*11* in this example).
+Then move the `def_samples_airport_airportname_city_faa` index from its original node (192.168.10.*10* in this example) to a new node (192.168.10.*11* in this example).
 
 [source,sqlpp]
 ----
@@ -405,7 +406,6 @@ You should see:
 include::example$n1ql-language-reference/alter-idx-move.jsonc[]
 ----
 
-image::alter-index_servers_step2.png["The Indexes tab showing def_inventory_airport_faa on 192.168.10.11"]
 ====
 
 .Create and move an index replica from one node to another

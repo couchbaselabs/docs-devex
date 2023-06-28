@@ -427,9 +427,9 @@ AND ANY v IN schedule SATISFIES v.flight LIKE 'FL%' END;
 [[example-5]]
 .Nested array index
 ====
-WARNING: Please note that the example below will alter the data in your sample buckets.
-To restore your sample data, remove and reinstall the `travel-sample` bucket.
-Refer to xref:server:manage:manage-settings/install-sample-buckets.adoc[Sample Buckets] for details.
+WARNING: Please note that the following example will alter the data in your sample dataset.
+To restore your sample data, remove and reinstall the samples scope.
+Refer to xref:clusters:data-service/import-data-documents.adoc[] for details.
 
 .Update: Create a nested array
 [source,sqlpp]
@@ -643,7 +643,7 @@ WHERE ANY v IN schedule SATISFIES v.flight LIKE 'UA%' END;
           "#operator": "DistinctScan",
           "scan": {
             "#operator": "IndexScan3",
-            "bucket": "travel-sample",
+            "bucket": "<BUCKET_NAME>",
             "covers": [
               "cover ((distinct (array (`v`.`flight`) for `v` in (`route`.`schedule`) end)))",
               "cover ((`route`.`schedule`))",
@@ -685,7 +685,7 @@ WHERE ANY AND EVERY v IN schedule SATISFIES v.flight LIKE 'UA%' END;
           "#operator": "DistinctScan",
           "scan": {
             "#operator": "IndexScan3",
-            "bucket": "travel-sample",
+            "bucket": "<BUCKET_NAME>",
             "covers": [
               "cover ((distinct (array (`v`.`flight`) for `v` in (`route`.`schedule`) end)))",
               "cover ((`route`.`schedule`))",
@@ -725,7 +725,7 @@ WHERE v.flight LIKE 'UA%';
           "scan": {
             "#operator": "IndexScan3",
             "as": "t",
-            "bucket": "travel-sample",
+            "bucket": "<BUCKET_NAME>",
             "covers": [
               "cover ((distinct (array (`v`.`flight`) for `v` in (`t`.`schedule`) end)))",
               "cover ((`t`.`schedule`))",
@@ -748,7 +748,7 @@ In this example, <<Q8A>> has the following limitation: the collection operator E
 
 As items cannot be indexed, it is not possible to index MISSING items, so the EVERY operator is evaluated in the {sqlpp} engine and cannot leverage the array index scan.
 
-For example, <<Q8D>> below uses the primary index `def_inventory_route_primary` ignoring the {use-index-clause}[USE INDEX] hint to use the array indexes.
+For example, <<Q8D>> below uses the index `def_samples_route_route_src_dst_day` ignoring the {use-index-clause}[USE INDEX] hint to use the array indexes.
 (Note that in this example, <<C8i>> defines a DISTINCT array index while <<C8ii>> defines an ALL array index, and both are ignored).
 --
 
@@ -779,8 +779,8 @@ WHERE EVERY v IN schedule SATISFIES v.flight LIKE 'UA%' END;
       "~children": [
         {
           "#operator": "PrimaryScan3",
-          "bucket": "travel-sample",
-          "index": "def_inventory_route_primary",
+          "bucket": "<BUCKET_NAME>",
+          "index": "def_samples_route_route_src_dst_day",
         // ...
         }
       ]
@@ -834,7 +834,7 @@ WHERE ANY v IN schedule SATISFIES v.flight LIKE 'UA%' END;
           "#operator": "DistinctScan",
           "scan": {
             "#operator": "IndexScan3",
-            "bucket": "travel-sample",
+            "bucket": "<BUCKET_NAME>",
             "covers": [
               "cover ((distinct (array (`v`.`flight`) for `v` in (`route`.`schedule`) end)))",
               "cover ((meta(`route`).`id`))"
@@ -892,7 +892,7 @@ WHERE v.flight LIKE 'UA%';
         {
           "#operator": "IndexScan3",
           "as": "t",
-          "bucket": "travel-sample",
+          "bucket": "<BUCKET_NAME>",
           "covers": [
             "cover ((`v`.`flight`))",
             "cover ((meta(`t`).`id`))"
@@ -907,7 +907,7 @@ WHERE v.flight LIKE 'UA%';
           "index_id": "de0704c3fdb45b07",
           "keyspace": "route",
           "namespace": "default",
-          "scope": "inventory",
+          "scope": "samples",
           "spans": [
             {
               "exact": true,
@@ -952,7 +952,7 @@ WHERE v.flight LIKE 'UA%';
           "scan": {
             "#operator": "IndexScan3",
             "as": "t",
-            "bucket": "travel-sample",
+            "bucket": "<BUCKET_NAME>",
             "index": "idx_sched_cover_simple",
             "index_id": "198a2bc8b0a3ea55",
             "index_projection": {
@@ -960,7 +960,7 @@ WHERE v.flight LIKE 'UA%';
             },
             "keyspace": "route",
             "namespace": "default",
-            "scope": "inventory",
+            "scope": "samples",
             "spans": [
               {
                 "exact": true,

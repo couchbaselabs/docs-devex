@@ -296,27 +296,47 @@ EXPLAIN SELECT DISTINCT city FROM landmark;
 ----
 [
   {
+    "cardinality": 2779.855582605531,
+    "cost": 2405.889898898149,
     "plan": {
       "#operator": "Sequence",
       "~children": [
         {
-          "#operator": "PrimaryScan3",
-          "bucket": "travel-sample",
-          "index": "def_inventory_landmark_primary",
+          "#operator": "IndexScan3",
+          "bucket": "<BUCKET_NAME>",
+          "covers": [
+            "cover ((`landmark`.`city`))",
+            "cover ((meta(`landmark`).`id`))"
+          ],
+          "distinct": true,
+          "index": "def_samples_landmark_city",
+          "index_id": "384002e05e5e993",
           "index_projection": {
-            "primary_key": true
+            "entry_keys": [
+              0
+            ]
           },
           "keyspace": "landmark",
           "namespace": "default",
-          "scope": "inventory",
+          "optimizer_estimates": {
+            "cardinality": 4495,
+            "cost": 2338.614899083954,
+            "fr_cost": 12.517600644957497,
+            "size": 56
+          },
+          "scope": "samples",
+          "spans": [
+            {
+              "exact": true,
+              "range": [
+                {
+                  "inclusion": 0,
+                  "index_key": "`city`"
+                }
+              ]
+            }
+          ],
           "using": "gsi"
-        },
-        {
-          "#operator": "Fetch",
-          "bucket": "travel-sample",
-          "keyspace": "landmark",
-          "namespace": "default",
-          "scope": "inventory"
         },
         {
           "#operator": "Parallel",
@@ -325,21 +345,41 @@ EXPLAIN SELECT DISTINCT city FROM landmark;
             "~children": [
               {
                 "#operator": "InitialProject",
+                "discard_original": true,
                 "distinct": true,
+                "optimizer_estimates": {
+                  "cardinality": 4495,
+                  "cost": 2372.2523989910515,
+                  "fr_cost": 12.525083959731045,
+                  "size": 56
+                },
+                "preserve_order": true,
                 "result_terms": [
                   {
-                    "expr": "(`landmark`.`city`)"
+                    "expr": "cover ((`landmark`.`city`))"
                   }
                 ]
               },
               {
-                "#operator": "Distinct" // <1>
+                "#operator": "Distinct",
+                "optimizer_estimates": {
+                  "cardinality": 2779.855582605531,
+                  "cost": 2405.889898898149,
+                  "fr_cost": 12.532567274504594,
+                  "size": 56
+                }
               }
             ]
           }
         },
         {
-          "#operator": "Distinct" // <1>
+          "#operator": "Distinct",
+          "optimizer_estimates": {
+            "cardinality": 2779.855582605531,
+            "cost": 2405.889898898149,
+            "fr_cost": 12.532567274504594,
+            "size": 56
+          }
         }
       ]
     },

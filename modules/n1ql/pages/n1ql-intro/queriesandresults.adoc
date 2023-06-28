@@ -31,36 +31,22 @@ Here's a sample query and the result returned:
 .Query
 [source,sqlpp]
 ----
-SELECT name, brewery_id from `beer-sample` WHERE brewery_id IS NOT MISSING LIMIT 2;
+SELECT name, callsign from samples.airline WHERE callsign IS NOT MISSING LIMIT 2;
 ----
 
 .Result
 [source,json]
 ----
-{
-    "requestID": "fbea9e79-a2e2-4ab8-9fdc-14e098838cc1",
-    "signature": {
-        "brewery_id": "json",
-        "name": "json"
-    },
-    "results": [
-        {
-            "brewery_id": "big_horn_brewing_the_ram_2",
-            "name": "Schaumbergfest"
-        },
-        {
-            "brewery_id": "ballast_point_brewing",
-            "name": "Wahoo Wheat Beer"
-        }
-    ],
-    "status": "success",
-    "metrics": {
-        "elapsedTime": "131.492184ms",
-        "executionTime": "131.261322ms",
-        "resultCount": 2,
-        "resultSize": 205
-    }
-}
+[
+  {
+    "name": "40-Mile Air",
+    "callsign": "MILE-AIR"
+  },
+  {
+    "name": "AD Aviation",
+    "callsign": "FLIGHTVUE"
+  }
+]
 ----
 
 [#keyspace-reference]
@@ -87,7 +73,8 @@ The [def]_query context_ specifies the the namespace, bucket, and scope used to 
 When the query context is set, you can refer to a collection using just the collection name, without having to enter the keyspace path.
 When the query context is not set, it defaults to the `default` namespace, with no bucket, scope, or collection.
 
-* To set the query context in the Query Workbench, use the xref:clusters:query-service/query-workbench.adoc#specify-bucket-and-scope-context[context] drop-down menu in the Query Editor.
+// Needs updating to point to Elixir version of that page.
+See xref:clusters:query-service/query-workbench.adoc#specify-bucket-and-scope-context[Query Workbench] for how to set the Query Context in a Capella Serverless database.
 
 ifdef::flag-devex-command-line[]
 * To set the query context from the cbq shell or the REST API, use the xref:settings:query-settings.adoc#query_context[query_context] request-level parameter.
@@ -136,7 +123,11 @@ The first occurrence of `?` refers to the first argument, the second occurrence 
 * Named placeholders take the form of `$name`.
 This is particularly useful when there are many query parameters, and ensuring that they are all in the correct order may be cumbersome.
 
-You can set query parameter values when you run the query, using the cbq query shell, the Query Workbench, or the {sqlpp} REST API.
+You can set query parameter values when you run the query, using
+ifdef::flag-devex-command-line[]
+the cbq query shell,
+endif::flag-devex-command-line[]
+the Query Workbench, or the {sqlpp} REST API.
 
 ifdef::flag-devex-settings[]
 For more information and examples, refer to xref:settings:query-settings.adoc#section_srh_tlm_n1b[Named Parameters and Positional Parameters].

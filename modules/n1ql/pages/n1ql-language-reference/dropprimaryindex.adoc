@@ -60,8 +60,7 @@ image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: refer to source
 Specifies the keyspace for the primary index to drop.
 The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
 
-NOTE: If there is a hyphen (-) inside any part of the keyspace reference, you must wrap that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+include::partial$n1ql-language-reference/hyphen-in-keyspace.adoc[tag=keyspace]
 
 [[keyspace-path,keyspace path]]
 ==== Keyspace Path
@@ -82,20 +81,20 @@ Currently, only the `default` namespace is available.
 If the namespace name is omitted, the default namespace in the current session is used.
 
 bucket::
-(Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[bucket name] of the keyspace.
+(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[bucket name] of the keyspace.
 
 scope::
 (Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[scope name] of the keyspace.
 If omitted, the bucket's default scope is used.
 
 collection::
-(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
+(Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
 If omitted, the default collection in the bucket's default scope is used.
 
 ====
-For example, `default:{backtick}travel-sample{backtick}` indicates the default collection in the default scope in the `travel-sample` bucket in the `default` namespace.
+For example, `_default` indicates the default collection in the default scope in the database's bucket in the `default` namespace.
 
-Similarly, `default:{backtick}travel-sample{backtick}.inventory.airline` indicates the `airline` collection in the `inventory` scope in the `travel-sample` bucket in the `default` namespace.
+Similarly, `default:{backtick}travel-db-abc123{backtick}.samples.airline` indicates the `airline` collection in the `samples` scope in the `travel-db-abc123` bucket in the `default` namespace.
 ====
 
 [[keyspace-partial,keyspace partial]]
@@ -109,7 +108,7 @@ include::partial$grammar/dql.ebnf[tag=keyspace-partial]
 image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
 
 Alternatively, if the keyspace is a named collection, the keyspace reference may be just the collection name with no path.
-In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
+In this case, you must first set the {query-context}[query context] to indicate the required scope.
 
 collection::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.

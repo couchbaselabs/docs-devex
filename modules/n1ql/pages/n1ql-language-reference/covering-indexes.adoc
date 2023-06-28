@@ -11,8 +11,8 @@ As a result, covered queries are faster and deliver better performance.
 
 .Examples on this Page
 ****
-The examples on this page use the `travel-sample` bucket, which needs to be installed before use.
-See xref:server:manage:manage-settings/install-sample-buckets.adoc[Sample Buckets] for details.
+The examples on this page use the sample dataset, which needs to be installed before use.
+For instructions on how to install the sample data, see xref:clusters:data-service/import-data-documents.adoc#import-overview[Import Sample Data].
 
 include::ROOT:partial$query-context.adoc[tag=statement]
 ****
@@ -72,7 +72,7 @@ EXPLAIN SELECT state FROM hotel WHERE state = "CA";
       "~children": [
         {
           "#operator": "IndexScan3",
-          "bucket": "travel-sample",
+          "bucket": "<BUCKET_NAME>",
           "covers": [ // <.>
             "cover ((`hotel`.`state`))",
             "cover ((meta(`hotel`).`id`))"
@@ -122,7 +122,7 @@ EXPLAIN SELECT state, city FROM hotel
       "~children": [
         {
           "#operator": "IndexScan3", // <.>
-          "bucket": "travel-sample",
+          "bucket": "<BUCKET_NAME>",
           "index": "idx_state", // <.>
 // ...
           "#operator": "Parallel",
@@ -193,7 +193,7 @@ xref:n1ql:n1ql-language-reference/prepare.adoc[Prepared statements] also benefit
 == Scenarios
 
 The following queries can benefit from covering indexes.
-Try these statements using [.api]`cbq` or the Query Workbench to see the query execution plan.
+To see the query execution plan, try these statements with the Query Workbench.
 
 .Expressions and Aggregates
 ====
@@ -381,17 +381,19 @@ SELECT name FROM hotel
 
 .Collection Operators: FIRST, ARRAY, ANY, EVERY, and ANY AND EVERY
 ====
-For this example, first insert the following documents into the default collection in the default scope in the `travel-sample` bucket:
+For this example, first insert the following documents into the default collection `_default` in the default scope in database:
+
+include::ROOT:partial$query-context.adoc[tag=unset]
 
 [source,sqlpp]
 ----
-INSERT INTO `travel-sample` VALUES ("account-customerXYZ-123456789",
+INSERT INTO _default VALUES ("account-customerXYZ-123456789",
 { "accountNumber": 123456789,
   "docId": "account-customerXYZ-123456789",
   "code": "001",
   "transDate":"2016-07-02" } );
 
-INSERT INTO `travel-sample` VALUES ("codes-version-9",
+INSERT INTO _default VALUES ("codes-version-9",
 { "version": 9,
   "docId": "codes-version-9",
   "codes": [
@@ -413,7 +415,7 @@ Create an index, `idx_account_customer_xyz_transDate`:
 [source,sqlpp]
 ----
 CREATE INDEX idx_account_customer_xyz_transDate
-    ON `travel-sample` (SUBSTR(transDate,0,10),code)
+    ON _default (SUBSTR(transDate,0,10),code)
     WHERE code != "" AND meta().id LIKE "account-customerXYZ%";
 ----
 
@@ -422,8 +424,8 @@ Then, run the following query:
 [source,sqlpp]
 ----
 SELECT SUBSTR(account.transDate,0,10) AS transDate, AVG(codes.weight) AS avgWeight
-FROM `travel-sample` AS account
-JOIN `travel-sample` AS codesDoc ON KEYS "codes-version-9"
+FROM _default AS account
+JOIN _default AS codesDoc ON KEYS "codes-version-9"
 LET codes = FIRST c FOR c IN codesDoc.codes WHEN c.code = account.code END
 WHERE account.code != "" AND meta(account).id LIKE "account-customerXYZ-%"
 AND SUBSTR(account.transDate,0,10) >= "2016-07-01"
@@ -436,8 +438,8 @@ GROUP BY SUBSTR(account.transDate,0,10);
 ----
 [
   {
-    "avgWeight": 26.2466,
-    "transDate": "2016-07-02"
+    "transDate": "2016-07-02",
+    "avgWeight": 26.2466
   }
 ]
 ----

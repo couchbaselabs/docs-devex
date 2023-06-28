@@ -31,7 +31,7 @@ Currently, only the `default` namespace is available.
 If the namespace name is omitted, the default namespace in the current session is used.
 
 bucket::
-(Optional) An {identifier}[identifier] that refers to the bucket in which you want to create the collection.
+(Optional) An {identifier}[identifier] that refers to the {logical-hierarchy}[bucket] in which you want to create the collection.
 
 scope::
 (Optional) An {identifier}[identifier] that refers to the scope in which you want to create the collection.
@@ -40,8 +40,7 @@ collection::
 (Required) An {identifier}[identifier] that refers to the name of the collection that you want to create.
 Refer to {naming-for-scopes-and-collections}[Naming for Scopes and Collections] for restrictions on collection names.
 
-NOTE: If there is a hyphen (-) inside the bucket name, the scope name, or the collection name, you must wrap that part of the path in backticks ({backtick} {backtick}).
-For example, `default:{backtick}travel-sample{backtick}` indicates the `travel-sample` keyspace in the `default` namespace.
+include::partial$n1ql-language-reference/hyphen-in-keyspace.adoc[tag=collection]
 
 [[location]]
 === Specifying the Location
@@ -49,11 +48,11 @@ For example, `default:{backtick}travel-sample{backtick}` indicates the `travel-s
 To specify the location of the collection, you may do one of the following:
 
 * Include its [def]_full path_, containing the namespace, bucket, and scope, followed by the collection name;
-* Include a [def]_relative path_, containing just the bucket and scope, followed by the connection name;
+* Include a [def]_relative path_, containing either the bucket and scope, or just the scope, followed by the collection name;
 * Specify just the collection name without a path.
 
 When you specify a collection name without a path, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
-If you specify a collection name by itself without setting a valid query context, an error is generated.
+If you specify a collection name by itself without setting a valid query context, the collection is created in the default scope.
 
 [[if-not-exists]]
 === IF NOT EXISTS Clause
@@ -75,11 +74,11 @@ You cannot create the scope and the collection in a single statement.
 
 .Create collection with full path
 ====
-This statement creates a collection called `city` in the `inventory` scope within the `travel-sample` bucket.
+This statement creates a collection called `city` in the `samples` scope within the database.
 
 [source,sqlpp]
 ----
-CREATE COLLECTION `travel-sample`.inventory.city
+CREATE COLLECTION samples.city
 ----
 ====
 
@@ -87,7 +86,7 @@ CREATE COLLECTION `travel-sample`.inventory.city
 ====
 include::ROOT:partial$query-context.adoc[tag=example]
 
-Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
+Assuming that the query context is set, this statement creates a collection called `country` in the `samples` scope within your bucket.
 
 [source,sqlpp]
 ----

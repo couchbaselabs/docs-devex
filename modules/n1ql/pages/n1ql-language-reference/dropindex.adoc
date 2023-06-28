@@ -70,8 +70,7 @@ You can use a dotted notation to specify the index and the keyspace on which the
 This syntax provides compatibility with legacy versions of Couchbase Server.
 The index path may be a <<keyspace-full-index>>, a <<keyspace-prefix-index>>, or a <<keyspace-partial-index>>.
 
-NOTE: If there is a hyphen (-) inside the index name or any part of the index path, you must wrap the index name or that part of the index path in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+include::partial$n1ql-language-reference/hyphen-in-keyspace.adoc[tag=keyspace]
 
 [[keyspace-full-index,full keyspace path]]
 ==== Index Path: Full Keyspace
@@ -99,10 +98,7 @@ scope::
 collection::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
 
-====
-For example, `default:{backtick}travel-sample{backtick}.inventory.airline.{backtick}idx-name{backtick}` indicates the `idx-name` index on the `airline` collection in the `inventory` scope in the `default:{backtick}travel-sample{backtick}` bucket.
-====
-
+ifdef::flag-keyspace-prefix[]
 [[keyspace-prefix-index,keyspace prefix]]
 ==== Index Path: Keyspace Prefix
 
@@ -113,7 +109,7 @@ include::partial$grammar/ddl.ebnf[tag=keyspace-prefix]
 
 image::n1ql-language-reference/keyspace-prefix.png["Syntax diagram: refer to source code listing", align=left]
 
-If the index is built on the default collection in the default scope within a bucket, the index path may be just an optional namespace and the bucket name, followed by the index name.
+If the index is built on the default collection in the default scope within the bucket, the index path may be just an optional namespace and the bucket name, followed by the index name.
 In this case, the {query-context}[query context] should not be set.
 
 namespace::
@@ -125,8 +121,9 @@ bucket::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[bucket name] of the keyspace.
 
 ====
-For example, `default:{backtick}travel-sample{backtick}.def_type` indicates the `def_type` index on the default collection in the default scope in the `default:{backtick}travel-sample{backtick}` bucket.
+For example, `default:{backtick}travel-db-abc123{backtick}.def_type` indicates the `def_type` index on the default collection in the default scope in the `default:{backtick}travel-db-abc123{backtick}` bucket.
 ====
+endif::flag-keyspace-prefix[]
 
 [[keyspace-partial-index,keyspace partial]]
 ==== Index Path: Keyspace Partial
@@ -139,7 +136,7 @@ include::partial$grammar/dql.ebnf[tag=keyspace-partial]
 image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
 
 Alternatively, if the keyspace is a named collection, the index path may be just the collection name, followed by the index name.
-In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
+In this case, you must first set the {query-context}[query context] to indicate the required scope.
 
 collection::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
@@ -161,8 +158,7 @@ image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: refer to source
 You can use the index name with the `ON` keyword and a keyspace reference to specify the keyspace on which the index is built.
 The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
 
-NOTE: If there is a hyphen (-) inside the index name or any part of the keyspace reference, you must wrap the index name or that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+include::partial$n1ql-language-reference/hyphen-in-keyspace.adoc[tag=keyspace]
 
 [[keyspace-path,keyspace path]]
 ==== Keyspace Reference: Keyspace Path
@@ -183,20 +179,20 @@ Currently, only the `default` namespace is available.
 If the namespace name is omitted, the default namespace in the current session is used.
 
 bucket::
-(Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[bucket name] of the keyspace.
+(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[bucket name] of the keyspace.
 
 scope::
 (Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[scope name] of the keyspace.
 If omitted, the bucket's default scope is used.
 
 collection::
-(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
+(Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
 If omitted, the default collection in the bucket's default scope is used.
 
 ====
-For example, `def_type ON default:{backtick}travel-sample{backtick}` indicates the `def_type` index on the default collection in the default scope in the `default:{backtick}travel-sample{backtick}` bucket.
+For example, `def_type ON _default` indicates the `def_type` index on the default collection in the default scope in the database's bucket.
 
-Similarly, `{backtick}idx-name{backtick} ON default:{backtick}travel-sample{backtick}.inventory.airline` indicates the `idx-name` index on the `airline` collection in the `inventory` scope in the `default:{backtick}travel-sample{backtick}` bucket.
+Similarly, `{backtick}idx-name{backtick} ON default:{backtick}travel-db-abc123{backtick}.samples.airline` indicates the `idx-name` index on the `airline` collection in the `samples` scope in the `default:{backtick}travel-db-abc123{backtick}` bucket.
 ====
 
 [[keyspace-partial,keyspace partial]]
@@ -209,8 +205,9 @@ include::partial$grammar/dql.ebnf[tag=keyspace-partial]
 
 image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
 
-Alternatively, if the keyspace is a named collection, the keyspace reference may be just the collection name.
-In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
+//Alternatively, if the keyspace is a named collection, the index path may be just the collection name, followed by the index name.
+If the keyspace is a named collection, the keyspace reference can be just the collection name.
+In this case, you must first set the {query-context}[query context] to indicate the required scope.
 
 collection::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
@@ -249,35 +246,6 @@ IMPORTANT: We recommend that you do not drop (or create) secondary indexes when 
 == Examples
 
 To try the examples in this section, you must set the query context as described in each example.
-
-[[ex-1]]
-.Drop index from the default collection in the default scope
-====
-This example drops an index from the default collection in the default scope within the `travel-sample` bucket.
-include::ROOT:partial$query-context.adoc[tag=unset]
-
-First create a secondary index on the default collection in the default scope in the `travel-sample` bucket.
-Once the index creation statement comes back, query `system:indexes` for the status of the index.
-
-[source,sqlpp]
-----
-include::example$n1ql-language-reference/drop-idx-default.n1ql[tag=tmp]
-----
-
-Subsequently, drop the index and check that it is no longer reported in the `system:indexes` output.
-
-[source,sqlpp]
-----
-include::example$n1ql-language-reference/drop-idx-default.n1ql[tag=query]
-----
-
-The following command would drop the index in exactly the same way, but uses alternative syntax.
-
-[source,sqlpp]
-----
-include::example$n1ql-language-reference/drop-idx-default.n1ql[tag=alt]
-----
-====
 
 [[ex-2]]
 .Drop index from a named collection with path

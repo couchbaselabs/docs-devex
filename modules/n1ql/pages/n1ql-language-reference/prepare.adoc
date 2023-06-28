@@ -244,12 +244,12 @@ WHERE airline = "FL";
 [
   {
     "encoded_plan": "H4sIAAAAAAAA/wEAAP//AAAAAAAAAAA=",
-    "featureControls": 12,
+    "featureControls": 76,
     "indexApiVersion": 4,
     "indexScanKeyspaces": {
-      "default:travel-sample.inventory.route": false
+      "default:<BUCKET_NAME>.samples.route": false
     },
-    "name": "[127.0.0.1:8091]26898aa0-04b2-518c-aa11-2fd13cd377b1",
+    "name": "[7f6d6222f6fb230915a17b106f204461]ebfd4aef-4f44-597b-9667-f54e1a27ee10",
     "namespace": "default",
     "operator": {
       "#operator": "Authorize",
@@ -258,7 +258,7 @@ WHERE airline = "FL";
           {
             "Priv": 7,
             "Props": 0,
-            "Target": "default:travel-sample.inventory.route"
+            "Target": "default:<BUCKET_NAME>.samples.route"
           }
         ]
       },
@@ -269,23 +269,56 @@ WHERE airline = "FL";
             "#operator": "Sequence",
             "~children": [
               {
-                "#operator": "PrimaryScan3",
-                "bucket": "travel-sample",
-                "index": "def_inventory_route_primary",
-                "index_projection": {
-                  "primary_key": true
+                "#operator": "DistinctScan",
+                "optimizer_estimates": {
+                  "cardinality": 24024,
+                  "cost": 956727.8397004276,
+                  "fr_cost": 17.689048092980993,
+                  "size": 11
                 },
-                "keyspace": "route",
-                "namespace": "default",
-                "scope": "inventory",
-                "using": "gsi"
+                "scan": {
+                  "#operator": "IndexScan3",
+                  "bucket": "<BUCKET_NAME>",
+                  "index": "def_samples_route_route_src_dst_day",
+                  "index_id": "1b887ff96f2a6c19",
+                  "index_projection": {
+                    "primary_key": true
+                  },
+                  "keyspace": "route",
+                  "namespace": "default",
+                  "optimizer_estimates": {
+                    "cardinality": 168168,
+                    "cost": 952737.6131261449,
+                    "fr_cost": 17.665320471945584,
+                    "size": 11
+                  },
+                  "scope": "samples",
+                  "spans": [
+                    {
+                      "exact": true,
+                      "range": [
+                        {
+                          "inclusion": 0,
+                          "index_key": "`sourceairport`"
+                        }
+                      ]
+                    }
+                  ],
+                  "using": "gsi"
+                }
               },
               {
                 "#operator": "Fetch",
-                "bucket": "travel-sample",
+                "bucket": "<BUCKET_NAME>",
                 "keyspace": "route",
                 "namespace": "default",
-                "scope": "inventory"
+                "optimizer_estimates": {
+                  "cardinality": 24024,
+                  "cost": 985241.4580881613,
+                  "fr_cost": 30.87542914475146,
+                  "size": 563
+                },
+                "scope": "samples"
               },
               {
                 "#operator": "Parallel",
@@ -294,10 +327,24 @@ WHERE airline = "FL";
                   "~children": [
                     {
                       "#operator": "Filter",
-                      "condition": "((`route`.`airline`) = \"FL\")"
+                      "condition": "((`route`.`airline`) = \"FL\")",
+                      "optimizer_estimates": {
+                        "cardinality": 2402.4,
+                        "cost": 985811.490455916,
+                        "fr_cost": 31.112705355105554,
+                        "size": 563
+                      }
                     },
                     {
                       "#operator": "InitialProject",
+                      "discard_original": true,
+                      "optimizer_estimates": {
+                        "cardinality": 2402.4,
+                        "cost": 985868.4936926916,
+                        "fr_cost": 31.136432976140963,
+                        "size": 563
+                      },
+                      "preserve_order": true,
                       "result_terms": [
                         {
                           "expr": "self",
@@ -311,12 +358,19 @@ WHERE airline = "FL";
             ]
           },
           {
-            "#operator": "Stream"
+            "#operator": "Stream",
+            "optimizer_estimates": {
+              "cardinality": 2402.4,
+              "cost": 985868.4936926916,
+              "fr_cost": 31.136432976140963,
+              "size": 563
+            }
           }
         ]
       }
     },
-    "queryContext": "",
+    "queryContext": "default:`<BUCKET_NAME>`.`samples`",
+    "reqType": "SELECT",
     "signature": {
       "*": "*"
     },

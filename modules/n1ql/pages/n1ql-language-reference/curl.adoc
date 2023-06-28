@@ -518,7 +518,7 @@ SELECT DISTINCT airline.name, airline.callsign,
 FROM CURL("http://localhost:8093/query/service",
    {"data": "statement=SELECT * FROM route t
                        WHERE t.sourceairport = 'SFO'
-           & query_context=travel-sample.inventory",
+           & query_context=<BUCKET_NAME>.samples",
     "user": "Administrator:password"}).results[*].t route
 JOIN airline
 ON KEYS route.airlineid
@@ -549,7 +549,7 @@ RBAC credentials are required when CURL() is accessing Couchbase Capella.
 .Full text search (FTS) in a {sqlpp} query
 ====
 The following example shows how to use the `CURL()` function to include a full text search from the xref:server:fts:full-text-intro.adoc[Search service] in a {sqlpp} query.
-Assuming the FTS index `fts_travel` is created on the default collection in the default scope of the travel sample dataset, running the following {sqlpp} query finds all documents that have "sanfrancisco" anywhere in the document.
+Assuming the FTS index `fts_travel` is created on the default collection in the default scope of the sample dataset, running the following {sqlpp} query finds all documents that have "sanfrancisco" anywhere in the document.
 
 You can use xref:n1ql-language-reference/searchfun.adoc[search functions] to use a full text search in a {sqlpp} query, as long as the Search service is available on the cluster.
 You can still use the `CURL()` function if you need to access the Search service on another cluster.
@@ -598,14 +598,14 @@ It uses the Yahoo finance API to find the day's low value (i.e `DaysLow`) of HDP
 
 For this example, unset the query context using the xref:tools/query-workbench.adoc#query-context[query context] drop-down menu in the Query Workbench, or the xref:settings:query-settings.adoc#query_context[query_context] request-level parameter.
 
-// TODO: completely overhaul this to use `travel-sample`.tenant_agent_00.users
+// TODO: completely overhaul this to use `<BUCKET_NAME>`.tenants.users
 
-Insert the following documents, representing customers and their minimum thresholds, into the default collection in the default scope of the travel sample data, and then run the `SELECT` query:
+Insert the following documents, representing customers and their minimum thresholds, into the default collection of the sample data scope, and then run the `SELECT` query:
 
 .Data
 [source,sqlpp]
 ----
-INSERT INTO `travel-sample` (KEY, VALUE)
+INSERT INTO `<BUCKET_NAME>` (KEY, VALUE)
   VALUES
      ("k1",
          {"custID" : 12345, "min_threshold" : 4}),
@@ -619,7 +619,7 @@ INSERT INTO `travel-sample` (KEY, VALUE)
 SELECT min_threshold,
        meta().id,
        to_number(hdp_low) hdp_low
-FROM `travel-sample`
+FROM `<BUCKET_NAME>`
 USE KEYS ["k1", "k2"]
 LET hdp_low = curl("https://query.yahooapis.com/v1/public/yql", {"data":"q=select%20*%20from%20yahoo.finance.quotes%20where%20symbol%20in%20(%22HDP%22)&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback="}).query.results.quote.DaysLow
 WHERE to_number(hdp_low) < min_threshold;

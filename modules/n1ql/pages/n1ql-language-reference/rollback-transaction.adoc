@@ -30,7 +30,9 @@ include::partial$n1ql-language-reference/transaction-id.adoc[]
 
 When you rollback the entire transaction, this statement removes all savepoints within the transaction.
 
+ifdef::flag-devex-command-line[]
 NOTE: If you are using the cbq shell, and a transaction fails for any reason, you must use the `ROLLBACK TRANSACTION` statement to remove the transaction context and reset the transaction ID.
+endif::flag-devex-command-line[]
 
 == Syntax
 
@@ -72,8 +74,76 @@ BEGIN WORK;
 -- Specify transaction settings
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
+-- Create 2 users
+UPSERT INTO users
+VALUES("0", {
+  "name": "Keon Hoppe",
+  "addresses": [
+    {
+      "type": "home",
+      "address": "222 Sauer Neck",
+      "city": "London",
+      "country": "United Kingdom"
+    },
+    {
+      "type": "work",
+      "address": "123 Carenden Road",
+      "city": "London",
+      "country": "United Kingdom"
+    }
+  ],
+  "driving_licence": "8d3931b5-51c5-58c8-9cf7-bc8ce9049558",
+  "passport": "95bfb372-04e8-5865-9331-d3ec66ca631b",
+  "preferred_email": "keonhoppe@reynholmindustries.co.uk",
+  "preferred_phone": "0118 999 881 999 119 7253",
+  "preferred_airline": "samples.airline.airline_2607",
+  "preferred_airport": "samples.airport.airport_507",
+  "credit_cards": [
+    {
+      "type": "Mastercard",
+      "number": "5161395257291763",
+      "expiration": "2021-11"
+    },
+    {
+      "type": "Visa",
+      "number": "4986258227926866",
+      "expiration": "2021-07"
+    }
+  ],
+  "created": "2020-10-20",
+  "updated": "2021-02-19"
+});
+
+UPSERT INTO users
+VALUES("1", {
+  "name": "Rigoberto Bernier",
+  "addresses": [
+    {
+      "type": "home",
+      "address": "0622 Adams Mills",
+      "city": "London",
+      "country": "United Kingdom"
+    }
+  ],
+  "driving_licence": "5f5f145d-a4db-5630-b7d8-874df29a505d",
+  "passport": "a1c4f1ac-a7d7-5b97-88ed-11cafc634896",
+  "preferred_email": "rigobertobernier@reynholmindustries.co.uk",
+  "preferred_phone": "(965) 227-3977",
+  "preferred_airline": "samples.airline.airline_5479",
+  "preferred_airport": "samples.airport.airport_478",
+  "credit_cards": [
+    {
+      "type": "American Express",
+      "number": "346533746753899",
+      "expiration": "2021-04"
+    }
+  ],
+  "created": "2020-04-12",
+  "updated": "2021-02-19"
+});
+
 -- Create a booking document
-UPSERT INTO `travel-sample`.tenant_agent_00.bookings
+UPSERT INTO bookings
 VALUES("bf7ad6fa-bdb9-4099-a840-196e47179f03", {
   "date": "07/24/2021",
   "flight": "WN533",
@@ -86,14 +156,14 @@ VALUES("bf7ad6fa-bdb9-4099-a840-196e47179f03", {
 SAVEPOINT s1;
 
 -- Update the booking document to include a user
-UPDATE `travel-sample`.tenant_agent_00.bookings AS b
+UPDATE bookings AS b
 SET b.`user` = "0"
 WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
 
 -- Check the content of the booking and user
 SELECT b.*, u.name
-FROM `travel-sample`.tenant_agent_00.bookings b
-JOIN `travel-sample`.tenant_agent_00.users u
+FROM bookings b
+JOIN users u
 ON b.`user` = META(u).id
 WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
 
@@ -101,14 +171,14 @@ WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
 SAVEPOINT s2;
 
 -- Update the booking documents to change the user
-UPDATE `travel-sample`.tenant_agent_00.bookings AS b
+UPDATE bookings AS b
 SET b.`user` = "1"
 WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
 
 -- Check the content of the booking and user
 SELECT b.*, u.name
-FROM `travel-sample`.tenant_agent_00.bookings b
-JOIN `travel-sample`.tenant_agent_00.users u
+FROM bookings b
+JOIN users u
 ON b.`user` = META(u).id
 WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
 
@@ -117,8 +187,8 @@ ROLLBACK TRAN TO SAVEPOINT s2;
 
 -- Check the content of the booking and user again
 SELECT b.*, u.name
-FROM `travel-sample`.tenant_agent_00.bookings b
-JOIN `travel-sample`.tenant_agent_00.users u
+FROM bookings b
+JOIN users u
 ON b.`user` = META(u).id
 WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
 
@@ -150,7 +220,7 @@ ROLLBACK WORK;
   },
   {
     "_sequence_num": 3,
-    "_sequence_query": "\n\n-- Create a booking document\nUPSERT INTO `travel-sample`.tenant_agent_00.bookings\nVALUES(\"bf7ad6fa-bdb9-4099-a840-196e47179f03\", {\n  \"date\": \"07/24/2021\",\n  \"flight\": \"WN533\",\n  \"flighttime\": 7713,\n  \"price\": 964.13,\n  \"route\": \"63986\"\n});",
+    "_sequence_query": "\n\n-- Create 2 users\nUPSERT INTO users...",
     "_sequence_query_status": "success",
     "_sequence_result": {
       "results": []
@@ -158,7 +228,7 @@ ROLLBACK WORK;
   },
   {
     "_sequence_num": 4,
-    "_sequence_query": "\n\n-- Set a savepoint\nSAVEPOINT s1;",
+    "_sequence_query": "\n\nUPSERT INTO users...",
     "_sequence_query_status": "success",
     "_sequence_result": {
       "results": []
@@ -166,7 +236,7 @@ ROLLBACK WORK;
   },
   {
     "_sequence_num": 5,
-    "_sequence_query": "\n\n-- Update the booking document to include a user\nUPDATE `travel-sample`.tenant_agent_00.bookings AS b\nSET b.`user` = \"0\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "_sequence_query": "\n\n-- Create a booking document\nUPSERT INTO bookings\nVALUES(\"bf7ad6fa-bdb9-4099-a840-196e47179f03\", {\n  \"date\": \"07/24/2021\",\n  \"flight\": \"WN533\",\n  \"flighttime\": 7713,\n  \"price\": 964.13,\n  \"route\": \"63986\"\n});",
     "_sequence_query_status": "success",
     "_sequence_result": {
       "results": []
@@ -174,7 +244,23 @@ ROLLBACK WORK;
   },
   {
     "_sequence_num": 6,
-    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM `travel-sample`.tenant_agent_00.bookings b\nJOIN `travel-sample`.tenant_agent_00.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "_sequence_query": "\n\n-- Set a savepoint\nSAVEPOINT s1;",
+    "_sequence_query_status": "success",
+    "_sequence_result": {
+      "results": []
+    }
+  },
+  {
+    "_sequence_num": 7,
+    "_sequence_query": "\n\n-- Update the booking document to include a user\nUPDATE bookings AS b\nSET b.`user` = \"0\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "_sequence_query_status": "success",
+    "_sequence_result": {
+      "results": []
+    }
+  },
+  {
+    "_sequence_num": 8,
+    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
     "_sequence_query_status": "success",
     "_sequence_result": [
       {
@@ -189,7 +275,7 @@ ROLLBACK WORK;
     ]
   },
   {
-    "_sequence_num": 7,
+    "_sequence_num": 9,
     "_sequence_query": "\n\n-- Set a second savepoint\nSAVEPOINT s2;",
     "_sequence_query_status": "success",
     "_sequence_result": {
@@ -197,16 +283,16 @@ ROLLBACK WORK;
     }
   },
   {
-    "_sequence_num": 8,
-    "_sequence_query": "\n\n-- Update the booking documents to change the user\nUPDATE `travel-sample`.tenant_agent_00.bookings AS b\nSET b.`user` = \"1\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "_sequence_num": 10,
+    "_sequence_query": "\n\n-- Update the booking documents to change the user\nUPDATE `<BUCKET_NAME>`.tenants.bookings AS b\nSET b.`user` = \"1\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
     "_sequence_query_status": "success",
     "_sequence_result": {
       "results": []
     }
   },
   {
-    "_sequence_num": 9,
-    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM `travel-sample`.tenant_agent_00.bookings b\nJOIN `travel-sample`.tenant_agent_00.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "_sequence_num": 11,
+    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM `<BUCKET_NAME>`.tenants.bookings b\nJOIN `<BUCKET_NAME>`.tenants.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
     "_sequence_query_status": "success",
     "_sequence_result": [
       {
@@ -221,7 +307,7 @@ ROLLBACK WORK;
     ]
   },
   {
-    "_sequence_num": 10,
+    "_sequence_num": 12,
     "_sequence_query": "\n\n-- Roll back the transaction to the second savepoint\nROLLBACK TRAN TO SAVEPOINT s2;",
     "_sequence_query_status": "success",
     "_sequence_result": {
@@ -229,8 +315,8 @@ ROLLBACK WORK;
     }
   },
   {
-    "_sequence_num": 11,
-    "_sequence_query": "\n\n-- Check the content of the booking and user again\nSELECT b.*, u.name\nFROM `travel-sample`.tenant_agent_00.bookings b\nJOIN `travel-sample`.tenant_agent_00.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "_sequence_num": 13,
+    "_sequence_query": "\n\n-- Check the content of the booking and user again\nSELECT b.*, u.name\nFROM `<BUCKET_NAME>`.tenants.bookings b\nJOIN `<BUCKET_NAME>`.tenants.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
     "_sequence_query_status": "success",
     "_sequence_result": [
       {
@@ -245,7 +331,7 @@ ROLLBACK WORK;
     ]
   },
   {
-    "_sequence_num": 12,
+    "_sequence_num": 14,
     "_sequence_query": "\n\n-- Roll back the entire transaction\nROLLBACK WORK;",
     "_sequence_query_status": "success",
     "_sequence_result": {
@@ -269,8 +355,8 @@ Check the result of rolling back the transaction.
 [source,sqlpp]
 ----
 SELECT b.*, u.name
-FROM `travel-sample`.tenant_agent_00.bookings b
-JOIN `travel-sample`.tenant_agent_00.users u
+FROM bookings b
+JOIN users u
 ON b.`user` = META(u).id
 WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
 ----

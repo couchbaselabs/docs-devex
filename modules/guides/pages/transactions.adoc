@@ -32,7 +32,7 @@ xref:n1ql:n1ql-language-reference/execute.adoc[EXECUTE].
 include::partial$before-you-begin.adoc[tag=body]
 include::partial$query-tools.adoc[tags=body;!thumbs]
 
-include::partial$data-warning.adoc[]
+include::partial$data-warning.adoc[tag=page]
 
 [[settings]]
 == Transaction Parameters
@@ -46,24 +46,25 @@ You can access transaction settings and parameters through any of the usual Quer
 Query Workbench::
 +
 --
-To specify parameters for a Couchbase transaction, use the Query Run-Time Preferences window.
+To specify parameters for a Couchbase transaction, use the Query Options dialog.
 
-. Click the cog icon icon:cog[] to display the Run-Time Preferences window.
+. To display the Query Options dialog, click btn:[options].
 
 . To specify the transaction scan consistency, open the *Scan Consistency* drop-down list and select an option.
 
 . To specify the transaction timeout, enter a value in seconds in the *Transaction Timeout* box.
 
-. To specify any other parameters, click the btn:[+] button in the *Named Parameters* section.
-When the new named parameter appears, enter the name in the *name* box and a value in the *value* box.
+. To specify any other parameters, click btn:[+] in the corresponding *Named Parameters* or *Positional Parameters* section.
+** For named parameters, enter the name in the *name* box and a value in the *value* box.
+** For positional parameters, enter the value in the *value* box.
 
-. Choose btn:[Save Preferences] to save the preferences and return to the Query Workbench.
+. To save your preferences and return to the Query Workbench, click btn:[Save Settings].
 
 '''
 
 {lead}
 
-image::transactions-preferences.png['The Run-Time Preferences dialog, with Scan Consistency set to "not_bounded", Transaction Timeout set to "120", and named parameter "durability_level" set to "none"']
+image::transaction-settings.png['The Query Options dialog, with Scan Consistency set to "not_bounded", Transaction Timeout set to "120", and named parameter "durability_level" set to "none"']
 
 ① Set *Scan Consistency* to `not_bounded`.
 
@@ -72,6 +73,7 @@ image::transactions-preferences.png['The Run-Time Preferences dialog, with Scan 
 ③ Set *Transaction Timeout* to `120`.
 --
 
+ifdef::flag-devex-command-line[]
 CBQ Shell::
 +
 --
@@ -92,6 +94,8 @@ include::n1ql:example$transactions/multiple.n1ql[tag=settings]
 
 {github}
 --
+endif::flag-devex-command-line[]
+
 ====
 
 For further details, refer to xref:n1ql:n1ql-language-reference/transactions.adoc#settings-and-parameters[Transaction Settings and Parameters].
@@ -106,7 +110,7 @@ You can create a Couchbase transaction containing a single DML statement.
 Query Workbench::
 +
 --
-To execute a single statement as a transaction, simply enter the statement in the Query Editor and click btn:[Run as TX].
+To execute a statement as a transaction, turn on the *transaction* toggle, enter the statement in the Query Editor and click btn:[Run Query].
 
 '''
 
@@ -120,6 +124,7 @@ include::n1ql:example$transactions/single.n1ql[tag=query]
 ----
 --
 
+ifdef::flag-devex-command-line[]
 CBQ Shell::
 +
 --
@@ -136,12 +141,14 @@ include::partial$query-context.adoc[tag=step]
 include::n1ql:example$transactions/single.n1ql[tags=**]
 ----
 --
+endif::flag-devex-command-line[]
 ====
 
-For further details, refer to xref:n1ql:n1ql-language-reference/transactions.adoc#query-tools[Query Tools].
+For more information about executing transactions, see xref:n1ql:n1ql-language-reference/transactions.adoc#query-tools[Query Tools].
 
 [[multiple-statement]]
 == Multiple Statement Transactions
+// Multistatement transactions do not work in Elixir as of 2023/04/13 (SURF-4665)
 :co-txid: After beginning the transaction, each subsequent statement in the transaction must specify the transaction ID that was generated when the transaction began.
 :result: When the transaction is committed, the document is added with the attributes that were present after rolling back to the second savepoint.
 :lead: The following example demonstrates a complete transaction using {sqlpp}. \
@@ -165,21 +172,27 @@ To execute a transaction containing multiple statements:
 
 . Compose the sequence of statements in the Query Editor.
 Each statement must be terminated with a semicolon.
-
 . After each statement, press kbd:[Shift+Enter] to start a new line _without_ executing the query.
 
-. When you have entered the entire transaction, click btn:[Execute] to execute the transaction.
+. When you have entered the entire transaction, click btn:[Run Query] to execute the transaction.
 
 '''
 
 {lead}
 
 .Preparation
-First, specify the transaction settings, as shown in the section <<settings>> above.
+First specify the transaction settings, as shown in the section <<settings>> above.
 
-Second, use the *context* controls at the top right of the Query Editor to select the `tenant_agent_00` scope in the travel sample data.
+Second, create a new keyspace for the transactions to run in:
 
-image::transactions-context.png["The query context drop-down menu, with the tenant_agent_00 scope selected"]
+. Next to your bucket in the Data Insights sidebar, click the *More Options* (⋮) button, then btn:[Add Scope].
+. Enter the name "tenants" in the *Scope Name* field, then click the btn:[Create Scope] button.
+. Next to the new tenants scope, click the *More Options* (⋮) button, then btn:[Add Collection]. 
+. Enter the name "users" in the *Collection Name* field, set the TTL to 0, then click the btn:[Create Collection] button.
+. Create another collection in the tenants scope called bookings, with the TTL also set to 0.
+
+Set the query context to the new `tenants` scope.
+For more information, see xref:select.adoc#query-context[Setting the Query Context].
 
 Third, create a primary index on the `bookings` collection so that you can query this keyspace.
 
@@ -205,6 +218,7 @@ include::n1ql:example$transactions/results.jsonc[tag=check-3]
 <.> {result}
 --
 
+ifdef::flag-devex-command-line[]
 CBQ Shell::
 +
 --
@@ -221,7 +235,7 @@ NOTE: You must be using cbq shell version 2.0 or above to use the automatic tran
 .Preparation
 First, specify the transaction settings, as shown in the section <<settings>> above.
 
-Second, set the query context to the `tenant_agent_00` scope in the travel sample data.
+Second, set the query context to the `tenants` scope in the sample data.
 
 [source,sqlpp]
 ----
@@ -251,6 +265,7 @@ include::n1ql:example$transactions/results.jsonc[tag=check-3]
 
 <.> {result}
 --
+endif::flag-devex-command-line[]
 ====
 
 For further details, refer to xref:n1ql:n1ql-language-reference/transactions.adoc#query-tools[Query Tools].

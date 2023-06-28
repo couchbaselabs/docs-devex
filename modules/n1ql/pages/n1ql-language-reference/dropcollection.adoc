@@ -30,16 +30,15 @@ Currently, only the `default` namespace is available.
 If the namespace name is omitted, the default namespace in the current session is used.
 
 bucket::
-(Optional) An {identifier}[identifier] that refers to the bucket which contains the collection you want to delete.
+(Optional) An {identifier}[identifier] that refers to the {logical-hierarchy}[bucket] which contains the collection you want to delete.
 
 scope::
-(Optional) An {identifier}[identifier] that refers to the scope which contains the collection you want to delete.
+(Required) An {identifier}[identifier] that refers to the scope which contains the collection you want to delete.
 
 collection::
 (Required) An {identifier}[identifier] that refers to the name of the collection that you want to delete.
 
-NOTE: If there is a hyphen (-) inside the bucket name, the scope name, or the collection name, you must wrap that part of the path in backticks ({backtick} {backtick}).
-For example, `default:{backtick}travel-sample{backtick}` indicates the `travel-sample` keyspace in the `default` namespace.
+include::partial$n1ql-language-reference/hyphen-in-keyspace.adoc[tag=collection]
 
 [[location]]
 === Specifying the Location
@@ -47,11 +46,11 @@ For example, `default:{backtick}travel-sample{backtick}` indicates the `travel-s
 To specify the location of the collection, you may do one of the following:
 
 * Include its [def]_full path_, containing the namespace, bucket, and scope, followed by the collection name;
-* Include a [def]_relative path_, containing just the bucket and scope, followed by the connection name;
+* Include a [def]_relative path_, containing either the bucket and scope, or just the scope, followed by the collection name;
 * Specify just the collection name without a path.
 
 When you specify a collection name without a path, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
-If you specify a collection name by itself without setting a valid query context, an error is generated.
+If you specify a collection name by itself without setting a valid query context, the database drops a collection of that name in the default scope.
 
 [[if-exists]]
 === IF EXISTS Clause
@@ -67,11 +66,11 @@ If the collection does not exist within the specified scope, then:
 
 .Delete collection with full path
 ====
-This statement deletes a collection called `city` in the `inventory` scope within the `travel-sample` bucket.
+This statement deletes a collection called `city` in the `samples` scope within the database.
 
 [source,sqlpp]
 ----
-DROP COLLECTION `travel-sample`.inventory.city
+DROP COLLECTION samples.city
 ----
 ====
 
@@ -79,7 +78,7 @@ DROP COLLECTION `travel-sample`.inventory.city
 ====
 include::ROOT:partial$query-context.adoc[tag=example]
 
-Assuming that the query context is set, this statement deletes a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
+Assuming that the query context is set, this statement deletes a collection called `country` in the `samples` scope within the bucket.
 
 [source,sqlpp]
 ----
