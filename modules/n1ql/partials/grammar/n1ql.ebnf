@@ -49,10 +49,15 @@ literal ::= string | number | boolean | null | missing
 string ::= '"' char* '"' | "'" char* "'"
 /* end::string[] */
 
+/* NOTE: double-quoted string must not contain unescaped double-quote */
+/* NOTE: single-quoted string must not contain unescaped single-quote */
+
 /* tag::char[] */
 char ::= unicode-character |
-         '\' ('\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' | 'u' hex hex hex hex )
+         '\' ( '\' | '"' | "'" | 'b' | 'f' | 'n' | 'r' | 't' | 'u' hex hex hex hex )
 /* end::char[] */
+
+/* NOTE: unicode-character may be TAB, LF, or CR, but must not be backslash */
 
 /* tag::hex[] */
 hex ::= [0-9a-fA-F]
@@ -295,7 +300,7 @@ window-function-arguments ::= ( expr ( ',' expr ( ',' expr )? )? )?
 /* end::window-function-arguments[] */
 
 /* tag::window-function-options[] */
-window-function-options ::= nth-val-from? nulls-treatment?
+window-function-options ::= nthval-from? nulls-treatment?
 /* end::window-function-options[] */
 
 /* tag::nthval-from[] */
@@ -331,3 +336,81 @@ block-comment ::= '/*' ( text | newline )* '*/'
 /* tag::line-comment[] */
 line-comment ::=  '--' text?
 /* end::line-comment[] */
+
+/* NOTE: block-comment text must not contain asterisk-slash or asterisk-backslash-slash */
+
+/**************
+ * Additional *
+ **************/
+
+/* Date-Time Functions */
+
+/* tag::format-specifier[] */
+format-specifier ::= '%' ( '%' | ( '-' | '_' | '0' | '^' )? width? element)
+/* end::format-specifier[] */
+
+width ::= integer
+element ::= [a-zA-Z]
+
+
+/* Window Functions */
+
+/* tag::cume-dist-function[] */
+cume-dist-function ::= 'CUME_DIST' '()' 'OVER' ( '(' window-definition ')' | window-ref )
+/* end::cume-dist-function[] */
+
+/* tag::dense-rank-function[] */
+dense-rank-function ::= 'DENSE_RANK' '()' 'OVER' ( '(' window-definition ')' | window-ref )
+/* end::dense-rank-function[] */
+
+/* tag::first-value-function[] */
+first-value-function ::= 'FIRST_VALUE' '(' expr ')' nulls-treatment?
+                         'OVER' ( '(' window-definition ')' | window-ref )
+/* end::first-value-function[] */
+
+/* tag::lag-function[] */
+lag-function ::= 'LAG' '(' expr ( ',' offset ( ',' default )? )? ')' nulls-treatment?
+                 'OVER' ( '(' window-definition ')' | window-ref )
+/* end::lag-function[] */
+
+/* tag::last-value-function[] */
+last-value-function ::= 'LAST_VALUE' '(' expr ')' nulls-treatment?
+                        'OVER' ( '(' window-definition ')' | window-ref )
+/* end::last-value-function[] */
+
+/* tag::lead-function[] */
+lead-function ::= 'LEAD' '(' expr ( ',' offset ( ',' default )? )? ')' nulls-treatment?
+                  'OVER' ( '(' window-definition ')' | window-ref )
+/* end::lead-function[] */
+
+/* tag::nth-value-function[] */
+nth-value-function ::= 'NTH_VALUE' '(' expr ',' offset ')' nthval-from? nulls-treatment?
+                       'OVER' ( '(' window-definition ')' | window-ref )
+/* end::nth-value-function[] */
+
+/* tag::ntile-function[] */
+ntile-function ::= 'NTILE' '(' num_tiles ')'
+                   'OVER' ( '(' window-definition ')' | window-ref )
+/* end::ntile-function[] */
+
+/* tag::percent-rank-function[] */
+percent-rank-function ::= 'PERCENT_RANK' '()'
+                          'OVER' ( '(' window-definition ')' | window-ref )
+/* end::percent-rank-function[] */
+
+/* tag::rank-function[] */
+rank-function ::= 'RANK' '()' 'OVER' ( '(' window-definition ')' | window-ref )
+/* end::rank-function[] */
+
+/* tag::ratio-to-report-function[] */
+ratio-to-report-function ::= 'RATIO_TO_REPORT' '(' expr ')'
+                             'OVER' ( '(' window-definition ')' | window-ref )
+/* end::ratio-to-report-function[] */
+
+/* tag::row-number-function[] */
+row-number-function ::= 'ROW_NUMBER' '()' 'OVER' ( '(' window-definition ')' | window-ref )
+/* end::row-number-function[] */
+
+offset ::= expr
+default ::= expr
+num_tiles ::= expr
