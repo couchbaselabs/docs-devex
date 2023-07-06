@@ -49,10 +49,15 @@ literal ::= string | number | boolean | null | missing
 string ::= '"' char* '"' | "'" char* "'"
 /* end::string[] */
 
+/* NOTE: double-quoted string must not contain unescaped double-quote */
+/* NOTE: single-quoted string must not contain unescaped single-quote */
+
 /* tag::char[] */
 char ::= unicode-character |
-         '\' ('\' | '/' | 'b' | 'f' | 'n' | 'r' | 't' | 'u' hex hex hex hex )
+         '\' ( '\' | '"' | "'" | 'b' | 'f' | 'n' | 'r' | 't' | 'u' hex hex hex hex )
 /* end::char[] */
+
+/* NOTE: unicode-character may be TAB, LF, or CR, but must not be backslash */
 
 /* tag::hex[] */
 hex ::= [0-9a-fA-F]
@@ -332,6 +337,7 @@ block-comment ::= '/*' ( text | newline )* '*/'
 line-comment ::=  '--' text?
 /* end::line-comment[] */
 
+/* NOTE: block-comment text must not contain asterisk-slash or asterisk-backslash-slash */
 
 /**************
  * Additional *
