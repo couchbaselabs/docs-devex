@@ -23,43 +23,7 @@ image::attempt-first-query.png[alt="Query to retrieve the course collection"]
 
 What happens when you hit btn:[Execute]?
 
-You get an error message returned from the cluster:
-
-[source, json]
-----
-[
-  {
-    "code": 4000,     // <1>
-    "msg": "No index available on keyspace `default`:`student-bucket`.`art-school-scope`.`course-record-collection` that matches your query. Use CREATE PRIMARY INDEX ON `default`:`student-bucket`.`art-school-scope`.`course-record-collection` to create a primary index, or check that your expected index is online.",    // <2>
-    "query": "select * from `course-record-collection`"    // <3>
-  }
-]
-----
-<1> The internal Couchbase code for the message.
-<2> A plain text description telling you what happened. In this case, the problem is that there no index defined on our bucket, so the search couldn't locate any key information.
-<3> The JSON message also returns the original query.
-
-== Creating an index
-
-Fortunately, you can use the same query editor to add an index to the bucket. To do this, enter the following command into the editor and press btn:[Enter].
-
-[source, sqlpp]
-----
-create primary index course_idx on `course-record-collection`
-----
-
-This will create a single index (`course_idx`) on your `course-record-collection`.
-
-TIP: The error message returned from the search statement provides an example command for creating the primary index. You can copy the example command and run it in the query editor to create your primary index.
-
-Okay, now if you run the `select` query again …
-
-[source, sqlpp]
-----
-select crc.* from `course-record-collection` crc
-----
-
-Now you should get a result:
+You should get a result:
 
 [source, json]
 ----
@@ -81,6 +45,18 @@ Now you should get a result:
   }
 ]
 ----
+
+== Creating an index
+
+To improve the speed of your queries, you can use the query editor to add an index to the bucket.
+To do this, enter the following command into the editor and press btn:[Enter].
+
+[source, sqlpp]
+----
+create primary index course_idx on `course-record-collection`
+----
+
+This will create a single index (`course_idx`) on your `course-record-collection`.
 
 Okay, now try something else: returning the courses with `credit-points` of less than 200:
 
