@@ -1,149 +1,94 @@
 // tag::extract[]
 [
   {
-    "_sequence_num": 1,
-    "_sequence_query": "-- Start the transaction\nBEGIN WORK;",
-    "_sequence_query_status": "success",
-    "_sequence_result": [
+    "batchQuery": "-- Start the transaction\nBEGIN WORK;",
+    "batchQueryResult": [
 // tag::begin[]
       {
-        "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51" // <.>
+        "nodeUUID": "d6256523500cb51d6c3ff4ad5798f8c1",
+        "txid": "763b53b6-d7b1-45b0-88f3-0e1b10ee6b6e" // <.>
       }
 // end::begin[]
     ]
   },
   {
-    "_sequence_num": 2,
-    "_sequence_query": "\n\n-- Specify transaction settings\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Specify transaction settings\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 3,
-    "_sequence_query": "\n\n-- Create 2 users\nUPSERT INTO users...",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
-  },
-  {
-    "_sequence_num": 4,
-    "_sequence_query": "\n\nUPSERT INTO users...",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
-  },
-  {
-    "_sequence_num": 5,
-    "_sequence_query": "\n\n-- Create a booking document\nUPSERT INTO `<BUCKET_NAME>`.tenants.bookings\nVALUES(\"bf7ad6fa-bdb9-4099-a840-196e47179f03\", {\n  \"date\": \"07/24/2021\",\n  \"flight\": \"WN533\",\n  \"flighttime\": 7713,\n  \"price\": 964.13,\n  \"route\": \"63986\"\n});",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Create a booking document\nUPSERT INTO bookings\nVALUES(\"bf7ad6fa-bdb9-4099-a840-196e47179f03\", {\n  \"date\": \"07/24/2021\",\n  \"flight\": \"WN533\",\n  \"flighttime\": 7713,\n  \"price\": 964.13,\n  \"route\": \"63986\"\n});",
+    "batchQueryResult": []
   },
 // end::extract[]
 // tag::ellipsis[]
 // ...
 // end::ellipsis[]
   {
-    "_sequence_num": 6,
-    "_sequence_query": "\n\n-- Set a savepoint\nSAVEPOINT s1;",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Set a savepoint\nSAVEPOINT s1;",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 7,
-    "_sequence_query": "\n\n-- Update the booking document to include a user\nUPDATE `<BUCKET_NAME>`.tenants.bookings AS b\nSET b.`user` = \"0\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Update the booking document to include a user\nUPDATE bookings AS b\nSET b.`user` = \"0\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 8,
-    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM `<BUCKET_NAME>`.tenants.bookings b\nJOIN `<BUCKET_NAME>`.tenants.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "_sequence_query_status": "success",
-    "_sequence_result": [
+    "batchQuery": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM bookings b\nJOIN users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "batchQueryResult": [
       {
         "date": "07/24/2021",
         "flight": "WN533",
         "flighttime": 7713,
-        "name": "Keon Hoppe",
         "price": 964.13,
         "route": "63986",
-        "user": "0" // <.>
+        "user": "0",
+        "name": "Keon Hoppe" // <.>
       }
     ]
   },
   {
-    "_sequence_num": 9,
-    "_sequence_query": "\n\n-- Set a second savepoint\nSAVEPOINT s2;",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Set a second savepoint\nSAVEPOINT s2;",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 10,
-    "_sequence_query": "\n\n-- Update the booking documents to change the user\nUPDATE `<BUCKET_NAME>`.tenants.bookings AS b\nSET b.`user` = \"1\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Update the booking documents to change the user\nUPDATE bookings AS b\nSET b.`user` = \"1\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 11,
-    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM `<BUCKET_NAME>`.tenants.bookings b\nJOIN `<BUCKET_NAME>`.tenants.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "_sequence_query_status": "success",
-    "_sequence_result": [
+    "batchQuery": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM bookings b\nJOIN users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "batchQueryResult": [
       {
         "date": "07/24/2021",
         "flight": "WN533",
         "flighttime": 7713,
-        "name": "Rigoberto Bernier",
         "price": 964.13,
         "route": "63986",
-        "user": "1" // <.>
+        "user": "1",
+        "name": "Rigoberto Bernier" // <.>
       }
     ]
   },
   {
-    "_sequence_num": 12,
-    "_sequence_query": "\n\n-- Roll back the transaction to the second savepoint\nROLLBACK TRAN TO SAVEPOINT s2;",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Roll back the transaction to the second savepoint\nROLLBACK TRAN TO SAVEPOINT s2;",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 13,
-    "_sequence_query": "\n\n-- Check the content of the booking and user again\nSELECT b.*, u.name\nFROM `<BUCKET_NAME>`.tenants.bookings b\nJOIN `<BUCKET_NAME>`.tenants.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "_sequence_query_status": "success",
-    "_sequence_result": [
+    "batchQuery": "\n\n-- Check the content of the booking and user again\nSELECT b.*, u.name\nFROM bookings b\nJOIN users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "batchQueryResult": [
 // tag::check-3[]
       {
         "date": "07/24/2021",
         "flight": "WN533",
         "flighttime": 7713,
-        "name": "Keon Hoppe",
         "price": 964.13,
         "route": "63986",
-        "user": "0" // <.>
+        "user": "0",
+        "name": "Keon Hoppe" // <.>
       }
 // end::check-3[]
     ]
   },
   {
-    "_sequence_num": 14,
-    "_sequence_query": "\n\n-- Commit the transaction\nCOMMIT WORK;",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Commit the transaction\nCOMMIT WORK;",
+    "batchQueryResult": []
   }
 ]

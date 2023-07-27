@@ -36,7 +36,7 @@ include::partial$data-warning.adoc[tag=page]
 
 [[settings]]
 == Transaction Parameters
-:lead: The following settings set the transaction parameters for the examples in the <<multiple-statement>> section below.
+:lead: The following example sets transaction parameters.
 
 You can specify various settings and parameters to control how transactions work.
 You can access transaction settings and parameters through any of the usual Query tools, such as the Query Workbench or the cbq shell.
@@ -48,13 +48,13 @@ Query Workbench::
 --
 To specify parameters for a Couchbase transaction, use the Query Options dialog.
 
-. To display the Query Options dialog, click btn:[options].
+. To display the Query Options dialog, click btn:[Query Options].
 
-. To specify the transaction scan consistency, open the *Scan Consistency* drop-down list and select an option.
+. To specify the transaction scan consistency, in the *Scan Consistency* list, select an option.
 
-. To specify the transaction timeout, enter a value in seconds in the *Transaction Timeout* box.
+. To specify the transaction timeout, in the *Transaction Timeout* box, enter a value in seconds.
 
-. To specify any other parameters, click btn:[+] in the corresponding *Named Parameters* or *Positional Parameters* section.
+. To specify any other parameters, click the btn:[+] button in the corresponding *Named Parameters* or *Positional Parameters* section.
 ** For named parameters, enter the name in the *name* box and a value in the *value* box.
 ** For positional parameters, enter the value in the *value* box.
 
@@ -64,13 +64,11 @@ To specify parameters for a Couchbase transaction, use the Query Options dialog.
 
 {lead}
 
-image::transaction-settings.png['The Query Options dialog, with Scan Consistency set to "not_bounded", Transaction Timeout set to "120", and named parameter "durability_level" set to "none"']
+image::transactions-preferences.png['The Query Options dialog, with transaction preferences set as follows.',674]
 
-① Set *Scan Consistency* to `not_bounded`.
-
-② In the *Named Parameters* section, add a named parameter with *name* set to `durability_level` and *value* set to `"none"` (with double quotes).
-
-③ Set *Transaction Timeout* to `120`.
+* The transaction timeout is set to `120`.
+* The transaction scan consistency is set to `not_bounded`.
+* The durability level of all the mutations within the transaction is set to `"none"`.
 --
 
 ifdef::flag-devex-command-line[]
@@ -110,7 +108,15 @@ You can create a Couchbase transaction containing a single DML statement.
 Query Workbench::
 +
 --
-To execute a statement as a transaction, turn on the *transaction* toggle, enter the statement in the Query Editor and click btn:[Run Query].
+To execute a single statement as a transaction:
+
+. To display the Query Options dialog, click btn:[Query Options].
+
+. Select *Run as transaction*.
+
+. To save your preferences and return to the Query Workbench, click btn:[Save Settings].
+
+. Enter the statement in the Query Editor and click btn:[Run].
 
 '''
 
@@ -144,15 +150,11 @@ include::n1ql:example$transactions/single.n1ql[tags=**]
 endif::flag-devex-command-line[]
 ====
 
-For more information about executing transactions, see xref:n1ql:n1ql-language-reference/transactions.adoc#query-tools[Query Tools].
+For more information about executing transactions, see xref:n1ql:n1ql-language-reference/transactions.adoc#query-tools[Transaction Query Tools].
 
 [[multiple-statement]]
 == Multiple Statement Transactions
 // Multistatement transactions do not work in Elixir as of 2023/04/13 (SURF-4665)
-:co-txid: After beginning the transaction, each subsequent statement in the transaction must specify the transaction ID that was generated when the transaction began.
-:result: When the transaction is committed, the document is added with the attributes that were present after rolling back to the second savepoint.
-:lead: The following example demonstrates a complete transaction using {sqlpp}. \
-Individual {sqlpp} transaction statements are described in the sections below.
 
 A Couchbase transaction may contain multiple DML statements.
 In this case, you must use {sqlpp} transaction statements to support the transaction:
@@ -174,48 +176,7 @@ To execute a transaction containing multiple statements:
 Each statement must be terminated with a semicolon.
 . After each statement, press kbd:[Shift+Enter] to start a new line _without_ executing the query.
 
-. When you have entered the entire transaction, click btn:[Run Query] to execute the transaction.
-
-'''
-
-{lead}
-
-.Preparation
-First specify the transaction settings, as shown in the section <<settings>> above.
-
-Second, create a new keyspace for the transactions to run in:
-
-. Next to your bucket in the Data Insights sidebar, click the *More Options* (⋮) button, then btn:[Add Scope].
-. Enter the name "tenants" in the *Scope Name* field, then click the btn:[Create Scope] button.
-. Next to the new tenants scope, click the *More Options* (⋮) button, then btn:[Add Collection]. 
-. Enter the name "users" in the *Collection Name* field, set the TTL to 0, then click the btn:[Create Collection] button.
-. Create another collection in the tenants scope called bookings, with the TTL also set to 0.
-
-Set the query context to the new `tenants` scope.
-For more information, see xref:select.adoc#query-context[Setting the Query Context].
-
-Third, create a primary index on the `bookings` collection so that you can query this keyspace.
-
-[source,sqlpp]
-----
-include::n1ql:example$transactions/multiple.n1ql[tag=index]
-----
-
-.Transaction
-Now copy the entire sequence below and paste it into the Query Workbench.
-
-[source,sqlpp]
-----
-include::n1ql:example$transactions/multiple.n1ql[tags=transaction;!begin-mark;!set-mark;!savepoint-mark;!rollback-mark;!commit-mark]
-----
-
-.Result
-[source,json,indent=0]
-----
-include::n1ql:example$transactions/results.jsonc[tag=check-3]
-----
-
-<.> {result}
+. When you have entered the entire transaction, click btn:[Run] to execute the transaction.
 --
 
 ifdef::flag-devex-command-line[]
@@ -227,48 +188,12 @@ To execute a transaction containing multiple statements, create the transaction 
 Once you have started a transaction, all statements within the cbq shell session are assumed to be part of the same transaction until you rollback or commit the transaction.
 
 NOTE: You must be using cbq shell version 2.0 or above to use the automatic transaction ID functionality.
-
-'''
-
-{lead}
-
-.Preparation
-First, specify the transaction settings, as shown in the section <<settings>> above.
-
-Second, set the query context to the `tenants` scope in the sample data.
-
-[source,sqlpp]
-----
-include::n1ql:example$transactions/multiple.n1ql[tag=context]
-----
-
-Third, create a primary index on the `bookings` collection so that you can query this keyspace.
-
-[source,sqlpp]
-----
-include::n1ql:example$transactions/multiple.n1ql[tag=index]
-----
-
-.Transaction
-Now copy the entire sequence below and paste it into the cbq shell.
-
-[source,sqlpp]
-----
-include::n1ql:example$transactions/multiple.n1ql[tags=transaction;!begin-mark;!set-mark;!savepoint-mark;!rollback-mark;!commit-mark]
-----
-
-.Result
-[source,json,indent=0]
-----
-include::n1ql:example$transactions/results.jsonc[tag=check-3]
-----
-
-<.> {result}
 --
 endif::flag-devex-command-line[]
 ====
 
-For further details, refer to xref:n1ql:n1ql-language-reference/transactions.adoc#query-tools[Query Tools].
+For a worked example demonstrating a complete transaction using {sqlpp}, see xref:n1ql:n1ql-language-reference/transactions.adoc#worked-example[Transaction Worked Example].
+Individual {sqlpp} transaction statements are described in the sections below.
 
 [[begin]]
 === Begin a Transaction
