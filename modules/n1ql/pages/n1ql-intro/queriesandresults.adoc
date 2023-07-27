@@ -155,12 +155,12 @@ endif::flag-devex-settings[]
 [#prepare-stmts]
 == Query Optimization Using Prepared Statements
 
-When a {sqlpp} query string is sent to the server, the server inspects the string and parses it, planning which indexes to query.
+When a {sqlpp} query is sent to the server, the server inspects the query and parses it, planning which indexes to use, if any.
 Once this is done, it generates a _query plan_.
 The computation for the plan adds some additional processing time and overhead for the query.
 
-You can _prepare_ a frequently-used query so that its plan is generated only once.
-Subsequent queries using the same query string will use the pre-generated plan instead, saving on the overhead and processing of the plan each time.
+A frequently-used query can be _prepared_ so that its plan is generated only once.
+Subsequent queries using the same query will use the pre-generated plan instead, saving on the overhead and processing of the plan each time.
 
 NOTE: Parameterized queries are considered the same query for caching and planning purposes, even if the supplied parameters are different.
 
@@ -168,21 +168,21 @@ For more information on how to optimize queries using prepared statements, refer
 
 == Indexes
 
-The Couchbase Query service uses _indexes_ to do its work.
-Indexes replicate subsets of documents from data nodes over to index nodes, allowing specific data (for example, specific document properties) to be retrieved quickly, and to distribute load away from data nodes in MDS topologies.
+Indexes help to improve the performance of a query.
+An index replicates a subset of the fields and documents stored in the Data service.
+This allows specific data (for example, specific fields) to be retrieved quickly.
 
-In order to make a keyspace queryable, it must have at least one index defined.
+The Index service enables you to create two types of index: primary indexes and global secondary indexes.
 
 * You can define a _primary index_ on a keyspace.
 Primary indexes are based on the unique key of every item in a specified collection. A primary index is intended to be used for simple queries, which have no filters or predicates.
 
 * You can also create a _secondary index_ on specific fields in a keyspace.
-Secondary indexes, often referred to as Global Secondary Indexes or GSIs, constitute the principal means of indexing documents to be accessed by the Query Service.
+Secondary indexes, often referred to as Global Secondary Indexes or GSIs, constitute the principal means of indexing documents to be accessed by the Query service.
 +
 For example, creating a secondary index on the `name` and `email` fields in the `users` keyspace would allow you to query the keyspace regarding a document's `name` or `email` properties.
 
-Indexes help improve the performance of a query.
-When an index includes the actual values of all the fields specified in the query, the index covers the query and eliminates the need to fetch the actual values from the Data Service.
-An index, in this case, is called a covering index and the query is called a covered query.
+Note that you do not need to create an index on a keyspace to be able to query that keyspace.
+If no indexes exist on a keyspace, Couchbase Capella uses a key range scan to query that index.
 
 For more information, refer to xref:learn:services-and-indexes/indexes/global-secondary-indexes.adoc[].
