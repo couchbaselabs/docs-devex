@@ -1,5 +1,5 @@
-= {sqlpp} Queries and Results
-:description: An overview of common concepts that you will need to understand in order to use the Query service.
+= Query Concepts
+:description: An overview of common concepts to use the Query service.
 :page-topic-type: concept
 :keywords: n1ql, sqlpp, query, result, parameter, prepared, prepared statement, consistent, consistency
 
@@ -8,23 +8,24 @@
 
 == Queries
 
-A {sqlpp} query is a string parsed by the query service.
+An {sqlpp} query is a string parsed by the query service.
 The {sqlpp} query language is based on SQL, but designed for structured and flexible JSON documents.
 
-As with SQL, you can have nested sub-queries.
-{sqlpp} queries run on JSON documents, and you can query over multiple documents by using the `JOIN` clause.
-
-Because data in {sqlpp} can be nested, there are operators and functions that let you navigate through nested arrays.
-Because data can be irregular, you can specify conditions in the `WHERE` clause to retrieve data.
-
-You can use standard `GROUP BY`, `ORDER BY`, `LIMIT`, and `OFFSET` clauses as well as a rich set of functions to transform the results as needed.
+* You can have nested sub-queries. {sqlpp} queries run on JSON documents
+* You can run a query over multiple documents by using the `JOIN` clause
+* Data in {sqlpp} can be nested. You can navigate through nested arrays using operators and functions. 
+* Data can be irregular. You can specify conditions in the `WHERE` clause to retrieve data
+* You can transform the results using standard `GROUP BY`, `ORDER BY`, `LIMIT`, and `OFFSET` clauses as well as a rich set of functions.
 
 == Results
 
-The result for each query is a set of JSON documents.
-The returned document set is not required to be uniform, though it can be.
-A `SELECT` statement that specifies a fixed set of attribute (column) names results in a uniform set of documents and a `SELECT` statement that specifies the wild card (*) results in a non-uniform result set.
-The only guarantee is that every returned document meets the query criteria.
+Capella returns query results for each query as a set of JSON documents. The returned document set can be uniform or non-uniform. 
+
+* A `SELECT` statement that specifies a fixed set of attribute (column) names results in a uniform set of documents.
+
+* A `SELECT` statement that specifies the wild card (*) results in a non-uniform result set. 
+
+Every returned document meets the query criteria.
 
 Here's a sample query and the result returned:
 
@@ -63,35 +64,70 @@ SELECT name, brewery_id from `beer-sample` WHERE brewery_id IS NOT MISSING LIMIT
 }
 ----
 
+
+[#data-hierarchy]
+== Data Hierarchy
+
+Couchbase organizes its data using a hierarchy. This hierarchy is important to know when creating paths to your data for queries.   [need to expand this]
+
+* Datastores
+** Namespaces(?)
+*** Buckets
+**** Scopes
+***** Collections
+****** Documents
+
+[#keyspaces]
+== Keyspaces
+
+A keyspace is a location that contains documents with data that you can query.
+
+Couchbase stores documents within a <<data-hierarchy,logical hierarchy>> of buckets, scopes, and collections. This enables separation between documents of different types.
+
+To query your data, you need to identify the [.term]_paths_ to get to the keyspace (where the data is stored) using a keyspace reference.
+
+In addition to querying your data, you can also query the system keyspaces that make up the system, (datastores, namespaces, buckets, scopes, collections, indexes, and dual). Querying system keyspaces provides various monitoring details and statistics about individual queries and the Query service. For information on how to query system keyspaces, see xref: [Monitor Queries]. 
+
+
+
 [#keyspace-reference]
 == Keyspace References
 
-Couchbase stores data within a logical hierarchy of buckets, scopes, and collections.
-This enables separation between documents of different types.
-For most queries, you must provide one or more keyspace references to specify the data sources for the query.
+A keyspace reference directs the Query service to the data you want to query. For most queries, you must provide one or more keyspace references to specify where the Query service should get the data to run the query.
 
-A keyspace reference may be a _full_ keyspace reference: a path comprising the bucket, the scope, and the collection which contains the documents you want.
+A keyspace reference may be 
 
-Alternatively, the keyspace reference may be a _partial_ keyspace reference, comprising the collection name only.
-When a query contains partial keyspace references, you must set the <<query-context,query context>> to specify a bucket and scope before running a query.
-Partial keyspace references are resolved using the bucket and scope supplied by the query context.
+* a _full_ keyspace reference: a path comprising the bucket, the scope, and the collection which contains the documents you want. 
++
+For example, `default:{backtick}travel-sample{backtick}.inventory.airline` refers to documents in:
 
-For compatibility with legacy versions of Couchbase Server, a keyspace reference may comprise the bucket name only, when referring to the default collection in the default scope within a bucket.
-In this case, the <<query-context,query context>> must not be set.
+** `travel-sample` bucket
+*** `inventory` scope
+**** `airline` collection 
+
+* a _partial_ keyspace reference that only uses the collection name. 
++ 
+To use only the collection name, you must set the <<query-context,query context>> to specify a bucket and scope before running a query. 
++
+Couchbase uses the  bucket and scope supplied by the query context to resolve the partial keyspace reference.
+
+For compatibility with legacy versions of Couchbase Server, the name of the scope and collection may be omitted when referring to the default collection in the default scope within a bucket.
+
+For example, you can refer to the travel-sample keyspace, if it is in the default collection in the default scope in the travel-sample bucket. In this case, the <<query-context,query context>> must not be set.
+
 
 [#query-context]
 == Query Context
 
-The [def]_query context_ specifies the the namespace, bucket, and scope used to resolve partial keyspace references.
+The [def]_query context_ specifies the namespace, bucket, and scope used to resolve partial keyspace references.
 
 When the query context is set, you can refer to a collection using just the collection name, without having to enter the keyspace path.
+
 When the query context is not set, it defaults to the `default` namespace, with no bucket, scope, or collection.
 
-* To set the query context in the Query Workbench, use the xref:clusters:query-service/query-workbench.adoc#specify-bucket-and-scope-context[context] drop-down menu in the Query Editor.
+* To set the query context in the Query Tab, from xref:tools:query-workbench.adoc#query-context[query context] choose a bucket and scope from the lists.
 
-ifdef::flag-devex-command-line[]
 * To set the query context from the cbq shell or the REST API, use the xref:settings:query-settings.adoc#query_context[query_context] request-level parameter.
-endif::flag-devex-command-line[]
 
 .Tenant separation
 [IMPORTANT]
@@ -103,8 +139,10 @@ This can be used to support the separation of tenant data in a multi-tenancy env
 [#paths]
 == Paths
 
-One of the main differences between JSON and flat rows is that JSON supports a nested structure, allowing documents to contain other documents, also known as sub-documents.
-{sqlpp} provides [.term]_paths_ to support nested data.
+[.term]_Paths_ provide a method for finding data in document structures without having to retrieve the entire document or handle it within an application. Only returning relevant information to an application reduces querying bandwidth.
+
+JSON supports a nested structure, allowing documents to contain other documents, also known as sub-documents. SQL++ uses paths to support nested data. 
+
 Paths use dot notation syntax to identify the logical location of an attribute within a document.
 For example, to get the street from a customer order, use the path `orders.billTo.street`.
 This path refers to the value for `street` in the `billTo` object.
@@ -113,44 +151,47 @@ A path is used with arrays or nested objects to get to attributes within the dat
 Array syntax in the path can also be used to get to information.
 For example, the path `orders.items[0].productId` evaluates to the `productId` value for the first array element under the order item, `items`.
 
-Paths provide a method for finding data in document structures without having to retrieve the entire document or handle it within an application.
-Any document data can be requested and returned to an application.
-When only relevant information is returned to an application, querying bandwidth is reduced.
-
-See xref:n1ql-language-reference/index.adoc#nested-path-exp[Nested Path Expressions] for more details.
+See xref:n1ql-language-reference/index.adoc#nested-path-expressions[Nested Path Expressions] for more details.
 
 [#named-placeholders]
 == Parameterized Queries
 
-{sqlpp} allows the use of placeholders to declare dynamic query parameters.
-When the query is constructed, it may receive arguments, with each argument being used as the placeholder value in the query.
+Use placeholders to declare dynamic query parameters in {sqlpp}. You can construct a query with arguments to be used as the placeholder value in the query.
 
-Placeholders in the query may be numbered positional placeholders, unnumbered positional placeholders, or named placeholders.
+There are three types of placeholders.
 
-* A numbered positional placeholder takes the form `$1`.
-Thus, in the query, `$1` refers to the first argument,`$2` to the second, and so on.
+[%header,cols="30%,10%,60%"]
+|===
+| Placeholder | Form | Use 
 
-* An unnumbered positional parameter takes the form of a question mark `?`.
-The first occurrence of `?` refers to the first argument, the second occurrence of `?` to the second, and so on.
+| numbered positional placeholder
+| $1
+| In the query, $1 refers to the first argument,$2 to the second, and so on.
 
-* Named placeholders take the form of `$name`.
-This is particularly useful when there are many query parameters, and ensuring that they are all in the correct order may be cumbersome.
 
-You can set query parameter values when you run the query, using the cbq query shell, the Query Workbench, or the {sqlpp} REST API.
+| unnumbered positional parameter
+| ?
+| The first occurrence of ? refers to the first argument, the second occurrence of ? to the second, and so on.
 
-ifdef::flag-devex-settings[]
+
+| Named placeholders
+| $name
+| Useful when there are many query parameters and ensuring that they are all in the correct order is cumbersome.
+
+|===
+
+Set query parameter values when you run the query, using the cbq query shell, the Query Tab, or the {sqlpp} REST API.
+
 For more information and examples, refer to xref:settings:query-settings.adoc#section_srh_tlm_n1b[Named Parameters and Positional Parameters].
-endif::flag-devex-settings[]
 
 [#prepare-stmts]
 == Query Optimization Using Prepared Statements
 
-When a {sqlpp} query string is sent to the server, the server will inspect the string and parse it, planning which indexes to query.
+When a {sqlpp} query string is sent to the server, the server inspects the string and parses it, to plan which indexes to query.
 Once this is done, it generates a _query plan_.
 The computation for the plan adds some additional processing time and overhead for the query.
 
-A frequently-used query can be _prepared_ so that its _plan_ is generated only once.
-Subsequent queries using the same query string will use the pre-generated _plan_ instead, saving on the overhead and processing of the plan each time.
+You can prepare a frequently-used query so that its plan is generated only once. Subsequent queries using the same query string will use the pre-generated plan, reducing processing resources.
 
 NOTE: Parameterized queries are considered the same query for caching and planning purposes, even if the supplied parameters are different.
 
@@ -158,8 +199,7 @@ For more information on how to optimize queries using prepared statements, refer
 
 == Indexes
 
-The Couchbase query service makes use of _indexes_ in order to do its work.
-Indexes replicate subsets of documents from data nodes over to index nodes, allowing specific data (for example, specific document properties) to be retrieved quickly, (and to distribute load away from data nodes in MDS topologies).
+Indexes help improve the performance of a query. When an index includes the values of all the fields specified in the query, the index covers the query and eliminates the need to fetch the values from the Data Service. Indexes allow specific data (for example, specific document properties) to be retrieved quickly and to distribute load away from data nodes in MDS topologies.
 
 In order to make a keyspace queryable, it must have at least one index defined.
 
@@ -207,7 +247,4 @@ Only updates occurring with a small time frame may not yet have been indexed.
 The query service can use the latest versions of documents by modifying the [.api]`consistency` of the query.
 This is done by setting the [.api]`scan_consistency` parameter to [.api]`REQUEST_PLUS`.
 When using this consistency mode, the query service will ensure that the indexes are synchronized with the data service before querying.
-
-ifdef::flag-devex-settings[]
 For more information, refer to xref:settings:query-settings.adoc#scan_consistency[Query Settings].
-endif::flag-devex-settings[]
