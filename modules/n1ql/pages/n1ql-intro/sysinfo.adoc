@@ -1,76 +1,48 @@
-= Getting System Information
+= Monitor Query Operations
 :page-topic-type: concept
-:description: {sqlpp} has a system catalog that stores metadata about a database. \
-The system catalog is a namespace called system.
+:description: System keyspaces provide various monitoring details and statistics about individual queries and the Query service.
+:page-topic-type: task
+:keywords: n1ql, sqlpp, query, result, parameter, prepared, prepared statement, consistent, consistency, monitor, keyspace
 
 [abstract]
-{sqlpp} has a system catalog that stores metadata about a database.
-The system catalog is a namespace called _system_.
+{description}
 
-There is a keyspace for each type of artifact.
-The keyspace names are plural in order to avoid conflicting with {sqlpp} keywords.
+You can monitor and profile SQL++ queries, Query service engines, and corresponding system resources for smoother operational performance and efficiency of the system. 
 
-== Logical Hierarchy
+There is a system keyspace for each part of the system catalog. The names are plural to avoid conflicting with SQL++ keywords.
 
-{sqlpp} has the following artifacts:
+[%header,cols="30%,70%"]
+|===
+| System Keyspace | Description 
 
-Datastores::
+| Datastores
+| Datastores are similar to sites. A datastore is a database deployment, for example, a server cluster, cloud service, or mobile installation. It is analogous to a relation database instance. For information on how to query this keyspace, see <<querying-datastores,Query Datastores>>.
 
-Datastores are similar to sites.
-A datastore is a database deployment, for example, a server cluster, cloud service, or mobile installation.
-It is analogous to a relation database instance.
+| Namespaces
+| Namespaces are similar to pools. A namespace is a unit of authorization, resource allocation, and tenancy. It is analogous to a relational database or schema. Currently, only the `default` and `system` namespaces are available. For information on how to query this keyspace, see <<query-namspaces,Query Namespaces>>.
+ 
 
-Namespaces::
+| Buckets
+| A bucket is the fundamental space for storing data in Couchbase Capella. Each bucket contains at least one scope by default, and you can create more scopes as required. It is analogous to a relational database table space or file group. For information on how to query this keyspace, see <<query-buckets,Query Buckets>>.
 
-Namespaces are similar to pools.
-A namespace is a unit of authorization, resource allocation, and tenancy.
-It is analogous to a relational database or schema.
-Currently, only the `default` and `system` namespaces are available.
+| Scopes
+| A scope is a set of one or more collections. Each scope contains at least one collection by default, and you can create more collections as required. It is analogous to a group of relational database tables. For information on how to query this keyspace, see <<query-scopes,Query Scopes>>.
 
-Buckets::
+| Collections
+| A collection is a set of documents that may vary in structure. It is a unit of authorization and resource allocation. It is analogous to a relational database table. For information on how to query this keyspace, see <<query-collections,Query Collections>>.
 
-A bucket is the fundamental space for storing data in Couchbase Capella.
-Each bucket contains at least one scope by default, and you can create more scopes as required.
-It is analogous to a relational database table space or file group.
+| Indexes
+| An index on a keyspace. It is analogous to a relational database index. Types of indexes include b-tree (ForestDB or MOI) and view indexes.For information on how to query this keyspace, see <<query-indexes,Query Indexes>>.
 
-Scopes::
+| Dual
+| The dual keyspace has been added for evaluating constant expressions. It contains a single entry with no attributes. For information on how to query this keyspace, see <<query-dual,Query Dual>>.
 
-A scope is a set of one or more collections.
-Each scope contains at least one collection by default, and you can create more collections as required.
-It is analogous to a group of relational database tables.
+|===
 
-Collections::
 
-A collection is a set of documents that may vary in structure.
-It is a unit of authorization and resource allocation.
-It is analogous to a relational database table.
-
-Keyspaces::
-
-Keyspaces map to collections in Couchbase Capella.
-A keyspace may be referred to using a full keyspace reference.
-For example, `default:{backtick}travel-sample{backtick}.inventory.airline` refers to the `airline` collection in the `inventory` scope in the `travel-sample` bucket.
-A keyspace may also be referred to using a partial keyspace reference, comprising just the collection name.
-In this case, the namespace, bucket, and scope must be implied by the current xref:n1ql-intro/queriesandresults.adoc#query-context[query context].
-+
-For compatibility with legacy versions of Couchbase Server, the name of the scope and collection may be omitted when referring to the default collection in the default scope within a bucket.
-So for example, we may refer to the `travel-sample` keyspace, meaning the default collection in the default scope in the `travel-sample` bucket.
-+
-The term is also used to refer to any of the catalogs in the `system` namespace.
-
-Indexes::
-
-An index on a keyspace.
-It is analogous to a relational database index.
-Types of indexes include b-tree (ForestDB or MOI) and view indexes.
-
-Dual::
-
-The dual keyspace has been added for evaluating constant expressions.
-It contains a single entry with no attributes.
 
 [#querying-datastores]
-== Querying Datastores
+== Query Datastores
 
 You can query datastores using the `system:datastores` keyspace as follows:
 
@@ -86,7 +58,7 @@ The query returns the following attributes:
 `url`:: (string) URL of the datastore instance
 
 [#querying-namespaces]
-== Querying Namespaces
+== Query Namespaces
 
 You can query namespaces using the `system:namespaces` keyspace as follows:
 
@@ -103,7 +75,7 @@ The query returns the following attributes:
 `datastore_id`:: (string) ID of the datastore to which the namespace belongs
 
 [#querying-buckets]
-== Querying Buckets
+== Query Buckets
 
 You can query buckets using the `system:buckets` keyspace as follows:
 
@@ -122,7 +94,7 @@ The query returns the following attributes:
 `path`:: (string) Path of the bucket
 
 [#querying-scopes]
-== Querying Scopes
+== Query Scopes
 
 You can query scopes using the `system:scopes` keyspace as follows:
 
@@ -145,7 +117,7 @@ NOTE: Querying `system:scopes` only returns named scopes -- that is, non-default
 To return all scopes, including the default scopes, you can query `system:all_scopes`.
 
 [#querying-keyspaces]
-== Querying Collections
+== Query Collections
 
 You can query collections using the `system:keyspaces` keyspace as follows:
 
@@ -180,7 +152,7 @@ NOTE: Querying `system:keyspaces` only returns non-system keyspaces.
 To return all keyspaces, including the system keyspaces, you can query `system:all_keyspaces`.
 
 [#querying-indexes]
-== Querying Indexes
+== Query Indexes
 
 You can query indexes using the `system:indexes` keyspace as follows:
 
@@ -222,7 +194,7 @@ NOTE: Querying `system:indexes` only returns indexes on non-system keyspaces.
 To return all indexes, including indexes on system keyspaces, you can query `system:all_indexes`.
 
 [#querying-dual]
-== Querying Dual
+== Query Dual
 
 You can use dual to evaluate constant expressions.
 
