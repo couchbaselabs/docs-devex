@@ -26,7 +26,7 @@ endif::[]
 A database query is a request to retrieve or change data in your database. You use queries to work with your data for tasks such as:
 
 * Aggregating data
-* Creating, reading, updating, or deleting (CRUD) data
+* Creating, reading, updating or deleting data (CRUD operations)
 * Finding and summarizing information
 * Defining indexes
 
@@ -41,7 +41,7 @@ A database query is a request to retrieve or change data in your database. You u
 | Use the Query service for operational queries -- for example, the front-end queries behind every page display or navigation.
 
 | xref:clusters:analytics-service/analytics-service.adoc[Analytics service]
-| Use the Analytics service when you don't know every aspect of the query in advance -- for example, if the data access patterns change frequently, or you want to avoid creating an index for each data access pattern, or you want to run ad hoc queries for data exploration or visualization.
+| Use the Analytics Service to efficiently run complex queries over many records. It supports large join, set, aggregation, and grouping operations, any of which may result in long running queries, high CPU usage, high memory consumption, and/or excessive network latency due to data fetching and cross node coordination. 
 
 | xref:search:search.adoc[Full Text Search service]
 | Use the Full Text Search service when you want to take advantage of natural-language querying.
@@ -58,19 +58,31 @@ Couchbase Capella uses a query language called {sqlpp}.
 The Couchbase implementation of {sqlpp} was formerly known as https://www.couchbase.com/products/n1ql[N1QL^] (pronounced "nickel").
 
 {sqlpp} is an expressive, powerful, and complete SQL dialect for querying, transforming, and manipulating JSON data. 
-Based on SQL, it’s immediately familiar to developers who can quickly start developing rich applications.
+Based on SQL, it’s familiar to developers who can quickly start developing rich applications.
+
+
+== Indexes
+
+An index is a data structure that stores where specific data is in your database. Database indexing speeds up data retrieval. Query indexes to look up where the data you need is, instead of using a query to scan through every document. 
+
+Indexes take up space in your database, so it is important to plan out the most efficient index to store what you need to retrieve.
+
+xref:clusters:query-service/query-service.adoc[Query], xref:clusters:analytics-service/analytics-service.adoc[Analytics], and xref:search:search.adoc[Search] services use indexes as targets for search-routines.
+
+The Query Service relies on indexes created by the xref:clusters:index-service/index-service.adoc[Index Service]. Primary Indexes and Global Secondary Indexes (GSI) support queries made by the Query Service.
+
+The Search and Analytics services provide their own indexes, internally.
 
 
 == What's Next
 
-* xref:n1ql:n1ql-intro/index.adoc[]
-* xref:n1ql:tutorial.adoc[]
+* xref:n1ql:tutorial.adoc[Query Service Tutorials]
 * xref:clusters:query-service/query-workbench.adoc[]
 ifdef::flag-query-settings[]
 * xref:settings:query-settings.adoc[]
 endif::flag-query-settings[]
-* xref:learn:services-and-indexes/indexes/global-secondary-indexes.adoc[]
-* xref:n1ql:advanced.adoc[]
+* xref:learn:services-and-indexes/indexes/global-secondary-indexes.adoc[Query Service Indexes]
+* xref:n1ql:advanced.adoc[Query Service Advanced Features]
 * xref:n1ql:n1ql-language-reference/index.adoc[]
 ifdef::flag-devex-javascript-udfs[]
 * xref:javascript-udfs:javascript-functions-with-couchbase.adoc[]
