@@ -138,6 +138,120 @@ For example, if you had a set of 10 documents to sort based on `_id` values of 1
 
 |====
 
+[#query]
+== Query Object 
+
+Use the `query` object to set the specific details of your Search query. 
+
+Use the properties in the `query` object to control search result rankings, add multiple subqueries, and more. 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+| [[must]]must
+| Object
+| No
+a| Use a `must` object to create a boolean query. 
+
+A `must` object must contain a <<conjuncts,conjuncts array>> or a <<disjuncts,disjuncts array>>. 
+The array lists all the queries that must have a match in a document to include the document in search results. 
+
+For example, a query could have a `must` object with 2 queries in a `conjuncts` array.
+The Search Service must find a match for both those queries in a document to include it in search results. 
+
+| [[must_not]]must_not
+| Object
+| No
+a| Use a `must_not` object to create a boolean query. 
+
+A `must_not` object must contain a <<conjuncts,conjuncts array>> or a <<disjuncts,disjuncts array>>. 
+The array lists the queries that must not have a match in a document to include the document in search results. 
+
+For example, a query could have a `must_not` object with 3 queries in a `conjuncts` array.
+The Search Service must not find a match for any of the 3 queries in a document to include it in search results. 
+
+| [[should]]should
+| Object
+| No
+a| Use a `should` object to create a boolean query. 
+
+A `should` object must contain a <<conjuncts,conjuncts array>> or a <<disjuncts,disjuncts array>>. 
+The array lists the queries that should have a match in a document to score the document higher in search results. 
+
+A document can be included in search results if it does not match the query in a `should` object. 
+The document scores higher in search results if it does match the query.
+
+| [[conjuncts]]conjuncts
+| Array
+| No
+a| Use the `conjuncts` array to specify multiple child queries in a single `query` object. 
+
+If you use the `conjuncts` array, every `query` object in the array must have a match in a document to include the document in search results.
+
+| [[disjuncts]]disjuncts
+| Array
+| No
+a| Use the `disjuncts` array to specify multiple child queries in a single `query` object. 
+
+You can use the `disjuncts` array inside a <<must,must object>>, <<must_not,must_not object>>, <<should,should object>>, or directly inside a `query` object.
+
+Use a `min` property to set the number of `query` objects from the `disjuncts` array that must have a match in a document.
+If a document does not match the `min` number of `query` objects, the Search Service does not include the document in search results. 
+
+| field
+| String
+| No
+a| Specify a specific field name, using dot notation, where the Search Service should search for a match to your search query. 
+
+For example, to search the `content` field inside the `reviews` array in a document, set the `field` property to `"reviews.content"`.
+
+| [[fuzziness]]fuzziness 
+| Integer 
+| No
+a| Use the `fuzziness` property to run a fuzzy query. 
+
+The `fuzziness` property uses your specified edit distance to match terms based on their similarity, rather than exact matches. 
+
+| match_all
+| Object
+| No
+| Use the `match_all` object as the only property in your `query` object to return all documents in the Search index. 
+
+| regexp
+| String
+| No
+a| Use the `regexp` property to run a regular expression query. 
+
+Set the property to a regular expression to return matches for that regular expression 
+
+| term 
+| String
+| No
+a| Use the `term` property to run a term query. 
+
+The Search Service searches for an exact match for the text you provide in the `term` property, unless you set additional properties to modify your Search query: 
+
+* <<fuzziness,fuzziness>>
+
+
+| wildcard
+| String
+| No
+a| Use the `wildcard` property to run a wildcard query. 
+
+Set the property to a regular expression that includes a wildcard character in the middle or end of a search term:
+
+* Use `?` to allow a match to any single character. 
+* Use `*` to allow a match to zero or many characters. 
+
+For example, you could set the `wildcard` property to `inter*` to return matches for `interview`, `interject`, `internal`, and so on. 
+
+You cannot place the wildcard character at the start of the search term. 
+The Search Service also cannot use any analyzers on the contents of your query text. 
+
+|====
+
 [#ctl]
 == Ctl Object 
 
