@@ -99,6 +99,7 @@ For more information about the properties for a `sort` JSON object, see <<sort,>
 To return the position of each occurrence of a search term inside a document, set `includeLocations` to `true`. 
 
 NOTE: You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on a field to use `includeLocations`.
+For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
 
 To turn off term locations, set `includeLocations` to `false`.
 
@@ -138,20 +139,25 @@ For example, if you had a set of 10 documents to sort based on `_id` values of 1
 
 |====
 
-[#query]
+[#query-object]
 == Query Object 
 
 Use the `query` object to set the specific details of your Search query. 
 
 Use the properties in the `query` object to control search result rankings, add multiple subqueries, and more. 
 
-[cols="1,1,1,4"]
+=== Boolean Query Properties 
+
+Use any of the following properties to run a boolean query. 
+
+Boolean queries take <<conjuncts,conjuncts>> and <<disjuncts,disjuncts>> arrays inside the <<must,must>>, <<must_not,must_not>> and <<should,should>> objects to set the queries a document must match to be included in search results. 
+
+[cols="1,1,4,4"]
 |====
-|Property |Type |Required? |Description
+|Property |Type |Description |Examples
 
 | [[must]]must
 | Object
-| No
 a| Use a `must` object to create a boolean query. 
 
 A `must` object must contain a <<conjuncts,conjuncts array>> or a <<disjuncts,disjuncts array>>. 
@@ -160,9 +166,15 @@ The array lists all the queries that must have a match in a document to include 
 For example, a query could have a `must` object with 2 queries in a `conjuncts` array.
 The Search Service must find a match for both those queries in a document to include it in search results. 
 
+a| 
+.reviews.content field must contain "location" and the phrase "nice view"
+[source,json]
+----
+include::example$query-boolean.jsonc[tag=must]
+----
+
 | [[must_not]]must_not
 | Object
-| No
 a| Use a `must_not` object to create a boolean query. 
 
 A `must_not` object must contain a <<conjuncts,conjuncts array>> or a <<disjuncts,disjuncts array>>. 
@@ -171,9 +183,15 @@ The array lists the queries that must not have a match in a document to include 
 For example, a query could have a `must_not` object with 3 queries in a `conjuncts` array.
 The Search Service must not find a match for any of the 3 queries in a document to include it in search results. 
 
+a|
+.free_breakfast field must not be false and reviews.Cleanliness field must not be between 1 and 3
+[source,json]
+----
+include::example$query-boolean.jsonc[tag=must_not]
+----
+
 | [[should]]should
 | Object
-| No
 a| Use a `should` object to create a boolean query. 
 
 A `should` object must contain a <<conjuncts,conjuncts array>> or a <<disjuncts,disjuncts array>>. 
@@ -182,16 +200,41 @@ The array lists the queries that should have a match in a document to score the 
 A document can be included in search results if it does not match the query in a `should` object. 
 The document scores higher in search results if it does match the query.
 
+a|
+.free_parking and free_internet fields should be true
+[source,json]
+----
+include::example$query-boolean.jsonc[tag=should]
+----
+
+|====
+
+=== Compound Queries (AND and OR)
+
+Use a Compound query array to specify multiple child queries that must have a match in a document for that document to be included in search results. 
+
+You can use 2 different types of compound queries: 
+
+[cols="1,1,4,4"]
+|====
+|Property |Type |Description |Examples
+
 | [[conjuncts]]conjuncts
 | Array
-| No
 a| Use the `conjuncts` array to specify multiple child queries in a single `query` object. 
 
-If you use the `conjuncts` array, every `query` object in the array must have a match in a document to include the document in search results.
+You can use the `conjuncts` array inside a <<must,must object>>, <<must_not,must_not object>>, <<should,should object>>, or directly inside a `query` object.
+
+If you use the `conjuncts` array, every object in the array must have a match in a document to include the document in search results.
+
+You can create objects to describe any of the available query types: 
+
+*
+*
+a| 
 
 | [[disjuncts]]disjuncts
 | Array
-| No
 a| Use the `disjuncts` array to specify multiple child queries in a single `query` object. 
 
 You can use the `disjuncts` array inside a <<must,must object>>, <<must_not,must_not object>>, <<should,should object>>, or directly inside a `query` object.
@@ -199,45 +242,244 @@ You can use the `disjuncts` array inside a <<must,must object>>, <<must_not,must
 Use a `min` property to set the number of `query` objects from the `disjuncts` array that must have a match in a document.
 If a document does not match the `min` number of `query` objects, the Search Service does not include the document in search results. 
 
-| field
+You can create objects to describe any of the available query types: 
+
+*
+*
+a|
+
+|====
+
+=== Query String Query Syntax 
+
+Use the following properties and syntax to run a Query String query. 
+
+Query String queries let you express more complex queries with a special syntax.
+You can reduce the properties you need to specify for a Search query with Query String syntax. 
+
+If you do not add any additional syntax to a query, the Search Service interprets the query as a match query. 
+It searches for an exact match to the provided term in any fields that have been added to the `default` field. 
+For more information about how to configure the default field for your Search index, see xref:set-advanced-settings.adoc#all-field[Set Search Index General Settings] or the xref:search-index-params.adoc#all-field[default_field property].
+
+[cols="1,1,4,4"]
+|====
+| Operator | Property | Description | Examples
+
+| `^`
+| `"boost"`
+a| If you use multiple clauses in a query, you can use the `^` operator or the `boost` property to assign the relative importance to a clause. 
+
+Clauses with a higher `boost` property or larger number after the `^` operator score higher and appear earlier in search results. 
+a| 
+.Query String query with a boost on the name field containing pool
+[source,json]
+----
+include::example$query-boost.jsonc[tag=short]
+----
+.Disjunction query with boost property on the city field containing glossop
+[source,json]
+----
+include::example$query-boost.jsonc[tag=long]
+----
+
+| `>`, `>=`, `<`, and `<=`
+| See <<date-range-query,Date Range Queries>> or <<numeric-range-query,Numeric Range Queries>>.
+a| Use the later than (`>`), later than or equal to (`>=`), earlier than (`<`), and earlier than or equal to (`<=`) operators with a date value to run a date range query. 
+The Search Service searches for a date value in the specified field that matches the specified operator. 
+
+Use the greater than (`>`), greater than or equal to (`>=`), less than (`<`), and less than or equal to (`<=`) operators with a numeric value to run a numeric range query. 
+The Search Service searches for a numeric value in the specified field that matches the specified operator. 
+a|
+.Query String query for a date in the created field after September 21, 2016
+[source,json]
+----
+include::example$query-date-range.jsonc[]
+----
+
+.Query String query for a rating in the reviews.ratings.Cleanliness field greater than 4
+[source,json]
+----
+include::example$query-numeric-range.jsonc[]
+----
+
+| `\`
+| N/A 
+a| Use a backslash character (`\`) to escape characters in a Query String query. 
+
+You must escape the following characters to search for them literally in a Query String query: 
+
+* Quotes (`"`)
+* Plus sign (`+`)
+* Dash (`-`)
+* Equals sign (`=`)
+* Ampersand (`&`)
+* Caret (`^`)
+* Asterix (`*`)
+* Space (` `)
+* Pipe (`\|`)
+* Greater than and less than symbol (`>` and `<`)
+* Exclamation mark (`!`)
+* Question mark (`?`)
+* Parentheses (`( )`)
+* Curly braces (`{ }`)
+* Square brackets (`[ ]`)
+* Single or double backslash (`\`)
+* Forward slash (`/`)
+* Tilde (`~`)
+* Colon (`:`)
+a| 
+.Query String match query with escaped space
+[source,json]
+----
+include::example$query-escape-characters.jsonc[tag=space]
+----
+
+.Query String match phrase query with escaped quotation mark
+[source,json]
+----
+include::example$query-escape-characters.jsonc[tag=quotes]
+----
+
+| [[field-name]]`{field-name}:`
+| See <<field,field>>. 
+a| Set the field in a document where the Search Service should search for your query by adding a field name and a colon to the start of a search term. 
+
+Use dot notation for the field name. 
+The Query String syntax does not support SQL++ field syntax, such as `[*]` or `[3]` as array locations in a field name path. 
+a| 
+.Query String query for "pool" in the description field
+[source,json]
+----
+include::example$query-field-name.jsonc[tag=short]
+----
+
+| `+` and `-`
+| See the <<must,must property>> and <<must_not,must_not property>>. 
+a| Use the `+` and `-` operators before a clause in a Query String query to run a boolean query: 
+
+* The `+` operator adds the clause to the `MUST` list of a boolean query.
+* The `-` operator adds the clause to the `MUST_NOT` list of a boolean query. 
+* The Search Service adds any additional query clauses not marked with a `+` or a `-` operator to the `SHOULD` list of a boolean query.
+
+Documents that match the `SHOULD` list of queries score higher than those that do not return a match.
+
+a| 
+.Query String query with boolean syntax
+[source,json]
+----
+include::example$query-boolean.jsonc[tag=short]
+----
+
+The Query String syntax specifies that: 
+
+* The document must have `pool` in the `description` field.
+* The document must not have `continental` in the `default` field. 
+* The document should have `breakfast` in the `default` field.
+
+| `""`
+| See <<match_phrase,match_phrase property>>. 
+a| Surround a search term in quotation marks (`" "`) to run a match phrase query. 
+
+To use a match phrase query: 
+
+* You must specify a field to search with the <<field,field property>> or the <<field-name,{field-name}>> syntax in your search query. 
+* You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
+
+For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+
+The Search Service searches for exact matches to the phrase you specify.
+
+a|
+.Query String match phrase query for "continental breakfast"
+[source,json]
+----
+include::example$query-match-phrase.jsonc[tag=short]
+----
+|====
+
+=== Analytic Queries 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Description |Examples
+
+| match 
 | String
-| No
-a| Specify a specific field name, using dot notation, where the Search Service should search for a match to your search query. 
+a| Use the `match` property to run a match query. 
+a| 
 
-For example, to search the `content` field inside the `reviews` array in a document, set the `field` property to `"reviews.content"`.
+|====
 
-| [[fuzziness]]fuzziness 
-| Integer 
-| No
-a| Use the `fuzziness` property to run a fuzzy query. 
+=== Non Analytic Queries 
 
-The `fuzziness` property uses your specified edit distance to match terms based on their similarity, rather than exact matches. 
+Use Non Analytic queries to run a search query without using an analyzer on the contents of your Search query. 
 
-| match_all
-| Object
-| No
-| Use the `match_all` object as the only property in your `query` object to return all documents in the Search index. 
+[cols="1,1,4,4"]
+|====
+|Property |Type |Description |Examples
 
-| regexp
+|[[bool]]bool
+| Boolean
+a| Use the `bool` property to query a field that contains a boolean value. 
+
+Use the <<field,field property>> and set `bool` to `true` or `false` to search. 
+a|
+
+| [[prefix]]prefix
 | String
-| No
+a| Use the `prefix` property to run a prefix query. 
+
+Set the property to a string to return matches for any term that starts with that string in search results. 
+
+If you use the `prefix` property, the Search Service does not use any analyzers on the contents of your query text. 
+
+For example, you could set the `prefix` property to `inter` to return matches for `interview`, `internal`, `interesting`, and so on. 
+a| 
+
+| [[regexp]]regexp
+| String
 a| Use the `regexp` property to run a regular expression query. 
 
-Set the property to a regular expression to return matches for that regular expression 
+Set the property to a regular expression to return matches for that regular expression in search results. 
 
-| term 
+If you use the `regexp` property, the Search Service does not use any analyzers on the contents of your query text. 
+a| 
+
+| [[term]]term 
 | String
-| No
 a| Use the `term` property to run a term query. 
 
 The Search Service searches for an exact match for the text you provide in the `term` property, unless you set additional properties to modify your Search query: 
 
 * <<fuzziness,fuzziness>>
 
+If you use the `term` property, the Search Service does not use any analyzers on the contents of your query text. 
 
-| wildcard
+a|
+
+| [[terms]]terms
+| Array
+a| Use the `terms` array to run a phrase query. 
+
+[NOTE]
+====
+To use a phrase query: 
+
+* You must set the <<field,field property>> in your search query. 
+* You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
+
+For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+====
+
+The Search Service searches for the strings you provide in the `terms` array in the specified order. 
+Unlike the <<match_phrase,match_phrase property>>, the `terms` array does not use any analyzers on the contents of your query text. 
+
+For example, set the `terms` array to `\["nice", "view"\]`. 
+The Search Service looks for any occurrences of `nice` in a document that are followed by an occurrence of `view`.  
+a|
+
+| [[wildcard]]wildcard
 | String
-| No
 a| Use the `wildcard` property to run a wildcard query. 
 
 Set the property to a regular expression that includes a wildcard character in the middle or end of a search term:
@@ -248,7 +490,53 @@ Set the property to a regular expression that includes a wildcard character in t
 For example, you could set the `wildcard` property to `inter*` to return matches for `interview`, `interject`, `internal`, and so on. 
 
 You cannot place the wildcard character at the start of the search term. 
-The Search Service also cannot use any analyzers on the contents of your query text. 
+
+If you use the `wildcard` property, the Search Service does not use any analyzers on the contents of your query text. 
+a|
+
+|====
+
+=== Special Queries 
+
+You can use the following special queries as the only properties inside a `query` object to return all or no documents from your Search index in search results. 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Description |Examples
+
+| match_all
+| Object
+| Use the `match_all` object as the only property in your `query` object to return all documents from the Search index in search results.
+a|
+
+| match_none
+| Object
+| Use the `match_none` object as the only property in your `query` object to return no documents from the Search index in search results.
+a|
+
+|====
+
+=== Additional Query Properties 
+
+You can use the following properties to modify the results returned by any other query. 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Description |Examples
+
+| [[field]]field
+| String
+a| Specify a specific field name, using dot notation, where the Search Service should search for a match to your search query. 
+a| 
+
+| [[fuzziness]]fuzziness 
+| Integer 
+a| Use the `fuzziness` property to run a fuzzy query. 
+
+The `fuzziness` property uses your specified edit distance to match terms based on their similarity, rather than exact matches. 
+
+Use the `fuzziness` property with the <<term,term property>> for a term query or the <<match,match property>> for a match query. 
+a| 
 
 |====
 
