@@ -232,6 +232,11 @@ You can create objects to describe any of the available query types:
 *
 *
 a| 
+.reviews.date field must be between 2001-10-09 and 2016-10-31 and description field must contain "pool"
+[source,json]
+----
+include::example$query-compound.jsonc[tag=conjuncts]
+----
 
 | [[disjuncts]]disjuncts
 | Array
@@ -247,6 +252,11 @@ You can create objects to describe any of the available query types:
 *
 *
 a|
+.free_parking field must be true or checkin field must be "1PM"
+[source,json]
+----
+include::example$query-compound.jsonc[tag=disjuncts]
+----
 
 |====
 
@@ -399,7 +409,7 @@ include::example$query-match-phrase.jsonc[tag=short]
 
 === Analytic Queries 
 
-[cols="1,1,1,4"]
+[cols="1,1,4,4"]
 |====
 |Property |Type |Description |Examples
 
@@ -407,6 +417,19 @@ include::example$query-match-phrase.jsonc[tag=short]
 | String
 a| Use the `match` property to run a match query. 
 a| 
+
+| match_phrase
+| String 
+a| Use the `match_phrase` property to run a match phrase query. 
+
+To use a match phrase query: 
+
+* You must specify a field to search with the <<field,field property>> or the <<field-name,{field-name}>> syntax in your search query. 
+* You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
+
+For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+
+The Search Service searches for exact matches to the phrase you specify.
 
 |====
 
@@ -424,17 +447,27 @@ a| Use the `bool` property to query a field that contains a boolean value.
 
 Use the <<field,field property>> and set `bool` to `true` or `false` to search. 
 a|
+.Search for documents where the pets_ok field is true
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=bool]
+----
 
 | [[prefix]]prefix
 | String
 a| Use the `prefix` property to run a prefix query. 
 
-Set the property to a string to return matches for any term that starts with that string in search results. 
-
-If you use the `prefix` property, the Search Service does not use any analyzers on the contents of your query text. 
+Set the property to a string to return matches for any term that starts with that string in search results.
 
 For example, you could set the `prefix` property to `inter` to return matches for `interview`, `internal`, `interesting`, and so on. 
+
+If you use the `prefix` property, the Search Service does not use any analyzers on the contents of your query text. 
 a| 
+.Search for terms that start with "inter" inside the reviews.content field
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=prefix]
+----
 
 | [[regexp]]regexp
 | String
@@ -444,6 +477,11 @@ Set the property to a regular expression to return matches for that regular expr
 
 If you use the `regexp` property, the Search Service does not use any analyzers on the contents of your query text. 
 a| 
+.Search for terms that match the regular expression "plan.+" inside the reviews.content field
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=regexp]
+----
 
 | [[term]]term 
 | String
@@ -456,20 +494,22 @@ The Search Service searches for an exact match for the text you provide in the `
 If you use the `term` property, the Search Service does not use any analyzers on the contents of your query text. 
 
 a|
+.Search for terms that match the term "interest" inside the reviews.content field with a fuzziness of 2
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=term]
+----
 
 | [[terms]]terms
 | Array
 a| Use the `terms` array to run a phrase query. 
 
-[NOTE]
-====
 To use a phrase query: 
 
 * You must set the <<field,field property>> in your search query. 
 * You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
 
 For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
-====
 
 The Search Service searches for the strings you provide in the `terms` array in the specified order. 
 Unlike the <<match_phrase,match_phrase property>>, the `terms` array does not use any analyzers on the contents of your query text. 
@@ -477,6 +517,11 @@ Unlike the <<match_phrase,match_phrase property>>, the `terms` array does not us
 For example, set the `terms` array to `\["nice", "view"\]`. 
 The Search Service looks for any occurrences of `nice` in a document that are followed by an occurrence of `view`.  
 a|
+.Search for the phrase "nice view" in the reviews.content field
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=phrase]
+----
 
 | [[wildcard]]wildcard
 | String
@@ -493,6 +538,11 @@ You cannot place the wildcard character at the start of the search term.
 
 If you use the `wildcard` property, the Search Service does not use any analyzers on the contents of your query text. 
 a|
+.Search for any terms that start with "inter" followed by zero or more characters in the reviews.content field
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=wildcard]
+----
 
 |====
 
@@ -500,7 +550,7 @@ a|
 
 You can use the following special queries as the only properties inside a `query` object to return all or no documents from your Search index in search results. 
 
-[cols="1,1,1,4"]
+[cols="1,1,4,4"]
 |====
 |Property |Type |Description |Examples
 
@@ -508,11 +558,21 @@ You can use the following special queries as the only properties inside a `query
 | Object
 | Use the `match_all` object as the only property in your `query` object to return all documents from the Search index in search results.
 a|
+.Return all documents in the Search index
+[source,json]
+----
+include::example$query-special.jsonc[tag=match_all]
+----
 
 | match_none
 | Object
 | Use the `match_none` object as the only property in your `query` object to return no documents from the Search index in search results.
 a|
+.Return no documents from the Search index
+[source,json]
+----
+include::example$query-special.jsonc[tag=match_none]
+----
 
 |====
 
@@ -520,7 +580,7 @@ a|
 
 You can use the following properties to modify the results returned by any other query. 
 
-[cols="1,1,1,4"]
+[cols="1,1,4,4"]
 |====
 |Property |Type |Description |Examples
 
@@ -528,6 +588,11 @@ You can use the following properties to modify the results returned by any other
 | String
 a| Specify a specific field name, using dot notation, where the Search Service should search for a match to your search query. 
 a| 
+.Search for documents where the pets_ok field is true
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=bool]
+----
 
 | [[fuzziness]]fuzziness 
 | Integer 
@@ -537,6 +602,11 @@ The `fuzziness` property uses your specified edit distance to match terms based 
 
 Use the `fuzziness` property with the <<term,term property>> for a term query or the <<match,match property>> for a match query. 
 a| 
+.Search for a match the term "interest" inside the reviews.content field with a fuzziness of 2
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=term]
+----
 
 |====
 
