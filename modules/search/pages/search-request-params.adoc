@@ -146,7 +146,12 @@ Use the `query` object to set the specific details of your Search query.
 
 Use the properties in the `query` object to control search result rankings, add multiple subqueries, and more. 
 
-=== Boolean Query Properties 
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=query]
+----
+
+=== Boolean Queries 
 
 Use any of the following properties to run a boolean query. 
 
@@ -409,18 +414,29 @@ include::example$query-match-phrase.jsonc[tag=short]
 
 === Analytic Queries 
 
+Analytic queries use an analyzer to analyze the contents of your Search query, and find a match in the documents inside your Search index. 
+
 [cols="1,1,4,4"]
 |====
 |Property |Type |Description |Examples
 
-| match 
+| [[match]]match 
 | String
 a| Use the `match` property to run a match query. 
+
+The Search Service searches for an exact match to the specified term inside the Search index's default field. 
+You can set a specific field to search with the <<field,field property>>. 
+
+You cannot include spaces inside the `match` property without specifying the <<operator,operator property>>, which tells the Search Service how to interpret the string. 
+
+For more information about the properties you can specify with a match query, see <<additional-query-properties,Additional Query Properties>>.
 a| 
 
 | match_phrase
 | String 
-a| Use the `match_phrase` property to run a match phrase query. 
+a| Use the `match_phrase` property to run a match phrase query.
+
+The Search Service searches for exact matches to the phrase you specify.
 
 To use a match phrase query: 
 
@@ -429,7 +445,8 @@ To use a match phrase query:
 
 For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
 
-The Search Service searches for exact matches to the phrase you specify.
+For more information about the properties you can specify with a match phrase query, see <<additional-query-properties,Additional Query Properties>>.
+a|
 
 |====
 
@@ -504,18 +521,18 @@ include::example$query-non-analytic.jsonc[tag=term]
 | Array
 a| Use the `terms` array to run a phrase query. 
 
+The Search Service searches for the strings you provide in the `terms` array in the specified order. 
+Unlike the <<match_phrase,match_phrase property>>, the `terms` array does not use any analyzers on the contents of your query text. 
+
+For example, set the `terms` array to `\["nice", "view"\]`. 
+The Search Service looks for any occurrences of `nice` in a document that are followed by an occurrence of `view`.
+
 To use a phrase query: 
 
 * You must set the <<field,field property>> in your search query. 
 * You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
 
-For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
-
-The Search Service searches for the strings you provide in the `terms` array in the specified order. 
-Unlike the <<match_phrase,match_phrase property>>, the `terms` array does not use any analyzers on the contents of your query text. 
-
-For example, set the `terms` array to `\["nice", "view"\]`. 
-The Search Service looks for any occurrences of `nice` in a document that are followed by an occurrence of `view`.  
+For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].  
 a|
 .Search for the phrase "nice view" in the reviews.content field
 [source,json]
@@ -576,6 +593,7 @@ include::example$query-special.jsonc[tag=match_none]
 
 |====
 
+[#additional-query-properties]
 === Additional Query Properties 
 
 You can use the following properties to modify the results returned by any other query. 
@@ -583,6 +601,13 @@ You can use the following properties to modify the results returned by any other
 [cols="1,1,4,4"]
 |====
 |Property |Type |Description |Examples
+
+| [[analyzer]]analyzer
+| String
+a| Use the `analyzer` property to modify the behavior of a <<match,match query>> or a<<match_phrase,match phrase query>>.
+
+Set the `analyzer` property to the name of the analyzer you want to use on the contents of the <<match,match property>> or <<match_phrase,match_phrase property>>.
+a|
 
 | [[field]]field
 | String
@@ -600,6 +625,8 @@ a| Use the `fuzziness` property to run a fuzzy query.
 
 The `fuzziness` property uses your specified edit distance to match terms based on their similarity, rather than exact matches. 
 
+You can set `fuzziness` to a maximum value of `2`.
+
 Use the `fuzziness` property with the <<term,term property>> for a term query or the <<match,match property>> for a match query. 
 a| 
 .Search for a match the term "interest" inside the reviews.content field with a fuzziness of 2
@@ -607,6 +634,26 @@ a|
 ----
 include::example$query-non-analytic.jsonc[tag=term]
 ----
+
+|[[operator]]operator
+| String
+a| Use the `operator` property to modify the behavior of a <<match,match query>>:
+
+* "and": Any spaces between terms in the <<match,match property>> are interpreted as the `AND` operator. Documents must match all of the terms in the query. 
+* "or": Any spaces between terms in the <<match,match property>> are interpreted as the `OR` operator. Documents must match at least one of the terms in the query. 
+
+For example, if you set a `match` property to the value `"good great"` and the `operator` property to `"and"`, the Search Service only returns matches for documents that contain `good` and `great`. 
+
+If you set the `operator` property to `"or"`, a document only needs to contain one of the terms from the `match` property: `good` or `great`.
+a| 
+
+|[[prefix-length]]prefix_length
+| Integer
+a| Use the `prefix_length` property to modify the behavior of a <<match,match query>>.
+
+The `prefix_length` changes a <<match,match query>> to a prefix match query. 
+The Search Service matches terms based on the query and the result sharing a prefix of the specified length. 
+a|
 
 |====
 
