@@ -297,7 +297,7 @@ include::example$query-boost.jsonc[tag=short]
 include::example$query-boost.jsonc[tag=long]
 ----
 
-| `>`, `>=`, `<`, and `<=`
+| [[range-query-string]]`>`, `>=`, `<`, and `<=`
 | See <<date-range-query,Date Range Queries>> or <<numeric-range-query,Numeric Range Queries>>.
 a| Use the later than (`>`), later than or equal to (`>=`), earlier than (`<`), and earlier than or equal to (`<=`) operators with a date value to run a date range query. 
 The Search Service searches for a date value in the specified field that matches the specified operator. 
@@ -308,13 +308,13 @@ a|
 .Query String query for a date in the created field after September 21, 2016
 [source,json]
 ----
-include::example$query-date-range.jsonc[]
+include::example$query-date-range.jsonc[tag=short]
 ----
 
 .Query String query for a rating in the reviews.ratings.Cleanliness field greater than 4
 [source,json]
 ----
-include::example$query-numeric-range.jsonc[]
+include::example$query-numeric-range.jsonc[tag=short]
 ----
 
 | `\`
@@ -431,6 +431,11 @@ You cannot include spaces inside the `match` property without specifying the <<o
 
 For more information about the properties you can specify with a match query, see <<additional-query-properties,Additional Query Properties>>.
 a| 
+.Match query for "best" or "great" in reviews.content with the "standard" analyzer
+[source,json]
+----
+include::example$query-analytic.jsonc[tag=match]
+----
 
 | match_phrase
 | String 
@@ -447,6 +452,11 @@ For more information about how to enable term vectors, see xref:create-child-fie
 
 For more information about the properties you can specify with a match phrase query, see <<additional-query-properties,Additional Query Properties>>.
 a|
+.Match phrase query for "very nice" in reviews.content
+[source,json]
+----
+include::example$query-analytic.jsonc[tag=match_phrase]
+----
 
 |====
 
@@ -563,6 +573,204 @@ include::example$query-non-analytic.jsonc[tag=wildcard]
 
 |====
 
+[#numeric-range-query]
+=== Numeric Range Queries 
+
+Use a numeric range query to search for a range of numbers inside documents in your Search index: 
+
+[source,json]
+----
+include::example$query-numeric-range.jsonc[tag=long]
+----
+
+You can also use the <<range-query-string,Query string syntax>> for a numeric range query. 
+
+[cols="1,1,4,4"]
+|====
+|Property |Type |Required? |Description
+
+|min 
+|Integer
+|No
+a| Set the minimum value of the numeric range that you want to search for. 
+
+You can specify only a `min` value or only a `max` value on your numeric range.
+
+By default, `min` is inclusive to the range.
+
+|max
+|Integer
+|No
+a| Set the maximum value of the numeric range that you want to search for. 
+
+You can specify only a `max` value or only a `min` value on your numeric range. 
+
+By default, `max` is exclusive to the range.
+
+|inclusive_min
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `min` value. 
+
+If you set `inclusive_min` to `false`, only values greater than `min` count as a match to your Search query. 
+
+If you do not set the `inclusive_min` value, by default, `min` is inclusive to the range.
+
+|inclusive_max
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `max` value. 
+
+If you set `inclusive_max` to `false`, only values less than `max` count as a match to your Search query.
+
+If you do not set the `inclusive_max` value, by default, `max` is exclusive to the range.
+
+|====
+
+[#date-range-query]
+=== Date Range Queries 
+
+Use a date range query to search for a range of date values inside documents in your Search index: 
+
+[source,json]
+----
+include::example$query-date-range.jsonc[tag=long]
+----
+
+You can also use the <<range-query-string,Query string syntax>> for a date range query. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|start
+|Integer
+|No
+a| Set the start date of the date range that you want to search for. 
+
+You can specify only a `start` value or only a `end` value on your date range.
+
+By default, `start` is inclusive to the range.
+
+|end
+|Integer
+|No
+a| Set the end date of the date range that you want to search for. 
+
+You can specify only a `end` value or only a `start` value on your date range.
+
+By default, `end` is exclusive to the range.
+
+|inclusive_start
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `start` value. 
+
+If you set `inclusive_start` to `false`, only dates later than `start` count as a match to your Search query. 
+
+If you do not set the `inclusive_start` value, by default, `start` is inclusive to the range.
+
+|inclusive_end
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `end` value. 
+
+If you set `inclusive_end` to `false`, only dates earlier than `end` count as a match to your Search query. 
+
+If you do not set the `inclusive_end` value, by default, `end` is exclusive to the range.
+
+|====
+
+[#term-range-query]
+=== Term Range Queries 
+
+Use a term range query to search for a range of terms inside documents in your Search index. 
+
+For example, the following query searches for any terms that occur in alphabetical order between `be` and `beautiful` from the `reviews.content` field in a Search index:
+
+[source,json]
+----
+include::example$query-term-range.jsonc[]
+----
+
+The query returns results such as `beach`, `beaches`, `Beatles`, and `beating`.
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|min
+|Integer
+|No
+a| Set the minimum term of the term range that you want to search for. 
+
+You can specify only a `min` value or only a `max` value on your term range.
+
+By default, `min` is inclusive to the range.
+
+|max
+|Integer
+|No
+a| Set the minimum term of the term range that you want to search for. 
+
+You can specify only a `max` value or only a `min` value on your term range.
+
+By default, `max` is exclusive to the range.
+
+|inclusive_min
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `min` value. 
+
+If you set `inclusive_min` to `false`, only terms that would occur after `min` in the dictionary count as a match to your Search query. 
+
+If you do not set the `inclusive_min` value, by default, `min` is inclusive to the range.
+
+|inclusive_max
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `max` value. 
+
+If you set `inclusive_max` to `false`, only terms that would occur before `max` in the dictionary count as a match to your Search query. 
+
+If you do not set the `inclusive_max` value, by default, `max` is exclusive to the range.
+
+|====
+
+[#geopoint-query-distance]
+=== Geopoint Queries - Distance/Radius-Based
+
+Use a Geopoint distance/radius-based query to search for geo location values in a set radius around a specified latitude and longitude:
+
+[source,json]
+----
+include::example$query-geopoint.jsonc[tag=distance]
+----
+
+NOTE: To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|location
+|Object
+|Yes
+a| Set the geo location value to use as the center of the search radius for your query. 
+
+You must set two values in the `location` object: 
+
+* `lon`: The longitude of the geo location to use as the center of the search radius. 
+* `lat`: The latitude of the geo location to use as the center of the search radius. 
+
+|distance
+|String
+|Yes
+a| The radius where the Search Service should search for matching geo location values. 
+
+|====
+
 === Special Queries 
 
 You can use the following special queries as the only properties inside a `query` object to return all or no documents from your Search index in search results. 
@@ -596,7 +804,7 @@ include::example$query-special.jsonc[tag=match_none]
 [#additional-query-properties]
 === Additional Query Properties 
 
-You can use the following properties to modify the results returned by any other query. 
+You can use the following properties to modify the results returned by specific query types. 
 
 [cols="1,1,4,4"]
 |====
@@ -607,7 +815,16 @@ You can use the following properties to modify the results returned by any other
 a| Use the `analyzer` property to modify the behavior of a <<match,match query>> or a<<match_phrase,match phrase query>>.
 
 Set the `analyzer` property to the name of the analyzer you want to use on the contents of the <<match,match property>> or <<match_phrase,match_phrase property>>.
+
+The specified analyzer only applies to the content of your Search request.
+It does not apply to the contents of documents in the Search index.
 a|
+
+.Match query for "location" and "hostel" in reviews.content with the "en" analyzer
+[source,json]
+----
+include::example$query-analytic.jsonc[tag=match_analyzer]
+----
 
 | [[field]]field
 | String
@@ -647,6 +864,12 @@ For example, if you set a `match` property to the value `"good great"` and the `
 If you set the `operator` property to `"or"`, a document only needs to contain one of the terms from the `match` property: `good` or `great`.
 a| 
 
+.Match query for "best" or "worst" in reviews.content
+[source,json]
+----
+include::example$query-analytic.jsonc[tag=match_operator]
+----
+
 |[[prefix-length]]prefix_length
 | Integer
 a| Use the `prefix_length` property to modify the behavior of a <<match,match query>>.
@@ -654,6 +877,11 @@ a| Use the `prefix_length` property to modify the behavior of a <<match,match qu
 The `prefix_length` changes a <<match,match query>> to a prefix match query. 
 The Search Service matches terms based on the query and the result sharing a prefix of the specified length. 
 a|
+.Match query for "location hostel" in reviews.content with a prefix_length of 4
+[source,json]
+----
+include::example$query-analytic.jsonc[tag=match_prefix_length]
+----
 
 |====
 
@@ -1007,7 +1235,7 @@ Set the order for search results when the `field` contains multiple values, such
 
 |missing |String |Yes a|
 
-Set how the Search Service sorts documents that don't have a value for the field specified in `field`:
+Set how the Search Service sorts documents that do not have a value for the field specified in `field`:
 
 * `first`: Documents with a missing value appear first and before other results in search results. 
 * `last`: Documents with a missing value appear last and after other results in search results. 
@@ -1019,5 +1247,11 @@ Set the data type of the field specified in `field`:
 * `string`: The field contains a string. 
 * `date`: The field contains date/time data. 
 * `number`: The field contains a number or geographic data, like a latitude or longitude value. 
+
+|unit |String |No a|
+
+When running a <<geopoint-query-distance,Geopoint Distance/Radius query>>, you can set the unit of distance to use when sorting documents. 
+
+The unit of distance does not have to match the unit specified in the <<query-object,query object>>.
 
 |====
