@@ -755,19 +755,236 @@ For more information about how to create a child field, see xref:create-child-fi
 |Property |Type |Required? |Description
 
 |location
-|Object
+|Object or Array
 |Yes
 a| Set the geo location value to use as the center of the search radius for your query. 
 
-You must set two values in the `location` object: 
+If you use `location` as an object, you must set two values: 
 
 * `lon`: The longitude of the geo location to use as the center of the search radius. 
 * `lat`: The latitude of the geo location to use as the center of the search radius. 
+
+If you use `location` as an array, your array must contain a longitude value followed by a latitude value.
+For example, `[-2.235143, 53.482358]`, where `-2.235143` is the longitude. 
 
 |distance
 |String
 |Yes
 a| The radius where the Search Service should search for matching geo location values. 
+
+Enter the radius as a single string, with a numeric value and a unit value. 
+For example, `100.5mi`.
+
+You can use the following distance units: 
+
+* `mm`: Millimeters 
+* `cm`: Centimeters
+* `in`: Inches
+* `yd`: Yards
+* `ft`: Feet
+* `m`: Meters
+* `km`: Kilometers
+* `mi`: Miles
+* `nm`: Nautical miles
+
+|====
+
+[#geopoint-query-rectangle]
+=== Geopoint Queries - Rectangle-Based
+
+Use a Geopoint rectangle-based query to search for geo location values in a defined rectangle:
+
+[source,json]
+----
+include::example$query-geopoint.jsonc[tag=rectangle]
+----
+
+The Search Service takes a value for the top-left and bottom-right corners of a rectangle, and draws a bounding box that connects those points. 
+The resulting rectangle is used as the search area for geo location values. 
+
+NOTE: To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|top_left
+|Object or Array
+|Yes
+a| Set the geo location value to use as the top-left corner point of the rectangle search area. 
+
+If you use `top_left` as an object, you must set two values: 
+
+* `lon`: The longitude of the geo location to use as the top-left corner of the rectangle. 
+* `lat`: The latitude of the geo location to use as the top-left corner of the rectangle. 
+
+If you use `top_left` as an array, your array must contain a longitude floating point value followed by a latitude floating point value.
+For example, `[-2.235143, 53.482358]`, where `-2.235143` is the longitude. 
+
+|bottom_right
+|Object or Array
+|Yes
+a| Set the geo location value to use as the bottom-right corner point of the rectangle search area. 
+
+If you use `bottom_right` as an object, you must set two values: 
+
+* `lon`: The longitude of the geo location to use as the bottom-right corner of the rectangle. 
+* `lat`: The latitude of the geo location to use as the bottom-right corner of the rectangle. 
+
+If you use `bottom_right` as an array, your array must contain a longitude floating point value followed by a latitude floating point value.
+For example, `[-2.235143, 53.482358]`, where `-2.235143` is the longitude.
+
+|====
+
+[#geopoint-query-polygon]
+=== Geopoint Queries - Polygon-Based
+
+Use a Geopoint polygon-based query to search for geo location values in a defined polygon:
+
+[source,json]
+----
+include::example$query-geopoint.jsonc[tag=polygon]
+----
+
+The Search Service takes an array of latitude and longitude values and connects them in the specified order to form a polygon. 
+The resulting polygon is used as the search area for geo location values. 
+
+NOTE: To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|polygon_points
+|Array
+|Yes
+a| Set an array of latitude and longitude string values to use as the points in your polygon search area. 
+
+For example, an array of `[ "37.79393211306212,-122.44234633404847", "37.77995881733997,-122.43977141339417", "37.788031092020155,-122.42925715405579"]` is interpreted as 3 separate polygon points and creates a 3-sided polygon. 
+
+For `polygon_points`, the first value in the string is the latitude, and the second is the longitude. 
+
+You can set the last value in the array to the same value as the first latitude and longitude to explicitly close your polygon. 
+Otherwise, the Search Service infers the polygon's closure. 
+
+|====
+
+[#geojson-query]
+=== GeoJSON Queries
+
+Use the GeoJSON query syntax to query a GeoJSON shape. 
+
+The Search Service can return documents with GeoJSON data that intersects, contains, or exists within the defined GeoJSON shape:
+
+[source,json]
+----
+include::example$query-geopoint.jsonc[tag=polygon]
+----
+
+NOTE: To use a GeoJSON query, you must have a child field in your Search index with the `geopoint` type.
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<shape,shape property>> and <<relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[shape]]shape
+|Object
+|Yes
+a| Contains the <<type,type property>> and <<coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[type]]type
+|String
+|Yes
+a| A string that specifies the type of GeoJSON object to use in the query. 
+
+Set to one of the GeoJSON shape types: 
+
+* <<point,Point>>
+* <<linestring,LineString>>
+* <<polygon,Polygon>>
+* <<multipoint,Multipoint>>
+* <<multilinestring,MultiLineString>>
+* <<multipolygon,MultiPolygon>>
+* <<geometrycollection,GeometryCollection>>
+* <<circle,Circle>>
+* <<envelope,Envelope>>
+
+|[[coordinates]]coordinates
+|Array or Array of Arrays
+|Yes
+a| An array of floating point value coordinates that define the GeoJSON shape. 
+
+The structure and nesting of the arrays depends on your chosen <<type,GeoJSON shape type>>.
+
+|[[relation]]relation
+|String
+|Yes
+a|
+
+* `intersects`: The document's geo location data must intersect the defined geometry for the query. 
+
+* `contains`: The defined geometry for the query must contain the document's geo location data. 
+
+* `within`: 
+
+//What's the difference between contains and within?
+|====
+
+==== Available GeoJSON Shapes
+
+You can search for the following GeoJSON shapes with the Search Service. 
+
+[cols="1,4,4"]
+|====
+|Shape Type |Description |Examples
+
+|[[point]]Point 
+a|
+a|
+
+|[[linestring]]LineString
+a|
+a|
+
+|[[polygon]]Polygon
+a|
+a|
+
+|[[multipoint]]Multipoint
+a|
+a|
+
+|[[multilinestring]]MultiLineString
+a|
+a|
+
+|[[multipolygon]]MultiPolygon
+a|
+a|
+
+|[[geometrycollection]]GeometryCollection
+a|
+a|
+
+|[[circle]]Circle
+a|
+a|
+
+|[[envelope]]Envelope
+a|
+a|
 
 |====
 
