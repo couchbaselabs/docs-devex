@@ -151,11 +151,13 @@ Use the properties in the `query` object to control search result rankings, add 
 include::example$run-search-full-request.jsonc[tag=query]
 ----
 
+[#boolean-queries]
 === Boolean Queries 
 
 Use any of the following properties to run a boolean query. 
+A boolean query searches for a combination of queries that a document must match to be included in search results. 
 
-Boolean queries take <<conjuncts,conjuncts>> and <<disjuncts,disjuncts>> arrays inside the <<must,must>>, <<must_not,must_not>> and <<should,should>> objects to set the queries a document must match to be included in search results. 
+Use a <<compound-queries,compound query array>> inside the <<must,must>>, <<must_not,must_not>> and <<should,should>> objects to set the queries a document must match. 
 
 [cols="1,1,4,4"]
 |====
@@ -166,7 +168,7 @@ Boolean queries take <<conjuncts,conjuncts>> and <<disjuncts,disjuncts>> arrays 
 a| Use a `must` object to create a boolean query. 
 
 A `must` object must contain a <<conjuncts,conjuncts array>> or a <<disjuncts,disjuncts array>>. 
-The array lists all the queries that must have a match in a document to include the document in search results. 
+Either array type lists all the queries that must have a match in a document to include the document in search results. 
 
 For example, a query could have a `must` object with 2 queries in a `conjuncts` array.
 The Search Service must find a match for both those queries in a document to include it in search results. 
@@ -183,7 +185,7 @@ include::example$query-boolean.jsonc[tag=must]
 a| Use a `must_not` object to create a boolean query. 
 
 A `must_not` object must contain a <<conjuncts,conjuncts array>> or a <<disjuncts,disjuncts array>>. 
-The array lists the queries that must not have a match in a document to include the document in search results. 
+Either array type lists all the queries that must have a match in a document to include the document in search results.
 
 For example, a query could have a `must_not` object with 3 queries in a `conjuncts` array.
 The Search Service must not find a match for any of the 3 queries in a document to include it in search results. 
@@ -200,9 +202,9 @@ include::example$query-boolean.jsonc[tag=must_not]
 a| Use a `should` object to create a boolean query. 
 
 A `should` object must contain a <<conjuncts,conjuncts array>> or a <<disjuncts,disjuncts array>>. 
-The array lists the queries that should have a match in a document to score the document higher in search results. 
+Either array type lists all the queries that must have a match in a document to score the document higher in search results. 
 
-A document can be included in search results if it does not match the query in a `should` object. 
+A document can be included in search results if it does not match the query or queries in a `should` object. 
 The document scores higher in search results if it does match the query.
 
 a|
@@ -214,9 +216,12 @@ include::example$query-boolean.jsonc[tag=should]
 
 |====
 
+[#compound-queries]
 === Compound Queries (AND and OR)
 
-Use a Compound query array to specify multiple child queries that must have a match in a document for that document to be included in search results. 
+Use a compound query array to specify multiple child queries that must have a match in a document for that document to be included in search results.
+
+Use compound query arrays with <<boolean-queries,boolean queries>>.
 
 You can use 2 different types of compound queries: 
 
@@ -272,7 +277,7 @@ Use the following properties and syntax to run a Query String query.
 Query String queries let you express more complex queries with a special syntax.
 You can reduce the properties you need to specify for a Search query with Query String syntax. 
 
-If you do not add any additional syntax to a query, the Search Service interprets the query as a match query. 
+If you do not add any additional Query String syntax to a query, the Search Service interprets the query as a match query. 
 It searches for an exact match to the provided term in any fields that have been added to the `default` field. 
 For more information about how to configure the default field for your Search index, see xref:set-advanced-settings.adoc#all-field[Set Search Index General Settings] or the xref:search-index-params.adoc#all-field[default_field property].
 
@@ -408,7 +413,7 @@ a|
 .Query String match phrase query for "continental breakfast"
 [source,json]
 ----
-include::example$query-match-phrase.jsonc[tag=short]
+include::example$query-analytic.jsonc[tag=short_match_phrase]
 ----
 |====
 
@@ -585,7 +590,7 @@ include::example$query-numeric-range.jsonc[tag=long]
 
 You can also use the <<range-query-string,Query string syntax>> for a numeric range query. 
 
-[cols="1,1,4,4"]
+[cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description
 
@@ -883,7 +888,8 @@ The Search Service can return documents with GeoJSON data that intersects, conta
 include::example$query-geopoint.jsonc[tag=polygon]
 ----
 
-NOTE: To use a GeoJSON query, you must have a child field in your Search index with the `geopoint` type.
+NOTE: To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
@@ -924,67 +930,148 @@ Set to one of the GeoJSON shape types:
 |[[coordinates]]coordinates
 |Array or Array of Arrays
 |Yes
-a| An array of floating point value coordinates that define the GeoJSON shape. 
+a| An array of coordinate floating point values that define the GeoJSON shape. 
 
 The structure and nesting of the arrays depends on your chosen <<type,GeoJSON shape type>>.
+
+The Search Service uses the first value in any `coordinates` array as a longitude value. 
+
+The Search Service also follows strict GeoJSON syntax, and expects exterior coordinates in a polygon to be in counterclockwise order.
 
 |[[relation]]relation
 |String
 |Yes
-a|
+a| Set how the Search Service should return a match for a GeoJSON search. 
+
+You can use the following string values in the `relation` property:
 
 * `intersects`: The document's geo location data must intersect the defined geometry for the query. 
 
-* `contains`: The defined geometry for the query must contain the document's geo location data. 
+* `contains`: The defined geometry for the query must be within the document's defined geoshape data. 
 
-* `within`: 
+* `within`: The document's defined geoshape data must be within the defined geometry for the query.
 
-//What's the difference between contains and within?
+NOTE: Not all `relation` property values are supported by all GeoJSON Shapes.
+For example, a `LineString` query cannot use `within` for the `relation`, as geoshape data cannot be inside a line. 
+
 |====
 
 ==== Available GeoJSON Shapes
 
 You can search for the following GeoJSON shapes with the Search Service. 
 
-[cols="1,4,4"]
+[cols="1,2,4"]
 |====
 |Shape Type |Description |Examples
 
 |[[point]]Point 
+a| Use the `point` geoshape with the `intersects` relation. 
+
+You cannot use the `within` relation type, and `contains` will behave the same as `intersects`.
+
+A `point` geoshape query searches for a single point that intersects or exists inside any geoshape data in a document. 
 a|
-a|
+.Search for geoshape data in the geojson field that intersects a defined Point
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=point]
+----
 
 |[[linestring]]LineString
+a| Use the `linestring` geoshape with the `contains` or `intersects` relations. 
+
+You cannot use the `within` relation. 
+
+A `linestring` geoshape query searches for a line defined by an array of points. 
+A straight line contains only 2 points. 
+If you define more than 2 points, the Search Service defines an arbitrary path between points.  
 a|
-a|
+.Search for geoshape data in the geojson field that intersects a defined LineString
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=linestring]
+----
 
 |[[polygon]]Polygon
+a| Use the `polygon` geoshape with any relation type. 
+
+A `polygon` geoshape query searches for a defined polygon that intersects, contains, or exists inside any geoshape data in a document. 
 a|
-a|
+.Search for geoshape data in the geojson field that exists within a defined Polygon
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=polygon]
+----
 
 |[[multipoint]]Multipoint
+a| Use the `multipoint` geoshape with any relation type. 
+
+A `multipoint` geoshape query searches for an array of points that intersects, contains, or exists inside any geoshape data in a document. 
 a|
-a|
+.Search for geoshape data in the geojson field that intersects 2 points 
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=multipoint]
+----
 
 |[[multilinestring]]MultiLineString
+a| Use the `multilinestring` geoshape with the `intersects` or `contains` relation types. 
+
+A `multilinestring` geoshape query searches for an array of LineStrings that intersects or exists inside any geoshape data in a document. 
 a|
-a|
+.Search for geoshape data in the geojson field that intersects a defined MultiLineString
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=multilinestring]
+----
 
 |[[multipolygon]]MultiPolygon
+a| Use the `multipolygon` geoshape with any relation type. 
+
+A `multipolygon` geoshape query searches for an array of defined Polygons that intersects, contains, or exists inside any geoshape data in a document. 
+
+For a `contains` match, every defined polygon must be contained within a defined geoshape in a document. 
+
+For a `within` match, every defined polygon must collectively contain any defined geoshapes in a document.
 a|
-a|
+.Search for geoshape data in the geojson field that exists within 2 defined Polygons
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=multipolygon]
+----
 
 |[[geometrycollection]]GeometryCollection
+a| Use the `geometrycollection` geoshape with any relation type. 
+
+A `geometrycollection` geoshape query searches for an array of Polygons, Points, or LineStrings that intersects, contains, or exists inside any geoshape data in a document. 
+
+For a `contains` match, any of the query geoshapes must be contained within a defined geoshape in a document. 
+
+For a `within` match, every defined polygon must collectively contain any defined geoshapes in a document.
 a|
-a|
+.Search for geoshape data in the geojson field that contains a LineString and a MultiPolygon
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=geometrycollection]
+----
 
 |[[circle]]Circle
 a|
 a|
+.Search for geoshape data in the geojson field that exists within a Circle with a radius of 100 miles
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=circle]
+----
 
 |[[envelope]]Envelope
 a|
 a|
+.Search for geoshape data in the geojson field that intersects with a bounded rectangle
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=envelope]
+----
 
 |====
 
