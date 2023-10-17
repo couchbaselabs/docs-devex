@@ -241,6 +241,7 @@ You can create objects to describe any of the available query types:
 
 *
 *
+//TO DO: Fill in query types
 a| 
 .reviews.date field must be between 2001-10-09 and 2016-10-31 and description field must contain "pool"
 [source,json]
@@ -261,6 +262,7 @@ You can create objects to describe any of the available query types:
 
 *
 *
+//TO DO: fill in query types
 a|
 .free_parking field must be true or checkin field must be "1PM"
 [source,json]
@@ -743,7 +745,7 @@ If you do not set the `inclusive_max` value, by default, `max` is exclusive to t
 |====
 
 [#geopoint-query-distance]
-=== Geopoint Queries - Distance/Radius-Based
+=== Distance/Radius-Based Geopoint Queries
 
 Use a Geopoint distance/radius-based query to search for geo location values in a set radius around a specified latitude and longitude:
 
@@ -795,7 +797,7 @@ You can use the following distance units:
 |====
 
 [#geopoint-query-rectangle]
-=== Geopoint Queries - Rectangle-Based
+=== Rectangle-Based Geopoint Queries
 
 Use a Geopoint rectangle-based query to search for geo location values in a defined rectangle:
 
@@ -843,7 +845,7 @@ For example, `[-2.235143, 53.482358]`, where `-2.235143` is the longitude.
 |====
 
 [#geopoint-query-polygon]
-=== Geopoint Queries - Polygon-Based
+=== Polygon-Based Geopoint Queries
 
 Use a Geopoint polygon-based query to search for geo location values in a defined polygon:
 
@@ -876,19 +878,17 @@ Otherwise, the Search Service infers the polygon's closure.
 
 |====
 
-[#geojson-query]
-=== GeoJSON Queries
+[#geojson-query-point]
+=== Point GeoJSON Queries
 
-Use the GeoJSON query syntax to query a GeoJSON shape. 
-
-The Search Service can return documents with GeoJSON data that intersects, contains, or exists within the defined GeoJSON shape:
+Use a GeoJSON Point query to search for a single latitude and longitude coordinate that intersects or is contained inside a GeoJSON shape in your documents: 
 
 [source,json]
 ----
-include::example$query-geopoint.jsonc[tag=polygon]
+include::example$query-geojson.jsonc[tag=point]
 ----
 
-NOTE: To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
@@ -899,179 +899,656 @@ For more information about how to create a child field, see xref:create-child-fi
 |geometry
 |Object
 |Yes
-a| Contains the <<shape,shape property>> and <<relation,relation>> property. 
+a| Contains the <<point-shape,shape property>> and <<point-relation,relation>> property. 
 
 Defines the GeoJSON shape and how the Search Service should find a match in documents. 
 
-|[[shape]]shape
+|[[point-shape]]shape
 |Object
 |Yes
-a| Contains the <<type,type property>> and <<coordinates,coordinates property>>. 
+a| Contains the <<point-type,type property>> and <<point-coordinates,coordinates property>>. 
 
 Defines the specific GeoJSON shape to use in the query. 
 
-|[[type]]type
+|[[point-type]]type
 |String
 |Yes
-a| A string that specifies the type of GeoJSON object to use in the query. 
+a| Set `type` to `point`.
 
-Set to one of the GeoJSON shape types: 
-
-* <<point,Point>>
-* <<linestring,LineString>>
-* <<polygon,Polygon>>
-* <<multipoint,Multipoint>>
-* <<multilinestring,MultiLineString>>
-* <<multipolygon,MultiPolygon>>
-* <<geometrycollection,GeometryCollection>>
-* <<circle,Circle>>
-* <<envelope,Envelope>>
-
-|[[coordinates]]coordinates
-|Array or Array of Arrays
+|[[point-coordinates]]coordinates
+|Array
 |Yes
 a| An array of coordinate floating point values that define the GeoJSON shape. 
 
-The structure and nesting of the arrays depends on your chosen <<type,GeoJSON shape type>>.
+For a `point` query, set the `coordinates` array to a single array with a longitude and latitude value. 
 
-The Search Service uses the first value in any `coordinates` array as a longitude value. 
+The Search Service uses the first value in the `coordinates` array as the longitude value. 
 
-The Search Service also follows strict GeoJSON syntax, and expects exterior coordinates in a polygon to be in counterclockwise order.
-
-|[[relation]]relation
+|[[point-relation]]relation
 |String
 |Yes
-a| Set how the Search Service should return a match for a GeoJSON search. 
+a| Set how the Search Service should return a match for a GeoJSON Point search. 
+
+Your selected `relation` type determines which shapes return a match for your query.
 
 You can use the following string values in the `relation` property:
 
-* `intersects`: The document's geo location data must intersect the defined geometry for the query. 
+* `intersects`: The defined query Point overlaps a defined Point or LineString, or exists within the defined area for a Polygon, Circle, or Envelope.
++
+For multi-shape geometries, the query point must only overlap with one Point, LineString, or Polygon. 
 
-* `contains`: The defined geometry for the query must be within the document's defined geoshape data. 
+* `contains`: The defined query Point overlaps a defined Point or LineString, or exists within the defined area for a Polygon, Circle, or Envelope. 
++
+For multi-shape geometries, the query point must only overlap with one Point, LineString, or Polygon. 
 
-* `within`: The document's defined geoshape data must be within the defined geometry for the query.
-
-NOTE: Not all `relation` property values are supported by all GeoJSON Shapes.
-For example, a `LineString` query cannot use `within` for the `relation`, as geoshape data cannot be inside a line. 
+* `within`: Not supported for Point queries. 
 
 |====
 
-==== Available GeoJSON Shapes
 
-You can search for the following GeoJSON shapes with the Search Service. 
+[#geojson-query-linestring]
+=== LineString GeoJSON Queries
 
-[cols="1,2,4"]
-|====
-|Shape Type |Description |Examples
+Use a GeoJSON LineString query to search for a line of coordinates that intersects or is contained inside a GeoJSON shape in your documents: 
 
-|[[point]]Point 
-a| Use the `point` geoshape with the `intersects` relation. 
-
-You cannot use the `within` relation type, and `contains` will behave the same as `intersects`.
-
-A `point` geoshape query searches for a single point that intersects or exists inside any geoshape data in a document. 
-a|
-.Search for geoshape data in the geojson field that intersects a defined Point
-[source,json]
-----
-include::example$query-geojson.jsonc[tag=point]
-----
-
-|[[linestring]]LineString
-a| Use the `linestring` geoshape with the `contains` or `intersects` relations. 
-
-You cannot use the `within` relation. 
-
-A `linestring` geoshape query searches for a line defined by an array of points. 
-A straight line contains only 2 points. 
-If you define more than 2 points, the Search Service defines an arbitrary path between points.  
-a|
-.Search for geoshape data in the geojson field that intersects a defined LineString
 [source,json]
 ----
 include::example$query-geojson.jsonc[tag=linestring]
 ----
 
-|[[polygon]]Polygon
-a| Use the `polygon` geoshape with any relation type. 
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
-A `polygon` geoshape query searches for a defined polygon that intersects, contains, or exists inside any geoshape data in a document. 
-a|
-.Search for geoshape data in the geojson field that exists within a defined Polygon
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<linestring-shape,shape property>> and <<linestring-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[linestring-shape]]shape
+|Object
+|Yes
+a| Contains the <<linestring-type,type property>> and <<linestring-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[linestring-type]]type
+|String
+|Yes
+a| Set `type` to `linestring`.
+
+|[[linestring-coordinates]]coordinates
+|Array of Arrays
+|Yes
+a| An array that contains arrays of 2 coordinate floating point values that define the GeoJSON LineString shape. 
+
+For a `linestring` query, the `coordinates` array can contain multiple coordinate point arrays. 
+
+The Search Service uses the first value in any nested `coordinates` array as the longitude value for the coordinate.  
+
+|[[linestring-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON LineString search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: The defined query LineString overlaps a defined Point or LineString, or intersects with the defined edges of a Polygon, Circle, or Envelope.
++
+For multi-shape geometries, the defined LineString must only overlap one Point, or intersect one LineString or Polygon. 
+
+* `contains`: The start and end points of the LineString are within the defined area of a Polygon, Circle, or Envelope.
++
+Points and LineStrings are not supported. 
+For MultiPolygon or GeometryCollection shapes, only one Polygon must contain both the start and end points of the LineString. 
+
+* `within`: Not supported for LineString queries. 
+
+|====
+
+[#geojson-query-polygon]
+=== Polygon GeoJSON Queries
+
+Use a GeoJSON Polygon query to search for a defined area that intersects, is contained inside, or surrounds a GeoJSON shape in your documents: 
+
 [source,json]
 ----
 include::example$query-geojson.jsonc[tag=polygon]
 ----
 
-|[[multipoint]]Multipoint
-a| Use the `multipoint` geoshape with any relation type. 
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
-A `multipoint` geoshape query searches for an array of points that intersects, contains, or exists inside any geoshape data in a document. 
-a|
-.Search for geoshape data in the geojson field that intersects 2 points 
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<polygon-shape,shape property>> and <<polygon-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[polygon-shape]]shape
+|Object
+|Yes
+a| Contains the <<polygon-type,type property>> and <<polygon-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[polygon-type]]type
+|String
+|Yes
+a| Set `type` to `polygon`.
+
+|[[polygon-coordinates]]coordinates
+|Array of Arrays
+|Yes
+a| An array that contains an outer array, and arrays of 2 coordinate floating point values that define the GeoJSON Polygon shape. 
+
+The Search Service uses the first value in any nested `coordinates` array as the longitude value for the coordinate.  
+
+The Search Service also follows strict GeoJSON syntax, and expects exterior coordinates in a polygon to be in counterclockwise order.
+
+|[[polygon-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON Polygon search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: The defined query Polygon contains a Point, or one of its edges intersects a LineString, Polygon, Circle, or Envelope.
++
+For multi-shape geometries, only one Point must be contained, or only one LineString or Polygon must intersect. 
+
+* `contains`: The entire defined area of the query Polygon exists inside a Polygon, Circle, or Envelope. 
++
+Points and LineStrings are not supported. 
+For multi-shape geometries, one shape must contain the entirety of the defined query Polygon. 
+
+* `within`: The query Polygon contains a Point, the endpoints of a LineString, or the entirety of a Polygon, Circle, or Envelope. 
++
+For multi-shape geometries, the query Polygon must contain the entirety of each defined Point, LineString, or Polygon. 
+
+|====
+
+
+[#geojson-query-multipoint]
+=== MultiPoint GeoJSON Queries
+
+Use a GeoJSON MultiPoint query to search for multiple coordinate points that intersect or are contained inside a GeoJSON shape in your documents: 
+
 [source,json]
 ----
 include::example$query-geojson.jsonc[tag=multipoint]
 ----
 
-|[[multilinestring]]MultiLineString
-a| Use the `multilinestring` geoshape with the `intersects` or `contains` relation types. 
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
-A `multilinestring` geoshape query searches for an array of LineStrings that intersects or exists inside any geoshape data in a document. 
-a|
-.Search for geoshape data in the geojson field that intersects a defined MultiLineString
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<multipoint-shape,shape property>> and <<multipoint-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[multipoint-shape]]shape
+|Object
+|Yes
+a| Contains the <<multipoint-type,type property>> and <<multipoint-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[multipoint-type]]type
+|String
+|Yes
+a| Set `type` to `multipoint`.
+
+|[[multipoint-coordinates]]coordinates
+|Array of Arrays
+|Yes
+a| An array that contains arrays of 2 coordinate floating point values that define the GeoJSON MultiPoint shape. 
+
+The Search Service uses the first value in any nested `coordinates` array as the longitude value for the coordinate.  
+
+|[[multipoint-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON MultiPoint search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: One of the points in the MultiPoint overlaps a Point or a LineString endpoint, or exists inside the area of a Polygon, Circle, or Envelope.
++
+For multi-shape geometries, only one Point must inside the shape or overlap a Point or endpoint. 
+
+* `contains`: All points in the MultiPoint exist inside a Polygon, Circle, or Envelope. 
++
+Points and LineStrings are not supported. 
+A MultiPoint shape can return a match if all points in the query overlap with the MultiPoint in the document. 
++
+A MultiPolygon or GeometryCollection returns a match if all query points exist within any of the defined Polygons or MultiPoints. 
+
+* `within`: Any of the points in the query MultiPoint overlap with a defined Point. 
++
+A MultiPoint shape returns a match if all points in the query overlap with the MultiPoint in the document. 
+
+|====
+
+[#geojson-query-multilinestring]
+=== MultiLineString GeoJSON Queries
+
+Use a GeoJSON MultiLineString query to search for multiple <<geojson-query-linestring,LineStrings>> that intersect or are contained inside a GeoJSON shape in your documents: 
+
 [source,json]
 ----
 include::example$query-geojson.jsonc[tag=multilinestring]
 ----
 
-|[[multipolygon]]MultiPolygon
-a| Use the `multipolygon` geoshape with any relation type. 
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
-A `multipolygon` geoshape query searches for an array of defined Polygons that intersects, contains, or exists inside any geoshape data in a document. 
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
 
-For a `contains` match, every defined polygon must be contained within a defined geoshape in a document. 
+|geometry
+|Object
+|Yes
+a| Contains the <<multilinestring-shape,shape property>> and <<multilinestring-relation,relation>> property. 
 
-For a `within` match, every defined polygon must collectively contain any defined geoshapes in a document.
-a|
-.Search for geoshape data in the geojson field that exists within 2 defined Polygons
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[multilinestring-shape]]shape
+|Object
+|Yes
+a| Contains the <<multilinestring-type,type property>> and <<multilinestring-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[multilinestring-type]]type
+|String
+|Yes
+a| Set `type` to `multilinestring`.
+
+|[[multilinestring-coordinates]]coordinates
+|Array of Arrays
+|Yes
+a| An array that contains nested arrays, each with their own nested arrays of 2 coordinate floating point values. 
+
+For example, the following `coordinates` array defines 2 LineStrings with start and end points: 
+----
+"coordinates": [ 
+    [ 
+        [1.954764, 50.962097], [3.029578, 49.868547] 
+    ], 
+        
+    [ 
+        [3.029578, 49.868547], [-0.387444, 48.545836] 
+    ] 
+]
+---- 
+
+The innermost arrays define the individual points for a LineString in the MultiLineString shape. 
+
+The Search Service uses the first value in the nested `coordinates` arrays as the longitude value for a coordinate. 
+
+|[[multilinestring-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON MultiLineString search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: Any LineString inside the defined query MultiLineString overlaps a defined Point or LineString, or intersects with the defined edges of a Polygon, Circle, or Envelope.
++
+For multi-shape geometries, any defined LineString must only overlap one Point, or intersect one LineString or Polygon. 
+
+* `contains`: The start and end points of every LineString inside the defined query MultiLineString are within the defined area of a Polygon, Circle, or Envelope.
++
+Points and LineStrings are not supported. 
+For MultiPolygon or GeometryCollection shapes, only one Polygon must contain both the start and end points of every LineString. 
+
+* `within`: Not supported for MultiLineString queries.  
+
+|====
+
+[#geojson-query-multipolygon]
+=== MultiPolygon GeoJSON Queries 
+
+Use a GeoJSON MultiPolygon query to search for a group of defined <<geojson-query-polygon,Polygons>> that intersect, are contained inside, or surround a GeoJSON shape in your documents: 
+
 [source,json]
 ----
 include::example$query-geojson.jsonc[tag=multipolygon]
 ----
 
-|[[geometrycollection]]GeometryCollection
-a| Use the `geometrycollection` geoshape with any relation type. 
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
-A `geometrycollection` geoshape query searches for an array of Polygons, Points, or LineStrings that intersects, contains, or exists inside any geoshape data in a document. 
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
 
-For a `contains` match, any of the query geoshapes must be contained within a defined geoshape in a document. 
+|geometry
+|Object
+|Yes
+a| Contains the <<multipolygon-shape,shape property>> and <<multipolygon-relation,relation>> property. 
 
-For a `within` match, every defined polygon must collectively contain any defined geoshapes in a document.
-a|
-.Search for geoshape data in the geojson field that contains a LineString and a MultiPolygon
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[multipolygon-shape]]shape
+|Object
+|Yes
+a| Contains the <<multipolygon-type,type property>> and <<multipolygon-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[multipolygon-type]]type
+|String
+|Yes
+a| Set `type` to `multipolygon`.
+
+|[[multipolygon-coordinates]]coordinates
+|Array of Arrays
+|Yes
+a| An array that contains arrays that describe a GeoJSON Polygon shape. 
+
+Each inner array that describes a Polygon can contain multiple arrays with 2 coordinate floating point values. 
+These innermost arrays describe the coordinates of the Polygon. 
+
+The Search Service uses the first value in any nested `coordinates` array as the longitude value for the coordinate.  
+
+The Search Service also follows strict GeoJSON syntax, and expects exterior coordinates in a polygon to be in counterclockwise order.
+
+|[[multipolygon-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON MultiPolygon search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: Any of the Polygons defined in the query MultiPolygon contain a Point, or one of their edges intersects a LineString, Polygon, Circle, or Envelope.
++
+For multi-shape geometries, only one Point must be contained in a query Polygon, or only one LineString or Polygon must intersect. 
+
+* `contains`: Every Polygon defined in the query MultiPolygon exists inside a Polygon, Circle, or Envelope. 
++
+Points and LineStrings are not supported. 
+For multi-shape geometries, one shape must contain the entirety of the defined query Polygons. 
+
+* `within`: Any of the Polygons defined in the query MultiPolygon contain a Point, the endpoints of a LineString, or the entirety of a Polygon, Circle, or Envelope. 
++
+For multi-shape geometries, any of the query Polygons must collectively contain the entirety of each defined Point, LineString, or Polygon. 
+
+|====
+
+[#geojson-query-geometrycollection]
+=== GeometryCollection GeoJSON Queries
+
+Use a GeoJSON GeometryCollection query to search for a group of defined <<geojson-query-point,Points>>, <<geojson-query-linestring,LineStrings>>, or <<geojson-query-polygon,Polygons>> that intersect, are contained inside, or surround a GeoJSON shape in your documents: 
+
 [source,json]
 ----
 include::example$query-geojson.jsonc[tag=geometrycollection]
 ----
 
-|[[circle]]Circle
-a|
-a|
-.Search for geoshape data in the geojson field that exists within a Circle with a radius of 100 miles
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<geometrycollection-shape,shape property>> and <<geometrycollection-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[geometrycollection-shape]]shape
+|Object
+|Yes
+a| Contains the <<geometrycollection-type,type property>> and <<geometrycollection-geometries,geometries property>>. 
+
+|[[geometrycollection-type]]type
+|String
+|Yes
+a| Set `type` to `geometrycollection`.
+
+|[[geometrycollection-geometries]]geometries
+|Array of Objects
+|Yes
+a| Contains objects to define each GeoJSON shape in the GeometryCollection. 
+
+Each object in the `geometries` array has a `type` property and a <<geometrycollection-coordinates,coordinates property>>. 
+
+Set the `type` property inside the object to the specific shape type you want to define: 
+
+* <<geojson-query-point,point>>
+* <<geojson-query-linestring,linestring>>
+* <<geojson-query-polygon,polygon>>
+* <<geojson-query-multipoint,multipoint>>
+* <<geojson-query-multilinestring,multilinestring>>
+* <<geojson-query-multipolygon,multipolygon>>
+
+|[[geometrycollection-coordinates]]coordinates
+|Array or Array of Arrays
+|Yes
+a| An array or array of arrays that describes a GeoJSON shape. 
+
+The exact structure of the arrays depends on the shape:
+
+* <<geojson-query-point,Point>>
+* <<geojson-query-linestring,LineString>>
+* <<geojson-query-polygon,Polygon>>
+* <<geojson-query-multipoint,MultiPoint>>
+* <<geojson-query-multilinestring,MultiLineString>>
+* <<geojson-query-multipolygon,MultiPolygon>>
+
+For any array that contains only floating point values, the Search Service uses the first value as the longitude.  
+
+The Search Service also follows strict GeoJSON syntax, and expects exterior coordinates in a polygon to be in counterclockwise order.
+
+|[[geometrycollection-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON GeometryCollection search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: If any of the shapes in the query intersect with a shape in the document, the Search Service returns the document. 
+
+* `contains`: Every shape in the query must be contained, cumulatively, inside the shape or shapes defined in a document. 
+
+* `within`: Any of the shapes in a document must be contained within a shape in the query. 
+
+|====
+
+[#geojson-query-circle]
+=== Circle GeoJSON Queries
+
+Use a GeoJSON Circle query to search in a radius around a single latitude and longitude coordinate: 
+
 [source,json]
 ----
 include::example$query-geojson.jsonc[tag=circle]
 ----
 
-|[[envelope]]Envelope
-a|
-a|
-.Search for geoshape data in the geojson field that intersects with a bounded rectangle
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<circle-shape,shape property>> and <<circle-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[circle-shape]]shape
+|Object
+|Yes
+a| Contains the <<circle-type,type property>>, <<circle-coordinates,coordinates property>>, and <<circle-radius,radius property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[circle-type]]type
+|String
+|Yes
+a| Set `type` to `circle`.
+
+|[[circle-coordinates]]coordinates
+|Array
+|Yes
+a| An array of coordinate floating point values that define the center point of the Circle. 
+
+Set the `coordinates` array to a single array with a longitude and latitude value. 
+
+The Search Service uses the first value in the `coordinates` array as the longitude value.
+
+|[[circle-radius]]radius
+|String
+|Yes
+a| Set the radius of the Circle. 
+
+Enter the radius as a single string, with a numeric value and a unit value. For example, `100.5mi`.
+
+You can use the following distance units: 
+
+* `mm`: Millimeters 
+* `cm`: Centimeters
+* `in`: Inches
+* `yd`: Yards
+* `ft`: Feet
+* `m`: Meters
+* `km`: Kilometers
+* `mi`: Miles
+* `nm`: Nautical miles
+
+|[[circle-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON Circle search. 
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: A defined Point exists within the radius of the Circle, or a LineString, Polygon, Envelope or Circle intersects the Circle.
++
+For multi-shape geometries, the Circle must only contain with one Point, or intersect one LineString or Polygon. 
+
+* `contains`: A defined Polygon, Envelope, or Circle contains the entire defined query Circle.
++
+Points and LineStrings are not supported. 
+For MultiPolygons or GeometryCollections containing only Polygons, the query Circle must be contained by one Polygon. 
+
+* `within`: All defined GeoJSON shapes in the document must exist inside the defined query Circle.  
+
+|====
+
+[#geojson-query-envelope]
+=== Envelope GeoJSON Queries
+
+Use a GeoJSON Envelope query to search in a bounded rectangle, based on a pair of coordinates that define the minimum and maxium longitude and latitude: 
+
 [source,json]
 ----
 include::example$query-geojson.jsonc[tag=envelope]
 ----
+
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<envelope-shape,shape property>> and <<envelope-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[envelope-shape]]shape
+|Object
+|Yes
+a| Contains the <<envelope-type,type property>> and <<envelope-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[envelope-type]]type
+|String
+|Yes
+a| Set `type` to `envelope`.
+
+|[[envelope-coordinates]]coordinates
+|Array of 2 Arrays
+|Yes
+a| An array of 2 different arrays that contain coordinate floating point values. 
+
+The first `coordinates` nested array contains the minimum longitude and maximum latitude, or the top-left corner of the rectangle.
+
+The second nested array contains the maximum longitude and minimum latitude, or the bottom-right corner. 
+
+The Search Service uses the first value in the nested `coordinates` array as the longitude value.
+
+|[[envelope-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON Envelope search. 
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: A defined Point exists within the Envelope, or a LineString, Polygon, Envelope or Circle intersects the Envelope.
++
+For multi-shape geometries, the Envelope must only contain with one Point, or intersect one LineString or Polygon. 
+
+* `contains`: A defined Polygon, Envelope, or Circle contains the entire defined query Envelope.
++
+Points and LineStrings are not supported. 
+For MultiPolygons or GeometryCollections containing only Polygons, the query Envelope must be contained by one Polygon. 
+
+* `within`: All defined GeoJSON shapes in the document must exist inside the defined query Envelope.  
 
 |====
 
