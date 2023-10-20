@@ -21,16 +21,9 @@ A Search request can contain the following properties:
 
 |[[query]]query |Object |Yes a|
 
-An object that contains the properties for one of the supported query types: 
+An object that contains the properties for one of the supported query types.
 
-* xref:server:fts:fts-supported-queries-query-string-query.adoc[]
-* xref:server:fts:fts-supported-queries-match.adoc[]
-* xref:server:fts:fts-supported-queries-match-phrase.adoc[]
-* xref:server:fts:fts-supported-queries-non-analytic-query.adoc[]
-* xref:server:fts:fts-supported-queries-compound-query.adoc[]
-* xref:server:fts:fts-supported-queries-range-query.adoc[]
-* xref:server:fts:fts-supported-queries-geospatial.adoc[]
-* xref:server:fts:fts-supported-queries-special-query.adoc[]
+For more information about how to configure the `query` object, see <<query-object,query object>>.
 
 |ctl |Object |No a|
 
@@ -239,9 +232,24 @@ If you use the `conjuncts` array, every object in the array must have a match in
 
 You can create objects to describe any of the available query types: 
 
-*
-*
-//TO DO: Fill in query types
+* <<analytic-queries,Analytic Queries>>
+* <<non-analytic-queries,Non-Analytic Queries>>
+* <<numeric-range-queries,Numeric Range Queries>>
+* <<date-range-queries,Date Range Queries>>
+* <<term-range-queries,Term Range Queries>>
+* <<geopoint-queries-distance,Distance/Radius-Based Geopoint Queries>>
+* <<geopoint-queries-rectangle,Rectangle-Based Geopoint Queries>>
+* <<geopoint-queries-polygon,Polygon-Based Geopoint Queries>>
+* <<geojson-queries-point,Point GeoJSON Queries>>
+* <<geojson-queries-linestring,LineString GeoJSON Queries>>
+* <<geojson-queries-polygon,Polygon GeoJSON Queries>>
+* <<geojson-queries-multipoint,MultiPoint GeoJSON Queries>>
+* <<geojson-queries-multilinestring,MultiLineString GeoJSON Queries>>
+* <<geojson-queries-multipolygon,MultiPolygon GeoJSON Queries>>
+* <<geojson-queries-geometrycollection,GeometryCollection GeoJSON Queries>>
+* <<geojson-queries-circle,Circle GeoJSON Queries>>
+* <<geojson-queries-envelope,Envelope GeoJSON Queries>>
+
 a| 
 .reviews.date field must be between 2001-10-09 and 2016-10-31 and description field must contain "pool"
 [source,json]
@@ -260,9 +268,24 @@ If a document does not match the `min` number of `query` objects, the Search Ser
 
 You can create objects to describe any of the available query types: 
 
-*
-*
-//TO DO: fill in query types
+* <<analytic-queries,Analytic Queries>>
+* <<non-analytic-queries,Non-Analytic Queries>>
+* <<numeric-range-queries,Numeric Range Queries>>
+* <<date-range-queries,Date Range Queries>>
+* <<term-range-queries,Term Range Queries>>
+* <<geopoint-queries-distance,Distance/Radius-Based Geopoint Queries>>
+* <<geopoint-queries-rectangle,Rectangle-Based Geopoint Queries>>
+* <<geopoint-queries-polygon,Polygon-Based Geopoint Queries>>
+* <<geojson-queries-point,Point GeoJSON Queries>>
+* <<geojson-queries-linestring,LineString GeoJSON Queries>>
+* <<geojson-queries-polygon,Polygon GeoJSON Queries>>
+* <<geojson-queries-multipoint,MultiPoint GeoJSON Queries>>
+* <<geojson-queries-multilinestring,MultiLineString GeoJSON Queries>>
+* <<geojson-queries-multipolygon,MultiPolygon GeoJSON Queries>>
+* <<geojson-queries-geometrycollection,GeometryCollection GeoJSON Queries>>
+* <<geojson-queries-circle,Circle GeoJSON Queries>>
+* <<geojson-queries-envelope,Envelope GeoJSON Queries>>
+
 a|
 .free_parking field must be true or checkin field must be "1PM"
 [source,json]
@@ -288,24 +311,19 @@ For more information about how to configure the default field for your Search in
 | Operator | Property | Description | Examples
 
 | `^`
-| `"boost"`
-a| If you use multiple clauses in a query, you can use the `^` operator or the `boost` property to assign the relative importance to a clause. 
+| See <<boost,boost>>.
+a| If you use multiple clauses in a query, you can use the `^` operator to assign the relative importance to a clause. 
 
-Clauses with a higher `boost` property or larger number after the `^` operator score higher and appear earlier in search results. 
+Clauses with a larger number after the `^` operator score higher and appear earlier in search results. 
 a| 
 .Query String query with a boost on the name field containing pool
 [source,json]
 ----
 include::example$query-boost.jsonc[tag=short]
 ----
-.Disjunction query with boost property on the city field containing glossop
-[source,json]
-----
-include::example$query-boost.jsonc[tag=long]
-----
 
 | [[range-query-string]]`>`, `>=`, `<`, and `<=`
-| See <<date-range-query,Date Range Queries>> or <<numeric-range-query,Numeric Range Queries>>.
+| See <<date-range-queries,Date Range Queries>> or <<numeric-range-queries,Numeric Range Queries>>.
 a| Use the later than (`>`), later than or equal to (`>=`), earlier than (`<`), and earlier than or equal to (`<=`) operators with a date value to run a date range query. 
 The Search Service searches for a date value in the specified field that matches the specified operator. 
 
@@ -432,7 +450,9 @@ Analytic queries use an analyzer to analyze the contents of your Search query, a
 a| Use the `match` property to run a match query. 
 
 The Search Service searches for an exact match to the specified term inside the Search index's default field. 
-You can set a specific field to search with the <<field,field property>>. 
+You can set a specific field to search with the <<field,field property>>.
+
+You can change the matching behavior by using the <<fuzziness,fuzziness property>>.
 
 You cannot include spaces inside the `match` property without specifying the <<operator,operator property>>, which tells the Search Service how to interpret the string. 
 
@@ -467,9 +487,9 @@ include::example$query-analytic.jsonc[tag=match_phrase]
 
 |====
 
-=== Non Analytic Queries 
+=== Non-Analytic Queries 
 
-Use Non Analytic queries to run a search query without using an analyzer on the contents of your Search query. 
+Use Non-Analytic queries to run a search query without using an analyzer on the contents of your Search query. 
 
 [cols="1,1,4,4"]
 |====
@@ -521,9 +541,9 @@ include::example$query-non-analytic.jsonc[tag=regexp]
 | String
 a| Use the `term` property to run a term query. 
 
-The Search Service searches for an exact match for the text you provide in the `term` property, unless you set additional properties to modify your Search query: 
+The Search Service searches for an exact match for the text you provide in the `term` property. 
 
-* <<fuzziness,fuzziness>>
+You can change the matching behavior by using the <<fuzziness,fuzziness property>>.
 
 If you use the `term` property, the Search Service does not use any analyzers on the contents of your query text. 
 
@@ -580,7 +600,7 @@ include::example$query-non-analytic.jsonc[tag=wildcard]
 
 |====
 
-[#numeric-range-query]
+[#numeric-range-queries]
 === Numeric Range Queries 
 
 Use a numeric range query to search for a range of numbers inside documents in your Search index: 
@@ -634,7 +654,7 @@ If you do not set the `inclusive_max` value, by default, `max` is exclusive to t
 
 |====
 
-[#date-range-query]
+[#date-range-queries]
 === Date Range Queries 
 
 Use a date range query to search for a range of date values inside documents in your Search index: 
@@ -688,7 +708,7 @@ If you do not set the `inclusive_end` value, by default, `end` is exclusive to t
 
 |====
 
-[#term-range-query]
+[#term-range-queries]
 === Term Range Queries 
 
 Use a term range query to search for a range of terms inside documents in your Search index. 
@@ -744,7 +764,7 @@ If you do not set the `inclusive_max` value, by default, `max` is exclusive to t
 
 |====
 
-[#geopoint-query-distance]
+[#geopoint-queries-distance]
 === Distance/Radius-Based Geopoint Queries
 
 Use a Geopoint distance/radius-based query to search for geo location values in a set radius around a specified latitude and longitude:
@@ -796,7 +816,7 @@ You can use the following distance units:
 
 |====
 
-[#geopoint-query-rectangle]
+[#geopoint-queries-rectangle]
 === Rectangle-Based Geopoint Queries
 
 Use a Geopoint rectangle-based query to search for geo location values in a defined rectangle:
@@ -844,7 +864,7 @@ For example, `[-2.235143, 53.482358]`, where `-2.235143` is the longitude.
 
 |====
 
-[#geopoint-query-polygon]
+[#geopoint-queries-polygon]
 === Polygon-Based Geopoint Queries
 
 Use a Geopoint polygon-based query to search for geo location values in a defined polygon:
@@ -878,7 +898,7 @@ Otherwise, the Search Service infers the polygon's closure.
 
 |====
 
-[#geojson-query-point]
+[#geojson-queries-point]
 === Point GeoJSON Queries
 
 Use a GeoJSON Point query to search for a single latitude and longitude coordinate that intersects or is contained inside a GeoJSON shape in your documents: 
@@ -946,7 +966,7 @@ For multi-shape geometries, the query point must only overlap with one Point, Li
 |====
 
 
-[#geojson-query-linestring]
+[#geojson-queries-linestring]
 === LineString GeoJSON Queries
 
 Use a GeoJSON LineString query to search for a line of coordinates that intersects or is contained inside a GeoJSON shape in your documents: 
@@ -1014,7 +1034,7 @@ For MultiPolygon or GeometryCollection shapes, only one Polygon must contain bot
 
 |====
 
-[#geojson-query-polygon]
+[#geojson-queries-polygon]
 === Polygon GeoJSON Queries
 
 Use a GeoJSON Polygon query to search for a defined area that intersects, is contained inside, or surrounds a GeoJSON shape in your documents: 
@@ -1085,7 +1105,7 @@ For multi-shape geometries, the query Polygon must contain the entirety of each 
 |====
 
 
-[#geojson-query-multipoint]
+[#geojson-queries-multipoint]
 === MultiPoint GeoJSON Queries
 
 Use a GeoJSON MultiPoint query to search for multiple coordinate points that intersect or are contained inside a GeoJSON shape in your documents: 
@@ -1155,10 +1175,10 @@ A MultiPoint shape returns a match if all points in the query overlap with the M
 
 |====
 
-[#geojson-query-multilinestring]
+[#geojson-queries-multilinestring]
 === MultiLineString GeoJSON Queries
 
-Use a GeoJSON MultiLineString query to search for multiple <<geojson-query-linestring,LineStrings>> that intersect or are contained inside a GeoJSON shape in your documents: 
+Use a GeoJSON MultiLineString query to search for multiple <<geojson-queries-linestring,LineStrings>> that intersect or are contained inside a GeoJSON shape in your documents: 
 
 [source,json]
 ----
@@ -1236,10 +1256,10 @@ For MultiPolygon or GeometryCollection shapes, only one Polygon must contain bot
 
 |====
 
-[#geojson-query-multipolygon]
+[#geojson-queries-multipolygon]
 === MultiPolygon GeoJSON Queries 
 
-Use a GeoJSON MultiPolygon query to search for a group of defined <<geojson-query-polygon,Polygons>> that intersect, are contained inside, or surround a GeoJSON shape in your documents: 
+Use a GeoJSON MultiPolygon query to search for a group of defined <<geojson-queries-polygon,Polygons>> that intersect, are contained inside, or surround a GeoJSON shape in your documents: 
 
 [source,json]
 ----
@@ -1309,10 +1329,10 @@ For multi-shape geometries, any of the query Polygons must collectively contain 
 
 |====
 
-[#geojson-query-geometrycollection]
+[#geojson-queries-geometrycollection]
 === GeometryCollection GeoJSON Queries
 
-Use a GeoJSON GeometryCollection query to search for a group of defined <<geojson-query-point,Points>>, <<geojson-query-linestring,LineStrings>>, or <<geojson-query-polygon,Polygons>> that intersect, are contained inside, or surround a GeoJSON shape in your documents: 
+Use a GeoJSON GeometryCollection query to search for a group of defined <<geojson-queries-point,Points>>, <<geojson-queries-linestring,LineStrings>>, or <<geojson-queries-polygon,Polygons>> that intersect, are contained inside, or surround a GeoJSON shape in your documents: 
 
 [source,json]
 ----
@@ -1353,12 +1373,12 @@ Each object in the `geometries` array has a `type` property and a <<geometrycoll
 
 Set the `type` property inside the object to the specific shape type you want to define: 
 
-* <<geojson-query-point,point>>
-* <<geojson-query-linestring,linestring>>
-* <<geojson-query-polygon,polygon>>
-* <<geojson-query-multipoint,multipoint>>
-* <<geojson-query-multilinestring,multilinestring>>
-* <<geojson-query-multipolygon,multipolygon>>
+* <<geojson-queries-point,point>>
+* <<geojson-queries-linestring,linestring>>
+* <<geojson-queries-polygon,polygon>>
+* <<geojson-queries-multipoint,multipoint>>
+* <<geojson-queries-multilinestring,multilinestring>>
+* <<geojson-queries-multipolygon,multipolygon>>
 
 |[[geometrycollection-coordinates]]coordinates
 |Array or Array of Arrays
@@ -1367,12 +1387,12 @@ a| An array or array of arrays that describes a GeoJSON shape.
 
 The exact structure of the arrays depends on the shape:
 
-* <<geojson-query-point,Point>>
-* <<geojson-query-linestring,LineString>>
-* <<geojson-query-polygon,Polygon>>
-* <<geojson-query-multipoint,MultiPoint>>
-* <<geojson-query-multilinestring,MultiLineString>>
-* <<geojson-query-multipolygon,MultiPolygon>>
+* <<geojson-queries-point,Point>>
+* <<geojson-queries-linestring,LineString>>
+* <<geojson-queries-polygon,Polygon>>
+* <<geojson-queries-multipoint,MultiPoint>>
+* <<geojson-queries-multilinestring,MultiLineString>>
+* <<geojson-queries-multipolygon,MultiPolygon>>
 
 For any array that contains only floating point values, the Search Service uses the first value as the longitude.  
 
@@ -1395,7 +1415,7 @@ You can use the following string values in the `relation` property:
 
 |====
 
-[#geojson-query-circle]
+[#geojson-queries-circle]
 === Circle GeoJSON Queries
 
 Use a GeoJSON Circle query to search in a radius around a single latitude and longitude coordinate: 
@@ -1482,7 +1502,7 @@ For MultiPolygons or GeometryCollections containing only Polygons, the query Cir
 
 |====
 
-[#geojson-query-envelope]
+[#geojson-queries-envelope]
 === Envelope GeoJSON Queries
 
 Use a GeoJSON Envelope query to search in a bounded rectangle, based on a pair of coordinates that define the minimum and maxium longitude and latitude: 
@@ -1593,7 +1613,7 @@ You can use the following properties to modify the results returned by specific 
 
 | [[analyzer]]analyzer
 | String
-a| Use the `analyzer` property to modify the behavior of a <<match,match query>> or a<<match_phrase,match phrase query>>.
+a| Use the `analyzer` property to modify the behavior of a <<match,match query>> or a <<match_phrase,match phrase query>>.
 
 Set the `analyzer` property to the name of the analyzer you want to use on the contents of the <<match,match property>> or <<match_phrase,match_phrase property>>.
 
@@ -1605,6 +1625,18 @@ a|
 [source,json]
 ----
 include::example$query-analytic.jsonc[tag=match_analyzer]
+----
+
+|[[boost]]boost
+| Integer
+a| If you use multiple clauses in a query, you can use the `boost` property to assign the relative importance to a clause. 
+
+Clauses with a higher value in the `boost` property score higher and appear earlier in search results. 
+a|
+.Disjunction query with boost property on the city field containing glossop
+[source,json]
+----
+include::example$query-boost.jsonc[tag=long]
 ----
 
 | [[field]]field
@@ -2031,7 +2063,7 @@ Set the data type of the field specified in `field`:
 
 |unit |String |No a|
 
-When running a <<geopoint-query-distance,Geopoint Distance/Radius query>>, you can set the unit of distance to use when sorting documents. 
+When running a <<geopoint-queries-distance,Geopoint Distance/Radius query>>, you can set the unit of distance to use when sorting documents. 
 
 The unit of distance does not have to match the unit specified in the <<query-object,query object>>.
 
