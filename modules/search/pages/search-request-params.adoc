@@ -23,7 +23,7 @@ A Search request can contain the following properties:
 
 An object that contains the properties for one of the supported query types.
 
-For more information about how to configure the `query` object, see <<query-object,query object>>.
+For more information about how to configure the `query` object, see <<query-object,>>.
 
 |ctl |Object |No a|
 
@@ -150,7 +150,7 @@ include::example$run-search-full-request.jsonc[tag=query]
 Use any of the following properties to run a boolean query. 
 A boolean query searches for a combination of queries that a document must match to be included in search results. 
 
-Use a <<compound-queries,compound query array>> inside the <<must,must>>, <<must_not,must_not>> and <<should,should>> objects to set the queries a document must match. 
+Boolean queries use a <<compound-queries,compound query array>> inside the <<must,must>>, <<must_not,must_not>> and <<should,should>> objects to set the queries a document must match. 
 
 [cols="1,1,4,4"]
 |====
@@ -214,7 +214,7 @@ include::example$query-boolean.jsonc[tag=should]
 
 Use a compound query array to specify multiple child queries that must have a match in a document for that document to be included in search results.
 
-Use compound query arrays with <<boolean-queries,boolean queries>>.
+You must use compound query arrays to run a <<boolean-queries,boolean query>>, but you can use a compound query array outside of a boolean query.
 
 You can use 2 different types of compound queries: 
 
@@ -228,9 +228,9 @@ a| Use the `conjuncts` array to specify multiple child queries in a single `quer
 
 You can use the `conjuncts` array inside a <<must,must object>>, <<must_not,must_not object>>, <<should,should object>>, or directly inside a `query` object.
 
-If you use the `conjuncts` array, every object in the array must have a match in a document to include the document in search results.
+If you use the `conjuncts` array, every query object in the array must have a match in a document to include the document in search results.
 
-You can create objects to describe any of the available query types: 
+You can create objects in a `conjuncts` array to describe any of the available query types: 
 
 * <<analytic-queries,Analytic Queries>>
 * <<non-analytic-queries,Non-Analytic Queries>>
@@ -263,10 +263,10 @@ a| Use the `disjuncts` array to specify multiple child queries in a single `quer
 
 You can use the `disjuncts` array inside a <<must,must object>>, <<must_not,must_not object>>, <<should,should object>>, or directly inside a `query` object.
 
-Use a `min` property to set the number of `query` objects from the `disjuncts` array that must have a match in a document.
-If a document does not match the `min` number of `query` objects, the Search Service does not include the document in search results. 
+Use a `min` property to set the number of query objects from the `disjuncts` array that must have a match in a document.
+If a document does not match the `min` number of query objects, the Search Service does not include the document in search results. 
 
-You can create objects to describe any of the available query types: 
+You can create objects in a `disjuncts` array to describe any of the available query types: 
 
 * <<analytic-queries,Analytic Queries>>
 * <<non-analytic-queries,Non-Analytic Queries>>
@@ -306,6 +306,8 @@ If you do not add any additional Query String syntax to a query, the Search Serv
 It searches for an exact match to the provided term in any fields that have been added to the `default` field. 
 For more information about how to configure the default field for your Search index, see xref:set-advanced-settings.adoc#all-field[Set Search Index General Settings] or the xref:search-index-params.adoc#all-field[default_field property].
 
+CAUTION: Query String syntax is not recommended for use in production environments.
+
 [cols="1,1,4,4"]
 |====
 | Operator | Property | Description | Examples
@@ -324,10 +326,11 @@ include::example$query-boost.jsonc[tag=short]
 
 | [[range-query-string]]`>`, `>=`, `<`, and `<=`
 | See <<date-range-queries,Date Range Queries>> or <<numeric-range-queries,Numeric Range Queries>>.
-a| Use the later than (`>`), later than or equal to (`>=`), earlier than (`<`), and earlier than or equal to (`<=`) operators with a date value to run a date range query. 
-The Search Service searches for a date value in the specified field that matches the specified operator. 
+a| You can run two types of range queries with the the later than (`>`), later than or equal to (`>=`), earlier than (`<`), and earlier than or equal to (`<=`) operators: 
 
-Use the greater than (`>`), greater than or equal to (`>=`), less than (`<`), and less than or equal to (`<=`) operators with a numeric value to run a numeric range query. 
+* Use the operators with a date value to run a *date range query*. 
+The Search Service searches for a date value in the specified field that matches the specified operator. 
+* Use operators with a numeric value to run a *numeric range query*. 
 The Search Service searches for a numeric value in the specified field that matches the specified operator. 
 a|
 .Query String query for a date in the created field after September 21, 2016
@@ -368,13 +371,13 @@ You must escape the following characters to search for them literally in a Query
 * Tilde (`~`)
 * Colon (`:`)
 a| 
-.Query String match query with escaped space
+.Query String match query with escaped exclamation mark (!)
 [source,json]
 ----
-include::example$query-escape-characters.jsonc[tag=space]
+include::example$query-escape-characters.jsonc[tag=exclamation]
 ----
 
-.Query String match phrase query with escaped quotation mark
+.Query String match phrase query with escaped quotation mark (")
 [source,json]
 ----
 include::example$query-escape-characters.jsonc[tag=quotes]
@@ -385,7 +388,10 @@ include::example$query-escape-characters.jsonc[tag=quotes]
 a| Set the field in a document where the Search Service should search for your query by adding a field name and a colon to the start of a search term. 
 
 Use dot notation for the field name. 
-The Query String syntax does not support SQL++ field syntax, such as `[*]` or `[3]` as array locations in a field name path. 
+For example, `parentField.childField`.
+
+The Query String syntax does not support SQL++ field syntax.
+For example, you cannot use `[*]` or `[3]` as array locations in a field name path. 
 a| 
 .Query String query for "pool" in the description field
 [source,json]
@@ -394,8 +400,8 @@ include::example$query-field-name.jsonc[tag=short]
 ----
 
 | `+` and `-`
-| See the <<must,must property>> and <<must_not,must_not property>>. 
-a| Use the `+` and `-` operators before a clause in a Query String query to run a boolean query: 
+| See the <<must,must property>>, <<must_not,must_not property>>, and <<should,should property>>. 
+a| Use the `+` and `-` operators before a clause in a Query String query to run a <<boolean-queries,boolean query>>: 
 
 * The `+` operator adds the clause to the `MUST` list of a boolean query.
 * The `-` operator adds the clause to the `MUST_NOT` list of a boolean query. 
@@ -439,7 +445,9 @@ include::example$query-analytic.jsonc[tag=short_match_phrase]
 
 === Analytic Queries 
 
-Analytic queries use an analyzer to analyze the contents of your Search query, and find a match in the documents inside your Search index. 
+Analytic queries use an analyzer to analyze the contents of your Search query, and find a match in the documents inside your Search index.
+
+For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the Capella UI].
 
 [cols="1,1,4,4"]
 |====
@@ -448,15 +456,15 @@ Analytic queries use an analyzer to analyze the contents of your Search query, a
 | [[match]]match 
 | String
 a| Use the `match` property to run a match query. 
+The Search Service searches for an exact match to the specified term inside the Search index's default field.
 
-The Search Service searches for an exact match to the specified term inside the Search index's default field. 
 You can set a specific field to search with the <<field,field property>>.
 
 You can change the matching behavior by using the <<fuzziness,fuzziness property>>.
 
-You cannot include spaces inside the `match` property without specifying the <<operator,operator property>>, which tells the Search Service how to interpret the string. 
+You cannot include spaces inside the string you provide to the `match` property without specifying the <<operator,operator property>>, which tells the Search Service how to interpret the string. 
 
-For more information about the properties you can specify with a match query, see <<additional-query-properties,Additional Query Properties>>.
+For more information about the properties you can specify with a match query, see <<additional-query-properties,Additional Query Object Properties>>.
 a| 
 .Match query for "best" or "great" in reviews.content with the "standard" analyzer
 [source,json]
@@ -467,8 +475,9 @@ include::example$query-analytic.jsonc[tag=match]
 | match_phrase
 | String 
 a| Use the `match_phrase` property to run a match phrase query.
-
 The Search Service searches for exact matches to the phrase you specify.
+
+Unlike a `match` query string, a match_phrase query string can contain spaces without using the <<operator,operator property>>. 
 
 To use a match phrase query: 
 
@@ -477,7 +486,7 @@ To use a match phrase query:
 
 For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
 
-For more information about the properties you can specify with a match phrase query, see <<additional-query-properties,Additional Query Properties>>.
+For more information about the additional properties you can specify with a match phrase query, see <<additional-query-properties,Additional Query Object Properties>>.
 a|
 .Match phrase query for "very nice" in reviews.content
 [source,json]
@@ -491,6 +500,8 @@ include::example$query-analytic.jsonc[tag=match_phrase]
 
 Use Non-Analytic queries to run a search query without using an analyzer on the contents of your Search query. 
 
+For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the Capella UI].
+
 [cols="1,1,4,4"]
 |====
 |Property |Type |Description |Examples
@@ -499,7 +510,11 @@ Use Non-Analytic queries to run a search query without using an analyzer on the 
 | Boolean
 a| Use the `bool` property to query a field that contains a boolean value. 
 
-Use the <<field,field property>> and set `bool` to `true` or `false` to search. 
+Use the <<field,field property>> and set the `bool` property to `true` or `false` to run a search. 
+
+The Search Service does not use any analyzers on the contents of your query.
+
+For more information about the additional properties you can specify with a bool query, see <<additional-query-properties,Additional Query Object Properties>>.
 a|
 .Search for documents where the pets_ok field is true
 [source,json]
@@ -516,6 +531,8 @@ Set the property to a string to return matches for any term that starts with tha
 For example, you could set the `prefix` property to `inter` to return matches for `interview`, `internal`, `interesting`, and so on. 
 
 If you use the `prefix` property, the Search Service does not use any analyzers on the contents of your query text. 
+
+For more information about the additional properties you can specify with a prefix query, see <<additional-query-properties,Additional Query Object Properties>>.
 a| 
 .Search for terms that start with "inter" inside the reviews.content field
 [source,json]
@@ -530,6 +547,8 @@ a| Use the `regexp` property to run a regular expression query.
 Set the property to a regular expression to return matches for that regular expression in search results. 
 
 If you use the `regexp` property, the Search Service does not use any analyzers on the contents of your query text. 
+
+For more information about the additional properties you can specify with a regexp query, see <<additional-query-properties,Additional Query Object Properties>>.
 a| 
 .Search for terms that match the regular expression "plan.+" inside the reviews.content field
 [source,json]
@@ -547,6 +566,8 @@ You can change the matching behavior by using the <<fuzziness,fuzziness property
 
 If you use the `term` property, the Search Service does not use any analyzers on the contents of your query text. 
 
+For more information about the additional properties you can specify with a term query, see <<additional-query-properties,Additional Query Object Properties>>.
+
 a|
 .Search for terms that match the term "interest" inside the reviews.content field with a fuzziness of 2
 [source,json]
@@ -557,11 +578,11 @@ include::example$query-non-analytic.jsonc[tag=term]
 | [[terms]]terms
 | Array
 a| Use the `terms` array to run a phrase query. 
-
 The Search Service searches for the strings you provide in the `terms` array in the specified order. 
+
 Unlike the <<match_phrase,match_phrase property>>, the `terms` array does not use any analyzers on the contents of your query text. 
 
-For example, set the `terms` array to `\["nice", "view"\]`. 
+For example, set the `terms` array to `["nice", "view"]`. 
 The Search Service looks for any occurrences of `nice` in a document that are followed by an occurrence of `view`.
 
 To use a phrase query: 
@@ -610,7 +631,7 @@ Use a numeric range query to search for a range of numbers inside documents in y
 include::example$query-numeric-range.jsonc[tag=long]
 ----
 
-You can also use the <<range-query-string,Query string syntax>> for a numeric range query. 
+The `field` value is an optional property. For more information about the `field` property, see <<additional-query-properties,Additional Query Object Properties>>.
 
 [cols="1,1,1,2"]
 |====
@@ -664,7 +685,7 @@ Use a date range query to search for a range of date values inside documents in 
 include::example$query-date-range.jsonc[tag=long]
 ----
 
-You can also use the <<range-query-string,Query string syntax>> for a date range query. 
+The `field` value is an optional property. For more information about the `field` property, see <<additional-query-properties,Additional Query Object Properties>>.
 
 [cols="1,1,1,2"]
 |====
@@ -720,7 +741,9 @@ For example, the following query searches for any terms that occur in alphabetic
 include::example$query-term-range.jsonc[]
 ----
 
-The query returns results such as `beach`, `beaches`, `Beatles`, and `beating`.
+The query returns results such as `beach`, `beaches`, `beans`, and `beast`.
+
+The `field` value is an optional property. For more information about the `field` property, see <<additional-query-properties,Additional Query Object Properties>>.
 
 [cols="1,1,1,2"]
 |====
@@ -774,7 +797,7 @@ Use a Geopoint distance/radius-based query to search for geo location values in 
 include::example$query-geopoint.jsonc[tag=distance]
 ----
 
-NOTE: To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
+To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
@@ -829,7 +852,7 @@ include::example$query-geopoint.jsonc[tag=rectangle]
 The Search Service takes a value for the top-left and bottom-right corners of a rectangle, and draws a bounding box that connects those points. 
 The resulting rectangle is used as the search area for geo location values. 
 
-NOTE: To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
+To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
@@ -877,7 +900,7 @@ include::example$query-geopoint.jsonc[tag=polygon]
 The Search Service takes an array of latitude and longitude values and connects them in the specified order to form a polygon. 
 The resulting polygon is used as the search area for geo location values. 
 
-NOTE: To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
+To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
@@ -1603,7 +1626,7 @@ include::example$query-special.jsonc[tag=match_none]
 |====
 
 [#additional-query-properties]
-=== Additional Query Properties 
+=== Additional Query Object Properties 
 
 You can use the following properties to modify the results returned by specific query types. 
 
