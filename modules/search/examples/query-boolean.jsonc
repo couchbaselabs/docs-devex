@@ -9,7 +9,6 @@
 // tag::long[]
 {
     "query":{
-        // tag::must[]
         "must":{
             "conjuncts":[
                 {
@@ -22,10 +21,8 @@
                 }
             ]
         },
-        // end::must[]
-        // tag::must_not[]
         "must_not":{
-            "conjuncts":[
+            "disjuncts":[
                 {
                     "field": "free_breakfast",
                     "bool": false
@@ -37,8 +34,6 @@
                 }
             ]
         },
-        // end::must_not[]
-        // tag::should[]
         "should":{
             "disjuncts":[
                 {
@@ -52,7 +47,63 @@
             ],
             "min": 1
         }
-        // end::should[]
     }
 }
 // end::long[]
+
+// tag::must[]
+{
+    "query":{
+        "must":{
+            "conjuncts":[
+                {
+                    "field": "reviews.content", 
+                    "match": "location"
+                },
+                {
+                    "field":"reviews.content",
+                    "match_phrase": "nice view"
+                }
+            ]
+        }
+    }
+}
+// end::must[]
+// tag::must_not[]
+{
+    "query":{
+        "must_not":{
+            "disjuncts":[
+                {
+                    "field": "free_breakfast",
+                    "bool": false
+                },
+                {
+                    "field": "ratings.Cleanliness",
+                    "inclusive_min": 1,
+                    "inclusive_max": 3
+                }
+            ]
+        }
+    }
+}
+// end::must_not[]
+// tag::should[]
+{
+    "query":{
+        "should":{
+            "disjuncts":[
+                {
+                    "field": "free_parking",
+                    "bool": true
+                },
+                {
+                    "field": "free_internet",
+                    "bool": true
+                }
+            ],
+            "min": 1
+        }
+    }
+}
+// end::should[]
