@@ -29,7 +29,7 @@ All Search index payloads have the following properties:
 |====
 |Property |Type |Required? |Description
 
-|name |String |Yes |The name of the Search index.
+|name |String |Yes |The name of the Search index. A Search index name must be unique for each cluster.
 
 |type |String |Yes a|
 
@@ -39,11 +39,12 @@ The type of index you want to create:
 * `fulltext-alias`: Create an alias for a Search index. 
 For more information about Search index aliases, see xref:server:fts:fts-creating-full-text-aliases.adoc[].
 
-|uuid |String |No a|
+|[[uuid]]uuid |String |No a|
 
-The UUID for the Search index. 
+The Search Service automatically generates a UUID for a Search index. 
 
-The Search Service automatically generates a UUID for a Search index.
+If you use an existing UUID, the Search Service updates the existing Search index. 
+Do not include the `uuid` property when you want to copy an index to a different cluster or create a new index.
 
 |sourceType |String |Yes |The `sourceType` is always `"gocbcore"`.
 
@@ -52,7 +53,13 @@ The name of the bucket where you want to create the Search index.
 
 The Search Service automatically finds the UUID for the bucket.
 
-|sourceUUID |String |No |The UUID of the bucket where you want to create the Search index.
+|[[sourceuuid]]sourceUUID |String |No a|
+
+The UUID of the bucket where you want to create the Search index.  
+
+The Search Service automatically finds the UUID for the bucket.
+
+Do not include the `sourceUUID` property when you want to copy an index to a different cluster, or create a new index.
 
 |sourceParams |Object |No a|
 
@@ -87,12 +94,13 @@ The `planParams` object contains the following properties:
 |Property |Type |Required? |Description
 
 |maxPartitionsPerPIndex |n/a |No |This setting is deprecated. Use `indexPartitions`, instead.
-|indexPartitions |Number |Yes |The number of partitions to split the Search index into, across the nodes you have available in your database with the Search Service enabled. 
+|indexPartitions |Number |Yes |The number of partitions to split the Search index into, across the nodes you have available in your database with the Search Service enabled. Use index partitions to increase index and query performance on large datasets.
 |numReplicas |Number |Yes a|
 
 For high-availability, set the number of replicas the Search Service creates for the Search index.
 
 You can create up to three replicas for a Search index. 
+Each replica creates a full copy of the Search index to increase high-availability.
 To turn off replication for the Search index, set `numReplicas` to `0`.
 
 The number of replicas you can create depends on the number of nodes you have available with the Search Service enabled. 
@@ -137,19 +145,31 @@ The `doc_config` object is a child object of the <<params,>>. It contains the fo
 
 |mode |String |Yes a|
 
-Set how the Search index identifies a document's type: 
+Set a xref:customize-search-index.adoc#type-identifiers[type identifier] for the Search index to filter documents from search results: 
 
 * `type_field`: Use the value from a specific field in the documents. 
-* `docid_prefix_delim`: Use the characters in the documents' ID values, up to but not including a specified separator.
+* `docid_prefix_delim`: Use the leading characters in the documents' ID values, up to but not including a specified separator.
 * `docid_regexp`: Use a regular expression on the documents' ID values.
 
 NOTE: If you want your Search index to only include documents from a specific collection, the `mode` value must be `"scope.collection.\{mode\}"`.
 
-|docid_prefix_delim |String |Yes |If `mode` is `docid_prefix_delim`, set the separator character to use on a document's ID value to determine its type.
+|docid_prefix_delim |String |Yes a|
 
-|docid_regexp |String |Yes |If `mode` is `docid_regexp`, set the regular expression to use on a document's ID value to determine its type. 
+If `mode` is `docid_prefix_delim`, set the separator character to use on a document's ID value.
 
-|type_field |String |Yes |If `mode` is `type_field`, set the name of the field to use to determine a document's type.
+For example, to filter documents based on the characters before a `_` in their ID values, set `docid_prefix_delim` to `_`.
+
+|docid_regexp |String |Yes a|
+
+If `mode` is `docid_regexp`, set the regular expression to use on a document's ID value to determine its type. 
+
+For example, to filter documents that contain the characters `_40` in their ID value, set `docid_regexp` to `_[3-5]0`. 
+
+|type_field |String |Yes a|
+
+If `mode` is `type_field`, set the name of the field to use to filter documents.
+
+For example, to filter documents based on the value of their `type` field, set `type_field` to `type`.
 
 |====
 
@@ -193,10 +213,10 @@ The name of the default date/time parser to use for the Search index.
 
 For more information about date/time parsers, see xref:customize-index.adoc#date-time[Date/Time Parsers].
 
-|default_field |String |Yes a|
+|[[all-field]]default_field |String |Yes a|
 Set a name for the `all` field in the Search index.
 
-If you enable `include_in_all` for a child field, the contents of that child field can be searched by specifying this field's name in your search. 
+If you enable the <<include-in-all,include_in_all property>> for a child field, the contents of that child field can be searched without specifying a field name or by specifying the default field's name in your Search query. 
 
 |default_mapping |Object |No a|
 
@@ -848,6 +868,8 @@ Corresponds to the selected scope and collection where the type mapping applies.
 For example, `inventory.airline`. 
 
 For more information about the properties in an `\{scope\}.\{collection\}` object, see <<scope-collection,>>. 
+
+TIP: To add a type identifier as an additional filter to your type mapping, add the filter to the end of your `\{scope\}.\{collection\}` object. For example, to use a `type_field` filter that uses the `type` field, and add only documents with a `type` value of `hotel`, the object name would be `\{scope\}.\{collection\}.hotel`
 |====
 
 [#scope-collection]
@@ -951,7 +973,7 @@ To include the value for each instance of the field in the Search index to suppo
 
 To exclude the values for each instance of this field from the index, set `docvalues` to `false`.
 
-|include_in_all |Boolean |Yes a|
+|[[include-in-all]]include_in_all |Boolean |Yes a|
 
 To allow this field to be searched without specifying the specific field's name in the search, set `include_in_all` to `true`.
 
@@ -959,7 +981,7 @@ When enabled, you can search this field through the specified `default_field` se
 
 To only search this field by specifying the field name, set `include_in_all` to `false`.
 
-|include_term_vectors |Boolean |Yes a|
+|[[term-vectors]]include_term_vectors |Boolean |Yes a|
 
 NOTE: To use term vectors, `store` must be set to `true`.
 

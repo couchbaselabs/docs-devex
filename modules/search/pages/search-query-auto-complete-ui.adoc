@@ -1,6 +1,6 @@
-= Configure and Test Autocomplete with the Web Console
+= Configure an Autocomplete Search Index
 :page-topic-type: guide 
-:description: Create a Search index and run a Search query with the Web Console to test autocomplete with the Search Service.
+:description: Create a Search index with the Couchbase Server Web Console or the REST API to start using autocomplete with the Search Service.
 
 [abstract]
 {description}
@@ -18,18 +18,18 @@
 
 == Procedure 
 
-To use autocomplete with the Search Service, you need to <<search-index,create a Search index with two custom analyzers>>.
+You can create a compatible Search index with the <<ui,Web Console>> or the <<api,REST API>>.  
 
-Then, you can <<run-query,run a test Search query from the Web Console>>. 
+[#ui]
+=== Create the Autocomplete Search Index with the Web Console
 
-[#search-index]
-=== Create the Autocomplete Search Index
-
-To create the Search index with the Couchbase Server Web Console:
+To create the Search index with the Web Console:
 
 . Go to *Search*.
 . Click btn:[Add Index].
 . In the *Index Name* field, enter a name for the new index. 
++
+NOTE: Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
 . In the *Bucket* list, select the bucket where you want to create the index. 
 . Expand *Customize Index*. 
 . Select *Use non-default scope/collection(s)*. 
@@ -42,17 +42,18 @@ To create the Search index with the Couchbase Server Web Console:
 . xref:create-custom-token-filter.adoc#edge-ngram[Create a custom token filter] with the following settings: 
 .. In the *Name* field, enter `edge_ngram_2_8`.
 .. In the *Type* list, select *edge_ngram*. 
-.. In the *Min* field, enter `2`.
-.. In the *Max* field, enter `8`.
+.. In the *Min* field, enter `2`, or the minimum number of characters you want the Search index to use for autocomplete.
+.. In the *Max* field, enter `8`, or the maximum number of characters you want the Search index to use for autocomplete.
 . xref:create-custom-analyzer.adoc[Create another custom analyzer] with the following settings:
 .. In the *Name* field, enter `edge_ngram`.
 .. In the *Tokenizer* list, select *unicode*.  
 .. In the *Token Filters* list, select and add the *to_lower* and your custom *edge_ngram_2_8* token filter.
 . Under *Mappings*, clear the *default* type mapping. 
-. xref:create-type-mapping.adoc[] with the following settings:
-.. In the *Collection* field, select a collection.
-.. Select *only index specified fields*. 
-. xref:create-child-field.adoc[] with the following settings:
+. xref:create-type-mapping.adoc[] with the following settings: 
+.. Clear *index all contained fields*.
+. (Optional) If the field you want to search with autocomplete is nested inside a JSON object in your documents, xref:create-child-mapping.adoc[] for the JSON object with the following settings: 
+.. Clear *index all contained fields*.
+. Under the type mapping or child mapping, xref:create-child-field.adoc[] with the following settings:
 .. In the *field* field, enter the name of a text field in a document from your selected scope and collection. 
 .. In the *analyzer* list, select your *edge_ngram* analyzer. 
 .. Select *index*.
@@ -62,15 +63,20 @@ To create the Search index with the Couchbase Server Web Console:
 . In the *Default Analyzer* list, select your *keyword_to_lower* analyzer. 
 . Click btn:[Create Index]
 
-[#run-query]
-=== Run A Search Query
+TIP: You can use the generated index definition JSON payload from the UI to create a Search index with the REST API.
 
-To run a search query against the Search index from the Web Console: 
+[#api]
+=== Create an Autocomplete Search Index with the REST API 
 
-. xref:simple-search-ui.adoc[Run a search] with the <<search-index,Autocomplete Search index>> and enter 2-8 characters to use to generate auto-completed search results. 
+To create an autocomplete Search index from the REST API: 
 
-The Search Service returns documents that could autocomplete the query you entered in the *Search* field. 
+. xref:create-search-index-rest-api.adoc[] with the following JSON payload, replacing all placeholder values that start with a `$`:
++
+[source,json]
+----
+include::example$autocomplete-search-index.jsonc[]
+----
 
 == Next Steps
 
-To add an autocomplete feature to your application, see Step 2 in xref:search-query-auto-complete-code.adoc[] for example code. 
+To add an autocomplete feature to your application, see xref:search-query-auto-complete-code.adoc[] for example code. 
