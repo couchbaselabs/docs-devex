@@ -1,58 +1,41 @@
 // tag::extract[]
+// tag::extract-1[]
 [
   {
-    "_sequence_num": 1,
-    "_sequence_query": "-- Start the transaction\nBEGIN WORK;",
-    "_sequence_query_status": "success",
-    "_sequence_result": [
+    "batchQuery": "-- Start the transaction\nBEGIN WORK;",
+    "batchQueryResult": [
 // tag::begin[]
       {
-        "txid": "d81d9b4a-b758-4f98-b007-87ba262d3a51" // <.>
+        "txid": "d3bbf182-1179-42ba-8900-eb20fda69e42" // <.>
       }
 // end::begin[]
     ]
   },
+// end::extract-1[]
+// tag::extract-2[]
   {
-    "_sequence_num": 2,
-    "_sequence_query": "\n\n-- Specify transaction settings\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Specify transaction settings\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 3,
-    "_sequence_query": "\n\n-- Create a booking document\nUPSERT INTO `travel-sample`.tenant_agent_00.bookings\nVALUES(\"bf7ad6fa-bdb9-4099-a840-196e47179f03\", {\n  \"date\": \"07/24/2021\",\n  \"flight\": \"WN533\",\n  \"flighttime\": 7713,\n  \"price\": 964.13,\n  \"route\": \"63986\"\n});",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Create a booking document\nUPSERT INTO bookings\nVALUES(\"bf7ad6fa-bdb9-4099-a840-196e47179f03\", {\n  \"date\": \"07/24/2021\",\n  \"flight\": \"WN533\",\n  \"flighttime\": 7713,\n  \"price\": 964.13,\n  \"route\": \"63986\"\n});",
+    "batchQueryResult": []
   },
 // end::extract[]
 // tag::ellipsis[]
 // ...
 // end::ellipsis[]
   {
-    "_sequence_num": 4,
-    "_sequence_query": "\n\n-- Set a savepoint\nSAVEPOINT s1;",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Set a savepoint\nSAVEPOINT s1;",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 5,
-    "_sequence_query": "\n\n-- Update the booking document to include a user\nUPDATE `travel-sample`.tenant_agent_00.bookings AS b\nSET b.`user` = \"0\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Update the booking document to include a user\nUPDATE bookings AS b\nSET b.`user` = \"0\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 6,
-    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM `travel-sample`.tenant_agent_00.bookings b\nJOIN `travel-sample`.tenant_agent_00.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "_sequence_query_status": "success",
-    "_sequence_result": [
+    "batchQuery": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM bookings b\nJOIN users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "batchQueryResult": [
       {
         "date": "07/24/2021",
         "flight": "WN533",
@@ -64,27 +47,19 @@
       }
     ]
   },
+// end::extract-2[]
+// tag::extract-3[]
   {
-    "_sequence_num": 7,
-    "_sequence_query": "\n\n-- Set a second savepoint\nSAVEPOINT s2;",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Set a second savepoint\nSAVEPOINT s2;",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 8,
-    "_sequence_query": "\n\n-- Update the booking documents to change the user\nUPDATE `travel-sample`.tenant_agent_00.bookings AS b\nSET b.`user` = \"1\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Update the booking documents to change the user\nUPDATE bookings AS b\nSET b.`user` = \"1\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 9,
-    "_sequence_query": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM `travel-sample`.tenant_agent_00.bookings b\nJOIN `travel-sample`.tenant_agent_00.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "_sequence_query_status": "success",
-    "_sequence_result": [
+    "batchQuery": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM bookings b\nJOIN users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "batchQueryResult": [
       {
         "date": "07/24/2021",
         "flight": "WN533",
@@ -96,19 +71,15 @@
       }
     ]
   },
+// end::extract-3[]
+// tag::extract-4[]
   {
-    "_sequence_num": 10,
-    "_sequence_query": "\n\n-- Roll back the transaction to the second savepoint\nROLLBACK TRAN TO SAVEPOINT s2;",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Roll back the transaction to the second savepoint\nROLLBACK TRAN TO SAVEPOINT s2;",
+    "batchQueryResult": []
   },
   {
-    "_sequence_num": 11,
-    "_sequence_query": "\n\n-- Check the content of the booking and user again\nSELECT b.*, u.name\nFROM `travel-sample`.tenant_agent_00.bookings b\nJOIN `travel-sample`.tenant_agent_00.users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "_sequence_query_status": "success",
-    "_sequence_result": [
+    "batchQuery": "\n\n-- Check the content of the booking and user again\nSELECT b.*, u.name\nFROM bookings b\nJOIN users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
+    "batchQueryResult": [
 // tag::check-3[]
       {
         "date": "07/24/2021",
@@ -123,11 +94,8 @@
     ]
   },
   {
-    "_sequence_num": 12,
-    "_sequence_query": "\n\n-- Commit the transaction\nCOMMIT WORK;",
-    "_sequence_query_status": "success",
-    "_sequence_result": {
-      "results": []
-    }
+    "batchQuery": "\n\n-- Commit the transaction\nCOMMIT WORK;",
+    "batchQueryResult": []
   }
 ]
+// end::extract-4[]

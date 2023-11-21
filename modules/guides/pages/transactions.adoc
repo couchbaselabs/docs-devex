@@ -1,5 +1,6 @@
 = Create Couchbase Transactions with {sqlpp}
 :page-topic-type: guide
+:page-toclevels: 2
 :imagesdir: ../assets/images
 :tabs:
 :description: How to create Couchbase transactions using {sqlpp}.
@@ -36,7 +37,7 @@ include::partial$data-warning.adoc[]
 
 [[settings]]
 == Transaction Parameters
-:lead: The following settings set the transaction parameters for the examples in the <<multiple-statement>> section below.
+:lead: The following example shows transaction parameters for the examples on this page.
 
 You can specify various settings and parameters to control how transactions work.
 You can access transaction settings and parameters through any of the usual Query tools, such as the Query Workbench or the cbq shell.
@@ -63,13 +64,11 @@ When the new named parameter appears, enter the name in the *name* box and a val
 
 {lead}
 
-image::transactions-preferences.png['The Run-Time Preferences dialog, with Scan Consistency set to "not_bounded", Transaction Timeout set to "120", and named parameter "durability_level" set to "none"']
+image::transactions-preferences.png['The Query Options dialog, with Scan Consistency set to "not_bounded", Transaction Timeout set to "120", and named parameter "durability_level" set to "none"']
 
-① Set *Scan Consistency* to `not_bounded`.
-
-② In the *Named Parameters* section, add a named parameter with *name* set to `durability_level` and *value* set to `"none"` (with double quotes).
-
-③ Set *Transaction Timeout* to `120`.
+* The transaction scan consistency is set to `not_bounded`.
+* The durability level of all the mutations within the transaction is set to `"none"`.
+* The transaction timeout is set to `120`.
 --
 
 ifdef::flag-devex-command-line[]
@@ -98,6 +97,7 @@ endif::flag-devex-command-line[]
 
 For further details, refer to xref:n1ql:n1ql-language-reference/transactions.adoc#settings-and-parameters[Transaction Settings and Parameters].
 
+////
 [[single-statement]]
 == Single Statement Transactions
 
@@ -143,12 +143,11 @@ endif::flag-devex-command-line[]
 ====
 
 For further details, refer to xref:n1ql:n1ql-language-reference/transactions.adoc#query-tools[Query Tools].
+////
 
 [[multiple-statement]]
 == Multiple Statement Transactions
-:co-txid: After beginning the transaction, each subsequent statement in the transaction must specify the transaction ID that was generated when the transaction began.
-:result: When the transaction is committed, the document is added with the attributes that were present after rolling back to the second savepoint.
-:lead: The following example demonstrates a complete transaction using {sqlpp}. \
+:lead: For a worked example showing a complete transaction using {sqlpp}, see xref:n1ql:n1ql-language-reference/transactions.adoc#worked-example[Transaction Worked Example]. \
 Individual {sqlpp} transaction statements are described in the sections below.
 
 A Couchbase transaction may contain multiple DML statements.
@@ -172,41 +171,11 @@ Each statement must be terminated with a semicolon.
 
 . After each statement, press kbd:[Shift+Enter] to start a new line _without_ executing the query.
 
-. When you have entered the entire transaction, click btn:[Execute] to execute the transaction.
+. When you have entered the entire transaction, click btn:[Run] to execute the transaction.
 
 '''
 
 {lead}
-
-.Preparation
-First, specify the transaction settings, as shown in the section <<settings>> above.
-
-Second, use the *context* controls at the top right of the Query Editor to select the `tenant_agent_00` scope in the travel sample data.
-
-image::transactions-context.png["The query context drop-down menu, with the tenant_agent_00 scope selected"]
-
-Third, create a primary index on the `bookings` collection so that you can query this keyspace.
-
-[source,sqlpp]
-----
-include::n1ql:example$transactions/multiple.n1ql[tag=index]
-----
-
-.Transaction
-Now copy the entire sequence below and paste it into the Query Workbench.
-
-[source,sqlpp]
-----
-include::n1ql:example$transactions/multiple.n1ql[tags=transaction;!begin-mark;!set-mark;!savepoint-mark;!rollback-mark;!commit-mark]
-----
-
-.Result
-[source,json,indent=0]
-----
-include::n1ql:example$transactions/results.jsonc[tag=check-3]
-----
-
-<.> {result}
 --
 
 ifdef::flag-devex-command-line[]
@@ -222,44 +191,9 @@ NOTE: You must be using cbq shell version 2.0 or above to use the automatic tran
 '''
 
 {lead}
-
-.Preparation
-First, specify the transaction settings, as shown in the section <<settings>> above.
-
-Second, set the query context to the `tenant_agent_00` scope in the travel sample data.
-
-[source,sqlpp]
-----
-include::n1ql:example$transactions/multiple.n1ql[tag=context]
-----
-
-Third, create a primary index on the `bookings` collection so that you can query this keyspace.
-
-[source,sqlpp]
-----
-include::n1ql:example$transactions/multiple.n1ql[tag=index]
-----
-
-.Transaction
-Now copy the entire sequence below and paste it into the cbq shell.
-
-[source,sqlpp]
-----
-include::n1ql:example$transactions/multiple.n1ql[tags=transaction;!begin-mark;!set-mark;!savepoint-mark;!rollback-mark;!commit-mark]
-----
-
-.Result
-[source,json,indent=0]
-----
-include::n1ql:example$transactions/results.jsonc[tag=check-3]
-----
-
-<.> {result}
 --
 endif::flag-devex-command-line[]
 ====
-
-For further details, refer to xref:n1ql:n1ql-language-reference/transactions.adoc#query-tools[Query Tools].
 
 [[begin]]
 === Begin a Transaction
