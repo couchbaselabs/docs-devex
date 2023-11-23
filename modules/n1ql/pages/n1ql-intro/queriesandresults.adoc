@@ -1,30 +1,37 @@
-= {sqlpp} Queries and Results
+= Query Concepts
 :description: An overview of common concepts that you will need to understand in order to use the Query service.
 :page-topic-type: concept
-:keywords: n1ql, sqlpp, query, result, parameter, prepared, prepared statement, consistent, consistency
+:keywords: n1ql, sqlpp, query, result, parameter, prepared, prepared statement, index
 
 [abstract]
 {description}
 
-== Queries
+== {sqlpp} Queries
 
-A {sqlpp} query is a string parsed by the query service.
+A {sqlpp} query is a string parsed by the Query service.
 The {sqlpp} query language is based on SQL, but designed for structured and flexible JSON documents.
 
-As with SQL, you can have nested sub-queries.
-{sqlpp} queries run on JSON documents, and you can query over multiple documents by using the `JOIN` clause.
+* As with SQL, a {sqlpp} query can have nested sub-queries.
 
-Because data in {sqlpp} can be nested, there are operators and functions that let you navigate through nested arrays.
-Because data can be irregular, you can specify conditions in the `WHERE` clause to retrieve data.
+* {sqlpp} queries run on JSON documents, and you can query over multiple documents by using the `JOIN` clause.
 
-You can use standard `GROUP BY`, `ORDER BY`, `LIMIT`, and `OFFSET` clauses as well as a rich set of functions to transform the results as needed.
+* Data in JSON documents can be nested.
+There are operators and functions that let you navigate through nested arrays.
+
+* Data in JSON documents can be irregular.
+You can specify conditions in the `WHERE` clause to retrieve data.
+
+* You can transform the results using standard `GROUP BY`, `ORDER BY`, `LIMIT`, and `OFFSET` clauses as well as a rich set of functions.
 
 == Results
 
 The result for each query is a set of JSON documents.
-The returned document set is not required to be uniform, though it can be.
-A `SELECT` statement that specifies a fixed set of attribute (column) names results in a uniform set of documents and a `SELECT` statement that specifies the wild card (*) results in a non-uniform result set.
-The only guarantee is that every returned document meets the query criteria.
+The returned document set may be uniform or non-uniform.
+
+* A `SELECT` statement that specifies a fixed set of attribute (column) names results in a uniform set of documents.
+* A `SELECT` statement that specifies the wild card (*) results in a non-uniform result set.
+
+Every returned document meets the query criteria.
 
 Here's a sample query and the result returned:
 
@@ -66,13 +73,16 @@ SELECT name, brewery_id from `beer-sample` WHERE brewery_id IS NOT MISSING LIMIT
 [#keyspace-reference]
 == Keyspace References
 
-Couchbase stores data within a logical hierarchy of buckets, scopes, and collections.
+Couchbase stores data within a xref:clusters:data-service/about-buckets-scopes-collections.adoc[logical hierarchy] of buckets, scopes, and collections.
 This enables separation between documents of different types.
 For most queries, you must provide one or more keyspace references to specify the data sources for the query.
 
-A keyspace reference may be a _full_ keyspace reference: a path comprising the bucket, the scope, and the collection which contains the documents you want.
+A keyspace reference may be:
 
-Alternatively, the keyspace reference may be a _partial_ keyspace reference, comprising the collection name only.
+* A _full_ keyspace reference: a path comprising the bucket, the scope, and the collection which contains the documents you want.
+
+* A _partial_ keyspace reference, comprising the collection name only.
+
 When a query contains partial keyspace references, you must set the <<query-context,query context>> to specify a bucket and scope before running a query.
 Partial keyspace references are resolved using the bucket and scope supplied by the query context.
 
@@ -122,8 +132,8 @@ See xref:n1ql-language-reference/index.adoc#nested-path-exp[Nested Path Expressi
 [#named-placeholders]
 == Parameterized Queries
 
-{sqlpp} allows the use of placeholders to declare dynamic query parameters.
-When the query is constructed, it may receive arguments, with each argument being used as the placeholder value in the query.
+Use placeholders to declare dynamic query parameters in {sqlpp}.
+When you run the query, you can pass arguments to it, with each argument being used as the placeholder value in the query.
 
 Placeholders in the query may be numbered positional placeholders, unnumbered positional placeholders, or named placeholders.
 
@@ -136,7 +146,7 @@ The first occurrence of `?` refers to the first argument, the second occurrence 
 * Named placeholders take the form of `$name`.
 This is particularly useful when there are many query parameters, and ensuring that they are all in the correct order may be cumbersome.
 
-You can set query parameter values when you run the query, using the cbq query shell, the Query Workbench, or the {sqlpp} REST API.
+To set query parameter values when you run the query, use the cbq query shell, the Query tab, or the {sqlpp} REST API.
 
 ifdef::flag-devex-settings[]
 For more information and examples, refer to xref:settings:query-settings.adoc#section_srh_tlm_n1b[Named Parameters and Positional Parameters].
@@ -145,12 +155,12 @@ endif::flag-devex-settings[]
 [#prepare-stmts]
 == Query Optimization Using Prepared Statements
 
-When a {sqlpp} query string is sent to the server, the server will inspect the string and parse it, planning which indexes to query.
+When a {sqlpp} query string is sent to the server, the server inspects the string and parses it, planning which indexes to query.
 Once this is done, it generates a _query plan_.
 The computation for the plan adds some additional processing time and overhead for the query.
 
-A frequently-used query can be _prepared_ so that its _plan_ is generated only once.
-Subsequent queries using the same query string will use the pre-generated _plan_ instead, saving on the overhead and processing of the plan each time.
+You can _prepare_ a frequently-used query so that its plan is generated only once.
+Subsequent queries using the same query string will use the pre-generated plan instead, saving on the overhead and processing of the plan each time.
 
 NOTE: Parameterized queries are considered the same query for caching and planning purposes, even if the supplied parameters are different.
 
@@ -158,8 +168,8 @@ For more information on how to optimize queries using prepared statements, refer
 
 == Indexes
 
-The Couchbase query service makes use of _indexes_ in order to do its work.
-Indexes replicate subsets of documents from data nodes over to index nodes, allowing specific data (for example, specific document properties) to be retrieved quickly, (and to distribute load away from data nodes in MDS topologies).
+The Couchbase Query service uses _indexes_ to do its work.
+Indexes replicate subsets of documents from data nodes over to index nodes, allowing specific data (for example, specific document properties) to be retrieved quickly, and to distribute load away from data nodes in MDS topologies.
 
 In order to make a keyspace queryable, it must have at least one index defined.
 
@@ -175,39 +185,4 @@ Indexes help improve the performance of a query.
 When an index includes the actual values of all the fields specified in the query, the index covers the query and eliminates the need to fetch the actual values from the Data Service.
 An index, in this case, is called a covering index and the query is called a covered query.
 
-For more information, refer to xref:learn:services-and-indexes/indexes/global-secondary-indexes.adoc[Using Indexes].
-
-== Index Building
-
-Index creation happens in two phases: the [def]_creation phase_ and the [def]_build phase_.
-During the creation phase, the Index Service validates the user input, decides the host node for the index, and creates the index metadata on the host node.
-During the build phase, the Index Service reads the documents from the Data Service and builds the index.
-The build phase cannot start until the creation phase is complete.
-
-Creating and building indexes can take a long time on keyspaces with lots of existing documents.
-When you create an index, you can choose to _defer_ the build phase, and then build the deferred index later.
-This allows multiple indexes to be built at once rather than having to re-scan the entire keyspace for each index.
-
-For more information and examples, refer to xref:n1ql:n1ql-language-reference/createprimaryindex.adoc[CREATE PRIMARY INDEX], xref:n1ql:n1ql-language-reference/createindex.adoc[CREATE INDEX], and xref:n1ql:n1ql-language-reference/build-index.adoc[BUILD INDEX].
-
-== Index Consistency
-
-(((consistent)))
-(((consistency)))
-Because indexes are by design outside the data service, they are eventually consistent with respect to changes to documents and, depending on how you issue the query, may at times not contain the most up-to-date information.
-This may especially be the case when deployed in a write-heavy environment: changes may take some time to propagate over to the index nodes.
-
-The asynchronous updating nature of global secondary indexes means that they can be very quick to query and do not require the additional overhead of index recalculations at the time documents are modified.
-{sqlpp} queries are forwarded to the relevant indexes and the queries are done based on indexed information, rather than the documents as they exist in the data service.
-
-With default query options, the query service will rely on the current index state: the most up-to-date document versions are not retrieved, and only the indexed versions are queried.
-This provides the best performance.
-Only updates occurring with a small time frame may not yet have been indexed.
-
-The query service can use the latest versions of documents by modifying the [.api]`consistency` of the query.
-This is done by setting the [.api]`scan_consistency` parameter to [.api]`REQUEST_PLUS`.
-When using this consistency mode, the query service will ensure that the indexes are synchronized with the data service before querying.
-
-ifdef::flag-devex-settings[]
-For more information, refer to xref:settings:query-settings.adoc#scan_consistency[Query Settings].
-endif::flag-devex-settings[]
+For more information, refer to xref:learn:services-and-indexes/indexes/global-secondary-indexes.adoc[].

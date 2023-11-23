@@ -1,7 +1,7 @@
-= Prepared Statements
+= Prepare Statements for Reuse
 :page-topic-type: guide
 :page-partial:
-:page-pagination:
+:page-pagination: prev
 :imagesdir: ../assets/images
 :description: How to create and execute prepared statements, including placeholder parameters.
 
@@ -41,7 +41,7 @@ include::partial$query-context.adoc[tag=step]
 .Query
 [source,sqlpp]
 ----
-include::settings:example$param-names.n1ql[tag=statement]
+include::server:settings:example$param-names.n1ql[tag=statement]
 ----
 
 To execute this query, the parameters must be supplied by name.
@@ -56,7 +56,7 @@ include::partial$query-context.adoc[tag=step]
 .Query
 [source,sqlpp]
 ----
-include::settings:example$param-numbers.n1ql[tag=statement]
+include::server:settings:example$param-numbers.n1ql[tag=statement]
 ----
 
 To execute this query, the parameters must be supplied as a list, in order of the placeholder numbers.
@@ -71,7 +71,7 @@ include::partial$query-context.adoc[tag=step]
 .Query
 [source,sqlpp]
 ----
-include::settings:example$param-positions.n1ql[tag=statement]
+include::server:settings:example$param-positions.n1ql[tag=statement]
 ----
 
 To execute this query, the parameters must be supplied as a list, in the order in which the placeholders appear in the statement.
@@ -89,11 +89,13 @@ To run a query containing placeholder parameters, you must supply values for the
 --
 To supply values for placeholder parameters:
 
+ifdef::flag-devex-command-line[]
 * If you are using the cbq shell, use the `\SET` command to set the parameters, then run the statement.
+endif::flag-devex-command-line[]
 
 * If you are using the {sqlpp} REST API, specify the parameters in the request body or the query URI, alongside the statement.
 
-* If you are using the Query Workbench, use the cog icon icon:cog[] to display the Run-Time Preferences window and set the parameters, then run the statement.
+* If you are using the Query tab, click *Query Options* to display the Query Options window and set the parameters, then run the statement.
 
 TIP: When you are executing a prepared statement, the `EXECUTE` statement provides another, easier way to supply parameter values.
 Refer to <<execute>> below.
@@ -104,28 +106,39 @@ Refer to <<execute>> below.
 include::partial$query-context.adoc[tag=example]
 
 .Queries
-The following query supplies positional parameter values, using the cbq shell.
+The following query supplies positional parameter values.
+
+. Click *Query Options* to display the Query Options window.
+. Next to *Positional Parameters*, click btn:[+].
+. In the *$1* box, enter `"France"`.
+. Next to *Positional Parameters*, click btn:[+] again.
+. In the *$2* box, enter `500`.
+. Choose btn:[Save].
+. Run the following query.
 
 [source,sqlpp]
 ----
-include::settings:example$param-numbers.n1ql[tags=**]
+include::server:settings:example$param-numbers.n1ql[tag=statement]
 ----
 
-<1> In the cbq shell, parameter names must be prefixed by a hyphen.
-<2> In the cbq shell or the REST API, the `args` parameter specifies positional parameters.
-<3> The `args` parameter takes an array, each element of which is a value for a positional parameter.
+The following query supplies named parameter values.
 
-The following query supplies named parameter values, using the cbq shell.
+. Click *Query Options* to display the Query Options window.
+. Next to *Named Parameters*, click btn:[+].
+. In the *name 0* box, enter `country`, and in the *value 0* box, enter `"France"`.
+. Next to *Named Parameters*, click btn:[+] again.
+. In the *name 1* box, enter `altitude`, and in the *value 1* box, enter `500`.
+. Choose btn:[Save].
+. Run the following query.
 
 [source,sqlpp]
 ----
-include::settings:example$param-names.n1ql[tags=**]
+include::server:settings:example$param-names.n1ql[tag=statement]
 ----
 
-<1> In the cbq shell, parameter names must be prefixed by a hyphen.
-<2> In the cbq shell, the REST API, or the Query Workbench, named parameters must begin with a dollar sign `$`.
-
+ifdef::flag-devex-settings[]
 For more information and examples, refer to xref:settings:query-settings.adoc[Settings and Parameters].
+endif::flag-devex-settings[]
 --
 
 .NET::
@@ -141,14 +154,14 @@ The following example supplies a single positional parameter.
 
 [source,csharp]
 ----
-include::dotnet-sdk:howtos:example$/N1qlQueries.csx[tag=positional,indent=0]
+include::dotnet-sdk:howtos:example$/n1ql-queries-sdk/n1ql-queries-sdk/Program.cs[tag=positional,indent=0]
 ----
 
 The following example supplies a single named parameter.
 
 [source,csharp]
 ----
-include::dotnet-sdk:howtos:example$/N1qlQueries.csx[tag=namedparameter,indent=0]
+include::dotnet-sdk:howtos:example$/n1ql-queries-sdk/n1ql-queries-sdk/Program.cs[tag=namedparameter,indent=0]
 ----
 
 For details, refer to https://docs.couchbase.com/sdk-api/couchbase-net-client/api/Couchbase.Query.QueryOptions.html[QueryOptions^].
