@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[[ -f ./build ]] || mkdir ./build
+[[ -d ./build ]] || mkdir ./build
 
 # install-rr
 [[ -f ./build/rr-2.0-java11.zip ]] || curl -L -o ./build/rr-2.0-java11.zip https://github.com/GuntherRademacher/rr/releases/download/v2.0/rr-2.0-java11.zip
