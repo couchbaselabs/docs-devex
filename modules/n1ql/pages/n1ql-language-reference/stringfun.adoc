@@ -515,6 +515,257 @@ AS positive_anchor;
 ]
 ----
 ====
+
+[[fn-mb-length,MB_LENGTH()]]
+== MB_LENGTH(in_str)
+
+=== Description
+Finds the length of a string, where length is defined as the number of characters within the string.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-length>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to find the length of.
+
+=== Return Value
+An integer representing the length of the string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_LENGTH("SQL++ is awesome") AS ascii,
+       MB_LENGTH("Café") AS diacritic,
+       MB_LENGTH("🙂") AS emoji,
+       MB_LENGTH("") AS zero;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "ascii": 16,
+    "diacritic": 4, // <.>
+    "emoji": 1, // <.>
+    "zero": 0
+  }
+]
+----
+
+<.> The letter with diacritic counts as a single character.
+<.> The emoji counts as a single character.
+====
+
+[[fn-mb-lpad,MB_LPAD()]]
+== MB_LPAD(in_str, size [, char])
+
+=== Description
+Pads a string with leading characters.
+The function adds characters to the beginning of the string to pad the string to a specified length.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-lpad>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to add the leading characters to.
+
+size:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that specifies the desired length of the result string.
+
+char::
+[Optional] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to add to the input string.
++
+If omitted, the default is space `" "`, Unicode U+0020.
+
+=== Return Value
+A string representing the input string with leading characters added.
+
+* If the specified size is smaller than the length of the input string, the input string is truncated and no padding is added.
+* If the specified size is larger than the length of the input string, but shorter than the length of the input string plus the padding characters, the padding characters are truncated.
+* If the specified size is greater than the length of the input string plus the padding characters, the padding characters are repeated in order until the specified size is reached.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_LPAD("SQL++ is awesome", 20) AS implicit_padding,
+       MB_LPAD("SQL++ is awesome", 20, "🙂!") AS repeated_padding,
+       MB_LPAD("SQL++ is awesome", 20, "987654321") AS truncate_padding,
+       MB_LPAD("SQL++ is awesome", 5, "987654321") AS truncate_string;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "implicit_padding": "    SQL++ is awesome",
+    "repeated_padding": "🙂!🙂!SQL++ is awesome", // <.>
+    "truncate_padding": "9876SQL++ is awesome",
+    "truncate_string": "SQL++"
+  }
+]
+----
+
+<.> The emoji counts as a single character when calculating the size.
+====
+
+[[fn-mb-rpad,MB_RPAD()]]
+== MB_RPAD(in_str, size [, char])
+
+=== Description
+Pads a string with trailing characters.
+The function adds characters to the end of the string to pad the string to a specified length.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-rpad>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to add the trailing characters to.
+
+size:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that specifies the desired length of the result string.
+
+char::
+[Optional] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to add to the input string.
++
+If omitted, the default is space `" "`, Unicode U+0020.
+
+=== Return Value
+A string representing the input string with trailing characters added.
+
+* If the specified size is smaller than the length of the input string, the input string is truncated and no padding is added.
+* If the specified size is larger than the length of the input string, but shorter than the length of the input string plus the padding characters, the padding characters are truncated.
+* If the specified size is greater than the length of the input string plus the padding characters, the padding characters are repeated in order until the specified size is reached.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_RPAD("SQL++ is awesome", 20) AS implicit_padding,
+       MB_RPAD("SQL++ is awesome", 20, "🙂!") AS repeated_padding,
+       MB_RPAD("SQL++ is awesome", 20, "123456789") AS truncate_padding,
+       MB_RPAD("SQL++ is awesome", 5, "123456789") AS truncate_string;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "implicit_padding": "SQL++ is awesome    ",
+    "repeated_padding": "SQL++ is awesome🙂!🙂!", // <.>
+    "truncate_padding": "SQL++ is awesome1234",
+    "truncate_string": "SQL++"
+  }
+]
+----
+
+<.> The emoji counts as a single character when calculating the size.
+====
+
+[[fn-mb-substr,MB_SUBSTR()]]
+== MB_SUBSTR(in_str, start_pos [, length])
+
+=== Description
+Returns the substring (of given length) starting at the provided position.
+The position is zero-based -- that is, the first position is 0.
+If position is negative, it is counted from the end of the string; -1 is the last position in the string.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-substr>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to convert to extract the substring from.
+
+start_pos:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the start position of the substring.
+
+length:: [Optional; default is to capture to the end of the string]
++
+An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the length of the substring to extract.
+
+=== Return Value
+A string representing the substring extracted from the input string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_SUBSTR("🙂 SQL++ is awesome", 11) as rest_of_string,
+       MB_SUBSTR("🙂 SQL++ is awesome", 11, 1) as single_letter,
+       MB_SUBSTR("🙂 SQL++ is awesome", 0, 10) as ten_from_start;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "rest_of_string": "awesome",
+    "single_letter": "a",
+    "ten_from_start": "🙂 SQL++ is"
+  }
+]
+----
+
+The emoji counts as a single character for the starting position and the substring length.
+====
+
+[[fn-mb-position,MB_POSITION()]]
+== MB_POSITION(in_str, search_str)
+
+=== Description
+Finds the first position of the search string within the string. This position is zero-based -- that is, the first position is 0.
+If the search string does not exist within the input string then the function returns -1.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-position>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search within.
+
+search_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search for.
+
+=== Return Value
+An integer representing the first position of the search string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_POSITION("🙂 SQL++ is awesome", "awesome") as awesome,
+       MB_POSITION("🙂 SQL++ is awesome", "N1QL") as n1ql,
+       MB_POSITION("🙂 SQL++ is awesome", "SQL") as sql
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "awesome": 11,
+    "n1ql": -1,
+    "sql": 2
+  }
+]
+----
+
+The emoji counts as a single character when calculating the position.
 ====
 
 [[fn-str-position,POSITION()]]
