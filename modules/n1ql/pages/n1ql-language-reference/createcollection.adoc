@@ -9,9 +9,13 @@
 :naming-for-scopes-and-collections: xref:learn:data/scopes-and-collections.adoc#naming-for-scopes-and-collections
 :query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
 :scopes-and-collections: xref:learn:data/scopes-and-collections.adoc
+:bucket-expiration: xref:learn:data/expiration.adoc
 :manage-scopes-and-collections: xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc
 :scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
 :couchbase-cli-collection-manage: xref:cli:cbcli/couchbase-cli-collection-manage.adoc
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 [abstract]
 The `CREATE COLLECTION` statement enables you to create a named collection within a scope.
@@ -25,6 +29,7 @@ include::partial$grammar/ddl.ebnf[tag=create-collection]
 
 image::n1ql-language-reference/create-collection.png["Syntax diagram: refer to source code listing", align=left]
 
+[horizontal]
 namespace::
 (Optional) An {identifier}[identifier] that refers to the {logical-hierarchy}[namespace] of the bucket in which you want to create the collection.
 Currently, only the `default` namespace is available.
@@ -65,6 +70,43 @@ If a collection with the same name already exists within the specified scope, th
 
 * If this clause is present, the statement does nothing and completes without error.
 
+[[with]]
+=== WITH Clause
+
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+Use the optional `WITH` clause to specify additional options for the collection.
+
+[horizontal]
+expr::
+An object representing the options to be set for the collection.
+Only the `maxTTL` attribute is valid; any other attributes generate an error.
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**maxTTL** +
+__required__
+|The maximum time-to-live for any item in the collection.
+May have any of the following values.
+
+`0` or unspecified: The collection inherits the maximum time-to-live setting from the bucket which contains it.
+
+Positive integer: By default, items in the collection expire after this many seconds.
+Overrides the maximum time-to-live set by the bucket.
+
+`-1`: By default, items in the collection never expire.
+Overrides the maximum time-to-live set by the bucket.
+
+|integer
+|===
+
 == Usage
 
 It is important to note that the scope must exist before you can create the collection, whether the scope is specified in the statement itself or implied by the query context.
@@ -95,6 +137,34 @@ CREATE COLLECTION country;
 ----
 ====
 
+.Create collection if it doesn't exist
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
+
+If the `country` collection already exists, the statement does nothing and no error is generated.
+
+[source,sqlpp]
+----
+CREATE COLLECTION country IF NOT EXISTS;
+----
+====
+
+.Create collection with maximum time-to-live
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
+
+The maximum time-to-live for the collection is set to `123456` seconds, overriding the maximum time-to-live specified by the bucket.
+
+[source,sqlpp]
+----
+CREATE COLLECTION country IF NOT EXISTS WITH {"maxTTL": 123456};
+----
+====
+
 == Related Links
 
 * An overview of scopes and collections is provided in {scopes-and-collections}[Scopes and Collections].
@@ -104,3 +174,5 @@ CREATE COLLECTION country;
 * Refer to {scopes-and-collections-api}[Scopes and Collections API] to manage scopes and collections with the REST API.
 
 * Refer to the reference page for the {couchbase-cli-collection-manage}[collection-manage] command to manage scopes and collections with the CLI.
+
+* Refer to {bucket-expiration}[Expiration] for information about bucket and collection time-to-live.
