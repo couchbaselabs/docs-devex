@@ -91,32 +91,25 @@ For further details, refer to xref:learn:services-and-indexes/indexes/storage-mo
 == Optimizer Statistics
 
 For each bucket, the `UPDATE STATISTICS` command stores statistics in a collection called `_query` within a scope called `_system`.
-This scope and collection are created automatically within the bucket, if they do not already exist.
+The `_system` scope and its collections, including `_query`, are created automatically when you create a bucket, or when you migrate a bucket from a previous version of Couchbase Server.
 
 === Security for Optimizer Statistics
 
-Access to the `_system` scope and `_query` collection is restricted to system administrators.
-Regular users do not have access to this scope or collection.
-Users with system administration privileges can access or drop them.
-If you drop this scope or collection, all optimizer statistics stored in the collection will be lost.
-A new `_system` scope and `_query` collection will be created again the next time an `UPDATE STATISTICS` statement is run.
+Regular users do not have access to the `_system` scope or any of its collections, including `_query`.
 
-The `_system` scope and `_query` collection are not listed in the *Explore Your Data* area in the Query Workbench.
+Users with system administration privileges can access `_system` scope and its collections, including `_query`.
+However, even with system administration privileges, you can't drop or create the `_system` scope or any of its collections.
 
-=== Memory Quota for Optimizer Statistics
-
-For large clusters, it is recommended that system administrators monitor the memory usage of any bucket which contains optimizer statistics.
-As any bucket containing optimizer statistics grows larger, increase the memory quota for that bucket so that it does not fall under 15% memory-resident.
-(This is recommended for all buckets to avoid potential issues with rebalancing, etc.)
+The `_system` scope and its collections are not listed in the *Explore Your Data* area in the Query Workbench.
 
 === Optimizer Statistics for Multiple Query Nodes
 
 When a cluster has multiple Query nodes, statistics gathered from one Query node via the `UPDATE STATISTICS` statement are automatically propagated to the other Query nodes.
-It is not necessary to run `UPDATE STATISTICS` with the same index expression for multiple query nodes.
+You don't need to run `UPDATE STATISTICS` with the same index expression for multiple query nodes.
 
 === Monitoring Optimizer Statistics
 
-You can monitor the optimizer statistics by querying the `system:dictionary` and `system:dictionary_cache` keyspaces.
+To monitor the optimizer statistics, query the `system:dictionary` and `system:dictionary_cache` keyspaces.
 For further details, refer to {monitor}[Monitor Queries].
 
 == Related Links
