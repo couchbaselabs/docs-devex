@@ -683,7 +683,7 @@ SELECT MB_RPAD("SQL++ is awesome", 20) AS implicit_padding,
 == MB_SUBSTR(in_str, start_pos [, length])
 
 === Description
-Returns the substring (of given length) starting at the provided position.
+Returns the substring (of given length) counting forward from the provided position.
 The position is zero-based -- that is, the first position is 0.
 If position is negative, it is counted from the end of the string; -1 is the last position in the string.
 
@@ -729,11 +729,63 @@ SELECT MB_SUBSTR("🙂 SQL++ is awesome", 11) as rest_of_string,
 The emoji counts as a single character for the starting position and the substring length.
 ====
 
+[[fn-mb-substr1,MB_SUBSTR1()]]
+== MB_SUBSTR1(in_str, start_pos [, length])
+
+=== Description
+Returns the substring (of given length) counting forward from the provided position.
+The position is one-based -- that is, the first position is 1.
+If position is negative, it is counted from the end of the string; 0 is the last position in the string.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-substr1>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to convert to extract the substring from.
+
+start_pos:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the start position of the substring.
+
+length:: [Optional; default is to capture to the end of the string]
++
+An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the length of the substring to extract.
+
+=== Return Value
+A string representing the substring extracted from the input string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_SUBSTR1("🙂 SQL++ is awesome", 12) as rest_of_string,
+       MB_SUBSTR1("🙂 SQL++ is awesome", 12, 1) as single_letter,
+       MB_SUBSTR1("🙂 SQL++ is awesome", 0, 10) as ten_from_start;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "rest_of_string": "awesome",
+    "single_letter": "a",
+    "ten_from_start": "🙂 SQL++ is"
+  }
+]
+----
+
+The emoji counts as a single character for the starting position and the substring length.
+====
+
+
 [[fn-mb-position,MB_POSITION()]]
 == MB_POSITION(in_str, search_str)
 
 === Description
-Finds the first position of the search string within the string. This position is zero-based -- that is, the first position is 0.
+Finds the first position of the search string within the string.
+This position is zero-based -- that is, the first position is 0.
 If the search string does not exist within the input string then the function returns -1.
 
 This function works with multi-byte characters, not single bytes.
@@ -774,6 +826,53 @@ SELECT MB_POSITION("🙂 SQL++ is awesome", "awesome") as awesome,
 The emoji counts as a single character when calculating the position.
 ====
 
+[[fn-mb-position1,MB_POSITION1()]]
+== MB_POSITION1(in_str, search_str)
+
+=== Description
+Finds the first position of the search string within the string.
+This position is one-based -- that is, the first position is 1.
+If the search string does not exist within the input string then the function returns 0.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-position1>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search within.
+
+search_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search for.
+
+=== Return Value
+An integer representing the first position of the search string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_POSITION1("🙂 SQL++ is awesome", "awesome") as awesome,
+       MB_POSITION1("🙂 SQL++ is awesome", "N1QL") as n1ql,
+       MB_POSITION1("🙂 SQL++ is awesome", "SQL") as sql
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "awesome": 12,
+    "n1ql": 0,
+    "sql": 3
+  }
+]
+----
+
+The emoji counts as a single character when calculating the position.
+====
+
+
 [[fn-str-position,POSITION()]]
 == POSITION(in_str, search_str)
 
@@ -811,6 +910,50 @@ SELECT POSITION("🙂 SQL++ is awesome", "awesome") as awesome,
     "awesome": 14,
     "n1ql": -1,
     "sql": 5
+  }
+]
+----
+
+The emoji counts as four bytes when calculating the position.
+====
+
+[[fn-str-position1,POSITION1()]]
+== POSITION1(in_str, search_str)
+
+=== Description
+Finds the first position of the search string within the string.
+This position is one-based -- that is, the first position is 1.
+If the search string does not exist within the input string then the function returns 0.
+
+This function works with single bytes, not multi-byte characters.
+For a variant of this function that works with multi-byte characters, see <<fn-mb-position1>>.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search within.
+
+search_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search for.
+
+=== Return Value
+An integer representing the first position of the search string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT POSITION1("🙂 SQL++ is awesome", "awesome") as awesome,
+       POSITION1("🙂 SQL++ is awesome", "N1QL") as n1ql,
+       POSITION1("🙂 SQL++ is awesome", "SQL") as sql
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "awesome": 15,
+    "n1ql": 0,
+    "sql": 6
   }
 ]
 ----
@@ -1088,7 +1231,7 @@ SELECT SPLIT("SQL++ is awesome", " ") as explicit_spaces,
 == SUBSTR(in_str, start_pos [, length])
 
 === Description
-Returns the substring (of given length) starting at the provided position.
+Returns the substring (of given length) counting forward from the provided position.
 The position is zero-based -- that is, the first position is 0.
 If position is negative, it is counted from the end of the string; -1 is the last position in the string.
 
@@ -1115,6 +1258,54 @@ A string representing the substring extracted from the input string.
 SELECT SUBSTR("🙂 SQL++ is awesome", 11) as rest_of_string,
        SUBSTR("🙂 SQL++ is awesome", 11, 1) as single_letter,
        SUBSTR("🙂 SQL++ is awesome", 0, 10) as ten_from_start;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "rest_of_string": "is awesome",
+    "single_letter": "i",
+    "ten_from_start": "🙂 SQL++"
+  }
+]
+----
+
+The emoji counts as four bytes for the starting position and the substring length.
+====
+
+[[fn-str-substr1,SUBSTR1()]]
+== SUBSTR1(in_str, start_pos [, length])
+
+=== Description
+Returns the substring (of given length) counting forward from the provided position.
+The position is one-based -- that is, the first position is 1.
+If position is negative, it is counted from the end of the string; 0 is the last position in the string.
+
+This function works with single bytes, not multi-byte characters.
+For a variant of this function that works with multi-byte characters, see <<fn-mb-substr1>>.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to convert to extract the substring from.
+
+start_pos:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the start position of the substring.
+
+length:: [Optional; default is to capture to the end of the string]
++
+An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the length of the substring to extract.
+
+=== Return Value
+A string representing the substring extracted from the input string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT SUBSTR1("🙂 SQL++ is awesome", 12) as rest_of_string,
+       SUBSTR1("🙂 SQL++ is awesome", 12, 1) as single_letter,
+       SUBSTR1("🙂 SQL++ is awesome", 0, 10) as ten_from_start;
 ----
 
 .Result
