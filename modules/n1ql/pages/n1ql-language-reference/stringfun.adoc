@@ -5,12 +5,10 @@
 
 {description}
 
-NOTE: If any arguments to any of the following functions are [.out]`MISSING` then the result is also [.out]`MISSING` (i.e.
-no result is returned).
-Similarly, if any of the arguments passed to the functions are `NULL` or are of the wrong type (e.g.
-an integer instead of a string), then `NULL` is returned as the result.
+NOTE: If any arguments to any of the following functions are [.out]`MISSING` then the result is also [.out]`MISSING` -- that is, no result is returned.
+Similarly, if any of the arguments passed to the functions are `NULL` or are of the wrong type, such as an integer instead of a string, then `NULL` is returned as the result.
 
-[#fn-str-concat]
+[[fn-str-concat,CONCAT()]]
 == CONCAT([.var]`string1`, [.var]`string2`, …)
 
 === Description
@@ -25,11 +23,13 @@ A new string, concatenated from the input strings.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
 SELECT CONCAT("abc", "def", "ghi") AS concat;
 ----
 
+.Result
 [source,json]
 ----
 [
@@ -40,7 +40,7 @@ SELECT CONCAT("abc", "def", "ghi") AS concat;
 ----
 ====
 
-[#fn-str-concat2]
+[[fn-str-concat2,CONCAT2()]]
 == CONCAT2([.var]`separator`, [.var]`arg1`, [.var]`arg2`, …)
 
 === Description
@@ -63,6 +63,7 @@ If any argument or array element is non-string, returns NULL.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
 SELECT CONCAT2('-','a','b',['c','d'],['xyz']) AS c1,
@@ -70,6 +71,7 @@ CONCAT2('-','a') AS c2,
 CONCAT2('-',['b']) AS c3;
 ----
 
+.Result
 [source,json]
 ----
 [
@@ -82,12 +84,11 @@ CONCAT2('-',['b']) AS c3;
 ----
 ====
 
-[#fn-str-contains]
+[[fn-str-contains,CONTAINS()]]
 == CONTAINS(in_str, search_str)
 
 === Description
-Checks whether or not the specified search string is a substring of the input string (i.e.
-exists within).
+Checks whether or not the specified search string is a substring of the input string -- that is, exists within.
 This returns `true` if the substring exists within the input string, otherwise `false` is returned.
 
 === Arguments
@@ -100,26 +101,26 @@ A boolean, representing whether the search string exists within the input string
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT CONTAINS("N1QL is awesome", "N1QL") as n1ql,
-       CONTAINS("N1QL is awesome", "SQL") as no_sql;
+SELECT CONTAINS("SQL++ is awesome", "N1QL") as n1ql,
+       CONTAINS("SQL++ is awesome", "SQL") as sql;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "n1ql": true,
-            "no_sql": false
-        }
-    ]
-}
+[
+  {
+    "n1ql": false,
+    "sql": true
+  }
+]
 ----
 ====
 
-[#fn-str-initcap]
+[[fn-str-initcap,INITCAP()]]
 == INITCAP(in_str)
 
 === Description
@@ -137,30 +138,33 @@ This does not strictly follow title case conventions used in the writing domain.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT INITCAP("N1QL is awesome") as n1ql;
+SELECT INITCAP("SQL++ is awesome") as sqlpp;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "n1ql": "N1ql Is Awesome"
-        }
-    ]
-}
+[
+  {
+    "sqlpp": "Sql++ Is Awesome"
+  }
+]
 ----
 ====
 
-[#fn-str-length]
+[[fn-str-length,LENGTH()]]
 == LENGTH(in_str)
 
 _Equivalent_: xref:n1ql-language-reference/metafun.adoc#len[LEN()]
 
 === Description
 Finds the length of a string, where length is defined as the number of code points within the string.
+
+This function works with single bytes, not multi-byte characters.
+For a variant of this function that works with multi-byte characters, see <<fn-mb-length>>.
 
 === Arguments
 in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to find the length of.
@@ -170,30 +174,33 @@ An integer representing the length of the string.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT LENGTH("N1QL is awesome") AS ascii,
+SELECT LENGTH("SQL++ is awesome") AS ascii,
        LENGTH("Café") AS diacritic,
        LENGTH("🙂") AS emoji,
        LENGTH("") AS zero;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "ascii": 15,
-            "diacritic": 5,
-            "emoji": 4,
-            "zero": 0
-        }
-    ]
-}
+[
+  {
+    "ascii": 16,
+    "diacritic": 5, // <.>
+    "emoji": 4, // <.>
+    "zero": 0
+  }
+]
 ----
+
+<.> The letter with diacritic counts as two bytes.
+<.> The emoji counts as four bytes.
 ====
 
-[#fn-str-lower]
+[[fn-str-lower,LOWER()]]
 == LOWER(in_str)
 
 === Description
@@ -208,24 +215,24 @@ A string representing the input string converted to lower case.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT LOWER("N1QL is awesome") as n1ql;
+SELECT LOWER("SQL++ is awesome") as sqlpp;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "n1ql": "n1ql is awesome"
-        }
-    ]
-}
+[
+  {
+    "sqlpp": "sql++ is awesome"
+  }
+]
 ----
 ====
 
-[#fn-str-lpad]
+[[fn-str-lpad,LPAD()]]
 == LPAD(in_str, size [, char])
 
 
@@ -233,16 +240,18 @@ SELECT LOWER("N1QL is awesome") as n1ql;
 Pads a string with leading characters.
 The function adds characters to the beginning of the string to pad the string to a specified length.
 
+This function works with single bytes, not multi-byte characters.
+For a variant of this function that works with multi-byte characters, see <<fn-mb-lpad>>.
+
 === Arguments
 in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to add the leading characters to.
 
 size:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that specifies the desired length of the result string.
 
 char::
-[Optional; default is Unicode U+0020, i.e. space
-`" "`]
+[Optional] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to add to the input string.
 +
-A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to add to the input string.
+If omitted, the default is space `" "`, Unicode U+0020.
 
 === Return Value
 A string representing the input string with leading characters added.
@@ -253,30 +262,32 @@ A string representing the input string with leading characters added.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT LPAD("N1QL is awesome", 20) AS implicit_padding,
-       LPAD("N1QL is awesome", 20, "-*") AS repeated_padding,
-       LPAD("N1QL is awesome", 20, "987654321") AS truncate_padding,
-       LPAD("N1QL is awesome", 4, "987654321") AS truncate_string;
+SELECT LPAD("SQL++ is awesome", 20) AS implicit_padding,
+       LPAD("SQL++ is awesome", 20, "🙂!") AS repeated_padding,
+       LPAD("SQL++ is awesome", 20, "987654321") AS truncate_padding,
+       LPAD("SQL++ is awesome", 5, "987654321") AS truncate_string;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "implicit_padding": "     N1QL is awesome",
-            "repeated_padding": "-*-*-N1QL is awesome",
-            "truncate_padding": "98765N1QL is awesome",
-            "truncate_string": "N1QL"
-        }
-    ]
-}
+[
+  {
+    "implicit_padding": "    SQL++ is awesome",
+    "repeated_padding": "🙂SQL++ is awesome", // <.>
+    "truncate_padding": "9876SQL++ is awesome",
+    "truncate_string": "SQL++"
+  }
+]
 ----
+
+<.> The emoji counts as four bytes when calculating the size.
 ====
 
-[#fn-str-ltrim]
+[[fn-str-ltrim,LTRIM()]]
 == LTRIM(in_str [, char])
 
 === Description
@@ -287,42 +298,41 @@ The function removes all consecutive characters from the beginning of the string
 in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to remove the leading characters from.
 
 char::
-[Optional; default is whitespace, i.e.
-space `" "`, tab `"\t"`, newline `"\n"`, formfeed `"\f"`, or carriage return `"\r"`]
+[Optional] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to trim from the input string.
+Each character in this string is trimmed from the input string -- you don't need to delimit the characters to trim.
+For example, specifying a character value of `"abc"` trims the characters "a", "b" and "c" from the start of the string.
 +
-A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to trim from the input string.
-Each character in this string will be trimmed from the input string, it is therefore not necessary to delimit the characters to trim.
-For example, specifying a character value of `"abc"` will trim the characters "a", "b" and "c" from the start of the string.
+If omitted, the default is whitespace: space `" "`, tab `"\t"`, newline `"\n"`, formfeed `"\f"`, or carriage return `"\r"`.
 
 === Return Value
 A string representing the input string with leading characters removed.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT LTRIM("...N1QL is awesome", ".") as dots,
-       LTRIM("     N1QL is awesome", " ") as explicit_spaces,
-       LTRIM("	  N1QL is awesome") as implicit_spaces,
-       LTRIM("N1QL is awesome") as no_dots;
+SELECT LTRIM("...SQL++ is awesome", ".") as dots,
+       LTRIM("     SQL++ is awesome", " ") as explicit_spaces,
+       LTRIM("\t   SQL++ is awesome") as implicit_spaces,
+       LTRIM("SQL++ is awesome") as no_dots;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "dots": "N1QL is awesome",
-            "explicit_spaces": "N1QL is awesome",
-            "implicit_spaces": "N1QL is awesome",
-            "no_dots": "N1QL is awesome"
-        }
-    ]
-}
+[
+  {
+    "dots": "SQL++ is awesome",
+    "explicit_spaces": "SQL++ is awesome",
+    "implicit_spaces": "SQL++ is awesome",
+    "no_dots": "SQL++ is awesome"
+  }
+]
 ----
 ====
 
-[#fn-str-mask]
+[[fn-str-mask,MASK()]]
 == MASK(in_str [, options])
 
 
@@ -388,6 +398,7 @@ A string representing the masked input string.
 ====
 Default mask, custom mask, custom mask demonstrating holes.
 
+.Query
 [source,sqlpp]
 ----
 SELECT MASK('SomeTextToMask') AS mask,
@@ -395,23 +406,23 @@ SELECT MASK('SomeTextToMask') AS mask,
        MASK('SomeTextToMask', {"mask": "++++    ++++"}) AS mask_hole;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "mask": "********",
-            "mask_custom": "++++",
-            "mask_hole": "++++Text++++"
-        }
-    ]
-}
+[
+  {
+    "mask": "********",
+    "mask_custom": "++++",
+    "mask_hole": "++++Text++++"
+  }
+]
 ----
 ====
 
 ====
 Mask with character injection.
 
+.Query
 [source,sqlpp]
 ----
 SELECT MASK('1234abcd5678efgh', {"mask": "****-****-****-####",
@@ -419,107 +430,403 @@ SELECT MASK('1234abcd5678efgh', {"mask": "****-****-****-####",
                                  "inject": "-"}) AS mask_inject;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "mask_inject": "****-****-****-efgh"
-        }
-    ]
-}
+[
+  {
+    "mask_inject": "****-****-****-efgh"
+  }
+]
 ----
 ====
 
 ====
 Mask anchored to the end of the source, with the output length determined by the source.
 
+.Query
 [source,sqlpp]
 ----
 SELECT MASK('1234abcd5678efgh', {"mask": "****", "anchor": "end", "length": "source"})
 AS end_anchor;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "end_anchor": "1234abcd5678****"
-        }
-    ]
-}
+[
+  {
+    "end_anchor": "1234abcd5678****"
+  }
+]
 ----
 ====
 
 ====
 Mask anchored at the pattern `d5`.
 
+.Query
 [source,sqlpp]
 ----
 SELECT MASK('1234abcd5678efgh', {"mask": "****", "anchor": "d5"}) AS regex_anchor;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "regex_anchor": "1234abc****"
-        }
-    ]
-}
+[
+  {
+    "regex_anchor": "1234abc****"
+  }
+]
 ----
 ====
 
 ====
 Mask anchored 2 characters from the end of the source, with length determined by the input string.
 
+.Query
 [source,sqlpp]
 ----
 SELECT MASK('1234abcd5678efgh', {"mask": "****", "anchor": -2, "length": "source"})
-AS negative_anchor
+AS negative_anchor;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "negative_anchor": "1234abcd56****gh"
-        }
-    ]
-}
+[
+  {
+    "negative_anchor": "1234abcd56****gh"
+  }
+]
 ----
 ====
 
 ====
 Mask anchored at the 14th character, with length determined by the input string.
 
+.Query
 [source,sqlpp]
 ----
 SELECT MASK('1234abcd5678efgh', {"mask": "****", "anchor": 14, "length": "source"})
 AS positive_anchor;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "positive_anchor": "1234abcd5678ef**"
-        }
-    ]
-}
+[
+  {
+    "positive_anchor": "1234abcd5678ef**"
+  }
+]
 ----
 ====
 
-[#fn-str-position]
-== POSITION(in_str, search_str)
+[[fn-mb-length,MB_LENGTH()]]
+== MB_LENGTH(in_str)
+
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
 
 === Description
-Finds the first position of the search string within the string, this position is zero-based, i.e., the first position is 0.
+Finds the length of a string, where length is defined as the number of characters within the string.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-length>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to find the length of.
+
+=== Return Value
+An integer representing the length of the string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_LENGTH("SQL++ is awesome") AS ascii,
+       MB_LENGTH("Café") AS diacritic,
+       MB_LENGTH("🙂") AS emoji,
+       MB_LENGTH("") AS zero;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "ascii": 16,
+    "diacritic": 4, // <.>
+    "emoji": 1, // <.>
+    "zero": 0
+  }
+]
+----
+
+<.> The letter with diacritic counts as a single character.
+<.> The emoji counts as a single character.
+====
+
+[[fn-mb-lpad,MB_LPAD()]]
+== MB_LPAD(in_str, size [, char])
+
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+=== Description
+Pads a string with leading characters.
+The function adds characters to the beginning of the string to pad the string to a specified length.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-lpad>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to add the leading characters to.
+
+size:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that specifies the desired length of the result string.
+
+char::
+[Optional] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to add to the input string.
++
+If omitted, the default is space `" "`, Unicode U+0020.
+
+=== Return Value
+A string representing the input string with leading characters added.
+
+* If the specified size is smaller than the length of the input string, the input string is truncated and no padding is added.
+* If the specified size is larger than the length of the input string, but shorter than the length of the input string plus the padding characters, the padding characters are truncated.
+* If the specified size is greater than the length of the input string plus the padding characters, the padding characters are repeated in order until the specified size is reached.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_LPAD("SQL++ is awesome", 20) AS implicit_padding,
+       MB_LPAD("SQL++ is awesome", 20, "🙂!") AS repeated_padding,
+       MB_LPAD("SQL++ is awesome", 20, "987654321") AS truncate_padding,
+       MB_LPAD("SQL++ is awesome", 5, "987654321") AS truncate_string;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "implicit_padding": "    SQL++ is awesome",
+    "repeated_padding": "🙂!🙂!SQL++ is awesome", // <.>
+    "truncate_padding": "9876SQL++ is awesome",
+    "truncate_string": "SQL++"
+  }
+]
+----
+
+<.> The emoji counts as a single character when calculating the size.
+====
+
+[[fn-mb-rpad,MB_RPAD()]]
+== MB_RPAD(in_str, size [, char])
+
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+=== Description
+Pads a string with trailing characters.
+The function adds characters to the end of the string to pad the string to a specified length.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-rpad>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to add the trailing characters to.
+
+size:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that specifies the desired length of the result string.
+
+char::
+[Optional] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to add to the input string.
++
+If omitted, the default is space `" "`, Unicode U+0020.
+
+=== Return Value
+A string representing the input string with trailing characters added.
+
+* If the specified size is smaller than the length of the input string, the input string is truncated and no padding is added.
+* If the specified size is larger than the length of the input string, but shorter than the length of the input string plus the padding characters, the padding characters are truncated.
+* If the specified size is greater than the length of the input string plus the padding characters, the padding characters are repeated in order until the specified size is reached.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_RPAD("SQL++ is awesome", 20) AS implicit_padding,
+       MB_RPAD("SQL++ is awesome", 20, "🙂!") AS repeated_padding,
+       MB_RPAD("SQL++ is awesome", 20, "123456789") AS truncate_padding,
+       MB_RPAD("SQL++ is awesome", 5, "123456789") AS truncate_string;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "implicit_padding": "SQL++ is awesome    ",
+    "repeated_padding": "SQL++ is awesome🙂!🙂!", // <.>
+    "truncate_padding": "SQL++ is awesome1234",
+    "truncate_string": "SQL++"
+  }
+]
+----
+
+<.> The emoji counts as a single character when calculating the size.
+====
+
+[[fn-mb-substr,MB_SUBSTR()]]
+== MB_SUBSTR(in_str, start_pos [, length])
+
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+=== Description
+Returns the substring (of given length) counting forward from the provided position.
+The position is zero-based -- that is, the first position is 0.
+If position is negative, it is counted from the end of the string; -1 is the last position in the string.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-substr>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to convert to extract the substring from.
+
+start_pos:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the start position of the substring.
+
+length:: [Optional; default is to capture to the end of the string]
++
+An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the length of the substring to extract.
+
+=== Return Value
+A string representing the substring extracted from the input string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_SUBSTR("🙂 SQL++ is awesome", 11) as rest_of_string,
+       MB_SUBSTR("🙂 SQL++ is awesome", 11, 1) as single_letter,
+       MB_SUBSTR("🙂 SQL++ is awesome", 0, 10) as ten_from_start;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "rest_of_string": "awesome",
+    "single_letter": "a",
+    "ten_from_start": "🙂 SQL++ is"
+  }
+]
+----
+
+The emoji counts as a single character for the starting position and the substring length.
+====
+
+[[fn-mb-substr1,MB_SUBSTR1()]]
+== MB_SUBSTR1(in_str, start_pos [, length])
+
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+=== Description
+Returns the substring (of given length) counting forward from the provided position.
+The position is one-based -- that is, the first position is 1.
+If position is negative, it is counted from the end of the string; 0 is the last position in the string.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-substr1>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to convert to extract the substring from.
+
+start_pos:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the start position of the substring.
+
+length:: [Optional; default is to capture to the end of the string]
++
+An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the length of the substring to extract.
+
+=== Return Value
+A string representing the substring extracted from the input string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_SUBSTR1("🙂 SQL++ is awesome", 12) as rest_of_string,
+       MB_SUBSTR1("🙂 SQL++ is awesome", 12, 1) as single_letter,
+       MB_SUBSTR1("🙂 SQL++ is awesome", 0, 10) as ten_from_start;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "rest_of_string": "awesome",
+    "single_letter": "a",
+    "ten_from_start": "🙂 SQL++ is"
+  }
+]
+----
+
+The emoji counts as a single character for the starting position and the substring length.
+====
+
+[[fn-mb-pos,MB_POS()]]
+== MB_POS(in_str, search_str)
+
+Alias for <<fn-mb-position>>.
+
+[[fn-mb-pos1,MB_POS1()]]
+== MB_POS1(in_str, search_str)
+
+Alias for <<fn-mb-position1>>.
+
+[[fn-mb-position,MB_POSITION()]]
+== MB_POSITION(in_str, search_str)
+
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+=== Description
+Finds the first position of the search string within the string.
+This position is zero-based -- that is, the first position is 0.
 If the search string does not exist within the input string then the function returns -1.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-position>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
 
 === Arguments
 in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search within.
@@ -531,28 +838,178 @@ An integer representing the first position of the search string.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT POSITION("N1QL is awesome", "awesome") as awesome,
-       POSITION("N1QL is awesome", "N1QL") as n1ql,
-       POSITION("N1QL is awesome", "SQL") as sql
+SELECT MB_POSITION("🙂 SQL++ is awesome", "awesome") as awesome,
+       MB_POSITION("🙂 SQL++ is awesome", "N1QL") as n1ql,
+       MB_POSITION("🙂 SQL++ is awesome", "SQL") as sql;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "awesome": 8,
-            "n1ql": 0,
-            "sql": -1
-        }
-    ]
-}
+[
+  {
+    "awesome": 11,
+    "n1ql": -1,
+    "sql": 2
+  }
+]
 ----
+
+The emoji counts as a single character when calculating the position.
 ====
 
-[#fn-str-repeat]
+[[fn-mb-position1,MB_POSITION1()]]
+== MB_POSITION1(in_str, search_str)
+
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+=== Description
+Finds the first position of the search string within the string.
+This position is one-based -- that is, the first position is 1.
+If the search string does not exist within the input string then the function returns 0.
+
+This function works with multi-byte characters, not single bytes.
+For a variant of this function that works with single bytes, see <<fn-str-position1>>.
+
+Because this function works with multi-byte characters, it may be slower than its single byte variant.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search within.
+
+search_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search for.
+
+=== Return Value
+An integer representing the first position of the search string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT MB_POSITION1("🙂 SQL++ is awesome", "awesome") as awesome,
+       MB_POSITION1("🙂 SQL++ is awesome", "N1QL") as n1ql,
+       MB_POSITION1("🙂 SQL++ is awesome", "SQL") as sql;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "awesome": 12,
+    "n1ql": 0,
+    "sql": 3
+  }
+]
+----
+
+The emoji counts as a single character when calculating the position.
+====
+
+[[fn-str-pos,POS()]]
+== POS(in_str, search_str)
+
+Alias for <<fn-str-position>>.
+
+[[fn-str-pos1,POS1()]]
+== POS1(in_str, search_str)
+
+Alias for <<fn-str-position1>>.
+
+[[fn-str-position,POSITION()]]
+== POSITION(in_str, search_str)
+
+=== Description
+Finds the first position of the search string within the string.
+This position is zero-based -- that is, the first position is 0.
+If the search string does not exist within the input string then the function returns -1.
+
+This function works with single bytes, not multi-byte characters.
+For a variant of this function that works with multi-byte characters, see <<fn-mb-position>>.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search within.
+
+search_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search for.
+
+=== Return Value
+An integer representing the first position of the search string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT POSITION("🙂 SQL++ is awesome", "awesome") as awesome,
+       POSITION("🙂 SQL++ is awesome", "N1QL") as n1ql,
+       POSITION("🙂 SQL++ is awesome", "SQL") as sql;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "awesome": 14,
+    "n1ql": -1,
+    "sql": 5
+  }
+]
+----
+
+The emoji counts as four bytes when calculating the position.
+====
+
+[[fn-str-position1,POSITION1()]]
+== POSITION1(in_str, search_str)
+
+=== Description
+Finds the first position of the search string within the string.
+This position is one-based -- that is, the first position is 1.
+If the search string does not exist within the input string then the function returns 0.
+
+This function works with single bytes, not multi-byte characters.
+For a variant of this function that works with multi-byte characters, see <<fn-mb-position1>>.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search within.
+
+search_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to search for.
+
+=== Return Value
+An integer representing the first position of the search string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT POSITION1("🙂 SQL++ is awesome", "awesome") as awesome,
+       POSITION1("🙂 SQL++ is awesome", "N1QL") as n1ql,
+       POSITION1("🙂 SQL++ is awesome", "SQL") as sql;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "awesome": 15,
+    "n1ql": 0,
+    "sql": 6
+  }
+]
+----
+
+The emoji counts as four bytes when calculating the position.
+====
+
+[[fn-str-repeat,REPEAT()]]
 == REPEAT(in_str, n)
 
 === Description
@@ -573,26 +1030,26 @@ It is therefore recommended that you first validate the inputs to this function 
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT REPEAT("N1QL", 0) as empty_string,
-       REPEAT("N1QL", 3) as n1ql_3;
+SELECT REPEAT("SQL++", 0) as empty_string,
+       REPEAT("SQL++", 3) as repeat_3;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "empty_string": "",
-            "n1ql_3": "N1QLN1QLN1QL"
-        }
-    ]
-}
+[
+  {
+    "empty_string": "",
+    "repeat_3": "SQL++SQL++SQL++"
+  }
+]
 ----
 ====
 
-[#fn-str-replace]
+[[fn-str-replace,REPLACE()]]
 == REPLACE(in_str, search_str, replace [, n ])
 
 === Description
@@ -615,35 +1072,34 @@ A string representing the input string with the specified substring replaced.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT REPLACE("SQL SQL SQL", "S", "N1", -2) as negative_n,
-       REPLACE("SQL SQL SQL", "S", "N1", 2) as replace_2,
-       REPLACE("SQL SQL SQL", "S", "N1") as replace_all;
+SELECT REPLACE("SQL SQL SQL", "L", "L++", -2) as negative_n,
+       REPLACE("SQL SQL SQL", "L", "L++", 2) as replace_2,
+       REPLACE("SQL SQL SQL", "L", "L++") as replace_all;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "negative_n": "N1QL N1QL N1QL",
-            "replace_2": "N1QL N1QL SQL",
-            "replace_all": "N1QL N1QL N1QL"
-        }
-    ]
-}
+[
+  {
+    "negative_n": "SQL++ SQL++ SQL++",
+    "replace_2": "SQL++ SQL++ SQL",
+    "replace_all": "SQL++ SQL++ SQL++"
+  }
+]
 ----
 ====
 
-[#fn-str-reverse]
+[[fn-str-reverse,REVERSE()]]
 == REVERSE(in_str)
 
 === Description
 Reverses the order of the characters in a given string.
-i.e.
-The first character becomes the last character and the last character becomes the first character etc.
-This is useful for testing whether or not a string is a palindrome.
+That is, the first character becomes the last character and the last character becomes the first character, and so on.
+Among other things, you can use this function to test whether or not a string is a palindrome.
 
 === Arguments
 in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to reverse.
@@ -653,31 +1109,34 @@ A string representing the input string with its characters reversed.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT REVERSE("N1QL is awesome") as n1ql,
+SELECT REVERSE("SQL++ is awesome") as sqlpp,
        REVERSE("racecar") as palindrome;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "n1ql": "emosewa si LQ1N",
-            "palindrome": "racecar"
-        }
-    ]
-}
+[
+  {
+    "sqlpp": "emosewa si ++LQS",
+    "palindrome": "racecar"
+  }
+]
 ----
 ====
 
-[#fn-str-rpad]
+[[fn-str-rpad,RPAD()]]
 == RPAD(in_str, size [, char])
 
 === Description
 Pads a string with trailing characters.
 The function adds characters to the end of the string to pad the string to a specified length.
+
+This function works with single bytes, not multi-byte characters.
+For a variant of this function that works with multi-byte characters, see <<fn-mb-rpad>>.
 
 === Arguments
 in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to add the trailing characters to.
@@ -685,10 +1144,9 @@ in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expressi
 size:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that specifies the desired length of the result string.
 
 char::
-[Optional; default is Unicode U+0020, i.e. space
-`" "`]
+[Optional] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to add to the input string.
 +
-A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to add to the input string.
+If omitted, the default is space `" "`, Unicode U+0020.
 
 === Return Value
 A string representing the input string with trailing characters added.
@@ -699,30 +1157,32 @@ A string representing the input string with trailing characters added.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT RPAD("N1QL is awesome", 20) AS implicit_padding,
-       RPAD("N1QL is awesome", 20, "-*") AS repeated_padding,
-       RPAD("N1QL is awesome", 20, "123456789") AS truncate_padding,
-       RPAD("N1QL is awesome", 4, "123456789") AS truncate_string;
+SELECT RPAD("SQL++ is awesome", 20) AS implicit_padding,
+       RPAD("SQL++ is awesome", 20, "🙂!") AS repeated_padding,
+       RPAD("SQL++ is awesome", 20, "123456789") AS truncate_padding,
+       RPAD("SQL++ is awesome", 5, "123456789") AS truncate_string;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "implicit_padding": "N1QL is awesome     ",
-            "repeated_padding": "N1QL is awesome-*-*-",
-            "truncate_padding": "N1QL is awesome12345",
-            "truncate_string": "N1QL"
-        }
-    ]
-}
+[
+  {
+    "implicit_padding": "SQL++ is awesome    ",
+    "repeated_padding": "SQL++ is awesome🙂", // <.>
+    "truncate_padding": "SQL++ is awesome1234",
+    "truncate_string": "SQL++"
+  }
+]
 ----
+
+<.> The emoji counts as four bytes when calculating the size.
 ====
 
-[#fn-str-rtrim]
+[[fn-str-rtrim,RTRIM()]]
 == RTRIM(in_str [, char])
 
 === Description
@@ -733,42 +1193,41 @@ The function removes all consecutive characters from the end of the string that 
 in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to convert to remove trailing characters from.
 
 char::
-[Optional; default is whitespace, i.e.
-space `" "`, tab `"\t"`, newline `"\n"`, formfeed `"\f"`, or carriage return `"\r"`]
+[Optional] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to trim from the input string.
+Each character in this string is trimmed from the input string -- you don't need to delimit the characters to trim.
+For example, specifying a character value of `"abc"` trims the characters `"a"`, `"b"` and `"c"` from the start of the string.
 +
-A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to trim from the input string.
-Each character in this string will be trimmed from the input string, it is therefore not necessary to delimit the characters to trim.
-For example specifying a character value of `"abc"` will trim the characters `"a"`, `"b"` and `"c"` from the start of the string.
+If omitted, the default is whitespace: space `" "`, tab `"\t"`, newline `"\n"`, formfeed `"\f"`, or carriage return `"\r"`.
 
 === Return Value
 A string representing the input string with its trailing characters removed.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT RTRIM("N1QL is awesome...", ".") as dots,
-       RTRIM("N1QL is awesome     ", " ") as explicit_spaces,
-       RTRIM("N1QL is awesome     ") as implicit_spaces,
-       RTRIM("N1QL is awesome") as no_dots;
+SELECT RTRIM("SQL++ is awesome...", ".") as dots,
+       RTRIM("SQL++ is awesome     ", " ") as explicit_spaces,
+       RTRIM("SQL++ is awesome   \t") as implicit_spaces,
+       RTRIM("SQL++ is awesome") as no_dots;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "dots": "N1QL is awesome",
-            "explicit_spaces": "N1QL is awesome",
-            "implicit_spaces": "N1QL is awesome",
-            "no_dots": "N1QL is awesome"
-        }
-    ]
-}
+[
+  {
+    "dots": "SQL++ is awesome",
+    "explicit_spaces": "SQL++ is awesome",
+    "implicit_spaces": "SQL++ is awesome",
+    "no_dots": "SQL++ is awesome"
+  }
+]
 ----
 ====
 
-[#fn-str-split]
+[[fn-str-split,SPLIT()]]
 == SPLIT(in_str [, in_substr])
 
 === Description
@@ -784,46 +1243,48 @@ An array of strings containing the strings created by splitting the input string
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT SPLIT("N1QL is awesome", " ") as explicit_spaces,
-       SPLIT("N1QL is awesome") as implicit_spaces,
-       SPLIT("N1QL is awesome", "is") as split_is
+SELECT SPLIT("SQL++ is awesome", " ") as explicit_spaces,
+       SPLIT("SQL++ is awesome") as implicit_spaces,
+       SPLIT("SQL++ is awesome", "is") as split_is;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "explicit_spaces": [
-                "N1QL",
-                "is",
-                "awesome"
-            ],
-            "implicit_spaces": [
-                "N1QL",
-                "is",
-                "awesome"
-            ],
-            "split_is": [
-                "N1QL ",
-                " awesome"
-            ]
-        }
+[
+  {
+    "explicit_spaces": [
+      "SQL++",
+      "is",
+      "awesome"
+    ],
+    "implicit_spaces": [
+      "SQL++",
+      "is",
+      "awesome"
+    ],
+    "split_is": [
+      "SQL++ ",
+      " awesome"
     ]
-}
+  }
+]
 ----
 ====
 
-[#fn-str-substr]
+[[fn-str-substr,SUBSTR()]]
 == SUBSTR(in_str, start_pos [, length])
 
 === Description
-Returns the substring (of given length) starting at the provided position.
-The position is zero-based, i.e.
-the first position is 0.
+Returns the substring (of given length) counting forward from the provided position.
+The position is zero-based -- that is, the first position is 0.
 If position is negative, it is counted from the end of the string; -1 is the last position in the string.
+
+This function works with single bytes, not multi-byte characters.
+For a variant of this function that works with multi-byte characters, see <<fn-mb-substr>>.
 
 === Arguments
 in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to convert to extract the substring from.
@@ -839,28 +1300,78 @@ A string representing the substring extracted from the input string.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT SUBSTR("N1QL is awesome", 3) as end_of_string,
-       SUBSTR("N1QL is awesome", 3, 1) as single_letter,
-       SUBSTR("N1QL is awesome", 3, 3) as three_letters
+SELECT SUBSTR("🙂 SQL++ is awesome", 11) as rest_of_string,
+       SUBSTR("🙂 SQL++ is awesome", 11, 1) as single_letter,
+       SUBSTR("🙂 SQL++ is awesome", 0, 10) as ten_from_start;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "end_of_string": "L is awesome",
-            "single_letter": "L",
-            "three_letters": "L i"
-        }
-    ]
-}
+[
+  {
+    "rest_of_string": "is awesome",
+    "single_letter": "i",
+    "ten_from_start": "🙂 SQL++"
+  }
+]
 ----
+
+The emoji counts as four bytes for the starting position and the substring length.
 ====
 
-[#fn-str-suffixes]
+[[fn-str-substr1,SUBSTR1()]]
+== SUBSTR1(in_str, start_pos [, length])
+
+=== Description
+Returns the substring (of given length) counting forward from the provided position.
+The position is one-based -- that is, the first position is 1.
+If position is negative, it is counted from the end of the string; 0 is the last position in the string.
+
+This function works with single bytes, not multi-byte characters.
+For a variant of this function that works with multi-byte characters, see <<fn-mb-substr1>>.
+
+=== Arguments
+in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to convert to extract the substring from.
+
+start_pos:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the start position of the substring.
+
+length:: [Optional; default is to capture to the end of the string]
++
+An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, that is the length of the substring to extract.
+
+=== Return Value
+A string representing the substring extracted from the input string.
+
+=== Examples
+====
+.Query
+[source,sqlpp]
+----
+SELECT SUBSTR1("🙂 SQL++ is awesome", 12) as rest_of_string,
+       SUBSTR1("🙂 SQL++ is awesome", 12, 1) as single_letter,
+       SUBSTR1("🙂 SQL++ is awesome", 0, 10) as ten_from_start;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "rest_of_string": "is awesome",
+    "single_letter": "i",
+    "ten_from_start": "🙂 SQL++"
+  }
+]
+----
+
+The emoji counts as four bytes for the starting position and the substring length.
+====
+
+[[fn-str-suffixes,SUFFIXES()]]
 == SUFFIXES(in_str)
 
 === Description
@@ -874,36 +1385,37 @@ An array of strings containing all of the suffixes of the input string.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT SUFFIXES("N1QL is awesome") as n1ql
+SELECT SUFFIXES("SQL++ is awesome") as sqlpp;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "n1ql": [
-                "N1QL is awesome",
-                "1QL is awesome",
-                "QL is awesome",
-                "L is awesome",
-                " is awesome",
-                "is awesome",
-                "s awesome",
-                " awesome",
-                "awesome",
-                "wesome",
-                "esome",
-                "some",
-                "ome",
-                "me",
-                "e"
-            ]
-        }
+[
+  {
+    "sqlpp": [
+      "SQL++ is awesome",
+      "QL++ is awesome",
+      "L++ is awesome",
+      "++ is awesome",
+      "+ is awesome",
+      " is awesome",
+      "is awesome",
+      "s awesome",
+      " awesome",
+      "awesome",
+      "wesome",
+      "esome",
+      "some",
+      "ome",
+      "me",
+      "e"
     ]
-}
+  }
+]
 ----
 ====
 
@@ -912,100 +1424,100 @@ The following example uses the `SUFFIXES()` function to index and query the airp
 ====
 include::ROOT:partial$query-context.adoc[tag=example]
 
+.Query
 [source,sqlpp]
 ----
 CREATE INDEX autocomplete_airport_name
 ON airport ( DISTINCT ARRAY array_element FOR array_element
-IN SUFFIXES(LOWER(airportname)) END )
+IN SUFFIXES(LOWER(airportname)) END );
 ----
 
+.Query
 [source,sqlpp]
 ----
 SELECT airportname
 FROM airport
 WHERE ANY array_element
-IN SUFFIXES(LOWER(airportname)) SATISFIES array_element LIKE 'washing%' END
+IN SUFFIXES(LOWER(airportname)) SATISFIES array_element LIKE 'washing%' END;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "airportname": "Ronald Reagan Washington Natl"
-        },
-        {
-            "airportname": "Washington Dulles Intl"
-        },
-        {
-            "airportname": "Baltimore Washington Intl"
-        },
-        {
-            "airportname": "Washington Union Station"
-        }
-    ]
-}
+[
+  {
+    "airportname": "Washington Dulles Intl"
+  },
+  {
+    "airportname": "Baltimore Washington Intl"
+  },
+  {
+    "airportname": "Ronald Reagan Washington Natl"
+  },
+  {
+    "airportname": "Washington Union Station"
+  }
+]
 ----
 ====
 
 This https://dzone.com/articles/a-couchbase-index-technique-for-like-predicates-wi[blog^] provides more information about this example.
 
-[#fn-str-title]
+[[fn-str-title,TITLE()]]
 == TITLE(in_str)
 
-Alias for <<fn-str-initcap,INITCAP()>>.
+Alias for <<fn-str-initcap>>.
 
 [#fn-str-token]
 include::partial$n1ql-language-reference/fun-token.adoc[]
 
-[#fn-str-trim]
+[[fn-str-trim,TRIM()]]
 == TRIM(in_str [, char])
 
 === Description
 Removes all leading and trailing characters from a string.
 The function removes all consecutive characters from the beginning and end of the string that match the specified characters and stops when it encounters a character that does not match any of the specified characters.
-This function is equivalent to calling `LTRIM()` and `RTRIM()` successively.
+This function is equivalent to calling <<fn-str-ltrim>> and <<fn-str-rtrim>> successively.
 
 === Arguments
 in_str:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is the string to convert to remove trailing and leading characters from.
 
 char::
-[Optional; default is Unicode U+0020, i.e.
-`" "`]
+[Optional] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to trim from the input string.
+Each character in this string is trimmed from the input string -- you don't need to delimit the characters to trim.
+For example, specifying a character value of `"abc"` trims the characters `"a"`, `"b"` and `"c"` from the start of the string.
 +
-A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that represents the characters to trim from the input string.
-Each character in this string will be trimmed from the input string, it is therefore not necessary to delimit the characters to trim.
-For example specifying a character value of `"abc"` will trim the characters `"a"`, `"b"` and `"c"` from the start of the string.
+If omitted, the default is whitespace: space `" "`, tab `"\t"`, newline `"\n"`, formfeed `"\f"`, or carriage return `"\r"`.
 
 === Return Value
 A string representing the input string with trailing and leading characters removed.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT TRIM("...N1QL is awesome...", ".") as dots,
-       TRIM("     N1QL is awesome     ", " ") as explicit_spaces,
-       TRIM("     N1QL is awesome     ") as implicit_spaces,
-       TRIM("N1QL is awesome") as no_dots;
+SELECT TRIM("...SQL++ is awesome...", ".") as dots,
+       TRIM("     SQL++ is awesome     ", " ") as explicit_spaces,
+       TRIM("\t   SQL++ is awesome     ") as implicit_spaces,
+       TRIM("SQL++ is awesome") as no_dots;
 ----
 
+.Result
 [source,json]
 ----
-{
-    "results": [
-        {
-            "dots": "N1QL is awesome",
-            "explicit_spaces": "N1QL is awesome",
-            "implicit_spaces": "N1QL is awesome",
-            "no_dots": "N1QL is awesome"
-        }
-    ]
-}
+[
+  {
+    "dots": "SQL++ is awesome",
+    "explicit_spaces": "SQL++ is awesome",
+    "implicit_spaces": "SQL++ is awesome",
+    "no_dots": "SQL++ is awesome"
+  }
+]
 ----
 ====
 
-[#fn-str-upper]
+[[fn-str-upper,UPPER()]]
 == UPPER(in_str)
 
 === Description
@@ -1019,17 +1531,19 @@ A string representing the input string converted to upper case.
 
 === Examples
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT UPPER("N1QL is awesome") as n1ql;
+SELECT UPPER("SQL++ is awesome") as sqlpp;
 ----
 
+.Result
 [source,json]
 ----
 {
     "results": [
         {
-            "n1ql": "N1QL IS AWESOME"
+            "sqlpp": "SQL++ IS AWESOME"
         }
     ]
 }
