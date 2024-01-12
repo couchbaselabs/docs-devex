@@ -1,63 +1,264 @@
-= Create a Type Mapping 
-:page-topic-type: guide
-:description: Create a type mapping with the Couchbase Capella UI to control what documents are included or excluded from a Search index. 
+= Type Mapping and Mapping Settings
+:page-topic-type: reference
+:description: When you create a Search index in Couchbase Capella, you need to configure each type mapping or mapping you add to your index. 
+:page-toclevels: 3
+:page-aliases: create-child-field.adoc, create-child-mapping.adoc
 
 [abstract]
 {description}
 
-For more information, see xref:customize-index.adoc#type-mappings[Customize a Search Index with the Capella UI].
+The configuration changes for <<quick-mode,>> and <<adv-mode,>>.
 
-== Prerequisites 
+[#quick-mode]
+== Quick Mode Type Mappings
 
-* You've created an index.
-For more information, see xref:create-search-index-ui.adoc[].
+You can create the following types of type mappings in Quick Mode: 
+
+* <<quick-collection,>>
+* <<quick-field,>>
+
+TIP: Indexing an entire collection in Quick Mode creates a dynamic type mapping. 
+Indexing a field creates a static type mapping.
+For more information about static and dynamic type mappings, see xref:customize-index.adoc#type-mappings[Search Index Features].
+
+For more information about how to create a Search index with Quick Mode, see xref:create-quick-index.adoc[]. 
+
+[#quick-collection]
+=== Quick Collection Type Mapping Options 
+
+Configure an entire collection in Quick Mode to add or remove all documents in that collection from your Search index.
+For more information about how to create an index in Quick Mode, see xref:create-quick-index.adoc[].
+
+You can configure the following settings in Quick Mode for a type mapping that uses an entire collection: 
+
+|====
+|Option |Description 
+
+| Index everything from collection: "`$COLLECTION_NAME`" a|
+
+You must select *Index everything from collection* to add a collection type mapping in Quick Mode. 
+
+| Index text fields as identifiers a|
+
+To use a *Text* field to set the document's type in the index, select *Index text fields as identifiers*. 
+
+To not use a *Text* field as the document's type, clear *Index text fields as identifiers*. 
+
+|Analyzer/Language a|
+
+Select the language for the content inside any *Text* fields. 
+
+The Search Service automatically applies an xref:customize-index.adoc#analyzers[analyzer] to the field's contents based on the selected language. 
+
+For more information about the available language options, see xref:quick-index-supported-languages.adoc[].
+
+|====
+
+[#quick-field]
+=== Quick Field Type Mapping Options 
+
+Configure a single field in Quick Mode to add or remove it from your Search index.
+For more information about how to create an index in Quick Mode, see xref:create-quick-index.adoc[].
+
+You can configure the following settings in Quick Mode for a type mapping that uses a single field:  
+
+|====
+|Option |Description 
+
+//|Dimension (Vector Only) a|
+
+//|Similarity Metric (Vector Only) a|
+
+//* *dotproduct*:
+//* *euclidean*:
  
-* You've logged in to the Couchbase Capella UI. 
+|Type a|
 
-== Procedure 
+Choose the type of data stored in this field inside your documents. 
 
-To create a type mapping with the Capella UI: 
+For more information about the available field data types, see xref:field-data-types-reference.adoc[].
 
-. On the *Databases* page, select the database that has the Search index you want to edit. 
-. Go to menu:Data Tools[Search].
-. Click the index where you want to create a type mapping. 
-. Under *Type Mappings*, in the *Bucket* list, select the bucket where you want to create a type mapping. 
-. In the *Scope* list, select the scope where you want to create a type mapping. 
-. Click btn:[Add Mapping].
-. In the *Collection* list, select the collection for the type mapping.
-. (Optional) Do any of the following:
-.. To use a specific analyzer for documents in the type mapping, in the *Analyzer* list, select an analyzer. 
-+
-By default, the mapping inherits the default analyzer you set for the Search index. 
-For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the Capella UI].
-.. To switch from a xref:customize-index.adoc#type-mappings[dynamic type mapping to a static type mapping], select *Only index specified fields*. 
-. Click btn:[Submit].
+|Index this field as an identifier (Text Only) a|
 
-[TIP]
-====
-You can also create type mappings with the Data Insights area: 
+To use a *Text* field to set the document's type in the index, select *Index this field as an identifier*. 
 
-. Expand the scope where you want to create a type mapping. 
-. Next to the collection where you want to create the type mapping, go to menu:More Options (&vellip;)[Map Collection to Index]. 
-. (Optional) To edit the analyzer or switch to a static type mapping, next to the type mapping, go to menu:More Options (&vellip;)[Edit].
-====
+To not use a *Text* field as the document's type, clear *Index this field as an identifier*. 
 
-== Next Steps 
+|Analyzer/Language (Text Only) a|
 
-After you create a static type mapping, you can xref:create-child-field.adoc[] to add or remove specific document fields from your Search index.
+Select the language for the content inside a *Text* field. 
 
-To add an extra filter to the documents selected by your type mapping, you can also xref:set-type-identifier.adoc[].
+The Search Service automatically applies an xref:customize-index.adoc#analyzers[analyzer] to the field's contents based on the selected language. 
 
-If you have a document field that contains a JSON object, xref:create-child-mapping.adoc[] for that field. 
+For more information about the available language options, see xref:quick-index-supported-languages.adoc[].
 
-To continue customizing your Search index, you can: 
+|Include in search results a|
 
-* xref:set-advanced-settings.adoc[]
-* xref:set-type-identifier.adoc[]
-* xref:create-custom-analyzer.adoc[]
-* xref:create-custom-character-filter.adoc[]
-* xref:create-custom-token-filter.adoc[]
-* xref:create-custom-tokenizer.adoc[]
-* xref:create-custom-wordlist.adoc[]
+To include content from the field in search results, select *Include in search results*. 
 
-To run a search and test the contents of your Search index, see xref:simple-search-ui.adoc[] or xref:simple-search-rest-api.adoc[].
+To exclude the field's content from search results, clear *Include in search results*. 
+
+|Support highlighting a|
+
+The Search Service can highlight matching search terms in search results from an index. 
+
+To enable highlighting in search results, select *Support highlighting*. 
+
+To turn off highlighting in search results, clear *Support highlighting*. 
+
+NOTE: To enable *Support highlighting*, you must also enable *Include in search results*. 
+
+|Support phrase matching (Text Only) a|
+
+To support searches for whole phrases in *Text* fields, select *Support phrase matching*. 
+
+To turn off phrase matching for *Text* fields, clear *Support phrase matching*. 
+
+|Support field agnostic search a|
+
+To search the field's contents without specifying the field name in a search query, select *Support field agnostic search*. 
+
+To turn off field agnostic search, clear *Support field agnostic search*. 
+
+|Support sorting and faceting a|
+
+To sort search results and use xref:search-request-params.adoc#facets[facets] with the field's contents, select *Support sorting and faceting*. 
+
+To turn off sorting and facets, clear *Support sorting and faceting*. 
+
+|Searchable As a|
+
+Set a different name that you can use to search the field's contents in a query. 
+
+The default value is the field's name.
+
+|====
+
+[#adv-mode]
+== Advanced Mode Mappings
+
+You can create the following types of mappings in Advanced Mode: 
+
+* <<adv-collection,>>
+* <<adv-object,>>
+* <<adv-child,>>
+
+TIP: In Advanced Mode, you can index an entire collection or a field as a static or dynamic type mapping. 
+For more information about static and dynamic type mappings, see xref:customize-index.adoc#type-mappings[Search Index Features].
+
+For more information about how to create a Search index with Advanced Mode, see xref:create-search-index-ui.adoc[]. 
+
+[#adv-collection]
+=== Advanced Collection Mapping Options 
+
+Map a collection to add or remove documents from that collection from your Search index.
+
+NOTE: Every index in Advanced Mode must have at least one collection mapping.
+
+For more information about how to create a Search index with Advanced Mode, see xref:create-search-index-ui.adoc[]. 
+
+You can choose to set your collection mappings as xref:customize-index.adoc#type-mappings[dynamic type mappings]: 
+
+|====
+|Option |Description
+
+|Index everything from collection: "`$COLLECTION_NAME`" a|
+
+To set the selected collection as a xref:customize-index.adoc#type-mappings[dynamic type mapping] and index all fields from its document schema, select *Index everything from collection*. 
+
+TIP: You can change this behavior in your xref:set-advanced-settings.adoc[general settings].
+
+To only index specific fields from the document schema, clear *Index everything from collection*. 
+
+|====
+
+[#adv-object]
+=== Advanced JSON Object Field Mapping Options
+
+You can use the child fields of a JSON object field from your document schema in your Search index. 
+
+In Advanced Mode, index a JSON object as an *Object* mapping. 
+You can then choose whether to use the JSON object as a xref:customize-index.adoc#type-mappings[dynamic type mapping].
+
+For more information about how to create an index in Advanced Mode, see xref:create-search-index-ui.adoc[].
+
+You can configure the following settings in Advanced Mode for a mapping that uses a JSON object field:  
+
+|====
+|Option |Description
+
+|Analyzer/Language a|
+
+Select the analyzer to use for any text content inside the JSON object.
+
+You can use a xref:default-analyzers-reference.adoc[default analyzer], inherit the xref:set-advanced-settings.adoc[analyzer set for the Search index], or xref:create-custom-analyzer.adoc[create a custom analyzer].
+
+|Index only specified fields a|
+
+To only index the fields you select and configure from the document schema under the JSON object, select *Index everything from collection*. 
+
+To set the selected JSON object as a xref:customize-index.adoc#type-mappings[dynamic type mapping] and index all child fields from the document schema, clear *Index only specified fields*. 
+
+TIP: You can change this behavior in your xref:set-advanced-settings.adoc[general settings].
+
+|====
+
+
+[#adv-child]
+=== Advanced Child Field Type Mapping Options
+
+To add or remove a single child field from your Search index, index the field as a *Child* type mapping. 
+
+For more information about how to create an index in Advanced Mode, see xref:create-search-index-ui.adoc[].
+
+You can configure the following settings in Advanced Mode for a type mapping that uses a single field:  
+
+|====
+|Option |Description
+
+|Type a|
+
+Choose the type of data stored in this field inside your documents. 
+
+For more information about the available field data types, see xref:field-data-types-reference.adoc[].
+
+|Analyzer/Language a|
+
+If the child field's Type is *Text*, select the analyzer to use.
+
+You can use a xref:default-analyzers-reference.adoc[default analyzer], inherit the xref:set-advanced-settings.adoc[analyzer set for the Search index], or xref:create-custom-analyzer.adoc[create a custom analyzer].
+
+|Index this field a|
+
+To add this field to your Search index, select *Index this field*. 
+
+To exclude this field from your Search index and any search results, clear *Index this field*. 
+
+|Store field values a|
+
+To store the values from the field in the index and return them in search results, select *Store*.
+This increases your index's size and indexing time.  
+
+To remove the field's values from the index, clear *Store*.
+
+|Include in _all field a|
+
+The `_all` field is a composite field that has the content from multiple fields in an index. 
+It allows searches to query the content of a field without specifying the field's name. 
+
+To include this field in the `_all` field, select *Include in _all field*. 
+
+To exclude this field from the `_all` field, clear *Include in _all field*. 
+
+TIP: To change the name of the `_all` field, see xref:set-advanced-settings.adoc#all-field[Default Field].
+
+|Store docvalues for facets a|
+
+Doc values are the value for each instance of the field in an index. 
+Use doc values for Search xref:search-request-params.adoc#facets[Facets] and sorting search results. 
+
+To store doc values, select *Doc Values*. 
+
+To exclude doc values from the index, clear *Doc Values*. 
+
+|====

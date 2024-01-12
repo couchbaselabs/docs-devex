@@ -58,13 +58,13 @@ The UUID of the bucket where you want to create the Search index.
 
 The Search Service automatically finds the UUID for the bucket.
 
-Don't include the `sourceUUID` property when you want to copy an index to a different cluster, or create a new index.
+Do not include the `sourceUUID` property when you want to copy an index to a different cluster, or create a new index.
 
 |sourceParams |Object |No a|
 
 This object contains advanced settings for index behavior.
 
-Don't add content into this object unless instructed by Couchbase Support.
+Do not add content into this object unless instructed by Couchbase Support.
 
 |planParams |Object |Yes |An object that sets the Search index's partitions and replications. 
 For more information, see <<planparams,>>.
@@ -229,7 +229,7 @@ For more information about the properties inside the `default_mapping` object, s
 |default_type |String |No |This setting is included for compatibility with earlier indexes only. 
 
 |docvalues_dynamic |Boolean |Yes a|
-To include the values for an indexed field in the Search index, set `docvalues_dynamic` to `true`.
+To include the value for each instance of an indexed field in the Search index to support xref:search-request-params.adoc#facet-name[facets] and sorting search results, set `docvalues_dynamic` to `true`.
 
 To exclude the values for an indexed field in the index, set `docvalues_dynamic` to `false`.
 
@@ -833,7 +833,7 @@ To only index the fields you specify in the type mapping, set `dynamic` to `fals
 |enabled |Boolean |Yes a|
 To enable the Search Service's default type mapping, set `enabled` to `true`. 
 
-The default type mapping includes all documents in the bucket in the Search index, even if they don't match another configured type mapping.
+The default type mapping includes all documents in the bucket in the Search index, even if they do not match another configured type mapping.
 This can increase index size and indexing time. 
 
 To disable the default type mapping, set `enabled` to `false`.
@@ -871,9 +871,9 @@ TIP: To add a type identifier as an additional filter to your type mapping, add 
 |====
 
 [#scope-collection]
-=== \{Scope\}.\{collection\} Object
+=== \{Scope\}.\{collection\} Object and JSON Object Field Objects
 
-The `\{scope\}.\{collection\}` object defines a custom type mapping for a Search index:
+The `\{scope\}.\{collection\}` object defines a custom type mapping for a Search index, on a specific scope and collection in the database:
 
 [source,json]
 ----
@@ -881,7 +881,12 @@ include::example$simple-search-index-payload.jsonc[tag=scope_collection]
 ----
 
 A `\{scope\}.\{collection\}` object is a child object of the <<types,>>.
-It contains the following properties:
+
+A JSON object field object is a child object of the `\{scope\}.\{collection\}` object. 
+It defines a mapping for a field that contains a JSON object in your document schema. 
+It can contain additional mappings as <<child-fields,>> under its <<properties,properties>> object. 
+
+Both objects can contain the following properties:
 
 [cols="1,1,1,2"]
 |====
@@ -905,7 +910,7 @@ The `properties` object is only enabled if `dynamic` is set to `false`.
 
 Specifies properties for the fields to index in the type mapping. Contains any number of `\{field_name\}` objects. 
 
-For more information, see <<child-fields,>>
+For more information, see <<child-fields,>>.
 
 |====
 
@@ -1021,6 +1026,6 @@ For more information about the available field data types, see xref:field-data-t
 
 If the child field's `type` is `text`, set the analyzer to use for the child field. 
 
-NOTE: If you want to use the default analyzer for the content of this child field, you don't need to include an `analyzer` property.  
+NOTE: If you want to use the default analyzer for the content of this child field, you do not need to include an `analyzer` property.  
 
 |====
