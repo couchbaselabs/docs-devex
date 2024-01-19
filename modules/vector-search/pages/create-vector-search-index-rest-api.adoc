@@ -1,0 +1,59 @@
+= Create a Vector Search Index with the REST API and curl/HTTP
+:page-topic-type: guide
+:description: You can create a Vector Search index with the Search Service API and Couchbase Capella. 
+
+[abstract]
+{description}
+
+You must create a Search index before you can xref:run-vector-search-rest-api.adoc[run a search] with the Search Service.
+// Add link
+
+== Prerequisites 
+
+* You have the Search Service enabled on a node in your database. 
+
+* You have a bucket with scopes and collections in your database. 
+
+* You have documents in a keyspace inside that bucket that contain vector embeddings. 
+
+* You have installed the Couchbase command-line tool (CLI).
+
+* You have the hostname for your database.
++
+For more information about how to find the hostname for your Capella database, see xref:clouds:get-capella-host-name.adoc[].
+
+== Procedure 
+
+To create a Search index with the REST API and Couchbase Capella: 
+
+. In your command-line tool, enter a `curl` command with the `XPUT` verb. 
+. Set your header content to include `Content-Type: application/json`.
+. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the index you want to create: 
++
+[source,console]
+----
+include::example$create-vector-search-index-header.sh[]
+----
+. Enter the JSON payload for the settings you want in your index. 
++
+Do not include the xref:search:search-index-params.adoc#uuid[uuid] or xref:search:search-index-params.adoc#sourceuuid[sourceUUID] parameters. 
++
+TIP: If you remove the xref:search:search-index-params.adoc#uuid[uuid] and xref:search:search-index-params.adoc#sourceuuid[sourceUUID] parameters, you can copy the Search index definition JSON payload from the Capella UI to use in a REST API call.
+For more information about how to create a Vector Search index with the UI, see xref:create-vector-search-index-ui.adoc[]. 
++
+In the following example, the JSON payload creates an index named `color-index` on the `vector-sample` bucket. It creates two child field mappings, `colorvect_dot` and `colorvect_l2` on two different vector fields in the documents under the `color.rgb` keyspace:
++
+[source,console]
+----
+include::example$create-vector-search-index-payload.sh[]
+----
++
+For more information about all the available JSON properties for a Search index, see xref:search:search-index-params.adoc[].
+
+== Next Steps
+
+After you create a Search index, you can xref:run-vector-search-rest-api.adoc[] to test your Search index. 
+
+If you want to edit your index with another REST API call, include the xref:search:search-index-params.adoc#uuid[uuid] parameter with the UUID the Search Service assigned to your Vector Search index.
+
+You can also xref:create-vector-search-index-ui.adoc[].

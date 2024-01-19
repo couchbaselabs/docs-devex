@@ -1,0 +1,58 @@
+= Run a Vector Search with the REST API and curl/HTTP 
+:page-topic-type: guide 
+:description: You can use the REST API and a curl command to run a search against a Vector Search index and return similar vectors from a Couchbase Capella database.
+
+[abstract]
+{description}
+
+== Prerequisites 
+
+* You have the Search Service enabled on a node in your database. 
+
+* Your user account has the *Search Admin* or *Search Reader* role. 
+
+* You installed the Couchbase command-line tool (CLI).
+
+* You have the hostname for your database.
++
+For more information about how to find the hostname for your Capella database, see xref:clouds:get-capella-host-name.adoc[].
+
+* You have created a Vector Search index. 
++
+For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
+
+== Procedure 
+
+To run a Vector search with the REST API: 
+
+. In your command-line tool, enter a `curl` command with the `XPOST` verb. 
+. Set your header content to include `Content-Type: application/json`.
+. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the Vector Search index you want to query: 
++
+[source,console]
+----
+include::example$run-vector-search-header.sh[]
+----
++
+To use SSL, use the `https` protocol in the Search Service endpoint URL and port `18094`. 
+. Enter the JSON payload for your query. 
++
+TIP: You can copy the JSON for a Query Request from the Capella UI to use in your REST API call.
+For more information about how to perform a search with the UI, see xref:search:simple-search-ui.adoc[].
+
++
+In the following example, the JSON payload uses a hybrid Vector Search and Search query on an index named `color-index`. 
+The query searches for a specified normalized color vector, but uses the regular query parameters to limit the brightness of the returned color to the range of `70-80`:
++
+[source,console]
+----
+include::example$run-vectorsearch-payload.sh[]
+----
++
+For more information about the available properties for a Search query JSON payload, see xref:search:search-request-params.adoc[].
+
+== Next Steps 
+
+If you do not get the search results you were expecting, you can change the JSON definition xref:search:search-index-params.adoc[for your Search index] or change the parameters xref:search:search-request-params.adoc[for your Search query].
+
+You can also xref:search:customize-index.adoc[].
