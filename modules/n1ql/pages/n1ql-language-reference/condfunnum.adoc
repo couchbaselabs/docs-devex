@@ -4,32 +4,70 @@
 
 {description}
 
-IFINF(expression1, expression2, \...)
+== IFINF(expression1, expression2, \...)
 
 Returns first non-MISSING, non-Inf number.
 Returns MISSING or NULL if a non-number input is encountered first.
 
-IFNAN(expression1, expression2, \...)
+
+== IFNAN(expression1, expression2, \...)
 
 Returns first non-MISSING, non-NaN number.
 Returns MISSING or NULL if a non-number input is encountered first.
 
-IFNANORINF(expression1, expression2, \...)
+== IFNANORINF(expression1, expression2, \...)
 
 Returns first non-MISSING, non-Inf, or non-NaN number.
 Returns MISSING or NULL if a non-number input is encountered first.
 
-NANIF(expression1, expression2)
+== NANIF(expression1, expression2)
 
 Returns NaN if expression1 = expression2, otherwise returns expression1.
 Returns MISSING or NULL if either input is MISSING or NULL.
 
-NEGINFIF(expression1, expression2)
+== NEGINFIF(expression1, expression2)
 
 Returns NegInf if expression1 = expression2, otherwise returns expression1.
 Returns MISSING or NULL if either input is MISSING or NULL.
 
-POSINFIF(expression1, expression2)
+== POSINFIF(expression1, expression2)
 
 Returns PosInf if expression1 = expression2, otherwise returns expression1.
 Returns MISSING or NULL if either input is MISSING or NULL.
+
+=== Examples
+
+.Return null if infinite value is encountered.
+====
+.Query
+[source, sqlpp]
+----
+select IFINF(0 / 0, 25, 23) as INF
+----
+.Result
+----
+[
+  {
+    "INF": null
+  }
+]
+----
+
+====
+
+.Return first non-infinite value encountered.
+====
+.Query
+----
+select IFINF(35, 0 / 0, 25, 23) as NONINF
+----
+
+.Result
+----
+[
+  {
+    "NONINF": 35
+  }
+]
+----
+====
