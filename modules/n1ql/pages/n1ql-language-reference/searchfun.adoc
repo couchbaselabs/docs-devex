@@ -5,14 +5,14 @@
 :imagesdir: ../../assets/images
 :underscore: _
 
-Search functions enable you to use full text search (xref:fts:full-text-intro.adoc[FTS]) queries directly within a {sqlpp} query.
+Search functions enable you to use xref:search:search.adoc[full text search (FTS)] queries directly within a {sqlpp} query.
 
 [float]
 === Prerequisites
 
 To use any of the search functions, the Search service must be available on the cluster.
 It is also recommended, but not required, that you should create suitable full text indexes for the searches that you need to perform.
-For more information, refer to xref:fts:fts-quickstart-guide.adoc#preparing-for-full-text-searches[Preparing for Full Text Searches].
+For more information, refer to xref:search:create-search-indexes.adoc[].
 
 [NOTE]
 --
@@ -22,7 +22,7 @@ The examples in this page all assume that demonstration full text indexes have b
 [float]
 === Authorization
 
-You do not need credentials for the FTS service to be able to use the search functions in a query.
+You do not need credentials for the Search Service to be able to use the search functions in a query.
 The role *Data Admin* must be assigned to those who intend to create indexes; and the role *Data Reader* to those who intend to perform searches.
 For information on creating users and assigning roles, see xref:learn:security/authorization-overview.adoc[Authorization].
 
@@ -31,7 +31,7 @@ For information on creating users and assigning roles, see xref:learn:security/a
 
 The search functions are useful when you need to combine a full text search with the power of a {sqlpp} query; for example, combining joins and natural-language search in the same query.
 
-If you only need to use the capabilities of a full text search without any {sqlpp} features, consider making use of the Search service directly, through the user interface, the REST API, or an SDK.
+If you only need to use the capabilities of a full text search without any {sqlpp} features, consider making use of the Search Service directly, through the user interface, the REST API, or an SDK.
 
 [[search,SEARCH()]]
 == SEARCH(`identifier`, `query`[, `options`])
@@ -47,7 +47,7 @@ The Query engine then passes the search specification over to the Search engine 
 [TIP]
 --
 If no suitable full text index can be selected, or no full text index exists, the Query engine falls back on a Primary index or qualified GSI index to produce document keys, and then fetches the documents.
-The Search service then creates a temporary index in memory to perform the search.
+The Search Service then creates a temporary index in memory to perform the search.
 This process may be slower than using a suitable full text index.
 --
 
@@ -85,21 +85,21 @@ This may be one of the following:
 
 | string
 | A query string.
-For more details, refer to xref:fts:fts-query-types.adoc#query-string-query-syntax[Query String Query].
+For more information about how to format a query string, refer to xref:search:search-request-params.adoc#query-string-query-syntax[Query String Query].
 
 | object
-| The query object within a full text search request.
-For more details, refer to xref:fts-supported-queries.adoc[Supported Queries].
+| The `query` object within a full text search request.
+For more information about how to format the `query` object, see xref:search:search-request-params.adoc#query-object[Query object].
 
 | object
 | A complete full text search request, including sort and pagination options, and so on.
-For more details, refer to xref:fts:fts-sorting.adoc[Sorting Query Results].
+For more information about how to format a full search request object, refer to xref:search:search-request-params.adoc[].
 
 [NOTE]
 ====
 When specifying a complete full text search request with the {sqlpp} SEARCH() function, if the value of the `size` parameter is greater than the xref:fts:fts-response-object-schema.adoc#request[maximum number of full text search results], the query ignores the `size` parameter and returns all matching results.
 
-This is different to the behavior of a complete full text search request in the Search service, where the query returns an error if the value of the `size` parameter is greater than the maximum number of full text search results.
+This is different to the behavior of a complete full text search request in the Search Service, where the query returns an error if the value of the `size` parameter is greater than the maximum number of full text search results.
 ====
 |===
 +
@@ -368,9 +368,49 @@ WHERE t1.type = "hotel" AND SEARCH(t1.description, "amazing");
 If the full text search index being queried has its default mapping disabled and has a custom type mapping defined, the query needs to specify the type explicitly.
 The above query uses the demonstration index xref:fts:fts-demonstration-indexes.adoc#travel-sample-index-hotel-description[travel-sample-index-hotel-description], which has the custom type mapping "hotel".
 
-For more information on defining custom type mappings within the full text search index, refer to xref:fts:fts-creating-indexes.adoc#specifying-type-mappings[Specifying Type Mappings].
+For more information on defining custom type mappings within the full text search index, refer to xref:search:create-type-mapping.adoc[].
 Note that for {sqlpp} queries, only full text search indexes with one type mapping are searchable.
 Also the supported type identifiers at the moment are "type_field" and "docid_prefix"; "docid_regexp" isn't supported yet for SEARCH queries via {sqlpp}.
+====
+
+.Search against a Vector Search index for the closest 2 vectors
+====
+.Query
+[source,sqlpp]
+----
+SELECT t1.color
+FROM rgb AS t1
+WHERE SEARCH(t1, 
+  { 
+    "fields": ["*"], 
+    "query": { 
+      "match_none": "" 
+    }, 
+    "knn": [ 
+      { 
+        "k": 2, 
+        "field": "colorvect_dot", 
+        "vector": [ 0.707106781186548, 0, 0.707106781186548 ]
+      }
+    ]
+  }
+)
+----
+
+.Results
+----
+[
+  {
+    "color": "magenta / fuchsia"
+  },
+  {
+    "color": "dark lavender"
+  }
+]
+----
+Using a Search index that contains vectors that describe colors, the query returns the color names of the closest `k` vectors to the vector in the `knn` object. 
+
+For more information about Vector Search and the Search Services, see xref:vector-search:vector-search.adoc[].
 ====
 
 [[search_meta,SEARCH_META()]]
@@ -572,4 +612,5 @@ LIMIT 3;
 
 == Related Links
 
-xref:fts:full-text-intro.adoc[Full Text Search]
+xref:search:search.adoc[]
+xref:rest-api:rest-fts.adoc[]
