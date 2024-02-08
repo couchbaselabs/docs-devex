@@ -1,0 +1,77 @@
+// tag::include[]
+[
+  {
+    "cardinality": 1968,
+    "cost": 2234.798843874139,
+    "plan": {
+      "#operator": "Sequence",
+      "~children": [
+        {
+          "#operator": "PrimaryScan3",
+          "bucket": "travel-sample",
+          "index": "def_inventory_airport_primary", // <.>
+          "index_projection": {
+            "primary_key": true
+          },
+// end::include[]
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+          "keyspace": "airport",
+          "namespace": "default",
+          "optimizer_estimates": {
+            "cardinality": 1968,
+            "cost": 362.3057953674344,
+            "fr_cost": 12.1780009122802,
+            "size": 12
+          },
+          "scope": "inventory",
+          "using": "gsi"
+        },
+        {
+          "#operator": "Fetch",
+          "bucket": "travel-sample",
+          "early_projection": [
+            "district"
+          ],
+          "keyspace": "airport",
+          "namespace": "default",
+          "optimizer_estimates": {
+            "cardinality": 1968,
+            "cost": 2201.112110105488,
+            "fr_cost": 25.106256153508888,
+            "size": 293
+          },
+          "scope": "inventory"
+        },
+        {
+          "#operator": "Parallel",
+          "~child": {
+            "#operator": "Sequence",
+            "~children": [
+              {
+                "#operator": "InitialProject",
+                "discard_original": true,
+                "optimizer_estimates": {
+                  "cardinality": 1968,
+                  "cost": 2234.798843874139,
+                  "fr_cost": 25.12337339627751,
+                  "size": 293
+                },
+                "preserve_order": true,
+                "result_terms": [
+                  {
+                    "expr": "(`airport`.`district`)"
+                  }
+                ]
+              }
+            ]
+          }
+// tag::include[]
+        }
+      ]
+    },
+    "text": "SELECT district FROM airport;"
+  }
+]
+// end::include[]
