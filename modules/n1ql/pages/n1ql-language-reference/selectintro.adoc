@@ -720,33 +720,35 @@ For more information, see xref:n1ql:n1ql-language-reference/createindex.adoc#inc
 (((sargable)))
 A query is said to be _sargable_ if the optimizer is able to select an index to speed up the execution of the query.
 
+[#ex-missing]
 .Field with MISSING values -- cannot choose the secondary index
 ====
-This example uses an index `idx_image_direct_url` that is defined by following statement.
+This example uses an index `idx_airport_missing` that is defined by following statement.
 
 .Index
 [source,sqlpp]
 ----
-include::example$n1ql-language-reference/create-idx-predicate.n1ql[]
+include::example$n1ql-language-reference/create-idx-missing.n1ql[]
 ----
 
 .Query
 [source,sqlpp]
 ----
-include::example$n1ql-language-reference/explain-idx-predicate.n1ql[]
+include::example$n1ql-language-reference/explain-idx-missing.n1ql[]
 ----
 
-<.> The query selects the `image_direct_url` field, which is MISSING for many documents in the `landmark` keyspace.
+The query selects the `district` field, which is MISSING for many documents in the `airport` keyspace.
 
 .Result
 [source,json]
 ----
-include::example$n1ql-language-reference/explain-idx-predicate.jsonc[]
+include::example$n1ql-language-reference/explain-idx-missing.jsonc[tags=include;ellipsis]
 ----
 
-<.> Therefore the optimizer falls back on the `def_inventory_landmark_primary` index.
+<.> Therefore the optimizer falls back on the `def_inventory_airport_primary` index.
 ====
 
+[#ex-filter]
 .Filter out MISSING values -- correct secondary index is chosen
 ====
 [source,sqlpp]
@@ -754,14 +756,14 @@ include::example$n1ql-language-reference/explain-idx-predicate.jsonc[]
 include::example$n1ql-language-reference/explain-idx-filter.n1ql[]
 ----
 
-<.> The WHERE clause filters out documents where `image_direct_url` is not MISSING.
+The WHERE clause filters out documents where `district` is not MISSING.
 
 [source,json]
 ----
-include::example$n1ql-language-reference/explain-idx-filter.jsonc[]
+include::example$n1ql-language-reference/explain-idx-filter.jsonc[tags=include;ellipsis]
 ----
 
-<.> The optimizer correctly chooses the `idx_image_direct_url` index.
+<.> The optimizer correctly chooses the `idx_airport_missing` index.
 ====
 
 For further examples, refer to xref:n1ql:n1ql-language-reference/groupby-aggregate-performance.adoc[Group By and Aggregate Performance].

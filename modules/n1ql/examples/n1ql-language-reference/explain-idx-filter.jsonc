@@ -1,5 +1,8 @@
+// tag::include[]
 [
   {
+    "cardinality": 1.0842021724855044e-19,
+    "cost": 1.0974078994531663e-16,
     "plan": {
       "#operator": "Sequence",
       "~children": [
@@ -7,21 +10,82 @@
           "#operator": "IndexScan3",
           "bucket": "travel-sample",
           "covers": [
-            "cover ((`landmark`.`image_direct_url`))",
-            "cover ((meta(`landmark`).`id`))"
+            "cover ((`airport`.`district`))",
+            "cover ((`airport`.`name`))",
+            "cover ((meta(`airport`).`id`))"
           ],
-          "filter": "(cover ((`landmark`.`image_direct_url`)) is not missing)",
-          "index": "idx_image_direct_url", // <.>
-          "index_id": "ed5be54231ea184",
+          "index": "idx_airport_missing", // <.>
+// end::include[]
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+          "index_id": "4c49c415d261e427",
           "index_projection": {
             "entry_keys": [
               0
             ]
           },
-/// ...
+          "keyspace": "airport",
+          "namespace": "default",
+          "optimizer_estimates": {
+            "cardinality": 1.0842021724855044e-19,
+            "cost": 1.0974003878801727e-16,
+            "fr_cost": 1.0974003878801727e-16,
+            "size": 12
+          },
+          "scope": "inventory",
+          "spans": [
+            {
+              "exact": true,
+              "range": [
+                {
+                  "inclusion": 1,
+                  "index_key": "`district`",
+                  "low": "null"
+                }
+              ]
+            }
+          ],
+          "using": "gsi"
+        },
+        {
+          "#operator": "Parallel",
+          "~child": {
+            "#operator": "Sequence",
+            "~children": [
+              {
+                "#operator": "Filter",
+                "condition": "(cover ((`airport`.`district`)) is not missing)",
+                "optimizer_estimates": {
+                  "cardinality": 1.0842021724855044e-19,
+                  "cost": 1.0974041436666695e-16,
+                  "fr_cost": 1.0974041436666695e-16,
+                  "size": 12
+                }
+              },
+              {
+                "#operator": "InitialProject",
+                "discard_original": true,
+                "optimizer_estimates": {
+                  "cardinality": 1.0842021724855044e-19,
+                  "cost": 1.0974078994531663e-16,
+                  "fr_cost": 1.0974078994531663e-16,
+                  "size": 12
+                },
+                "preserve_order": true,
+                "result_terms": [
+                  {
+                    "expr": "cover ((`airport`.`district`))"
+                  }
+                ]
+              }
+            ]
+          }
+// tag::include[]
         }
       ]
     },
-    "text": "SELECT image_direct_url FROM `travel-sample`.inventory.landmark\nWHERE image_direct_url IS NOT MISSING;"
+    "text": "SELECT district FROM airport\nWHERE district IS NOT MISSING;"
   }
 ]
+// end::include[]
