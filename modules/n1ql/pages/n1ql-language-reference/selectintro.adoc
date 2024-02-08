@@ -766,4 +766,32 @@ include::example$n1ql-language-reference/explain-idx-filter.jsonc[tags=include;e
 <.> The optimizer correctly chooses the `idx_airport_missing` index.
 ====
 
+[#ex-include]
+.Index includes MISSING values -- correct secondary index is chosen
+====
+This example uses an index `idx_airport_include` that is defined by following statement.
+
+.Index
+[source,sqlpp]
+----
+include::example$n1ql-language-reference/create-idx-include.n1ql[]
+----
+
+.Query
+[source,sqlpp]
+----
+include::example$n1ql-language-reference/explain-idx-missing.n1ql[]
+----
+
+As in <<ex-missing>>, the query selects the `district` field, which is MISSING for many documents in the `airport` keyspace.
+
+.Result
+[source,json]
+----
+include::example$n1ql-language-reference/explain-idx-include.jsonc[tags=include;ellipsis]
+----
+
+<.> In this case, since the lead key in the index includes MISSING values, the optimizer correctly chooses the `idx_airport_include` index.
+====
+
 For further examples, refer to xref:n1ql:n1ql-language-reference/groupby-aggregate-performance.adoc[Group By and Aggregate Performance].
