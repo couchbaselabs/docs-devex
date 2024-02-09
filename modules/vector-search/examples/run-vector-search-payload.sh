@@ -15,6 +15,5 @@ curl -XPOST -H "Content-Type: application/json" \
           "field": "colorvect_dot", 
           "vector": [ 0.707106781186548, 0, 0.707106781186548 ]
         }
-      ], 
-      "size": 10
+      ]
     }'
