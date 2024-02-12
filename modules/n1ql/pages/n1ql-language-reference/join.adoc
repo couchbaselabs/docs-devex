@@ -62,6 +62,7 @@ image::n1ql-language-reference/ansi-join-clause.png["Syntax diagram", align=left
 
 [horizontal.compact]
 ansi-join-type:: <<ansi-join-type>> icon:caret-down[]
+ansi-join-lateral:: <<ansi-join-lateral>> icon:caret-down[]
 ansi-join-rhs:: <<ansi-join-rhs>> icon:caret-down[]
 ansi-join-predicate:: <<ansi-join-predicate>> icon:caret-down[]
 
@@ -108,7 +109,7 @@ a|
 ----
 SELECT *
 FROM route
-JOIN LATERAL airline
+JOIN airline
 ON route.airlineid = META(airline).id
 WHERE airline.country = "France";
 ----
@@ -118,7 +119,7 @@ a|
 ----
 SELECT *
 FROM route
-LEFT JOIN LATERAL airline
+LEFT JOIN airline
 ON route.airlineid = META(airline).id
 WHERE route.sourceairport = "SFO";
 ----
@@ -145,6 +146,16 @@ In Couchbase Server 6.5 and later, if you create either of the following:
 Then the query is transformed internally into an INNER JOIN for greater efficiency.
 --
 
+[#ansi-join-lateral]
+==== LATERAL Joins
+
+Couchbase supports lateral queries with and without the LATERAL keyword.
+This makes Couchbase queries compatible with queries from relational databases.
+
+INNER JOINS and LEFT OUTER JOINS support the optional LATERAL keyword in front of the right-hand side keyspace.
+
+RIGHT OUTER JOINS do not support the optional LATERAL keyword.
+
 [#ansi-join-predicate]
 ==== Join Predicate
 
@@ -170,8 +181,6 @@ This expression may contain fields, constant expressions, or any complex {sqlpp}
 
 * You may chain ANSI joins with comma-separated joins; however, the comma-separated joins must come after any JOIN, NEST, or UNNEST clauses.
 
-* INNER joins and LEFT OUTER joins support the LATERAL keyword in front of the right-hand side keyspace. RIGHT OUTER joins do not support the LATERAL keyword.
-
 === Examples
 
 include::ROOT:partial$query-context.adoc[tag=section]
@@ -196,6 +205,26 @@ The INNER JOIN only returns results where a left-side document matches a right-s
 ====
 
 [#ANSI-Join-Example-2]
+.Inner LATERAL Join
+====
+This example is the same as <<ANSI-Join-Example-1,Example 1>>, but it includes the optional LATERAL keyword.
+
+[source,sqlpp]
+----
+include::example$select/ansi-join-lateral.n1ql[]
+----
+
+.Results
+[source,JSON]
+----
+include::example$select/ansi-join-lateral.jsonc[tags=extract;ellipsis]
+----
+
+The INNER LATERAL JOIN returns the same results as <<ANSI-Join-Example-1,Example 1>>.
+
+====
+
+[#ANSI-Join-Example-3]
 .Left Outer Join of U.S. airports in the same city as a landmark
 ====
 List the airports and landmarks in the same city, ordered by the airports.
@@ -217,8 +246,8 @@ include::example$select/ansi-join-left.jsonc[]
 <.> The LEFT OUTER JOIN lists all the left-side results, even if there are no matching right-side documents, as indicated by the results in which the fields from the `landmark` keyspace are null or missing.
 ====
 
-[#ANSI-Join-Example-3]
-.RIGHT OUTER JOIN of <<ANSI-Join-Example-2>>
+[#ANSI-Join-Example-4]
+.RIGHT OUTER JOIN of <<ANSI-Join-Example-3>>
 ====
 List the airports and landmarks in the same city, ordered by the landmarks.
 
@@ -239,7 +268,7 @@ include::example$select/ansi-join-right.jsonc[]
 <.> The RIGHT OUTER JOIN lists all the right-side results, even if there are no matching left-side documents, as indicated by the results in which the fields from the `airport` keyspace are null or missing.
 ====
 
-[#ANSI-Join-Example-4]
+[#ANSI-Join-Example-5]
 .Inner Join with Covering Index
 ====
 Use an ANSI JOIN to list the routes and destination airports that are available from London Heathrow (ICAO code `EGLL`).
