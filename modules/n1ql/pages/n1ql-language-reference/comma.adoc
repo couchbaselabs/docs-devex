@@ -64,6 +64,14 @@ For each joined object produced, both the left-hand side and right-hand side sou
 (((right-hand side,comma-separated join)))
 The _right-hand side_ of a comma-separated join may be a keyspace reference, a subquery, or a generic expression term.
 
+[#comma-join-lateral]
+==== LATERAL Join
+
+Couchbase supports lateral queries with and without the LATERAL keyword.
+This makes Couchbase queries compatible with queries from relational databases.
+
+You can use the optional LATERAL keyword in front of the right-hand side keyspace of a comma-separated join.
+
 [[rhs-keyspace]]
 === Right-Hand Side Keyspace
 
@@ -191,7 +199,16 @@ SELECT * FROM [{"abc": 1}, {"abc": 2}, {"abc": 3}] AS a,
               [{"xyz": 1}, {"xyz": 2}] AS b;
 ----
 
-Compare the query above with the following query using an ANSI join.
+Compare the query above with the following query using the optional comma-separated LATERAL join.
+
+.Comma-separated LATERAL join
+[source,sqlpp]
+----
+SELECT * FROM [{"abc": 1}, {"abc": 2}, {"abc": 3}] AS a, LATERAL
+              [{"xyz": 1}, {"xyz": 2}] AS b;
+----
+
+Compare the queries above with the following query using an ANSI join.
 
 .ANSI join
 [source,sqlpp]
@@ -200,7 +217,7 @@ SELECT * FROM [{"abc": 1}, {"abc": 2}, {"abc": 3}] AS a
          JOIN [{"xyz": 1}, {"xyz": 2}] AS b ON true;
 ----
 
-The results of the two queries are the same.
+The results of the three queries are the same.
 
 .Results
 [source,json]
