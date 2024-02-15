@@ -18,7 +18,7 @@ For instructions on how to install the sample bucket, see {install-sample-bucket
 == Sequential Scans
 
 If a keyspace does not have any suitable primary or secondary indexes for a query, the Query service can fall back on a sequential scan of the data to retrieve the document keys.
-(A sequential scan is also known as a K/V range scan.)
+A sequential scan uses an underlying mechanism known as a K/V range scan.
 
 Sequential scans are intended for simple, ready access to data, and are not intended as a high performance solution.
 
@@ -28,7 +28,13 @@ For ordered document key operations, a primary index provides the same functiona
 
 NOTE: Sequential scans are unavailable on ephemeral buckets.
 
-== Prerequisites
+== Use Sequential Scans
+
+To query an index using sequential scan, run the query as usual.
+
+If there is a primary index or any suitable secondary index available for the keyspace, the Query service uses that in preference to sequential scan.
+
+=== Prerequisites
 
 [discrete]
 ===== RBAC Privileges
@@ -37,12 +43,14 @@ Users must have the *Query Use Sequential Scans* role on the keyspace to be able
 For more details about user roles, see
 {authorization-overview}[].
 
-== Examples
+=== Examples
 
-For this example, set the query context to the `tenant_agent_01` scope in the travel sample dataset.
+To try the examples in this section, set the query context to the `tenant_agent_01` scope in the travel sample dataset.
 For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
 
+.Check that a collection has no indexes
 ====
+.Query
 [source,sqlpp]
 ----
 SELECT * FROM system:indexes
@@ -50,6 +58,7 @@ WHERE scope_id = "tenant_agent_01"
   AND keyspace_id = "users";
 ----
 
+.Result
 [source,json]
 ----
 {
@@ -57,15 +66,18 @@ WHERE scope_id = "tenant_agent_01"
 }
 ----
 
-The collection has no indexes.
+You should see that collection has no primary or secondary indexes.
 ====
 
+.Run a query without indexes
 ====
+.Query
 [source,sqlpp]
 ----
 SELECT name FROM users;
 ----
 
+.Result
 [source,json]
 ----
 [
@@ -106,14 +118,18 @@ SELECT name FROM users;
 ----
 
 The query returns 11 documents.
+Notice that the query takes one or more seconds.
 ====
 
+.Check explain plan for query without index
 ====
+.Query
 [source,sqlpp]
 ----
 EXPLAIN SELECT name FROM users;
 ----
 
+.Result
 [source,json]
 ----
 [
@@ -168,7 +184,10 @@ EXPLAIN SELECT name FROM users;
 ]
 ----
 
-The query uses a Primary Scan called `sequentialscan`.
+The explain plan includes a primary scan operator, using `sequentialscan` rather than `gsi.`
+
+The explain plan reports that the primary scan operator uses an index called `#sequentialscan`.
+This name is a placeholder -- in reality there is no index.
 ====
 
 == Monitor Sequential Scans
