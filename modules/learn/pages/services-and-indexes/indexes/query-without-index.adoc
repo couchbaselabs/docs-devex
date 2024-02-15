@@ -192,14 +192,35 @@ This name is a placeholder -- in reality there is no index.
 
 == Monitor Sequential Scans
 
-You can monitor sequential scans using the `completed_requests` catalog.
+You can monitor sequential scans using the `system:completed_requests` catalog.
 
+* Completed requests which used sequential scan include a `primaryScan.Seq` property within the request's `phaseCounts`, `phaseOperators`, and `phaseTimes`, in addition to the `primaryScan` property.
+
+* In contrast, queries which used a primary index include a `primaryScan.GSI` property within the request's `phaseCounts`, `phaseOperators`, and `phaseTimes`, in addition to the `primaryScan` property.
+
+The `system:completed_requests` catalog also includes a `~qualifier` field, which indicates the reason why any request was captured.
+A completed requests qualifier automatically captures any requests where more than 10000 keys have been returned by sequential scans.
+In most cases, this indicates that you should create an index to support the request.
+
+Statistics on sequential scan usage are also available in request profiling information.
+
+For more details, see xref:manage:monitor/monitoring-n1ql-query.adoc[].
+
+=== Examples
+
+.Get completed requests which used sequential scan
+====
+.Query
 [source,sqlpp]
 ----
 SELECT * FROM system:completed_requests
 WHERE phaseCounts.`primaryScan.Seq` IS NOT MISSING;
 ----
 
+You must wrap the property name `primaryScan.Seq` in backquotes, because the property name contains a period.
+The period after `phaseCounts` is a separator between nested property names, whereas the period within `primaryScan.Seq` is actually part of the property name.
+
+.Result
 [source,json]
 ----
 [
@@ -256,63 +277,10 @@ WHERE phaseCounts.`primaryScan.Seq` IS NOT MISSING;
       "~qualifier": "threshold"
     }
   },
-  {
-    "completed_requests": {
-      "clientContextID": "04a32d09-028d-48a5-88e5-c927f574190c",
-      "cpuTime": "47.303832ms",
-      "elapsedTime": "904.030735ms",
-      "errorCount": 0,
-      "errors": [],
-      "n1qlFeatCtrl": 76,
-      "node": "127.0.0.1:8091",
-      "phaseCounts": {
-        "fetch": 4495,
-        "primaryScan": 4495,
-        "primaryScan.GSI": 4495
-      },
-      "phaseOperators": {
-        "authorize": 1,
-        "fetch": 1,
-        "primaryScan": 1,
-        "primaryScan.GSI": 1,
-        "project": 1,
-        "stream": 1
-      },
-      "phaseTimes": {
-        "authorize": "9.074µs",
-        "fetch": "873.153484ms",
-        "instantiate": "24.38µs",
-        "parse": "400.687µs",
-        "plan": "281.728µs",
-        "plan.index.metadata": "24.149µs",
-        "plan.keyspace.metadata": "9.682µs",
-        "primaryScan": "28.154968ms",
-        "primaryScan.GSI": "28.154968ms",
-        "project": "17.0392ms",
-        "run": "903.212145ms",
-        "stream": "5.641339ms"
-      },
-      "queryContext": "default:travel-sample.inventory",
-      "remoteAddr": "127.0.0.1:43164",
-      "requestId": "15d4bc72-3fec-4cf6-b525-8d7ddc1f131f",
-      "requestTime": "2024-02-09T15:58:48.711Z",
-      "resultCount": 4495,
-      "resultSize": 45781,
-      "scanConsistency": "unbounded",
-      "serviceTime": "903.935582ms",
-      "state": "completed",
-      "statement": "SELECT image_direct_url FROM landmark;",
-      "statementType": "SELECT",
-      "useCBO": true,
-      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
-      "users": "builtin:Administrator",
-      "~qualifier": "threshold"
-    }
-  }
+  // ...
 ]
-----
 
-In most environments, sequential scans that produce a large number of keys are an indication of a missing index.
-To help identify such cases, a completed requests qualifier is automatically added that captures requests where more than 10000 keys have been returned by sequential scans.
-The `~qualifier` field in `completed_requests` indicates the reason the request was captured.
-Statistics on sequential scan usage are also available in request profiling information.
+The query returns details of completed requests using sequential scan, if any are logged.
+----
+====
+
