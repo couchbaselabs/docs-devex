@@ -284,3 +284,96 @@ The query returns details of completed requests using sequential scan, if any ar
 ----
 ====
 
+== Manage Sequential Scans
+
+In Couchbase Server, sequential scans are switched on globally by default.
+(Administrators need to grant the *Query Use Sequential Scans* role to users before users can access the feature, as described above.)
+
+To turn sequential scans off or on globally, use the {sqlpp} Feature Controller setting.
+You must have administrator privileges to change this setting.
+
+You can get or set the {sqlpp} Feature Controller setting in any of the following ways:
+
+[options="header", cols="~a,~a,~a,~a"]
+|===
+|At|Method|See|Name of option
+
+|Cluster-level
+|Couchbase Web Console
+|xref:manage:manage-settings/general-settings.adoc#query-settings[Configure General Settings with the UI: Query Settings]
+|**{sqlpp} Feature Controller**
+
+|Cluster-level
+|CLI
+|xref:cli:cbcli/couchbase-cli-setting-query.adoc[]
+|`--n1ql-feature-control`
+
+|Cluster-level
+|REST API
+|xref:rest-api:rest-cluster-query-settings.adoc[]
+|`queryN1qlFeatCtrl`
+
+|Node-level
+|REST API
+|xref:n1ql:n1ql-rest-api/admin.adoc#_settings_resource[Query Admin REST API: Settings Endpoint]
+|`n1ql-feat-ctrl`
+|===
+
+To switch off sequential scans globally:
+
+. Get the current value of {sqlpp} Feature Controller.
+
+. Find the result of a bitwise OR operation on the current value and the sequential scan control bit `16384` (hex `0x4000`).
+
+. Set {sqlpp} Feature Controller to the resulting value.
+
+To switch on sequential scans globally:
+
+. Get the current value of {sqlpp} Feature Controller.
+
+. Find the result of a bitwise XOR operation on the current value and the sequential scan control bit `16384` (hex `0x4000`).
+
+. Set {sqlpp} Feature Controller to the resulting value.
+
+Note that the xref:n1ql:n1ql-language-reference/infer.adoc[INFER] command also uses K/V range scan, the mechanism that underlies sequential scan.
+If you turn off sequential scan globally, then INFER can no longer use sequential scan either.
+
+=== Examples
+
+.Switch Off Sequential Scan Globally
+====
+Assuming that the current value of the {sqlpp} Feature Controller is `76`:
+
+.OR operation
+[source,sh]
+----
+echo $(( 76 | 16384 ))
+----
+
+.Result
+[source,none]
+----
+16460
+----
+
+Set the {sqlpp} Feature Controller to `16460`.
+====
+
+.Switch On Sequential Scan Globally
+====
+Assuming that the current value of the {sqlpp} Feature Controller is `16460`:
+
+.XOR operation
+[source,sh]
+----
+echo $(( 16460 ^ 16384 ))
+----
+
+.Result
+[source,none]
+----
+76
+----
+
+Set the {sqlpp} Feature Controller to `76`.
+====
