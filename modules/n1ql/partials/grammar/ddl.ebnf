@@ -9,14 +9,17 @@ create-statement ::= create-scope
                    | create-primary-index
                    | create-index
                    | create-function
+                   | create-sequence
 
 drop-statement ::= drop-scope
                  | drop-collection
                  | drop-primary-index
                  | drop-index
                  | drop-function
+                 | drop-sequence
 
 other-statement ::= alter-index
+                  | alter-sequence
                   | build-index
                   | execute-function
 
@@ -206,3 +209,49 @@ drop-function ::= 'DROP' 'FUNCTION' function ( 'IF' 'EXISTS' )?
 /* tag::execute-function[] */
 execute-function ::= 'EXECUTE' 'FUNCTION' function '(' ( expr ( ',' expr )* )? ')'
 /* end::execute-function[] */
+
+
+/*************
+ * Sequences *
+ *************/
+
+/* tag::create-sequence[] */
+create-sequence ::= 'CREATE' 'SEQUENCE' ( sequence ( 'IF' 'NOT' 'EXISTS' )? |
+                    ( 'IF' 'NOT' 'EXISTS' )? sequence )
+                    ( sequence-with | create-sequence-options )?
+/* end::create-sequence[] */
+
+/* tag::create-sequence-options[] */
+create-sequence-options ::= ( 'START' 'WITH' integer )?
+                           ( 'INCREMENT' 'BY' integer )?
+                           ( 'MAXVALUE' integer | 'NO' 'MAXVALUE' )?
+                           ( 'MINVALUE' integer | 'NO' 'MINVALUE' )?
+                           ( 'CYCLE' | 'NO' 'CYCLE' )?
+                           ( 'CACHE' integer | 'NO' 'CACHE' )?
+/* end::create-sequence-options[] */
+
+/* tag::sequence[] */
+sequence ::= ( namespace ':' ( bucket '.' scope '.' )? )? identifier
+/* end::sequence[] */
+
+/* tag::sequence-with[] */
+sequence-with ::= 'WITH' expr
+/* end::sequence-with[] */
+
+/* tag::drop-sequence[] */
+drop-sequence ::= 'DROP' 'SEQUENCE' sequence ( 'IF' 'EXISTS' )?
+/* end::drop-sequence[] */
+
+/* tag::alter-sequence[] */
+alter-sequence ::= 'ALTER' 'SEQUENCE' sequence
+                   ( sequence-with | alter-sequence-options )?
+/* end::alter-sequence[] */
+
+/* tag::alter-sequence-options[] */
+alter-sequence-options ::= ( 'RESTART' ( 'WITH' integer )? )?
+                           ( 'INCREMENT' 'BY' integer )?
+                           ( 'MAXVALUE' integer | 'NO' 'MAXVALUE' )?
+                           ( 'MINVALUE' integer | 'NO' 'MINVALUE' )?
+                           ( 'CYCLE' | 'NO' 'CYCLE' )?
+                           ( 'CACHE' integer | 'NO' 'CACHE' )?
+/* end::alter-sequence-options[] */
