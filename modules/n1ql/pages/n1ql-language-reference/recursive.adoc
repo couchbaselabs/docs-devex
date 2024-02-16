@@ -1,0 +1,229 @@
+= Recursive WITH Clause
+:description: Use the RECURSIVE keyword to enable recursive referencing in WITH common table expressions.
+:imagesdir: ../../assets/images
+:page-topic-type: reference
+
+[abstract]
+{description}
+
+The CTE can be an expression or a temporary result set to be used as a data source for your query.
+
+[#purpose]
+== Purpose
+
+
+
+[#syntax]
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=recursive-with-clause]
+----
+
+image::n1ql-language-reference/recursive-with-clause.png["Syntax diagram", align=left]
+
+[#arguments]
+== Arguments
+
+The following arguments are optional.
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=recursive-with-clause-options]
+----
+
+image::n1ql-language-reference/recursive-with-clause-options.png["Argument diagram", align=left]
+
+options:: Object that signals an early exit.
+* `levels`: An exit after level `N`. 
+This object assumes the Anchor is at level 0.
+* `documents`: An exit after accumulating `N` documents. 
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=recursive-with-clause-cycle]
+----
+
+image::n1ql-language-reference/recursive-with-clause-cycle.png["Argument diagram", align=left]
+
+cycle:: `CYCLE <fieldnames_list> RESTRICT`. 
+List of field names in which you want to perform cycle detection.
+
+[#limitations]
+== Limitations
+
+* The recursive reference is only allowed once in the FROM clause.
+It's not allowed anywhere else.
+
+* ORDER BY, LIMIT, and OFFSET clauses are not allowed in the SELECT statement in the subquery used to define the anchor and the recursive clause.
+
+* The DISTINCT quantifier is not allowed in anchor and recursive clauses.
+
+* GROUP BY, WINDOW, and AGGREGATE functions are not allowed in recursive clauses.
+
+* OUTER JOINS are not allowed in recursive clauses because they can lead to potential infinite recursion.
+
+* Recursive clauses do not support NEST and UNNEST clauses.
+
+* If there is no UNION/UNION ALL separation for the recursive CTE, the query defaults to a normal CTE.
+
+* A syntax error is returned when optional subclauses are used without the RECURSIVE keyword.
+
+* In general, recursion is also limited by:
+** The logic in the recursive statement.
+** The stop in the options argument.
+** Breaching the request timeout, if confifured.
+** Breaching the request memory quota, if configured.
+** Exceeding the implicit document limit (10000) when a memory quota is not in use and when no explicit document limit has been set in the options.
+** Exceeding the implicit level limit (1000) when the level option is not in use.
+
+[#examples_section]
+== Examples
+
+The following examples follow linear recursion.
+Only one recursive reference is allowed in the FROM clause.
+Self-joins or set-ops are not allowed in the recursive reference.
+
+.Simple example of recursive referencing
+====
+[source,sqlpp]
+----
+WITH RECURSIVE cte AS (
+    SELECT 1 AS r 
+        UNION 
+    SELECT cte.r+1 AS r 
+    FROM cte 
+    WHERE cte.r<4 
+) 
+SELECT cte.r FROM cte;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "r": 1
+  },
+  {
+    "r": 2
+  },
+  {
+    "r": 3
+  },
+  {
+    "r": 4
+  }
+]
+----
+====
+
+.Example combining recursive and non-recursive CTEs with the WITH clause
+====
+[source,sqlpp]
+----
+WITH RECURSIVE cte AS (SELECT 1 r) ,
+    rcte AS ( 
+        SELECT cte.r FROM cte 
+            UNION 
+        SELECT rcte.r+2 r FROM rcte WHERE rcte.r<7
+    )
+SELECT * FROM rcte;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "rcte": {
+      "r": 1
+    }
+  },
+  {
+    "rcte": {
+      "r": 3
+    }
+  },
+  {
+    "rcte": {
+      "r": 5
+    }
+  },
+  {
+    "rcte": {
+      "r": 7
+    }
+  }
+]
+----
+====
+
+
+
+
+
+
+
+
+
+
+
+== Purpose
+
+Common table expressions or CTEs can be used to simplify complex queries.
+They can also be particularly useful when a value needs to be used several times in a query.
+
+The WITH clause has comparable functionality to the xref:n1ql-language-reference/let.adoc[LET] clause.
+The major difference between the WITH clause and the LET clause is that the WITH clause can come before the SELECT clause, enabling an earlier definition of expressions; whereas the LET clause must come after the xref:n1ql-language-reference/from.adoc[FROM] clause.
+
+The WITH clause is evaluated once per query block, and LET is evaluated for every object produced by the FROM or JOIN clause.
+
+You can chain WITH clauses.
+A CTE that you create in one WITH clause may be referenced in a later WITH clause.
+
+== Prerequisites
+
+The WITH clause can only be used preceding a SELECT statement, and in order for you to select data from a document or keyspace, you must have the [.param]`query_select` privilege on the document or keyspace.
+For more details about user roles, see
+xref:learn:security/authorization-overview.adoc[Authorization].
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=with-clause]
+----
+
+image::n1ql-language-reference/with-clause.png["Syntax diagram", align=left]
+
+
+
+
+
+
+[#recursive-queries]
+== Recursive Queries
+
+The RECURSIVE keyword enables you to reference recursion in CTEs.
+The SELECT definition for CTE is split on UNION/UNION ALL.
+
+The anchor clause is the non-recursive part of the query, which produces the initial set of documents. The anchor clause makes up the left arm of UNION/UNION ALL.
+
+The recursive clause makes up the right arm of UNION/UNION ALL and produces a new set of documents.
+
+
+
+
+
+4. Keyspace CTE is now made to refer to the previous result set produced by the recursive clause, and the recursive clause is executed again. This process is repeated until we get an empty intermediate result set. All the intermediate results are appended to give us the final output in a level ordered fashion.
+
+And incase of UNION it is ensured that no duplicates are present in the output.
+Summarily, what is happening here is Breadth-First traversal.
+Anchor clause produces the root level, and every execution recursive clause traverses a level.
+
+
+A general use case is Hierarchical lookups.
+
+
