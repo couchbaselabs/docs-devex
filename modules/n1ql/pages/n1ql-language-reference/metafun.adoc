@@ -368,6 +368,79 @@ The return value is a flattened list of array elements for use in an array index
 
 For examples, refer to xref:n1ql:n1ql-language-reference/indexing-arrays.adoc#examples[Array Indexing Examples].
 
+[[formalize,FORMALIZE()]]
+== FORMALIZE(`statement` [ `,query_context` ])
+
+=== Description
+
+Specifies all references from a query.
+
+Can be spelled as FORMALIZE or FORMALISE.
+
+=== Arguments
+
+statement:: A string containing the statement to formalize.
+
+query_context:: [ Optional ]
+A string query context value for the function to use when formalizing.
+
+=== Return Value
+
+Returns a query with all references fully specified.
+
+=== Examples
+
+[[formalize-ex,FORMALIZE() Example]]
+====
+.Query
+[source,sqlpp]
+----
+SELECT formalize("SELECT * FROM landmark WHERE country = 'United Kingdom'","default:`travel-sample`.inventory")
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": "select self.* from `default`:`travel-sample`.`inventory`.`landmark` where ((`landmark`.`country`) = \"United Kingdom\")"
+  }
+]
+----
+====
+
+====
+.Query
+[source,sqlpp]
+----
+SELECT statement
+      ,NVL(queryContext,"") AS queryContext
+      ,formalize(statement, queryContext) AS formalized 
+FROM system:completed_requests;
+
+----
+.Results
+[source,json]
+----
+[
+  {
+    "statement": "advise SELECT *\nFROM route\nJOIN LATERAL airline\nON route.airlineid = META(airline).id\nWHERE route.sourceairport = \"SFO\";",
+    "queryContext": "default:travel-sample.inventory",
+    "formalized": "advise SELECT *\nFROM route\nJOIN LATERAL airline\nON route.airlineid = META(airline).id\nWHERE route.sourceairport = \"SFO\";"
+  },
+  ...
+]
+----
+====
+
+
+
+
+
+
+
+
+
+
 [[len,LEN()]]
 == LEN(`expression`)
 
@@ -415,46 +488,6 @@ The return value is usually a number, depending on the datatype of the input exp
 For any item not listed above, the return value is `null`.
 
 === Example
-
-[[formalize,FORMALIZE()]]
-== FORMALIZE(`statement` [ `,query_context` ])
-
-=== Description
-
-Specifies all references from a query.
-
-Can be spelled as FORMALIZE or FORMALISE.
-
-=== Arguments
-
-statement:: A string containing the statement to formalize.
-
-query_context:: [ Optional ]
-A string query context value for the function to use when formalizing.
-
-=== Return Value
-
-Returns a query with all references fully specified.
-
-=== Example
-
-[[formalize-ex,FORMALIZE() Example]]
-====
-.Query
-[source,sqlpp]
-----
-SELECT FORMALIZE("select * from c1","default: example")
-----
-.Results
-[source,json]
-----
-[
-  {
-    "$1": "select self.* from `default`:` example`.`_default`.`c1`"
-  }
-]
-----
-====
 
 [[len-ex,LEN() Example]]
 ====
