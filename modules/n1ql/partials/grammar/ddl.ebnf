@@ -218,21 +218,45 @@ execute-function ::= 'EXECUTE' 'FUNCTION' function '(' ( expr ( ',' expr )* )? '
 /* tag::create-sequence[] */
 create-sequence ::= 'CREATE' 'SEQUENCE' ( sequence ( 'IF' 'NOT' 'EXISTS' )? |
                     ( 'IF' 'NOT' 'EXISTS' )? sequence )
-                    ( sequence-with | create-sequence-options )?
+                    ( create-sequence-options | sequence-with )?
 /* end::create-sequence[] */
-
-/* tag::create-sequence-options[] */
-create-sequence-options ::= ( 'START' 'WITH' integer )?
-                           ( 'INCREMENT' 'BY' integer )?
-                           ( 'MAXVALUE' integer | 'NO' 'MAXVALUE' )?
-                           ( 'MINVALUE' integer | 'NO' 'MINVALUE' )?
-                           ( 'CYCLE' | 'NO' 'CYCLE' )?
-                           ( 'CACHE' integer | 'NO' 'CACHE' )?
-/* end::create-sequence-options[] */
 
 /* tag::sequence[] */
 sequence ::= ( namespace ':' ( bucket '.' scope '.' )? )? identifier
 /* end::sequence[] */
+
+/* tag::create-sequence-options[] */
+create-sequence-options ::= start-with?
+                            increment-by?
+                            maxvalue?
+                            minvalue?
+                            cycle?
+                            cache?
+/* end::create-sequence-options[] */
+
+/* tag::start-with[] */
+start-with ::= 'START' 'WITH' integer
+/* end::start-with[] */
+
+/* tag::increment-by[] */
+increment-by ::= 'INCREMENT' 'BY' integer
+/* end::increment-by[] */
+
+/* tag::maxvalue[] */
+maxvalue ::= 'MAXVALUE' integer | 'NO' 'MAXVALUE'
+/* end::maxvalue[] */
+
+/* tag::minvalue[] */
+minvalue ::= 'MINVALUE' integer | 'NO' 'MINVALUE'
+/* end::minvalue[] */
+
+/* tag::cycle[] */
+cycle ::= 'CYCLE' | 'NO' 'CYCLE'
+/* end::cycle[] */
+
+/* tag::cache[] */
+cache ::= 'CACHE' integer | 'NO' 'CACHE'
+/* end::cache[] */
 
 /* tag::sequence-with[] */
 sequence-with ::= 'WITH' expr
@@ -244,14 +268,18 @@ drop-sequence ::= 'DROP' 'SEQUENCE' sequence ( 'IF' 'EXISTS' )?
 
 /* tag::alter-sequence[] */
 alter-sequence ::= 'ALTER' 'SEQUENCE' sequence
-                   ( sequence-with | alter-sequence-options )?
+                   ( alter-sequence-options | sequence-with )?
 /* end::alter-sequence[] */
 
 /* tag::alter-sequence-options[] */
-alter-sequence-options ::= ( 'RESTART' ( 'WITH' integer )? )?
-                           ( 'INCREMENT' 'BY' integer )?
-                           ( 'MAXVALUE' integer | 'NO' 'MAXVALUE' )?
-                           ( 'MINVALUE' integer | 'NO' 'MINVALUE' )?
-                           ( 'CYCLE' | 'NO' 'CYCLE' )?
-                           ( 'CACHE' integer | 'NO' 'CACHE' )?
+alter-sequence-options ::= restart-with?
+                           increment-by?
+                           maxvalue?
+                           minvalue?
+                           cycle?
+                           cache?
 /* end::alter-sequence-options[] */
+
+/* tag::restart-with[] */
+restart-with ::= 'RESTART' ( 'WITH' integer )?
+/* end::restart-with[] */
