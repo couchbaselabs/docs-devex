@@ -179,48 +179,136 @@ SELECT * FROM rcte;
 ====
 [source,sqlpp]
 ----
-CREATE INDEX srcdestidx ON `travel-sample`.inventory.route(sourceairport, destinationairport);
-
 WITH RECURSIVE recroute AS (
-    SELECT sourceairport, destinationairport, 0 as depth
-    FROM `travel-sample`.inventory.route WHERE sourceairport="TLV"
+    SELECT sourceairport, destinationairport, 0 as depth,
+    [ sourceairport, destinationairport ] as route
+    FROM `travel-sample`.inventory.route 
+    WHERE sourceairport="TLV"
         UNION
-    SELECT r.sourceairport, rdestinationairport, recroute.depth+1 as depth
-    FROM `travel-sample`.inventory.route r JOIN recroute ON recroute.destinationairport = r.sourceairport
-    WHERE r.sourceairport!="TLV" and recroute.depth<2 )
-SELECT * FROM recroute;
+    SELECT r.sourceairport, r.destinationairport, 
+    ARRAY_APPEND ( recroute.route, r.destinationairport ) as route,
+        recroute.depth+1 as depth
+    FROM `travel-sample`.inventory.route r JOIN recroute ON 
+        recroute.destinationairport = r.sourceairport
+    WHERE r.sourceairport!="TLV" and recroute.depth<2 
+)
+SELECT * FROM recroute LIMIT 10;
 ----
 
 .Results
 [source,json]
 ----
-RESULTS
-----
-
-.Anchor clause
-[source,sqlpp]
-----
-SELECT sourceairport, destinationairport, 0 as depth 
-FROM `travel-sample`.inventory.route WHERE sourceairport="TLV"
-----
-
-.Results
-[source,json]
-----
-RESULTS
-----
-
-.Recursive clause
-[source,sqlpp]
-----
-SELECT r.sourceairport, r.destinationairport, recroute.depth+1 as depth 
-FROM `travel-sample`.inventory.route r JOIN recroute ON recroute.destinationairport = r.sourceairport 
-WHERE r.sourceairport!="TLV" and recroute.depth<2 
-----
-
-.Results
-[source,json]
-----
-RESULTS
+[
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "BSL",
+      "route": [
+        "TLV",
+        "BSL"
+      ],
+      "sourceairport": "TLV"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "CDG",
+      "route": [
+        "TLV",
+        "CDG"
+      ],
+      "sourceairport": "TLV"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "EWR",
+      "route": [
+        "TLV",
+        "EWR"
+      ],
+      "sourceairport": "TLV"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "FCO",
+      "route": [
+        "TLV",
+        "FCO"
+      ],
+      "sourceairport": "TLV"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "GVA",
+      "route": [
+        "TLV",
+        "GVA"
+      ],
+      "sourceairport": "TLV"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "JFK",
+      "route": [
+        "TLV",
+        "JFK"
+      ],
+      "sourceairport": "TLV"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "LAX",
+      "route": [
+        "TLV",
+        "LAX"
+      ],
+      "sourceairport": "TLV"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "LGW",
+      "route": [
+        "TLV",
+        "LGW"
+      ],
+      "sourceairport": "TLV"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "LHR",
+      "route": [
+        "TLV",
+        "LHR"
+      ],
+      "sourceairport": "TLV"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "LTN",
+      "route": [
+        "TLV",
+        "LTN"
+      ],
+      "sourceairport": "TLV"
+    }
+  }
+]
 ----
 ====
