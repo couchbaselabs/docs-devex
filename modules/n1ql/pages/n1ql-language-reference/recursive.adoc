@@ -1,17 +1,26 @@
 = Recursive WITH Clause
-:description: Use the RECURSIVE keyword to enable recursive referencing in WITH common table expressions.
+:description: Use the RECURSIVE keyword to enable recursive referencing in WITH common table expressions (CTEs).
 :imagesdir: ../../assets/images
 :page-topic-type: reference
 
 [abstract]
 {description}
 
-The CTE can be an expression or a temporary result set to be used as a data source for your query.
-
 [#purpose]
 == Purpose
 
+CTEs can be an expression or a temporary result set to be used as a data source for your query.
+Their select definition is split on UNION/UNION ALL.
 
+* The left arm of UNION/UNION ALL contains an anchor clause, which is non-recursive. 
+The anchor clause produces an initial set of documents as an intermediate result set for the CTE keyspace.
+
+* The right arm of UNION/UNION ALL contains the recursive clause.
+The recursive clause produces a new set of documents.
+
+The recursive clause is executed again, with the CTE keyspace now referring to the result produced by the initial recursive clause.
+This process repeats until it results in an empty intermediate result set.
+The intermediate result sets are appended to produce a final output.
 
 [#syntax]
 == Syntax
@@ -22,6 +31,12 @@ include::partial$grammar/dql.ebnf[tag=recursive-with-clause]
 ----
 
 image::n1ql-language-reference/recursive-with-clause.png["Syntax diagram", align=left]
+
+----
+include::partial$grammar/dql.ebnf[tag=recursive-with-clause-union]
+----
+
+image::n1ql-language-reference/recursive-with-clause-union.png["Syntax diagram UNION/UNION ALL", align=left]
 
 [#arguments]
 == Arguments
@@ -85,7 +100,7 @@ The following examples follow linear recursion.
 Only one recursive reference is allowed in the FROM clause.
 Self-joins or set-ops are not allowed in the recursive reference.
 
-.Simple example of recursive referencing
+.Example of simple recursive referencing
 ====
 [source,sqlpp]
 ----
@@ -160,70 +175,52 @@ SELECT * FROM rcte;
 ----
 ====
 
-
-
-
-
-
-
-
-
-
-
-== Purpose
-
-Common table expressions or CTEs can be used to simplify complex queries.
-They can also be particularly useful when a value needs to be used several times in a query.
-
-The WITH clause has comparable functionality to the xref:n1ql-language-reference/let.adoc[LET] clause.
-The major difference between the WITH clause and the LET clause is that the WITH clause can come before the SELECT clause, enabling an earlier definition of expressions; whereas the LET clause must come after the xref:n1ql-language-reference/from.adoc[FROM] clause.
-
-The WITH clause is evaluated once per query block, and LET is evaluated for every object produced by the FROM or JOIN clause.
-
-You can chain WITH clauses.
-A CTE that you create in one WITH clause may be referenced in a later WITH clause.
-
-== Prerequisites
-
-The WITH clause can only be used preceding a SELECT statement, and in order for you to select data from a document or keyspace, you must have the [.param]`query_select` privilege on the document or keyspace.
-For more details about user roles, see
-xref:learn:security/authorization-overview.adoc[Authorization].
-
-== Syntax
-
-[source,ebnf]
+.Example finding all possible routes leaving from the TLV airport and going to 2 other airports
+====
+[source,sqlpp]
 ----
-include::partial$grammar/dql.ebnf[tag=with-clause]
+CREATE INDEX srcdestidx ON `travel-sample`.inventory.route(sourceairport, destinationairport);
+
+WITH RECURSIVE recroute AS (
+    SELECT sourceairport, destinationairport, 0 as depth
+    FROM `travel-sample`.inventory.route WHERE sourceairport="TLV"
+        UNION
+    SELECT r.sourceairport, rdestinationairport, recroute.depth+1 as depth
+    FROM `travel-sample`.inventory.route r JOIN recroute ON recroute.destinationairport = r.sourceairport
+    WHERE r.sourceairport!="TLV" and recroute.depth<2 )
+SELECT * FROM recroute;
 ----
 
-image::n1ql-language-reference/with-clause.png["Syntax diagram", align=left]
+.Results
+[source,json]
+----
+RESULTS
+----
 
+.Anchor clause
+[source,sqlpp]
+----
+SELECT sourceairport, destinationairport, 0 as depth 
+FROM `travel-sample`.inventory.route WHERE sourceairport="TLV"
+----
 
+.Results
+[source,json]
+----
+RESULTS
+----
 
+.Recursive clause
+[source,sqlpp]
+----
+SELECT r.sourceairport, r.destinationairport, recroute.depth+1 as depth 
+FROM `travel-sample`.inventory.route r JOIN recroute ON recroute.destinationairport = r.sourceairport 
+WHERE r.sourceairport!="TLV" and recroute.depth<2 
+----
 
-
-
-[#recursive-queries]
-== Recursive Queries
-
-The RECURSIVE keyword enables you to reference recursion in CTEs.
-The SELECT definition for CTE is split on UNION/UNION ALL.
-
-The anchor clause is the non-recursive part of the query, which produces the initial set of documents. The anchor clause makes up the left arm of UNION/UNION ALL.
-
-The recursive clause makes up the right arm of UNION/UNION ALL and produces a new set of documents.
-
-
-
-
-
-4. Keyspace CTE is now made to refer to the previous result set produced by the recursive clause, and the recursive clause is executed again. This process is repeated until we get an empty intermediate result set. All the intermediate results are appended to give us the final output in a level ordered fashion.
-
-And incase of UNION it is ensured that no duplicates are present in the output.
-Summarily, what is happening here is Breadth-First traversal.
-Anchor clause produces the root level, and every execution recursive clause traverses a level.
-
-
-A general use case is Hierarchical lookups.
-
-
+.Results
+[source,json]
+----
+RESULTS
+----
+====
