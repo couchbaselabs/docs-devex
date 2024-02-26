@@ -13,7 +13,7 @@ You can supply the name of an inline or external user-defined function.
 
 * For an inline function, EXPLAIN FUNCTION returns the query plans for all of the subqueries present in the function body.
 +
-For more information about inline functions, see xref:n1ql-language-reference:userfun.adoc[].
+For more information about inline functions, see xref:n1ql-language-reference/userfun.adoc[].
 
 * For an external function, EXPLAIN FUNCTION returns the query plans for all embedded {sqlpp} queries inside the referenced JavaScript body, or the line number on which a N1QL() call appears.
 +
@@ -23,7 +23,7 @@ The following constraints apply:
 
 * If a user-defined function itself contains other, nested user-defined function executions, EXPLAIN FUNCTION generates the query plan for the specified function only, and not for its nested {sqlpp} queries.
 
-* If an external function defines an alias for an N1QL() call, EXPLAIN FUNCTION cannot return its line number.
+* If an external function defines an alias for a N1QL() call, EXPLAIN FUNCTION cannot return its line number.
 
 == Prerequisites
 
@@ -48,20 +48,22 @@ xref:learn:security/authorization-overview.adoc[Authorization].
 
 [source,ebnf]
 ----
-include::partial$grammar/utility.ebnf[tag=explainfunction]
+include::partial$grammar/utility.ebnf[tag=explain-function]
 ----
 
-image::n1ql-language-reference/explainfunction.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/explain-function.png["Syntax diagram: refer to source code listing", align=left]
 
 The statement consists of the `EXPLAIN FUNCTION` keywords followed by the name of the user-defined function that has the execution plan you want to review.
 
+For more information about function name syntax and requirements, see xref:n1ql-language-reference/createfunction.adoc#syntax[CREATE FUNCTION].
+
 == Examples
 
-=== Inline Function Example
-
-In this example, you create an inline function named `func1` and then request the plan for its subquery.
+.Inline Function Example
 
 ====
+In this example, you create an inline function named `func1` and then request the plan for its subquery.
+
 [source,sqlpp]
 ----
 include::n1ql:example$utility/explainfunction.n1ql[]
@@ -74,8 +76,9 @@ include::n1ql:example$utility/explainfunction.jsonc[]
 ----
 ====
 
-=== External Function Example
+.External Function Example
 
+====
 This example assumes that you have defined a JavaScript library named  `lib1`.
 
 You then add a JavaScript function named `function1` to that library as follows:
@@ -86,7 +89,7 @@ include::n1ql:example$utility/explainfunctionjs.js[]
 ----
 
 <.> An embedded {sqlpp} statement.
-<.> An N1QL() call that executes a {sqlpp} statement.
+<.> A N1QL() call that executes a {sqlpp} statement.
 
 You then create the corresponding inline user-defined function for that JavaScript function, named `jsfunction1`, and request the plan for its embedded {sqlpp} expression:
 
@@ -101,5 +104,6 @@ include::n1ql:example$utility/explainfunctionjs.n1ql[]
 include::n1ql:example$utility/explainfunctionjs.jsonc[]
 ----
 
-<.> The line number in the JavaScript function that includes an N1QL() call. 
+<.> The line number in the JavaScript function that includes a N1QL() call. 
 <.> The query plan for the embedded {sqlpp} statement.
+====
