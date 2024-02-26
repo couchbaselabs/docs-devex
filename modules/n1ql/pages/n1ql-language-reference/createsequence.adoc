@@ -2,7 +2,7 @@
 :page-topic-type: reference
 :page-status: Couchbase Server 7.6
 :imagesdir: ../../assets/images
-:description: The CREATE SEQUENCE statement enables you to create a sequence in a given keyspace.
+:description: The CREATE SEQUENCE statement enables you to create a sequence in a given scope.
 
 // Cross-references
 :authorization-overview: xref:learn:security/authorization-overview.adoc
@@ -34,7 +34,8 @@ You should choose a cache size with this in mind, along with the expected usage 
 === Storage
 
 Sequences are stored in the bucket's hidden `&lowbar;system` scope.
-When you back up or restore a bucket, sequences are included automatically.
+When you back up a bucket, sequences are included automatically, in accordance with the backup filters.
+Similarly, when you restore a bucket, sequences are restored in accordance with the restore command -- if you select to restore specific scopes, the sequences associated with those scopes are restored, and no others.
 
 == Prerequisites
 
@@ -51,7 +52,7 @@ include::{partialsdir}/grammar/ddl.ebnf[tag=create-sequence]
 
 image::n1ql-language-reference/create-sequence.png["Syntax diagram: refer to source code listing", align=left]
 
-The CREATE INDEX statement provides two possible syntaxes for specifying options for a sequence.
+The CREATE SCOPE statement provides two possible syntaxes for specifying options for a sequence.
 
 // TODO: Automatic links in EBNF.
 
@@ -107,7 +108,7 @@ If the namespace, bucket, scope, or sequence name contain any special characters
 === IF NOT EXISTS Clause
 
 The optional `IF NOT EXISTS` clause enables the statement to complete successfully when the specified sequence already exists.
-If a sequence with the same name already exists within the specified keyspace, then:
+If a sequence with the same name already exists within the specified scope, then:
 
 * If this clause is not present, an error is generated.
 
@@ -124,6 +125,7 @@ include::{partialsdir}/grammar/ddl.ebnf[tag=create-sequence-options]
 image::n1ql-language-reference/create-sequence-options.png["Syntax diagram: refer to source code listing", align=left]
 
 You can use the following optional clauses to specify individual attributes for the sequence.
+These clauses can occur in any order, but none of them can occur more than once in the statement.
 
 [horizontal.compact]
 start-with:: <<start-with>> icon:caret-down[]
@@ -161,9 +163,9 @@ include::{partialsdir}/grammar/ddl.ebnf[tag=increment-by]
 
 image::n1ql-language-reference/increment-by.png["Syntax diagram: refer to source code listing", align=left]
 
-Use the INCREMENT BY clause to specify the incremental value of each step in the sequence.
+Use the INCREMENT BY clause to specify the increment value of each step in the sequence.
 
-If this clause is omitted, the incremental value is `1`: that is, at each step in the sequence, the value goes up by `1`.
+If this clause is omitted, the increment value is `1`: that is, at each step in the sequence, the value goes up by `1`.
 
 [horizontal#increment-by-args]
 integer::
@@ -202,7 +204,7 @@ image::n1ql-language-reference/minvalue.png["Syntax diagram: refer to source cod
 
 Use the MINVALUE clause to specify the minimum value for the sequence.
 
-Use NO MINVALUE to specify that the minimum value is the lowest signed 64-bit integer, `-2^63^-1`.
+Use NO MINVALUE to specify that the minimum value is the lowest signed 64-bit integer, `-2^63^`.
 
 If this clause is omitted, the default is NO MINVALUE.
 
@@ -296,7 +298,7 @@ __optional__
 |The minimum value for the sequence.
 If unspecified, the minimum is the lowest signed 64-bit integer.
 
-**Default:** `-2^63^-1`
+**Default:** `-2^63^`
 |Integer (int64)
 
 |**cycle** +
