@@ -498,7 +498,7 @@ function OnUpdate(doc, meta) {
 `result = couchbase.touch(binding, meta)`
 
 The TOUCH operation lets you modify the expiration time of a document without having to first access the document.
-You can use this operation when an application is handling a user session but does not need to access the database.
+You can use this operation when your application does not need to access the database when handling a user session.
 
 ==== Example
 ====
@@ -531,8 +531,6 @@ function OnUpdate(doc, meta) {
 [#multiple-collection-functions]
 == Eventing Functions that Listen to Multiple Collections
 
-Eventing Functions can listen to multiple collections through
-
 You can use the wildcard `{asterisk}` in an Eventing Function's scope or collection to listen to multiple collections.
 
 If the binding used by the Advanced Keyspace Accessor also contains a wildcard `{asterisk}` for its scope or collection, you must use the additional `meta.keyspace` parameter.
@@ -562,13 +560,15 @@ See the xref:eventing-examples.adoc#examples-scriptlets-advanced-accessors[multi
 
 == Return Values
 
-[cols="1,2",options="header"]
+[cols="1,2,3",options="header"]
 
 |===
-|Value 
+|Value
+|Type
 |Description
 
 |`binding`
+| -
 |The name of the binding that references the target bucket.
 
 For the Advanced GET operation, the binding can have an access level of read or read/write.
@@ -576,136 +576,111 @@ For the Advanced GET operation, the binding can have an access level of read or 
 For all other operations, the binding must have an access level of read/write.
 
 |`meta`
-|Type: Object
-
-The positional parameter that represents the metadata of the operation.
+|Object
+|The positional parameter that represents the metadata of the operation.
 
 |`meta.id`
-|Type: string
-
-The key of the document to be used in the operation.
+|string
+|The key of the document to be used in the operation.
 This is a mandatory parameter that must be a JavaScript string.
 
 |`meta.keyspace`
-|Type: Object
-
-The keyspace of the document to be used for the operation.
+|Object
+|The keyspace of the document to be used for the operation.
 Must be in the JavaScript format `"keyspace": { "bucket_name": _string_, "scope_name": _string_, "collection_name": _string_ }`.
 
 |`meta.cas`
-|Type: string
-
-(Optional) Specified the CAS value to be used as a pre-condition for the operation.
+|string
+|(Optional) Specified the CAS value to be used as a pre-condition for the operation.
 
 If the CAS value of the document does not match the CAS value specified in this field, the operation fails and sets the parameter `cas_mismatch` to true in the error return object.
 
 |`meta.expiry_date`
-|Type: Date
-
-(optional) Sets the expiry time for the document.
+|Date
+|(Optional) Sets the expiry time for the document.
 If specified, must be in the JavaScript format `Date`.
 
 |`doc`
-| Type: string, number, boolean, null, Object, or Array
-
-The document content of the operation.
+|string, number, boolean, null, Object, or Array
+|The document content of the operation.
 
 |`result`
-|Type: Object
-
-Indicates the success or failure of the operation.
+|Object
+|Indicates the success or failure of the operation.
 
 If the operation is successful, it returns the data that was fetched.
 If the operation fails, it returns the details of the error.
 
 |`result.success`
-|Type: boolean
-
-Indicates if the operation is successful or not.
+|boolean
+|Indicates if the operation is successful or not.
 This field is always present in the return object.
 
 |`result.meta`
-|Type: Object
-
-Contains metadata about the object that was fetched.
+|Object
+|Contains metadata about the object that was fetched.
 This field is only present is the operation is successful.
 
 If the specified key is not present in the bucket, the operation fails and `key_not_found` is returned in the error object.
 
 |`result.meta.id`
-|Type: string
-
-The key of the document fetched by the operation.
+|string
+|The key of the document fetched by the operation.
 
 |`result.meta.cas`
-|Type: string
-
-The CAS value of the document fetched by the operation.
+|string
+|The CAS value of the document fetched by the operation.
 
 |`result.meta.expiry_date`
-|Type: Date
-
-The expiration date of the document.
+|Date
+|The expiration date of the document.
 This field is only present if an expiration is set on the document.
 
 |`result.meta.datatype`
-|Type: string
-
-Indicates whether the document is `json` or `binary`.
+|string
+|Indicates whether the document is `json` or `binary`.
 
 |`result.doc`
-|Type: string, number, boolean, null, Object, or Array
-
-If the operation is successful, this field returns the content of the requested document.
+|string, number, boolean, null, Object, or Array
+|If the operation is successful, this field returns the content of the requested document.
 
 |`result.error`
-|Type: Object
-
-If the operation fails, this field returns an error.
+|Object
+|If the operation fails, this field returns an error.
 
 |`result.error.cas_mismatch`
-|Type: boolean
-
-If true, this field indicates that the operation failed because a CAS value was not specified or because the CAS value on the object did not match the CAS value in the request.
+|boolean
+|If true, this field indicates that the operation failed because a CAS value was not specified or because the CAS value on the object did not match the CAS value in the request.
 
 |`result.error.key_not_found`
-|Type: boolean
-
-If set to true, this field indicates that the operation failed because the specified key did not exist in the bucket.
+|boolean
+|If set to true, this field indicates that the operation failed because the specified key did not exist in the bucket.
 
 |`result.error.key_already_exists`
-|Type: boolean
-
-If true, this field indicates that the operation failed because the specified key already exists in the bucket.
+|boolean
+|If true, this field indicates that the operation failed because the specified key already exists in the bucket.
 
 |`result.error.code`
-|Type: number
-
-Represents the SDK error code that triggered the operation to fail.
+|number
+|Represents the SDK error code that triggered the operation to fail.
 Usually returns an internal numeric code.
 
 |`result.error.name`
-|Type: string
-
-Indicates the error that the SDK triggered and that caused the operation to fail.
+|string
+|Indicates the error that the SDK triggered and that caused the operation to fail.
 
 |`result.error.desc`
-|Type: string
-
-A description of the error.
+|string
+|A description of the error.
 This description can be used for diagnostics and logging, and can change over time.
 Programming logic should not be tied to the specific contents of this field.
 
 |`exceptions`
+|-
 |Indicates errors through the error object in the return value.
 Exceptions are only thrown during system failure conditions.
 
 |===
-
-
-
-
-
 
 == See Also
 
