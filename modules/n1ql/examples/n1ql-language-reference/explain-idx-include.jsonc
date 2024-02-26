@@ -1,0 +1,80 @@
+// tag::include[]
+[
+  {
+    "cardinality": 1968,
+    "cost": 761.4521745648723,
+    "plan": {
+      "#operator": "Sequence",
+      "~children": [
+        {
+          "#operator": "IndexScan3",
+          "bucket": "travel-sample",
+          "covers": [
+            "cover ((`airport`.`district`))",
+            "cover ((`airport`.`name`))",
+            "cover ((meta(`airport`).`id`))"
+          ],
+          "index": "idx_airport_include", // <.>
+// end::include[]
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+          "index_id": "d3ee8615205a69e9",
+          "index_projection": {
+            "entry_keys": [
+              0
+            ]
+          },
+          "keyspace": "airport",
+          "namespace": "default",
+          "optimizer_estimates": {
+            "cardinality": 1968,
+            "cost": 751.2261465969856,
+            "fr_cost": 12.375623041970014,
+            "size": 27
+          },
+          "scope": "inventory",
+          "spans": [
+            {
+              "exact": true,
+              "range": [
+                {
+                  "inclusion": 0,
+                  "index_key": "`district`"
+                }
+              ]
+            }
+          ],
+          "using": "gsi"
+        },
+        {
+          "#operator": "Parallel",
+          "~child": {
+            "#operator": "Sequence",
+            "~children": [
+              {
+                "#operator": "InitialProject",
+                "discard_original": true,
+                "optimizer_estimates": {
+                  "cardinality": 1968,
+                  "cost": 761.4521745648723,
+                  "fr_cost": 12.380819194392721,
+                  "size": 27
+                },
+                "preserve_order": true,
+                "result_terms": [
+                  {
+                    "expr": "cover ((`airport`.`district`))"
+                  }
+                ]
+              }
+            ]
+          }
+// tag::include[]
+        }
+      ]
+    },
+    "text": "SELECT district FROM airport;"
+  }
+]
+// end::include[]
