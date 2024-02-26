@@ -512,7 +512,7 @@ function OnUpdate(doc, meta) {
     var expiry = new Date();
     expiry.setSeconds(expiry.getSeconds() + 10);
 
-    var req = {"id": meta.id, "expiry_date": expiry};
+    var req = {"id": "doc1", "expiry_date": expiry};
     var result = couchbase.touch(dst_bucket, req);
     if (result.success) {
         log('success adv. touch: result', result);
@@ -524,7 +524,23 @@ function OnUpdate(doc, meta) {
 .Results
 [source,javascript]
 ----
+{
+  "meta": {
+    "id": "doc1",
+    "cas": "1708978502129614848"
+  },
+  "success": true
+}
 
+{
+  "error": {
+    "code": 1,
+    "name": "LCB_KEY_ENOENT",
+    "desc": "The document key does not exist on the server",
+    "key_not_found": true
+  },
+  "success": false
+}
 ----
 ====
 
