@@ -1,0 +1,121 @@
+= DROP SEQUENCE
+:page-topic-type: reference
+:imagesdir: ../../assets/images
+:description: The DROP SEQUENCE statement enables you to drop a sequence in a given scope.
+
+// Cross-references
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+:identifiers: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql-intro/sysinfo.adoc#logical-hierarchy
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+== Purpose
+
+include::./sequenceops.adoc[tags=overview]
+
+== Prerequisites
+
+.RBAC Privileges
+To execute the DROP SEQUENCE statement, you must have the _Query Manage Sequences_ privilege granted on the scope.
+For more details about user roles, see {authorization-overview}[Authorization].
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=drop-sequence]
+----
+
+image::n1ql-language-reference/drop-sequence.png["Syntax diagram: refer to source code listing", align=left]
+
+// TODO: Automatic links in EBNF.
+
+[horizontal]
+sequence:: (Required) A name that identifies the sequence within a namespace, bucket, and scope.
+See <<sequence>> below.
+
+[[sequence]]
+=== Sequence Name
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=sequence]
+----
+
+image::n1ql-language-reference/sequence.png["Syntax diagram: refer to source code listing", align=left]
+
+The sequence name specifies the name of the sequence to drop.
+
+Each sequence is associated with a given namespace, bucket, and scope.
+You must specify the namespace, bucket, and scope to refer to the sequence correctly.
+
+[horizontal]
+namespace::
+(Optional) The {logical-hierarchy}[namespace] of the bucket which contains the sequence you want to drop.
+
+bucket::
+(Optional) The bucket which contains the sequence you want to drop.
+
+scope::
+(Optional) The scope which contains the sequence you want to drop.
+
+identifier::
+(Required) The name of the sequence.
+The sequence name is case-sensitive.
+
+Currently, only the `default` namespace is available.
+If you omit the namespace, the default namespace in the current session is used.
+
+If the {query-context}[query context] is set, you can omit the bucket and scope from the statement.
+In this case, the bucket and scope for the sequence are taken from the query context.
+
+The namespace, bucket, scope, and sequence name must follow the rules for {identifiers}[identifiers].
+If the namespace, bucket, scope, or sequence name contain any special characters such as hyphens (-), you must wrap that part of the expression in backticks ({backtick} {backtick}).
+
+=== IF EXISTS Clause
+
+The optional `IF EXISTS` clause enables the statement to complete successfully when the specified sequence doesn't exist.
+
+When the sequence does not exist within the specified context:
+
+* If this clause is not present, an error is generated.
+
+* If this clause is present, the statement does nothing and completes without error.
+
+== Examples
+
+include::ROOT:partial$query-context.adoc[tag=section]
+
+[[ex-drop-seq1]]
+.Drop a sequence in a specified scope
+====
+This statement drops a sequence in the specified scope.
+
+[source,sqlpp]
+----
+DROP SEQUENCE `travel-sample`.inventory.seq1;
+----
+====
+
+[[ex-drop-seq2]]
+.Drop a sequence in the current query context
+====
+This statement drops a sequence in the current query context, if a sequence of that name exists.
+
+[source,sqlpp]
+----
+DROP SEQUENCE seq2 IF EXISTS;
+----
+====
+
+== Related Links
+
+* To create a sequence, see xref:n1ql-language-reference/createsequence.adoc[].
+* To alter a sequence, see xref:n1ql-language-reference/altersequence.adoc[].
+* To use a sequence in an expression, see xref:n1ql-language-reference/sequenceops.adoc[].
