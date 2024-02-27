@@ -1,0 +1,417 @@
+= ALTER SEQUENCE
+:page-topic-type: reference
+:imagesdir: ../../assets/images
+:description: The ALTER SEQUENCE statement enables you to alter an existing sequence in a given scope.
+
+// Cross-references
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+:identifiers: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql-intro/sysinfo.adoc#logical-hierarchy
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+== Purpose
+
+include::./sequenceops.adoc[tags=overview;attributes]
+
+=== Cache
+
+Sequences operate most efficiently with an in-memory cache of values.
+You can specify the size of this cache when you alter the sequence.
+A block of values is reserved by a node, and requests for values are satisfied from this cache.
+When exhausted, a new block of values is reserved.
+Reserving a cached block offers a performance boost, as it enables the Query service to return values directly from memory.
+
+Note however that if a Query node shuts down, or if you alter the sequence, the unused values in the cached block are lost: a new block is reserved when you restart the node, or request the next value.
+You should choose a cache size with this in mind, along with the expected usage patterns for the sequence.
+
+=== Storage
+
+Sequences are stored in the bucket's hidden `&lowbar;system` scope.
+WhWhen you back up a bucket, sequences are included automatically, in accordance with the backup filters.
+Similarly, when you restore a bucket, sequences are restored in accordance with the restore command -- if you select to restore specific scopes, the sequences associated with those scopes are restored, and no others.
+
+== Prerequisites
+
+.RBAC Privileges
+To execute the ALTER SEQUENCE statement, you must have the _Query Manage Sequences_ privilege granted on the scope.
+For more details about user roles, see {authorization-overview}[Authorization].
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=alter-sequence]
+----
+
+image::n1ql-language-reference/alter-sequence.png["Syntax diagram: refer to source code listing", align=left]
+
+The ALTER SEQUENCE statement provides two possible syntaxes for specifying options for a sequence.
+
+// TODO: Automatic links in EBNF.
+
+[horizontal]
+sequence:: (Required) A name that identifies the sequence within a namespace, bucket, and scope.
+See <<sequence>> below.
+
+alter-sequence-options:: (Optional) One possible syntax for specifying options for the sequence.
+See <<alter-sequence-options>> below.
+
+sequence-with:: (Optional) The other possible syntax for specifying options for the sequence.
+See <<sequence-with>> below.
+
+[[sequence]]
+=== Sequence Name
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=sequence]
+----
+
+image::n1ql-language-reference/sequence.png["Syntax diagram: refer to source code listing", align=left]
+
+The sequence name specifies the name of the sequence to alter.
+
+Each sequence is associated with a given namespace, bucket, and scope.
+You must specify the namespace, bucket, and scope to refer to the sequence correctly.
+
+[horizontal]
+namespace::
+(Optional) The {logical-hierarchy}[namespace] of the bucket which contains the sequence you want to alter.
+
+bucket::
+(Optional) The bucket which contains the sequence you want to alter.
+
+scope::
+(Optional) The scope which contains the sequence you want to alter.
+
+identifier::
+(Required) The name of the sequence.
+The sequence name is case-sensitive.
+
+Currently, only the `default` namespace is available.
+If you omit the namespace, the default namespace in the current session is used.
+
+If the {query-context}[query context] is set, you can omit the bucket and scope from the statement.
+In this case, the bucket and scope for the sequence are taken from the query context.
+
+The namespace, bucket, scope, and sequence name must follow the rules for {identifiers}[identifiers].
+If the namespace, bucket, scope, or sequence name contain any special characters such as hyphens (-), you must wrap that part of the expression in backticks ({backtick} {backtick}).
+
+[[alter-sequence-options]]
+=== Sequence Options
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=alter-sequence-options]
+----
+
+image::n1ql-language-reference/alter-sequence-options.png["Syntax diagram: refer to source code listing", align=left]
+
+You can use the following optional clauses to specify individual attributes for the sequence.
+These clauses can occur in any order, but none of them can occur more than once in the statement.
+
+[horizontal.compact]
+restart-with:: <<restart-with>> icon:caret-down[]
+increment-by:: <<increment-by>> icon:caret-down[]
+maxvalue:: <<maxvalue>> icon:caret-down[]
+minvalue:: <<minvalue>> icon:caret-down[]
+cycle:: <<cycle>> icon:caret-down[]
+cache:: <<cache>> icon:caret-down[]
+
+[[restart-with]]
+==== RESTART WITH Clause
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=restart-with]
+----
+
+image::n1ql-language-reference/restart-with.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the RESTART keyword by itself to restart the sequence from its original starting value.
+
+Use the RESTART WITH clause to restart the sequence from a new value.
+
+If this clause is omitted, the sequence does not restart.
+
+[horizontal#restart-with-args]
+integer::
+(Optional) The restart value for the sequence.
+
+[[increment-by]]
+==== INCREMENT BY Clause
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=increment-by]
+----
+
+image::n1ql-language-reference/increment-by.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the INCREMENT BY clause to specify the increment value of each step in the sequence.
+
+If this clause is omitted, the increment value is not altered.
+
+[horizontal#increment-by-args]
+integer::
+(Required) The step size for the sequence.
+Use a negative value for a descending sequence.
+
+[[maxvalue]]
+==== MAXVALUE Clause
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=maxvalue]
+----
+
+image::n1ql-language-reference/maxvalue.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the MAXVALUE clause to specify the maximum value for the sequence.
+
+Use NO MAXVALUE to specify that the maximum value is the highest signed 64-bit integer, `2^63^-1`.
+
+If this clause is omitted, the maximum value is not altered.
+
+[horizontal#maxvalue-args]
+integer::
+(Optional) The maximum value for the sequence.
+
+[[minvalue]]
+==== MINVALUE Clause
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=minvalue]
+----
+
+image::n1ql-language-reference/minvalue.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the MINVALUE clause to specify the minimum value for the sequence.
+
+Use NO MINVALUE to specify that the minimum value is the lowest signed 64-bit integer, `-2^63^`.
+
+If this clause is omitted, the minimum value is not altered.
+
+[horizontal#minvalue-args]
+integer::
+(Optional) The minimum value for the sequence.
+
+[[cycle]]
+==== CYCLE Clause
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=cycle]
+----
+
+image::n1ql-language-reference/cycle.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the CYCLE clause to specify the whether the sequence should loop when it reaches the maximum or minimum value.
+
+Use NO CYCLE to specify that the sequence should stop when it reaches the maximum or minimum value.
+
+If this clause is omitted, the sequence behavior is not altered.
+
+[[cache]]
+==== CACHE Clause
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=cache]
+----
+
+image::n1ql-language-reference/cache.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the CACHE clause to specify the cache size for the sequence.
+
+Use NO CACHE to specify a cache size of `1`.
+
+If this clause is omitted, the cache size is not altered.
+
+[horizontal#cache-args]
+integer::
+(Optional) The cache size for the sequence.
+The value must be greater than `0`.
+
+[[sequence-with]]
+=== WITH Clause
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=index-with]
+----
+
+image::n1ql-language-reference/index-with.png["Syntax diagram: refer to source code listing", align=left]
+
+You can use the WITH clause to specify options for the sequence using a JSON object.
+
+[horizontal#sequence-with-args]
+expr::
+(Required) An object with the following properties.
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**restart** +
+__optional__
+|The restart value for the sequence.
+If unspecified, the sequence does not restart.
+|Integer
+
+|**increment** +
+__optional__
+|The step size for the sequence.
+Use a negative value for a descending sequence.
+|Integer
+
+|**max** +
+__optional__
+|The maximum value for the sequence.
+|Integer (int64)
+
+|**min** +
+__optional__
+|The minimum value for the sequence.
+|Integer (int64)
+
+|**cycle** +
+__optional__
+|Whether the sequence should continue when it reaches the specified maximum value or minimum value.
+|Boolean
+
+|**cache** +
+__optional__
+|The cache size for the sequence.
+The value must be greater than `0`.
+|Integer
+|===
+
+== Examples
+
+include::ROOT:partial$query-context.adoc[tag=section]
+
+[[ex-alter-seq1]]
+.Restart a sequence
+====
+This example assumes that you have created a sequence as follows.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE seq3 IF NOT EXISTS START WITH 5 INCREMENT BY 5 MAXVALUE 1000 MINVALUE 0 CYCLE;
+----
+
+The following statement restarts the sequence at the original starting value.
+
+[source,sqlpp]
+----
+ALTER SEQUENCE seq3 RESTART;
+----
+
+The following query tests the sequence.
+
+[source,sqlpp]
+----
+SELECT NEXT VALUE FOR seq3;
+----
+
+The query returns the specified starting value, 5.
+
+[source,json]
+----
+[
+  {
+    "$1": 5
+  }
+]
+----
+====
+
+[[ex-alter-seq2]]
+.Restart a sequence from a new starting value
+====
+This example assumes that you have created a sequence as follows.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE seq3 IF NOT EXISTS START WITH 5 INCREMENT BY 5 MAXVALUE 1000 MINVALUE 0 CYCLE;
+----
+
+The following statement restarts the sequence at a new starting value.
+
+[source,sqlpp]
+----
+ALTER SEQUENCE seq3 RESTART WITH 25;
+----
+
+The following query tests the sequence.
+
+[source,sqlpp]
+----
+SELECT NEXT VALUE FOR seq3;
+----
+
+The query returns the specified starting value, 25.
+
+[source,json]
+----
+[
+  {
+    "$1": 25
+  }
+]
+----
+====
+
+[[ex-alter-seq3]]
+.Alter the increment and maximum value of a sequence
+====
+This example assumes that you have created a sequence as follows.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE seq3 IF NOT EXISTS START WITH 5 INCREMENT BY 5 MAXVALUE 1000 MINVALUE 0 CYCLE;
+----
+
+The following statement alters the increment and maximum value of the sequence.
+
+[source,sqlpp]
+----
+ALTER SEQUENCE seq3 INCREMENT BY 1 MAXVALUE 250;
+----
+====
+
+
+[[ex-alter-seq4]]
+.Alter the cycling of a sequence
+====
+This example assumes that you have created a descending sequence as follows.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE seq4 IF NOT EXISTS WITH {"start": 10, "increment": -1, "min": 0};
+----
+
+The following statement specifies that the sequence should count down from 10 again when it reaches 0.
+
+[source,sqlpp]
+----
+ALTER SEQUENCE seq4 WITH {"max": 10, "cycle": true};
+----
+
+Note that you must specify the maximum value to be `10`, even though the starting value is already set.
+If you didn't do this, the sequence would cycle to the highest possible value, `2^63^-1`.
+====
+
+== Related Links
+
+* To create a sequence, see xref:n1ql-language-reference/createsequence.adoc[].
+* To drop a sequence, see xref:n1ql-language-reference/dropsequence.adoc[].
+* To use a sequence in an expression, see xref:n1ql-language-reference/sequenceops.adoc[].
