@@ -29,8 +29,8 @@ Couchbase supports the following Advanced Keyspace Accessors:
 
 `result = couchbase.get(binding, meta)`
 
-The GET operation lets you read a document with metadata from the bucket.
-It also allows any subsequent operations to use CAS and check or modify the expiration date in the document.
+The GET operation lets you read a document with metadata from your bucket.
+It also allows any subsequent operations to use CAS and check or modify the expiration date of the document.
 
 ==== Example
 ====
@@ -59,7 +59,7 @@ This cache exists on each Eventing node and is shared across all Eventing Functi
 
 The cache has "read your own write" (RYOW) semantics. Writing and then reading the same document with `{ "cache": true }` always retrieves the value that has just been written.
 
-You can use this optional parameter to load near static data from the Data Service where every document mutation needs external data to drive the business logic of Eventing Functions.
+This parameter loads near static data from the Data Service, where every mutation needs external data to drive the business logic of Eventing Functions.
 The performance of this operator is usually 18 to 25 times faster than reading data directly from the Data Service.
 
 ==== Example using the optional parameter `{ "cache": true }`
@@ -127,10 +127,10 @@ function OnUpdate(doc, meta) {
 
 `result = couchbase.insert(binding, meta, doc)`
 
-The INSERT operation lets you create a new document in the bucket.
-It also lets you to specify an expiration date (or TTL) in the document.
+The INSERT operation lets you create a new document in your bucket.
+It also lets you to specify an expiration date (or TTL) for the document.
 
-The operation fails if the document with the specified key already exists.
+The operation fails if the document with the key you specified already exists.
 
 ==== Example
 ====
@@ -182,10 +182,10 @@ function OnUpdate(doc, meta) {
 
 `result = couchbase.upsert(binding, meta, doc)`
 
-The UPSERT operation lets you update an existing document in the bucket. 
-It also lets you specify an expiration date (or TTL) in the document.
+The UPSERT operation lets you update an existing document in your bucket. 
+It also lets you specify an expiration date (or TTL) for the document.
 
-If no documents exist in the bucket, the operation creates a new document with the specified key.
+If no documents exist in your bucket, the operation creates a new document with the key you specified.
 
 The operation does not allow you to specify CAS.
 
@@ -229,10 +229,10 @@ function OnUpdate(doc, meta) {
 
 `result = couchbase.replace(binding, meta, doc)`
 
-The REPLACE operation lets you replace an existing document in the bucket.
+The REPLACE operation lets you replace an existing document in your bucket with a new document.
 It also lets you specify the following:
 
-* An expiration date (or TTL) in the document
+* An expiration date (or TTL) for the document
 * A CAS value to be used as a pre-condition for the operation
 
 ==== Example
@@ -309,8 +309,10 @@ function OnUpdate(doc, meta) {
 
 `result = couchbase.delete(binding, meta)`
 
-The DELETE operation lets you delete a document in the bucket specified by the key.
-It also lets you specify a CAS value to be matched as a pre-condition to proceed with the operation.
+The DELETE operation lets you delete a document in your bucket.
+You can use the document key to specify the document you want to delete.
+
+This operation also lets you specify a CAS value to be matched as a pre-condition to proceed with the operation.
 
 ==== Example
 ====
@@ -399,7 +401,7 @@ function OnUpdate(doc, meta) {
 
 `result = couchbase.increment(binding, meta)`
 
-The INCREMENT operation lets you increment the `count` field in a specified document.
+The INCREMENT operation lets you increment the `count` field in a specific document.
 
 The document must have the structure `{ count: 23 }`, where 23 is the example counter value.
 
@@ -447,7 +449,7 @@ function OnUpdate(doc, meta) {
 
 `result = couchbase.decrement(binding, meta)`
 
-The DECREMENT operation lets you decrement the `count` field in a specified document.
+The DECREMENT operation lets you decrement the `count` field in a specific document.
 
 The document must have the structure `{ count: 23 }`, where 23 is the example counter value.
 
@@ -495,8 +497,9 @@ function OnUpdate(doc, meta) {
 
 `result = couchbase.touch(binding, meta)`
 
-The TOUCH operation lets you modify the expiration time of a document without having to first access the document.
-You can use this operation when your application does not need to access the database when handling a user session.
+The TOUCH operation lets you modify the expiration time of a document without the need to access that document first.
+
+You can use this operation if your application does not need to access the database when handling a user session.
 
 ==== Example
 ====
@@ -700,3 +703,4 @@ Exceptions are only thrown during system failure conditions.
 == See Also
 
 * xref:eventing-examples.adoc#examples-scriptlets-advanced-accessors[Advanced Accessor Handler scriptlets] for complete examples of Advanced Keyspace Accessors, including JavaScript, input mutations, output mutations, and log messages
+* xref:eventing-language-constructs.adoc#bucket_accessors[Basic Keyspace Accessors]
