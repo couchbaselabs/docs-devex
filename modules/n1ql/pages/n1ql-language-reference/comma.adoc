@@ -65,10 +65,20 @@ For each joined object produced, both the left-hand side and right-hand side sou
 The _right-hand side_ of a comma-separated join may be a keyspace reference, a subquery, or a generic expression term.
 
 [#comma-join-lateral]
-==== LATERAL Join
+=== LATERAL Join
 
-Couchbase supports lateral queries with and without the LATERAL keyword.
-This makes Couchbase queries compatible with queries from relational databases.
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+When an expression on the right-hand side of a comma-separated join references a keyspace that is already specified in the same FROM clause, the expression is said to be correlated.
+In relational databases, a join which contains correlated expressions is referred to as a lateral join.
+In {sqlpp}, lateral correlations are detected automatically, and there is no need to specify that a join is lateral.
+
+In Couchbase Server 7.6 and later, you can use the LATERAL keyword as a visual reminder that a join contains correlated expressions.
+The LATERAL keyword is not required -- the keyword is included solely for compatibility with queries from relational databases.
+
+If you use the LATERAL keyword in a join that has no lateral correlation, the keyword is ignored.
 
 You can use the optional LATERAL keyword in front of the right-hand side keyspace of a comma-separated join.
 
