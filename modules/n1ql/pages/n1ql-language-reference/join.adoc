@@ -149,8 +149,18 @@ Then the query is transformed internally into an INNER JOIN for greater efficien
 [#ansi-join-lateral]
 ==== LATERAL Join
 
-Couchbase supports lateral queries with and without the LATERAL keyword.
-This makes Couchbase queries compatible with queries from relational databases.
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+When an expression on the right-hand side of an ANSI join references a keyspace that is already specified in the same FROM clause, the expression is said to be correlated.
+In relational databases, a join which contains correlated expressions is referred to as a lateral join.
+In {sqlpp}, lateral correlations are detected automatically, and there is no need to specify that a join is lateral.
+
+In Couchbase Server 7.6 and later, you can use the LATERAL keyword as a visual reminder that a join contains correlated expressions.
+The LATERAL keyword is not required -- the keyword is included solely for compatibility with queries from relational databases.
+
+If you use the LATERAL keyword in a join that has no lateral correlation, the keyword is ignored.
 
 INNER JOINS and LEFT OUTER JOINS support the optional LATERAL keyword in front of the right-hand side keyspace.
 
@@ -204,7 +214,7 @@ include::example$select/ansi-join-inner.jsonc[tags=extract;ellipsis]
 The INNER JOIN only returns results where a left-side document matches a right-side document.
 ====
 
-[#ANSI-Join-Example-2]
+[#ANSI-Join-Example-1A]
 .Inner LATERAL Join
 ====
 This example is the same as <<ANSI-Join-Example-1,Example 1>>, but it includes the optional LATERAL keyword.
@@ -223,7 +233,7 @@ include::example$select/ansi-join-lateral.jsonc[tags=extract;ellipsis]
 The INNER LATERAL JOIN returns the same results as <<ANSI-Join-Example-1,Example 1>>.
 ====
 
-[#ANSI-Join-Example-3]
+[#ANSI-Join-Example-2]
 .Left Outer Join of U.S. airports in the same city as a landmark
 ====
 List the airports and landmarks in the same city, ordered by the airports.
@@ -245,8 +255,8 @@ include::example$select/ansi-join-left.jsonc[]
 <.> The LEFT OUTER JOIN lists all the left-side results, even if there are no matching right-side documents, as indicated by the results in which the fields from the `landmark` keyspace are null or missing.
 ====
 
-[#ANSI-Join-Example-4]
-.RIGHT OUTER JOIN of <<ANSI-Join-Example-3>>
+[#ANSI-Join-Example-3]
+.RIGHT OUTER JOIN of <<ANSI-Join-Example-2>>
 ====
 List the airports and landmarks in the same city, ordered by the landmarks.
 
@@ -267,7 +277,7 @@ include::example$select/ansi-join-right.jsonc[]
 <.> The RIGHT OUTER JOIN lists all the right-side results, even if there are no matching left-side documents, as indicated by the results in which the fields from the `airport` keyspace are null or missing.
 ====
 
-[#ANSI-Join-Example-5]
+[#ANSI-Join-Example-4]
 .Inner Join with Covering Index
 ====
 Use an ANSI JOIN to list the routes and destination airports that are available from London Heathrow (ICAO code `EGLL`).
