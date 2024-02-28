@@ -82,6 +82,8 @@ If you use the LATERAL keyword in a join that has no lateral correlation, the ke
 
 You can use the optional LATERAL keyword in front of the right-hand side keyspace of a comma-separated join.
 
+NOTE: Using the LATERAL keyword in a comma-separated join implies that the right-hand side of the join must appear after the left-hand side of the join. This may prevent the cost-based optimizer from reordering joins in the query to give the optimal join order. For details, see xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#join-enumeration[Join Enumeration].
+
 [[rhs-keyspace]]
 === Right-Hand Side Keyspace
 
@@ -218,7 +220,7 @@ SELECT * FROM [{"abc": 1}, {"abc": 2}, {"abc": 3}] AS a
          JOIN [{"xyz": 1}, {"xyz": 2}] AS b ON true;
 ----
 
-The results of the three queries are the same.
+The results of the two queries are the same.
 
 .Results
 [source,json]
@@ -434,7 +436,6 @@ The results of the two queries are the same.
 ----
 ====
 
-
 [#example-chain]
 .Chaining ANSI joins with comma-separated joins
 ====
@@ -476,6 +477,61 @@ LIMIT 4;
     "airline": "AirTran Airways",
     "airport": "San Francisco Intl",
     "route": 25483
+  }
+]
+----
+====
+
+[#example-lateral]
+.Lateral correlation
+====
+The following query has a lateral correlation between the subquery and the `airport` keyspace.
+
+.Comma-separated join
+[source,sqlpp]
+----
+SELECT airport.airportname, t2.name
+FROM airport,
+(SELECT name FROM hotel WHERE hotel.city = airport.city) AS t2
+LIMIT 5;
+----
+
+Compare the query above with the following query using the LATERAL keyword.
+
+.Comma-separated join with LATERAL keyword
+[source,sqlpp]
+----
+SELECT airport.airportname, t2.name
+FROM airport,
+LATERAL (SELECT name FROM hotel WHERE hotel.city = airport.city) AS t2
+LIMIT 5;
+----
+
+The results of the two queries are the same.
+
+.Results
+[source,json]
+----
+[
+  {
+    "airportname": "Mandelieu",
+    "name": "Hotel Cybelle"
+  },
+  {
+    "airportname": "Cote D\\'Azur",
+    "name": "Best Western Hotel Riviera Nice"
+  },
+  {
+    "airportname": "Cote D\\'Azur",
+    "name": "Hotel Anis"
+  },
+  {
+    "airportname": "Cote D\\'Azur",
+    "name": "NH Nice"
+  },
+  {
+    "airportname": "Cote D\\'Azur",
+    "name": "Hotel Suisse"
   }
 ]
 ----
