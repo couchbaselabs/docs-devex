@@ -147,12 +147,9 @@ See xref:eventing-debugging-and-diagnosability.adoc#logging-functions[Logging Fu
 === {sqlpp} Statements
 
 You can use top-level {sqlpp} keywords like SELECT, UPDATE, INSERT, and DELETE as inline words in Eventing Functions.
-These operations are accessible through a returned iterable handle.
+These operations are accessible through the returned iterable handle.
 
 {sqlpp} Query results, through the SELECT operation, are streamed in batches to the iterable handle as the iteration progresses through the result set.
-
-{sqlpp} statements can refer to JavaScript variables using the `$variable` syntax.
-These parameters are substituted by the corresponding JavaScript variable's runtime value.
 
 NOTE: To avoid recursion, an Eventing Function can listen for mutations in a bucket. 
 {sqlpp} DML statement canot manipulate documents in that same bucket.
@@ -168,8 +165,8 @@ You can also make sure you have an optimal index, which improves query performan
 function OnUpdate(doc, meta) {
     var strong = 70;
     var results =
-        SELECT *                               // SQL++ queries are embedded directly
-        FROM `beer-sample`._default._default   // Token escaping is standard SQL++ style
+        SELECT *                               /* SQL++ queries are embedded directly */
+        FROM `beer-sample`._default._default   /* Token escaping is standard SQL++ style */
         WHERE abv > $strong;                   // Local variable reference using $ syntax
     for (var beer of results) {                // Stream results using 'for' iterator
         log(beer);
@@ -179,68 +176,63 @@ function OnUpdate(doc, meta) {
 }
 ----
 
+The embedded {sqlpp} call starts the query and returns a JavaScript iterable object that represents the result set of the query. You can iterate the returned handle using standard JavaScript mechanisms like `for...of` loops.
 
+The iterator is an input iterator, meaning the elements are read-only. 
+The variables created inside the iterator are local to it.
+You cannot use the keyword `this` in the body of the iterator.
 
+You must close wach result set with the `close()` method, which stops the underlying {sqlpp} query and releases associated resources.
+In some cases like nested {sqlpp} lookups, failing to explicitly call `close()` can use too many {sqlpp} resources and lead to poor performance.
 
+=== Valid and Invalid Statements
 
+{sqlpp} is not syntactically part of the JavaScript language. 
+Eventing transpiles the Eventing Function code to identify {sqlpp} statements and convert them to a standard JavaScript function call. 
+This call then returns an iterable object with a `close()` method.
 
+To use a JavaScript variable in a query statement, you must use `$<variable>`.
+This parameter is substituted in the query by the corresponding JavaScript variable's runtime value.
 
+You cannot use the `meta.id` expression in the query statement. 
+Instead, you can use `var id = meta.id` in a {sqlpp} query.
 
-The embedded {sqlpp} call starts the query and returns a JavaScript Iterable object representing the result set of the query. The query is streamed in batches as the iteration proceeds. The returned handle can be iterated using any standard JavaScript mechanism including _for...of_ loops.
-
-In multiline {sqlpp} statements (as above) you cannot use single line [.var]`// end of line comments like this` +
-prior to the terminating semicolon as it will cause a syntax error in the transpilation of the {sqlpp} statement, however multiline [.var]`/* comments like this */` are allowed.
-
-The iterator is an input iterator (elements are read-only). The keyword _this_ cannot be used in the body of the iterator. The variables created inside the iterator are local to the iterator.
-
-The returned handle must be closed using the [.var]`close()` method defined on it, which stops the underlying {sqlpp} query and releases associated resources.
-
-NOTE: When an Eventing Function completes for a given mutation and exits all resources will be freed even if you omit the [.var]`close()` statement for your result set(s). However in some complex use cases such as nested {sqlpp} lookups a failure to explicitly call [.var]`close()` after each result set is no longer needed can tie up an excessive amount of {sqlpp} resources and lead to poor performance.
-
-All three operations, i.e., the {sqlpp} statement, iterating over the result set, and closing the Iterable handle can throw exceptions if unexpected error arises from the underlying {sqlpp} query.
-
-As {sqlpp} is not syntactically part of the JavaScript language, the Eventing Function code is transpiled to identify valid {sqlpp} statements which are then converted to a standard JavaScript function call that returns an Iterable object with addition of a [.var]`close()` method.
-
-You must use [.var]`$<variable>`, as per {sqlpp} specification, to use a JavaScript variable in the query statement.
-The object expressions for substitution are not supported and therefore you cannot use the [.param]`meta.id` expression in the query statement.
-
-Instead of [.param]`meta.id` expression, you can use `var id = meta.id` in an {sqlpp} query.
-
-* Invalid {sqlpp} Statement
-+
-[source, sqlpp]
-----
-DELETE FROM mybucket.myscope.transactions WHERE username = $meta.id;
-----
-
-* Valid {sqlpp} Statement
-+
+The following is a valid statement:
 [source, sqlpp]
 ----
 var id = meta.id;
 DELETE FROM mybucket.myscope.transactions WHERE username = $id;
 ----
- 
-When you use a {sqlpp} query inside a Eventing Function, remember to use an escaped identifier for keyspaces (bucket.scope.collection) with special characters
-(+++`+++[.param]`bucket-name`+++`+++).
-Escaped identifiers are surrounded by back ticks and support all identifiers in JSON
 
-For example:
+The following is an invalid statement:
+[source, sqlpp]
+----
+DELETE FROM mybucket.myscope.transactions WHERE username = $meta.id;
+----
 
-* If the bucket name is [.param]`beer-sample` and the scope and collection are both _default, then only the bucket in the {sqlpp} needs to be escaped:
-+
+==== Escape Identfiers
+
+Escaped identifiers are surrounded by back ticks and support all identifiers in JSON.
+When you use a {sqlpp} query inside an Eventing Function, you must also use an escaped identifier for keyspaces with special characters.
+
+If the bucket name is `beer-sample` and the scope and collection are both `_default`, you only need to escape the bucket in the {sqlpp} query:
 [source, sqlpp]
 ----
 SELECT * FROM `beer-sample`._default._default WHERE type ...
 ----
 
-* However if the bucket name was [.param]`beersample`, then the keyspace of the {sqlpp} query needs no escaping:
-+
+If the bucket name is `beersample`, you do not need to escape the keyspace of the {sqlpp} query:
 [source, sqlpp]
 ----
 SELECT * FROM beersample._default._default WHERE type ...
 ----
 
+==== End of Line Comments
+
+In multiline {sqlpp} statements, you cannot use single line `// end of line comments` before the semicolon at the end of the statement. 
+This causes syntax errors in the transformation and compilation of the {sqlpp} statement.
+
+To include comments in multiline statements, use `/* this format */`.
 
 
 
@@ -359,6 +351,16 @@ This releases the resources held by the {sqlpp} query. If the query is still str
 The N1QL() function throws an exception if the underlying {sqlpp} query fails to parse or start executing. The returned Iterable handler throws an exception if the underlying {sqlpp} query fails after starting. The close() method on the iterable handle can throw an exception if underlying {sqlpp} query cancellation encounters an unexpected error.
 
 
+
+
+
+
+
+
+
+
+
+
 [#crc64_call]
 === The crc64() Function Call
 
@@ -395,6 +397,16 @@ function OnUpdate(doc, meta) {
 ----
 Note that if multiple Eventing Functions share the same Sync Gateway crc64() checksum documents, real mutations will be suppressed and missed. In this use case make the checksum documents unique to each Eventing Function, i.e. checksum_bucket["evfunc1:" + meta.id], checksum_bucket["evfunc2:" + meta.id], etc.
 
+
+
+
+
+
+
+
+
+
+
 [#timers_general]
 == Timers
 
@@ -411,6 +423,13 @@ For more information see xref:eventing-timers.adoc#createtimer-function[createTi
 
 To cancel a timer you can either by invoking _createTimer()_ with the same reference of an existing timer or you can use the _cancelTimer() function.
 For more information see xref:eventing-timers.adoc#canceltimer-function[cancelTimer function].
+
+
+
+
+
+
+
 
 == cURL
 
