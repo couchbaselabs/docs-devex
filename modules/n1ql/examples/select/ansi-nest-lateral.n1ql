@@ -1,6 +1,9 @@
 SELECT *
 FROM airport a
-  INNER NEST LATERAL route r
-  ON a.faa = r.sourceairport
+  NEST LATERAL (
+    SELECT r1.* FROM route r1
+    WHERE a.faa = r1.sourceairport
+  ) AS r
+  ON true
 WHERE a.city = "Toulouse"
 ORDER BY a.airportname;
