@@ -1,6 +1,9 @@
 SELECT route.airlineid, airline.name, route.sourceairport, route.destinationairport
-FROM route
-INNER JOIN LATERAL airline
-ON route.airlineid = META(airline).id
+FROM route JOIN LATERAL (
+  SELECT airline1.name
+  FROM airline airline1
+  WHERE route.airlineid = META(airline1).id
+) AS airline
+ON true
 WHERE route.destinationairport = "SFO"
 ORDER BY route.sourceairport;
