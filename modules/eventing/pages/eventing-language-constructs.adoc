@@ -7,51 +7,8 @@
 
 This page describes which JavaScript constructs Eventing Functions do and do not support.
 
-You can use JavaScript to write custom functions.
-
-
-
-||||||| <<<< NOTE TO SELF: remove "removed" and "added"?? Because I think these were removed/added for 7.0 release a while ago. So right now they're just things we do and don't support, not "removed/added" things. >>>>>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-[abstract]
-{description}
-This topic discusses the JavaScript constructs that have been removed and new constructs that have been added in order to support the requirements of Couchbase Functions.
-
-Using JavaScript, you can write your custom Functions.
-Couchbase Functions inherit support for most ECMAScript constructs by using Google v8 as the execution container.
-However, to support the ability to shard and scale Function-execution automatically, some capabilities have been removed.
-Additionally, to optimize language-utilization of the server environment, some new constructs have been added.
-
-
-
-
-
-
-
-
-
+Couchbase functions inherit support for most ECMAScript constructs by using Google v8 as the execution container.
+Certain capabilities have been removed in order to support the automatic sharding and scaling of functions.
 
 [#supported-lang-features]
 == Supported Language Features
@@ -182,7 +139,7 @@ The iterator is an input iterator, meaning the elements are read-only.
 The variables created inside the iterator are local to it.
 You cannot use the keyword `this` in the body of the iterator.
 
-You must close wach result set with the `close()` method, which stops the underlying {sqlpp} query and releases associated resources.
+You must close each result set with the `close()` method, which stops the underlying {sqlpp} query and releases associated resources.
 In some cases like nested {sqlpp} lookups, failing to explicitly call `close()` can use too many {sqlpp} resources and lead to poor performance.
 
 ==== Valid and Invalid Statements
@@ -302,23 +259,6 @@ function OnUpdate(doc, meta) {
 The Eventing Service does not support importing libraries into Eventing Functions.
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 [#build-in-functions]
 == Built-in Functions
 
@@ -330,54 +270,40 @@ Eventing Functions support the following built-in functions:
 * <<canceltimer_call,cancelTimer() Function>>
 * <<curl_call,curl() Function>>
 
-
 [#n1ql_call]
-=== N1QL() Function Call
+=== `N1QL()` Function Call
 
 You cannot use the `N1QL()` function call directly because it bypasses the semantic and syntactic checks of the transpiler.
 
-NOTE: The `N1QL()` call has replaced the deprecated `N1qlQuery()`.
+NOTE: The `N1QL()` function has replaced the deprecated `N1qlQuery()`.
 
+The `N1QL()` function contains the following parameters:
 
-
-[cols="40,60",options="header"]
+[cols="30,80",options="header"]
 
 |===
 |Parameter
 |Description
 
 |`statement`
-|The identified {sqlpp} statement.
-Passed to {sqlpp} through SDK to run as a prepared statement.
+|The identified {sqlpp} statement. 
+This is passed to {sqlpp} through SDK to run as a prepared statement.
 
 All of the JavaScript variables referenced in the statement using the `$variable` notation are treated as named parameters.
 
 |`params`
-|Can be a JavaScript array or a JavaScript map.
+a|Can be a JavaScript array or a JavaScript map object.
 
-When the {sqlpp} statement executes positional parameters, `params` is expected 
+`params` is a JavaScript array when the {sqlpp} statement executes positional parameters.
+This array corresponds to the values bound to the positional parameters.
 
+`params` is a JavaScript map object when the {sqlpp} statement executes named parameters.
+This map object provides the name-value pairs that correspond to the variables used by the {sqlpp} statement.
 
+You cannot mix positional and named parameters.
 
-|===
+Example of an iterator using a positional `params` array:
 
-
-
-
-
-
-* _params_
-+
-This can be either a JavaScript array (for positional parameters) or a JavaScript map. 
-When the {sqlpp} statement utilizes positional parameters (i.e., $1, $2 ...), then params is expected to be a JavaScript array corresponding to the values to be bound to these positional parameters. 
-
-
-When the {sqlpp} statement utilizes named parameters (i.e., $name), then params is expected to be a JavaScript map object providing the name-value pairs corresponding to the variables used by the {sqlpp} statement. Positional and named value parameters cannot be mixed.
-+
-Note, adding an optimal index to the `travel-sample`.`_default.`_default` keyspace for the below query can increase the performance by 57X.
-+
-_iterator using a positional params array_
-+
 [source,javascript]
 ----
     // Using `travel-sample`._default._default to demonstrate params.
@@ -397,9 +323,9 @@ _iterator using a positional params array_
         { 'isPrepared': true }
     );
 ----
-+
-_Example iterator using a named params object_
-+
+
+Example of an iterator using a named `params` map object:
+
 [source,javascript]
 ----
     // Using `travel-sample`._default._default to demonstrate named params.
@@ -420,59 +346,58 @@ _Example iterator using a named params object_
     );
 ----
 
-* _options_
-+
-This is a JSON object having various query runtime options as keys. Currently, the following settings are recognized:
+|`options`
+|A JSON object that has various query runtime options as keys.
+The following settings are available:
 
-** _isPrepared_
-+
-This controls if the statement will be prepared. Normally, this defaults to _false_ but can be set on a per statement basis to _true_ for any {sqlpp} query that needs increased performance.
+`isPrepared` determines if the statement is prepared.
+This setting defaults to `false`, but you can change it to `true` to increase the performance of any {sqlpp} query.
 
-** _consistency_
-+
-This controls the consistency level for the statement. Normally, this defaults to the consistency level specified in the overall Eventing Function settings but can be set on a per statement basis. The valid values are "none" and "request".
+`consistency` determines the consistency level for the statement.
+This setting defaults to the consistency level specified in your Eventing Function settings, but you can change it on any individual statement.
+Valid values are `none` and `request`.
 
-* _return value (handle)_
-+
-The call returns a JavaScript Iterable object representing the result set of the query. The query is streamed in batches as the iteration proceeds. The returned handle can be iterated using any standard JavaScript mechanism including for...of loops.
+|`return value (handle)`
+|Returns a JavaScript iterable object that represents the result set of the query.
+You can iterate the returned handle using standard JavaScript mechanisms like `for...of` loops.
 
-** _close() Method on handle object (return value)_
-+
-This releases the resources held by the {sqlpp} query. If the query is still streaming results, the query is cancelled.
+You can use the `close()` method on the handle object to release the resources held by the {sqlpp} query.
+This method also cancels queries that are in the process of streaming results.
 
-* _Exceptions Thrown_
-+
-The N1QL() function throws an exception if the underlying {sqlpp} query fails to parse or start executing. The returned Iterable handler throws an exception if the underlying {sqlpp} query fails after starting. The close() method on the iterable handle can throw an exception if underlying {sqlpp} query cancellation encounters an unexpected error.
+|Exceptions thrown
+|The `N1QL()` function throws an exception if the underlying {sqlpp} query fails to parse or does not start to execute.
 
+The returned iterable handle throws an exception if the underlying {sqlpp} query fails after it has started.
 
+The `close()` method on the iterable handle can throw an exception if the underlying {sqlpp} query cancellation finds an unexpected error.
 
-
-
-
-
-
-
-
-
+|===
 
 [#crc64_call]
-=== The crc64() Function Call
+=== `crc64()` Function Call
 
-_crc64()_: This function calculates the CRC64 hash of an object using the ISO polynomial. The function
-takes one parameter, the object to checksum, and this can be any JavaScript object that can be
-encoded to JSON. The hash is returned as a string (because JavaScript numeric types offers only
-53-bit precision). Note that the hash is sensitive to ordering of parameters in case of map
-objects.
+The `crc64()` function calculates the CRC64 hash of an object using the ISO polynomial.
+
+The function takes the object to checksum as its only parameter.
+The parameter can be any JavaScript object that can be encoded to JSON.
+
+The function returns the hash as a string. 
+The hash is sensitive to the order of the parameters in case of map objects.
 
 [source,javascript]
 ----
 function OnUpdate(doc, meta) {
     var crc_str = crc64(doc);
-    /// code here ...
+    /// Code goes here
 }
 ----
 
-The *crc64* function can be useful in cases like suppressing a duplicate mutation from the Sync Gateway (SG), when both the Sync Gateway & Eventing are leveraging the same bucket. Basically, Sync Gateway updates metadata of the document within the bucket, which in turn generates an event for Eventing to process. Eventing can't differentiate between events from Sync Gateway and other events (doc updates via SDK, {sqlpp}, and others).  A workaround to this double mutation issue is possible via the *crc64()* function.
+A double mutation can happen when the Sync Gateway and the Eventing Function leverage the same bucket.
+
+The Sync Gateway updates the metadata of the document inside the bucket and generates an event for the Eventing Function to process.
+The Eventing Function cannot differentiate between events from the Sync Gateway and events from SDKs, {sqlpp}, and other sources.
+
+To suppress a double mutation, use the `crc64` function.
 
 [source,javascript]
 ----
@@ -489,14 +414,9 @@ function OnUpdate(doc, meta) {
    // Business logic goes in here
 }
 ----
-Note that if multiple Eventing Functions share the same Sync Gateway crc64() checksum documents, real mutations will be suppressed and missed. In this use case make the checksum documents unique to each Eventing Function, i.e. checksum_bucket["evfunc1:" + meta.id], checksum_bucket["evfunc2:" + meta.id], etc.
 
-
-
-
-
-
-
+If multiple Eventing Functions share the same `crc64` checksum documents as the Sync Gateway, real mutations can be suppressed and missed.
+To prevent this from happening, you can make the checksum documents unique to each Eventing Function.
 
 [#timers_general]
 === Timers
@@ -525,6 +445,7 @@ For more information about Timers, see xref:eventing-timers.adoc[Timers].
 The `curl()` function lets you interact with external entities through a REST endpoint from Eventing Functions, using either HTTP or HTTPS.
 
 For more information about the `curl()` function, see xref:eventing-curl-spec.adoc[cURL].
+
 
 [#handler-signatures]
 == Handler Signatures
@@ -623,6 +544,7 @@ function OnUpdate(doc, meta) {
 ----
 
 For more information about Timers, see xref:eventing-timers.adoc[Timers].
+
 
 == Reserved Words
 
