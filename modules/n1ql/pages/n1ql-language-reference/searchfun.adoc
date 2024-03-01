@@ -1,22 +1,22 @@
 = Search Functions
-:description: Search functions enable you to use full text search (FTS) queries directly within a {sqlpp} query.
+:description: Search functions enable you to use Full Text Search (FTS) queries directly within a {sqlpp} query.
 :page-topic-type: reference
 :example-caption!:
 :imagesdir: ../../assets/images
 :underscore: _
 
-Search functions enable you to use xref:search:search.adoc[full text search (FTS)] queries directly within a {sqlpp} query.
+Search functions enable you to use xref:search:search.adoc[Full Text Search (FTS)] queries directly within a {sqlpp} query.
 
 [float]
 === Prerequisites
 
 To use any of the search functions, the Search service must be available on the cluster.
-It is also recommended, but not required, that you should create suitable full text indexes for the searches that you need to perform.
+It is also recommended, but not required, that you should create suitable Search indexes for the searches that you need to perform.
 For more information, refer to xref:search:create-search-indexes.adoc[].
 
 [NOTE]
 --
-The examples in this page all assume that demonstration full text indexes have been created, as described in xref:fts:fts-demonstration-indexes.adoc[Demonstration Indexes].
+The examples in this page all assume that demonstration Search indexes have been created, as described in xref:fts:fts-demonstration-indexes.adoc[Demonstration Indexes].
 --
 
 [float]
@@ -29,16 +29,16 @@ For information on creating users and assigning roles, see xref:learn:security/a
 [float]
 === When to Use Search Functions
 
-The search functions are useful when you need to combine a full text search with the power of a {sqlpp} query; for example, combining joins and natural-language search in the same query.
+The search functions are useful when you need to combine a Full Text Search with the power of a {sqlpp} query; for example, combining joins and natural-language search in the same query.
 
-If you only need to use the capabilities of a full text search without any {sqlpp} features, consider making use of the Search Service directly, through the user interface, the REST API, or an SDK.
+If you only need to use the capabilities of a Full Text Search without any {sqlpp} features, consider making use of the Search Service directly, through the user interface, the REST API, or an SDK.
 
 [[search,SEARCH()]]
 == SEARCH(`identifier`, `query`[, `options`])
 
 === Description
 
-This function enables you to use a full text search to filter a result set, or as a join predicate.
+This function enables you to use a Full Text Search to filter a result set, or as a join predicate.
 It is only allowed in the xref:n1ql-language-reference/where.adoc[WHERE] clause or the xref:n1ql-language-reference/join.adoc[ON] clause.
 
 If a query contains a SEARCH function, the Query engine analyzes the entire query, including the search specification, to select the best index to use with this search, taking any index hints into account.
@@ -46,9 +46,9 @@ The Query engine then passes the search specification over to the Search engine 
 
 [TIP]
 --
-If no suitable full text index can be selected, or no full text index exists, the Query engine falls back on a Primary index or qualified GSI index to produce document keys, and then fetches the documents.
+If no suitable Search index can be selected, or no Search index exists, the Query engine falls back on a Primary index or qualified GSI index to produce document keys, and then fetches the documents.
 The Search Service then creates a temporary index in memory to perform the search.
-This process may be slower than using a suitable full text index.
+This process may be slower than using a suitable Search index.
 --
 
 === Arguments
@@ -75,7 +75,7 @@ Similarly, if the _query_ argument is a query object, the path is ignored.
 The _identifier_ argument cannot be replaced by a {sqlpp} query parameter.
 
 query::
-[Required] The full text search query.
+[Required] The Full Text Search query.
 This may be one of the following:
 +
 [cols="1a,4a", options="header"]
@@ -88,18 +88,18 @@ This may be one of the following:
 For more information about how to format a query string, refer to xref:search:search-request-params.adoc#query-string-query-syntax[Query String Query].
 
 | object
-| The `query` object within a full text search request.
+| The `query` object within a Full Text Search request.
 For more information about how to format the `query` object, see xref:search:search-request-params.adoc#query-object[Query object].
 
 | object
-| A complete full text search request, including sort and pagination options, and so on.
+| A complete Full Text Search request, including sort and pagination options, and so on.
 For more information about how to format a full search request object, refer to xref:search:search-request-params.adoc[].
 
 [NOTE]
 ====
-When specifying a complete full text search request with the {sqlpp} SEARCH() function, if the value of the `size` parameter is greater than the xref:fts:fts-response-object-schema.adoc#request[maximum number of full text search results], the query ignores the `size` parameter and returns all matching results.
+When specifying a complete Full Text Search request with the {sqlpp} SEARCH() function, if the value of the `size` parameter is greater than the xref:fts:fts-response-object-schema.adoc#request[maximum number of Full Text Search results], the query ignores the `size` parameter and returns all matching results.
 
-This is different to the behavior of a complete full text search request in the Search Service, where the query returns an error if the value of the `size` parameter is greater than the maximum number of full text search results.
+This is different to the behavior of a complete Full Text Search request in the Search Service, where the query returns an error if the value of the `size` parameter is greater than the maximum number of Full Text Search results.
 ====
 |===
 +
@@ -118,10 +118,10 @@ The object may contain the following fields:
 | `index`
 [Optional]
 | string, object
-| The `index` field may be a string, containing the name of a full text index in the keyspace.
-(This may be a full text index alias, but only if the full text index is in the same keyspace.)
+| The `index` field may be a string, containing the name of a Search index in the keyspace.
+(This may be a Search index alias, but only if the Search index is in the same keyspace.)
 This provides an index hint to the Query engine.
-If the full text index does not exist, an error occurs.
+If the Search index does not exist, an error occurs.
 
 [TIP]
 --
@@ -131,7 +131,7 @@ This takes precedence over a hint provided by the `index` field.
 
 '''
 
-The `index` field may also be an object, containing an example of a full text index mapping.
+The `index` field may also be an object, containing an example of a Search index mapping.
 This is treated as an input to the index mapping.
 It overrides the default mapping and is used during index selection and filtering.
 
@@ -141,23 +141,23 @@ For more information, refer to xref:search:customize-index.adoc[].
 | `indexUUID`
 [Optional]
 | string
-| A string, containing the UUID of a full text index in the keyspace.
+| A string, containing the UUID of a Search index in the keyspace.
 This provides an index hint to the Query engine.
-If the full text index cannot be identified, an error occurs.
+If the Search index cannot be identified, an error occurs.
 
-You can use the `indexUUID` field alongside the `index` field to help identify a full text index.
-The `indexUUID` field and the `index` field must both identify the same full text index.
-If they identify different full text indexes, or if either of them does not identify a full text index, an error occurs.
+You can use the `indexUUID` field alongside the `index` field to help identify a Search index.
+The `indexUUID` field and the `index` field must both identify the same Search index.
+If they identify different Search indexes, or if either of them does not identify a Search index, an error occurs.
 
-You can find the UUID of a full text index by viewing the index definition.
+You can find the UUID of a Search index by viewing the index definition.
 You can do this using the xref:fts:fts-creating-indexes.adoc#using-the-index-definition-preview[Index Definition Preview] in the Query Workbench, or the xref:rest-api:rest-fts-indexing.adoc[Index Definition] endpoints provided by the Full Text Search REST API.
 
 | `out`
 [Optional]
 | string
-| A name given to this full text search operation in this keyspace.
+| A name given to this Full Text Search operation in this keyspace.
 You can use this name to refer to this operation using the <<search_meta>> and <<search_score>> functions.
-If this field is omitted, the name of this full text search operation defaults to `"out"`.
+If this field is omitted, the name of this Full Text Search operation defaults to `"out"`.
 
 | (other)
 [Optional]
@@ -177,7 +177,7 @@ This returns `true` if the search query is found within the input path, or `fals
 
 === Limitations
 
-The Query service can select a full text index for efficient search in the following cases:
+The Query service can select a Search index for efficient search in the following cases:
 
 * If the SEARCH() function is used in a WHERE clause or in an ANSI JOIN.
 The SEARCH() function must be on the leftmost (first) JOIN.
@@ -186,7 +186,7 @@ RIGHT OUTER JOINs are rewritten as LEFT OUTER JOINs.
 
 * If the SEARCH() function is evaluated on the `true` condition in positive cases: for example, `SEARCH(_field_, _query_, _options_)`, `SEARCH(_field_, _query_, _options_) = true`, `SEARCH(_field_, _query_, _options_) IN [true, true, true]`, or a condition including one of these with `AND` or `OR`.
 
-The Query service cannot select a full text index for efficient search in the following cases:
+The Query service cannot select a Search index for efficient search in the following cases:
 
 * If a USE KEYS hint is present; or if the SEARCH() function is used on the inner side of a nested-loop JOIN, a lookup JOIN or lookup NEST, an index JOIN or index NEST, an UNNEST clause, a subquery expression, a subquery result, or a correlated query.
 
@@ -285,7 +285,7 @@ WHERE SEARCH(t1, {
 The results are unordered, so they may be returned in a different order each time.
 ====
 
-.Search using a complete full text search request
+.Search using a complete Full Text Search request
 ====
 .Query
 [source,sqlpp]
@@ -336,7 +336,7 @@ This query returns 5 results, and the results are ordered, as specified by the s
 As an alternative, you could limit the number of results and order them using the {sqlpp} xref:n1ql-language-reference/limit.adoc[LIMIT] and xref:n1ql-language-reference/orderby.adoc[ORDER BY] clauses.
 ====
 
-.Search against a full text search index that carries a custom type mapping
+.Search against a Full Text Search index that carries a custom type mapping
 ====
 .Query
 [source,sqlpp]
@@ -365,11 +365,11 @@ WHERE t1.type = "hotel" AND SEARCH(t1.description, "amazing");
 ]
 ----
 
-If the full text search index being queried has its default mapping disabled and has a custom type mapping defined, the query needs to specify the type explicitly.
+If the Full Text Search index being queried has its default mapping disabled and has a custom type mapping defined, the query needs to specify the type explicitly.
 The above query uses the demonstration index xref:fts:fts-demonstration-indexes.adoc#travel-sample-index-hotel-description[travel-sample-index-hotel-description], which has the custom type mapping "hotel".
 
-For more information on defining custom type mappings within the full text search index, refer to xref:search:create-type-mapping.adoc[].
-Note that for {sqlpp} queries, only full text search indexes with one type mapping are searchable.
+For more information on defining custom type mappings within the Full Text Search index, refer to xref:search:create-type-mapping.adoc[].
+Note that for {sqlpp} queries, only Full Text Search indexes with one type mapping are searchable.
 Also the supported type identifiers at the moment are "type_field" and "docid_prefix"; "docid_regexp" isn't supported yet for SEARCH queries via {sqlpp}.
 ====
 
@@ -422,12 +422,12 @@ For more information about Vector Search and the Search Services, see xref:vecto
 
 This function is intended to be used in a query which contains a <<search>> function.
 It returns the metadata given by the Search engine for each document found by the <<search>> function.
-If there is no <<search>> function in the query, or if a full text index was not used to evaluate the search, the function returns MISSING.
+If there is no <<search>> function in the query, or if a Search index was not used to evaluate the search, the function returns MISSING.
 
 === Arguments
 
 identifier::
-[Optional] An expression in the form `{startsb}__keyspaceAlias__.{endsb}__outname__`, consisting of the keyspace or keyspace alias in which the full text search operation was performed, followed by the outname of the full text search operation, using dot notation.
+[Optional] An expression in the form `{startsb}__keyspaceAlias__.{endsb}__outname__`, consisting of the keyspace or keyspace alias in which the Full Text Search operation was performed, followed by the outname of the Full Text Search operation, using dot notation.
 
 [NOTE]
 --
@@ -472,7 +472,7 @@ LIMIT 3;
 ----
 
 <1> There is only one <<search>> function in this query, so the SEARCH_META() function does not need to specify the outname.
-<2> The full text search specifies that locations should be included in the search result metadata.
+<2> The Full Text Search specifies that locations should be included in the search result metadata.
 
 .Result
 [source,json]
@@ -547,14 +547,14 @@ This query only uses one data source, so there is no need to specify the keyspac
 
 This function is intended to be used in a query which contains a <<search>> function.
 It returns the score given by the Search engine for each document found by the <<search>> function.
-If there is no <<search>> function in the query, or if a full text index was not used to evaluate the search, the function returns MISSING.
+If there is no <<search>> function in the query, or if a Search index was not used to evaluate the search, the function returns MISSING.
 
 This function is the same as <<search_meta,SEARCH_META().score>>.
 
 === Arguments
 
 identifier::
-[Optional] An expression in the form `{startsb}__keyspaceAlias__.{endsb}__outname__`, consisting of the keyspace or keyspace alias in which the full text search operation was performed, followed by the outname of the full text search operation, using dot notation.
+[Optional] An expression in the form `{startsb}__keyspaceAlias__.{endsb}__outname__`, consisting of the keyspace or keyspace alias in which the Full Text Search operation was performed, followed by the outname of the Full Text Search operation, using dot notation.
 
 [NOTE]
 --
