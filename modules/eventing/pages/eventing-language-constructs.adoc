@@ -8,7 +8,7 @@
 This page describes which JavaScript constructs Eventing Functions do and do not support.
 
 Couchbase functions inherit support for most ECMAScript constructs by using Google v8 as the execution container.
-Certain capabilities have been removed in order to support the automatic sharding and scaling of functions.
+Certain capabilities have been removed and are not supported in order to handle the automatic sharding and scaling of functions.
 
 [#supported-lang-features]
 == Supported Language Features
@@ -28,7 +28,7 @@ Map operations like GET, SET, and DELETE are exposed to the GET, SET, and DELETE
 
 If the bucket binding has a wildcard `*` for its scope or collection, you cannot use a Basic Keyspace Accessor to access the Data Service. Instead, you must use an <<advanced_bucket_accessors,Advanced Keyspace Accessor>>.
 
-[cols="30,60",options="header"]
+[cols="20,80",options="header"]
 
 |===
 |Operation
@@ -167,7 +167,7 @@ The following is an invalid statement:
 DELETE FROM mybucket.myscope.transactions WHERE username = $meta.id;
 ----
 
-==== Escape Identfiers
+==== Escaped Identifiers
 
 When you use a {sqlpp} query inside an Eventing Function, you must also use an escaped identifier for keyspaces with special characters. To escape an identifier, enclose it in back ticks (``).
 
@@ -265,6 +265,7 @@ The Eventing Service does not support importing libraries into Eventing Function
 Eventing Functions support the following built-in functions:
 
 * <<n1ql_call,`N1QL()` Function Call>>
+* <<analytics_call,`ANALYTICS()` Function Call>>
 * <<crc64_call,`crc64()` Function Call>>
 * <<timers_general,`createTimer()` and `cancelTimer()` Function Calls>>
 * <<curl_call,`curl()` Function Call>>
@@ -371,6 +372,50 @@ The returned iterable handle throws an exception if the underlying {sqlpp} query
 The `close()` method on the iterable handle can throw an exception if the underlying {sqlpp} query cancellation finds an unexpected error.
 
 |===
+
+[#analytics_call]
+=== `ANALYTICS()` Function Call
+
+The `ANALYTICS()` function provides integration with {sqlpp} Analytics directly form the Eventing Service.
+
+Integrating Eventing with Analytics:
+
+* Allows Eventing to benefit from the high availability and load balancing of Analytics, where requests can take turns being submitted across nodes
+* Simplifies Eventing code logic and improves code readability
+* Eliminates security and network latency issues with the `curl()` function
+
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    // Ignore information we don't care about
+    if (doc.type !== 'airline') return;
+
+    // Get the total routes per IATA
+    var route_cnt = 0;     
+    // Uses a true variable as a SQL++ parameter  
+    var airline = doc.iata;  
+
+    var results = ANALYTICS(
+        "SELECT COUNT(*) AS cnt
+        FROM `travel-sample`.`inventory`.`route`
+        WHERE type = \"route\" 
+		AND airline = $1", [doc.iata]
+    );
+
+    // Stream results using the 'for' iterator
+    for (var item of results) {   
+        route_cnt = item.cnt;
+    }
+
+    // End the query and free the resources held
+    results.close();    
+
+    // Log the KEY, AIRLINE and ROUTE_CNT
+    log("key: " + meta.id + ", airline: " + doc.iata + ", route_cnt: " + route_cnt);
+}
+----
+
+For more information about {sqlpp} Analytics, see the xref:server:analytics:1_intro.adoc[{sqlpp} Analytics reference guide].
 
 [#crc64_call]
 === `crc64()` Function Call
