@@ -3,7 +3,7 @@
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 
-:authorization-overview: xref:learn:security/authorization-overview.adoc
+:authorization-overview: xref:server:learn:security/authorization-overview.adoc
 :logical-hierarchy: xref:n1ql-intro/sysinfo.adoc#logical-hierarchy
 :returning-clause: xref:n1ql-language-reference/insert.adoc#returning-clause
 :use-keys-clause: xref:n1ql-language-reference/hints.adoc#use-keys-clause
@@ -55,9 +55,12 @@ For more details about user roles, see
 [source,ebnf]
 ----
 include::partial$grammar/dml.ebnf[tag=delete]
+include::partial$grammar/dml.ebnf[tag=deletealt]
 ----
 
 image::n1ql-language-reference/delete.png["Syntax diagram: refer to source code listing", align=left]
+
+image::n1ql-language-reference/deletealt.png["Syntax diagram: refer to source code listing", align=left]
 
 // TODO: Automatic links from EBNF
 
@@ -66,6 +69,7 @@ target-keyspace:: <<delete-target>> icon:caret-down[]
 use-keys-clause:: <<delete-hint>> icon:caret-down[]
 where-clause:: <<where-clause>> icon:caret-down[]
 limit-clause:: <<limit-clause>> icon:caret-down[]
+offset-clause:: <<offset-clause>> icon:caret-down[]
 returning-clause:: <<returning-clause>> icon:caret-down[]
 
 [[delete-target]]
@@ -153,6 +157,25 @@ Specifies the greatest number of objects that can be deleted.
 This clause must have a non-negative integer as its upper bound.
 Optional.
 
+[[offset-clause]]
+=== OFFSET Clause
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=offset-clause]
+----
+
+image::n1ql-language-reference/offset-clause.png["Syntax diagram: refer to source code listing", align=left]
+
+Like the xref:n1ql-language-reference/offset.adoc[OFFSET clause] for a SELECT query, you can include an OFFSET clause in a DELETE statement to specify a number of objects to skip before beginning the deletion.
+This option can be useful for parallelizing a large delete operation.
+
+You can include the OFFSET clause either before or after the optional LIMIT clause. 
+The position has no effect on the result.
+
+The expression for this clause must be a non-negative integer.
+Optional.
+
 [[returning-clause]]
 === RETURNING Clause
 
@@ -172,7 +195,7 @@ include::ROOT:partial$query-context.adoc[tag=section]
 
 WARNING: Please note that running the following examples will permanently delete your sample data.
 To restore your sample data, remove and reinstall the `travel-sample` bucket.
-Refer to xref:manage:manage-settings/install-sample-buckets.adoc[Sample Buckets] for details. 
+Refer to xref:server:manage:manage-settings/install-sample-buckets.adoc[Sample Buckets] for details. 
 
 [[Q1]]
 .Delete query containing a WHERE clause
@@ -249,4 +272,38 @@ include::example$dml/delete-filter.n1ql[]
 ----
 include::example$dml/delete-filter.jsonc[]
 ----
+====
+
+.Delete with LIMIT and OFFSET
+====
+This example deletes a subset of the airlines with a country of "France'.
+First, you query to get a list of the airlines in France.
+
+[source,sqlpp]
+----
+include::example$dml/delete-offset-before.n1ql[]
+----
+
+.Results
+[source,json]
+----
+include::example$dml/delete-offset-before.jsonc[]
+----
+
+There are 21 documents in this collection with `country="France"`.
+Then, you specify that you want to delete up to 10 documents, after skipping the first 10.
+
+[source,sqlpp]
+----
+include::example$dml/delete-offset.n1ql[]
+----
+
+.Results
+[source,json]
+----
+include::example$dml/delete-offset.jsonc[]
+----
+
+<.> Documents for the first 10 ids remain in the airline collection.
+<.> After deleting the limit of 10 documents, 1 more document remains in the collection.
 ====
