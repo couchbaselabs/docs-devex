@@ -21,16 +21,9 @@ A Search request can contain the following properties:
 
 |[[query]]query |Object |Yes a|
 
-An object that contains the properties for one of the supported query types: 
+An object that contains the properties for one of the supported query types.
 
-* xref:server:fts:fts-supported-queries-query-string-query.adoc[]
-* xref:server:fts:fts-supported-queries-match.adoc[]
-* xref:server:fts:fts-supported-queries-match-phrase.adoc[]
-* xref:server:fts:fts-supported-queries-non-analytic-query.adoc[]
-* xref:server:fts:fts-supported-queries-compound-query.adoc[]
-* xref:server:fts:fts-supported-queries-range-query.adoc[]
-* xref:server:fts:fts-supported-queries-geospatial.adoc[]
-* xref:server:fts:fts-supported-queries-special-query.adoc[]
+For more information about how to configure the `query` object, see <<query-object,>>.
 
 |ctl |Object |No a|
 
@@ -99,6 +92,7 @@ For more information about the properties for a `sort` JSON object, see <<sort,>
 To return the position of each occurrence of a search term inside a document, set `includeLocations` to `true`. 
 
 NOTE: You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on a field to use `includeLocations`.
+For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
 
 To turn off term locations, set `includeLocations` to `false`.
 
@@ -134,7 +128,1624 @@ You must provide the values in the same order that they appear in the `sort` arr
 
 For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_before` set to `8`, documents 2-6 appear on the same page. 
 
-|collections |Array |No |Contains an array of strings that specify the collections where you want to run the query. 
+|[[collections]]collections |Array |No |Contains an array of strings that specify the collections where you want to run the query. 
+
+|====
+
+[#query-object]
+== Query Object 
+
+Use the `query` object to set the specific details of your Search query. 
+
+Use the properties in the `query` object to control search result rankings, add multiple subqueries, and more. 
+
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=query]
+----
+
+[#boolean-queries]
+=== Boolean Queries 
+
+Use any of the following properties to run a boolean query. 
+A boolean query searches for a combination of queries that a document must match to be included in search results. 
+
+Boolean queries use a <<compound-queries,compound query array>> inside the <<must,must>>, <<must_not,must_not>> and <<should,should>> objects to set the queries a document must match. 
+
+[cols="1,1,4,4"]
+|====
+|Property |Type |Description |Examples
+
+| [[must]]must
+| Object
+a| Use a `must` object to create a boolean query. 
+
+A `must` object must contain a <<conjuncts,conjuncts array>>. 
+The array lists all the queries that must have a match in a document to include the document in search results. 
+
+For example, a query could have a `must` object with 2 queries in a `conjuncts` array.
+The Search Service must find a match for both those queries in a document to include it in search results. 
+
+a| 
+.reviews.content field must contain "location" and the phrase "nice view"
+[source,json]
+----
+include::example$query-boolean.jsonc[tag=must]
+----
+
+| [[must_not]]must_not
+| Object
+a| Use a `must_not` object to create a boolean query. 
+
+A `must_not` object must contain a <<disjuncts,disjuncts array>>. 
+The array lists all the queries that must have a match in a document to include the document in search results.
+
+For example, a query could have a `must_not` object with 3 queries in a `disjuncts` array.
+The Search Service must not find a match for any of the 3 queries in a document to include it in search results. 
+
+a|
+.free_breakfast field must not be false and reviews.Cleanliness field must not be between 1 and 3
+[source,json]
+----
+include::example$query-boolean.jsonc[tag=must_not]
+----
+
+| [[should]]should
+| Object
+a| Use a `should` object to create a boolean query. 
+
+A `should` object must contain a <<disjuncts,disjuncts array>>. 
+The array lists all the queries that must have a match in a document to score the document higher in search results. 
+
+A document can be included in search results if it does not match the query or queries in a `should` object. 
+The document scores higher in search results if it does match the query.
+
+a|
+.free_parking and free_internet fields should be true
+[source,json]
+----
+include::example$query-boolean.jsonc[tag=should]
+----
+
+|====
+
+[#compound-queries]
+=== Compound Queries (AND and OR)
+
+Use a compound query array to specify multiple child queries that must have a match in a document for that document to be included in search results.
+
+You must use compound query arrays to run a <<boolean-queries,boolean query>>, but you can use a compound query array outside of a boolean query.
+
+You can use 2 different types of compound queries: 
+
+[cols="1,1,4,4"]
+|====
+|Property |Type |Description |Examples
+
+| [[conjuncts]]conjuncts
+| Array
+a| Use the `conjuncts` array to specify multiple child queries in a single `query` object. 
+
+You can use the `conjuncts` array inside a <<must,must object>> or directly inside a `query` object.
+
+If you use the `conjuncts` array, every query object in the array must have a match in a document to include the document in search results.
+
+You can create objects in a `conjuncts` array to describe any of the available query types: 
+
+* <<analytic-queries,Analytic Queries>>
+* <<non-analytic-queries,Non-Analytic Queries>>
+* <<numeric-range-queries,Numeric Range Queries>>
+* <<date-range-queries,Date Range Queries>>
+* <<term-range-queries,Term Range Queries>>
+* <<geopoint-queries-distance,Distance/Radius-Based Geopoint Queries>>
+* <<geopoint-queries-rectangle,Rectangle-Based Geopoint Queries>>
+* <<geopoint-queries-polygon,Polygon-Based Geopoint Queries>>
+* <<geojson-queries-point,Point GeoJSON Queries>>
+* <<geojson-queries-linestring,LineString GeoJSON Queries>>
+* <<geojson-queries-polygon,Polygon GeoJSON Queries>>
+* <<geojson-queries-multipoint,MultiPoint GeoJSON Queries>>
+* <<geojson-queries-multilinestring,MultiLineString GeoJSON Queries>>
+* <<geojson-queries-multipolygon,MultiPolygon GeoJSON Queries>>
+* <<geojson-queries-geometrycollection,GeometryCollection GeoJSON Queries>>
+* <<geojson-queries-circle,Circle GeoJSON Queries>>
+* <<geojson-queries-envelope,Envelope GeoJSON Queries>>
+
+a| 
+.reviews.date field must be between 2001-10-09 and 2016-10-31 and description field must contain "pool"
+[source,json]
+----
+include::example$query-compound.jsonc[tag=conjuncts]
+----
+
+| [[disjuncts]]disjuncts
+| Array
+a| Use the `disjuncts` array to specify multiple child queries in a single `query` object. 
+
+You can use the `disjuncts` array inside a <<must_not,must_not object>>, <<should,should object>>, or directly inside a `query` object.
+
+Use a `min` property to set the number of query objects from the `disjuncts` array that must have a match in a document.
+If a document does not match the `min` number of query objects, the Search Service does not include the document in search results. 
+
+You can create objects in a `disjuncts` array to describe any of the available query types: 
+
+* <<analytic-queries,Analytic Queries>>
+* <<non-analytic-queries,Non-Analytic Queries>>
+* <<numeric-range-queries,Numeric Range Queries>>
+* <<date-range-queries,Date Range Queries>>
+* <<term-range-queries,Term Range Queries>>
+* <<geopoint-queries-distance,Distance/Radius-Based Geopoint Queries>>
+* <<geopoint-queries-rectangle,Rectangle-Based Geopoint Queries>>
+* <<geopoint-queries-polygon,Polygon-Based Geopoint Queries>>
+* <<geojson-queries-point,Point GeoJSON Queries>>
+* <<geojson-queries-linestring,LineString GeoJSON Queries>>
+* <<geojson-queries-polygon,Polygon GeoJSON Queries>>
+* <<geojson-queries-multipoint,MultiPoint GeoJSON Queries>>
+* <<geojson-queries-multilinestring,MultiLineString GeoJSON Queries>>
+* <<geojson-queries-multipolygon,MultiPolygon GeoJSON Queries>>
+* <<geojson-queries-geometrycollection,GeometryCollection GeoJSON Queries>>
+* <<geojson-queries-circle,Circle GeoJSON Queries>>
+* <<geojson-queries-envelope,Envelope GeoJSON Queries>>
+
+a|
+.free_parking field must be true or checkin field must be "1PM"
+[source,json]
+----
+include::example$query-compound.jsonc[tag=disjuncts]
+----
+
+|====
+
+=== Query String Query Syntax 
+
+Use the following properties and syntax to run a Query String query. 
+
+Query String queries let you express more complex queries with a special syntax.
+You can reduce the properties you need to specify for a Search query with Query String syntax. 
+
+If you do not add any additional Query String syntax to a query, the Search Service interprets the query as a match query. 
+It searches for an exact match to the provided term in any fields that have been added to the `default` field. 
+For more information about how to configure the default field for your Search index, see xref:set-advanced-settings.adoc#all-field[Set Search Index General Settings] or the xref:search-index-params.adoc#all-field[default_field property].
+
+CAUTION: Query String syntax is not recommended for use in production environments.
+
+[cols="1,1,4,4"]
+|====
+| Operator | Property | Description | Examples
+
+| `^`
+| See <<boost,boost>>.
+a| If you use multiple clauses in a query, you can use the `^` operator to assign the relative importance to a clause. 
+
+Clauses with a larger number after the `^` operator score higher and appear earlier in search results. 
+a| 
+.Query String query with a boost on the name field containing pool
+[source,json]
+----
+include::example$query-boost.jsonc[tag=short]
+----
+
+| [[range-query-string]]`>`, `>=`, `<`, and `<=`
+| See <<date-range-queries,Date Range Queries>> or <<numeric-range-queries,Numeric Range Queries>>.
+a| You can run two types of range queries with the the later than (`>`), later than or equal to (`>=`), earlier than (`<`), and earlier than or equal to (`<=`) operators: 
+
+* Use the operators with a date value to run a *date range query*. 
+The Search Service searches for a date value in the specified field that matches the specified operator. 
+* Use operators with a numeric value to run a *numeric range query*. 
+The Search Service searches for a numeric value in the specified field that matches the specified operator. 
+a|
+.Query String query for a date in the created field after September 21, 2016
+[source,json]
+----
+include::example$query-date-range.jsonc[tag=short]
+----
+
+.Query String query for a rating in the reviews.ratings.Cleanliness field greater than 4
+[source,json]
+----
+include::example$query-numeric-range.jsonc[tag=short]
+----
+
+| `\`
+| N/A 
+a| Use a backslash character (`\`) to escape characters in a Query String query. 
+
+You must escape the following characters to search for them literally in a Query String query: 
+
+* Quotes (`"`)
+* Plus sign (`+`)
+* Dash (`-`)
+* Equals sign (`=`)
+* Ampersand (`&`)
+* Caret (`^`)
+* Asterix (`*`)
+* Pipe (`\|`)
+* Greater than and less than symbol (`>` and `<`)
+* Exclamation mark (`!`)
+* Question mark (`?`)
+* Parentheses (`( )`)
+* Curly braces (`{ }`)
+* Square brackets (`[ ]`)
+* Single or double backslash (`\`)
+* Forward slash (`/`)
+* Tilde (`~`)
+* Colon (`:`)
+a| 
+.Query String match query with escaped exclamation mark (!)
+[source,json]
+----
+include::example$query-escape-characters.jsonc[tag=exclamation]
+----
+
+.Query String match phrase query with escaped quotation mark (")
+[source,json]
+----
+include::example$query-escape-characters.jsonc[tag=quotes]
+----
+
+| [[field-name]]`{field-name}:`
+| See <<field,field>>. 
+a| Set the field in a document where the Search Service should search for your query by adding a field name and a colon to the start of a search term. 
+
+Use dot notation for the field name. 
+For example, `parentField.childField`.
+
+The Query String syntax does not support SQL++ field syntax.
+For example, you cannot use `[*]` or `[3]` as array locations in a field name path. 
+a| 
+.Query String query for "pool" in the description field
+[source,json]
+----
+include::example$query-field-name.jsonc[tag=short]
+----
+
+| `+` and `-`
+| See the <<must,must property>>, <<must_not,must_not property>>, and <<should,should property>>. 
+a| Use the `+` and `-` operators before a clause in a Query String query to run a <<boolean-queries,boolean query>>: 
+
+* The `+` operator adds the clause to the `MUST` list of a boolean query.
+* The `-` operator adds the clause to the `MUST_NOT` list of a boolean query. 
+* The Search Service adds any additional query clauses not marked with a `+` or a `-` operator to the `SHOULD` list of a boolean query.
+
+Documents that match the `SHOULD` list of queries score higher than those that do not return a match.
+
+a| 
+.Query String query with boolean syntax
+[source,json]
+----
+include::example$query-boolean.jsonc[tag=short]
+----
+
+The Query String syntax specifies that: 
+
+* The document must have `pool` in the `description` field.
+* The document must not have `continental` in the `default` field. 
+* The document should have `breakfast` in the `default` field.
+
+| `""`
+| See <<match_phrase,match_phrase property>>. 
+a| Surround a search term in quotation marks (`" "`) to run a match phrase query. 
+
+To use a match phrase query: 
+
+* You must specify a field to search with the <<field,field property>> or the <<field-name,{field-name}>> syntax in your search query. 
+* You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
+
+For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+
+The Search Service searches for exact matches to the phrase you specify.
+
+a|
+.Query String match phrase query for "continental breakfast"
+[source,json]
+----
+include::example$query-analytic.jsonc[tag=short_match_phrase]
+----
+|====
+
+=== Analytic Queries 
+
+Analytic queries use an analyzer to analyze the contents of your Search query, and find a match in the documents inside your Search index.
+
+For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the Web Console].
+
+[cols="1,1,4,4"]
+|====
+|Property |Type |Description |Examples
+
+| [[match]]match 
+| String
+a| Use the `match` property to run a match query. 
+The Search Service searches for an exact match to the specified term inside the Search index's default field.
+
+You can set a specific field to search with the <<field,field property>>.
+
+You can change the matching behavior by using the <<fuzziness,fuzziness property>>.
+
+You cannot include spaces inside the string you provide to the `match` property without specifying the <<operator,operator property>>, which tells the Search Service how to interpret the string. 
+
+For more information about the properties you can specify with a match query, see <<additional-query-properties,Additional Query Object Properties>>.
+a| 
+.Match query for "best" or "great" in reviews.content with the "standard" analyzer
+[source,json]
+----
+include::example$query-analytic.jsonc[tag=match]
+----
+
+| match_phrase
+| String 
+a| Use the `match_phrase` property to run a match phrase query.
+The Search Service searches for exact matches to the phrase you specify.
+
+Unlike a `match` query string, a match_phrase query string can contain spaces without using the <<operator,operator property>>. 
+
+To use a match phrase query: 
+
+* You must specify a field to search with the <<field,field property>> or the <<field-name,{field-name}>> syntax in your search query. 
+* You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
+
+For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+
+For more information about the additional properties you can specify with a match phrase query, see <<additional-query-properties,Additional Query Object Properties>>.
+a|
+.Match phrase query for "very nice" in reviews.content
+[source,json]
+----
+include::example$query-analytic.jsonc[tag=match_phrase]
+----
+
+|====
+
+=== Non-Analytic Queries 
+
+Use Non-Analytic queries to run a search query without using an analyzer on the contents of your Search query. 
+
+For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the Web Console].
+
+[cols="1,1,4,4"]
+|====
+|Property |Type |Description |Examples
+
+|[[bool]]bool
+| Boolean
+a| Use the `bool` property to query a field that contains a boolean value. 
+
+Use the <<field,field property>> and set the `bool` property to `true` or `false` to run a search. 
+
+The Search Service does not use any analyzers on the contents of your query.
+
+For more information about the additional properties you can specify with a bool query, see <<additional-query-properties,Additional Query Object Properties>>.
+a|
+.Search for documents where the pets_ok field is true
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=bool]
+----
+
+| [[prefix]]prefix
+| String
+a| Use the `prefix` property to run a prefix query. 
+
+Set the property to a string to return matches for any term that starts with that string in search results.
+
+For example, you could set the `prefix` property to `inter` to return matches for `interview`, `internal`, `interesting`, and so on. 
+
+If you use the `prefix` property, the Search Service does not use any analyzers on the contents of your query text. 
+
+For more information about the additional properties you can specify with a prefix query, see <<additional-query-properties,Additional Query Object Properties>>.
+a| 
+.Search for terms that start with "inter" inside the reviews.content field
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=prefix]
+----
+
+| [[regexp]]regexp
+| String
+a| Use the `regexp` property to run a regular expression query. 
+
+Set the property to a regular expression to return matches for that regular expression in search results. 
+
+If you use the `regexp` property, the Search Service does not use any analyzers on the contents of your query text. 
+
+For more information about the additional properties you can specify with a regexp query, see <<additional-query-properties,Additional Query Object Properties>>.
+a| 
+.Search for terms that match the regular expression "plan.+" inside the reviews.content field
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=regexp]
+----
+
+| [[term]]term 
+| String
+a| Use the `term` property to run a term query. 
+
+The Search Service searches for an exact match for the text you provide in the `term` property. 
+
+You can change the matching behavior by using the <<fuzziness,fuzziness property>>.
+
+If you use the `term` property, the Search Service does not use any analyzers on the contents of your query text. 
+
+For more information about the additional properties you can specify with a term query, see <<additional-query-properties,Additional Query Object Properties>>.
+
+a|
+.Search for terms that match the term "interest" inside the reviews.content field with a fuzziness of 2
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=term]
+----
+
+| [[terms]]terms
+| Array
+a| Use the `terms` array to run a phrase query. 
+The Search Service searches for the strings you provide in the `terms` array in the specified order. 
+
+Unlike the <<match_phrase,match_phrase property>>, the `terms` array does not use any analyzers on the contents of your query text. 
+
+For example, set the `terms` array to `["nice", "view"]`. 
+The Search Service looks for any occurrences of `nice` in a document that are followed by an occurrence of `view`.
+
+To use a phrase query: 
+
+* You must set the <<field,field property>> in your search query. 
+* You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
+
+For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].  
+a|
+.Search for the phrase "nice view" in the reviews.content field
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=phrase]
+----
+
+| [[wildcard]]wildcard
+| String
+a| Use the `wildcard` property to run a wildcard query. 
+
+Set the property to a regular expression that includes a wildcard character in the middle or end of a search term:
+
+* Use `?` to allow a match to any single character. 
+* Use `*` to allow a match to zero or many characters. 
+
+For example, you could set the `wildcard` property to `inter*` to return matches for `interview`, `interject`, `internal`, and so on. 
+
+You cannot place the wildcard character at the start of the search term. 
+
+If you use the `wildcard` property, the Search Service does not use any analyzers on the contents of your query text. 
+a|
+.Search for any terms that start with "inter" followed by zero or more characters in the reviews.content field
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=wildcard]
+----
+
+|====
+
+[#numeric-range-queries]
+=== Numeric Range Queries 
+
+Use a numeric range query to search for a range of numbers inside documents in your Search index: 
+
+[source,json]
+----
+include::example$query-numeric-range.jsonc[tag=long]
+----
+
+The `field` value is an optional property. For more information about the `field` property, see <<additional-query-properties,Additional Query Object Properties>>.
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|min 
+|Integer
+|No
+a| Set the minimum value of the numeric range that you want to search for. 
+
+You can specify only a `min` value or only a `max` value on your numeric range.
+
+By default, `min` is inclusive to the range.
+
+|max
+|Integer
+|No
+a| Set the maximum value of the numeric range that you want to search for. 
+
+You can specify only a `max` value or only a `min` value on your numeric range. 
+
+By default, `max` is exclusive to the range.
+
+|inclusive_min
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `min` value. 
+
+If you set `inclusive_min` to `false`, only values greater than `min` count as a match to your Search query. 
+
+If you do not set the `inclusive_min` value, by default, `min` is inclusive to the range.
+
+|inclusive_max
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `max` value. 
+
+If you set `inclusive_max` to `false`, only values less than `max` count as a match to your Search query.
+
+If you do not set the `inclusive_max` value, by default, `max` is exclusive to the range.
+
+|====
+
+[#date-range-queries]
+=== Date Range Queries 
+
+Use a date range query to search for a range of date values inside documents in your Search index: 
+
+[source,json]
+----
+include::example$query-date-range.jsonc[tag=long]
+----
+
+The `field` value is an optional property. For more information about the `field` property, see <<additional-query-properties,Additional Query Object Properties>>.
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|start
+|Integer
+|No
+a| Set the start date of the date range that you want to search for. 
+
+You can specify only a `start` value or only a `end` value on your date range.
+
+By default, `start` is inclusive to the range.
+
+|end
+|Integer
+|No
+a| Set the end date of the date range that you want to search for. 
+
+You can specify only a `end` value or only a `start` value on your date range.
+
+By default, `end` is exclusive to the range.
+
+|inclusive_start
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `start` value. 
+
+If you set `inclusive_start` to `false`, only dates later than `start` count as a match to your Search query. 
+
+If you do not set the `inclusive_start` value, by default, `start` is inclusive to the range.
+
+|inclusive_end
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `end` value. 
+
+If you set `inclusive_end` to `false`, only dates earlier than `end` count as a match to your Search query. 
+
+If you do not set the `inclusive_end` value, by default, `end` is exclusive to the range.
+
+|====
+
+[#term-range-queries]
+=== Term Range Queries 
+
+Use a term range query to search for a range of terms inside documents in your Search index. 
+
+For example, the following query searches for any terms that occur in alphabetical order between `be` and `beautiful` from the `reviews.content` field in a Search index:
+
+[source,json]
+----
+include::example$query-term-range.jsonc[]
+----
+
+The query returns results such as `beach`, `beaches`, `beans`, and `beast`.
+
+The `field` value is an optional property. For more information about the `field` property, see <<additional-query-properties,Additional Query Object Properties>>.
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|min
+|Integer
+|No
+a| Set the minimum term of the term range that you want to search for. 
+
+You can specify only a `min` value or only a `max` value on your term range.
+
+By default, `min` is inclusive to the range.
+
+|max
+|Integer
+|No
+a| Set the minimum term of the term range that you want to search for. 
+
+You can specify only a `max` value or only a `min` value on your term range.
+
+By default, `max` is exclusive to the range.
+
+|inclusive_min
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `min` value. 
+
+If you set `inclusive_min` to `false`, only terms that would occur after `min` in the dictionary count as a match to your Search query. 
+
+If you do not set the `inclusive_min` value, by default, `min` is inclusive to the range.
+
+|inclusive_max
+|Boolean
+|No
+a| Set whether the Search Service should return documents that contain the exact `max` value. 
+
+If you set `inclusive_max` to `false`, only terms that would occur before `max` in the dictionary count as a match to your Search query. 
+
+If you do not set the `inclusive_max` value, by default, `max` is exclusive to the range.
+
+|====
+
+=== IP Address Range Queries
+
+Use an IP Address Range query to search for IP address data in your Search index.
+
+You can use IPv4 or IPv6 CIDR syntax in your query. 
+
+For example, the following query searches for any IP addresses in the range `2.7.13.141/32` and `2001:4860:4860::8888/24`: 
+
+[source,json]
+----
+include::example$query-ip-range.jsonc[]
+----
+
+NOTE: If your IP range includes over 1024 IP addresses, you must update the `bleveMaxResultWindow` setting to accommodate your results.
+For more information about how to change this setting, see xref:server:fts:fts-advanced-settings-bleveMaxResultWindow.adoc[].
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|cidr
+|String Containing An IPv4 or IPv6 IP Address
+|Yes
+a| Enter an IP address range or single IP address, in IPv4 or IPv6 CIDR notation. 
+
+The Search Service returns documents with IP addresses that fall inside the specified range or match the specified IP address. 
+
+|====
+
+[#geopoint-queries-distance]
+=== Distance/Radius-Based Geopoint Queries
+
+Use a Geopoint distance/radius-based query to search for geo location values in a set radius around a specified latitude and longitude:
+
+[source,json]
+----
+include::example$query-geopoint.jsonc[tag=distance]
+----
+
+To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|location
+|Object or Array
+|Yes
+a| Set the geo location value to use as the center of the search radius for your query. 
+
+If you use `location` as an object, you must set two values: 
+
+* `lon`: The longitude of the geo location to use as the center of the search radius. 
+* `lat`: The latitude of the geo location to use as the center of the search radius. 
+
+If you use `location` as an array, your array must contain a longitude value followed by a latitude value.
+For example, `[-2.235143, 53.482358]`, where `-2.235143` is the longitude. 
+
+|distance
+|String
+|Yes
+a| The radius where the Search Service should search for matching geo location values. 
+
+Enter the radius as a single string, with a numeric value and a unit value. 
+For example, `100.5mi`.
+
+You can use the following distance units: 
+
+* `mm`: Millimeters 
+* `cm`: Centimeters
+* `in`: Inches
+* `yd`: Yards
+* `ft`: Feet
+* `m`: Meters
+* `km`: Kilometers
+* `mi`: Miles
+* `nm`: Nautical miles
+
+|====
+
+[#geopoint-queries-rectangle]
+=== Rectangle-Based Geopoint Queries
+
+Use a Geopoint rectangle-based query to search for geo location values in a defined rectangle:
+
+[source,json]
+----
+include::example$query-geopoint.jsonc[tag=rectangle]
+----
+
+The Search Service takes a value for the top-left and bottom-right corners of a rectangle, and draws a bounding box that connects those points. 
+The resulting rectangle is used as the search area for geo location values. 
+
+To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|top_left
+|Object or Array
+|Yes
+a| Set the geo location value to use as the top-left corner point of the rectangle search area. 
+
+If you use `top_left` as an object, you must set two values: 
+
+* `lon`: The longitude of the geo location to use as the top-left corner of the rectangle. 
+* `lat`: The latitude of the geo location to use as the top-left corner of the rectangle. 
+
+If you use `top_left` as an array, your array must contain a longitude floating point value followed by a latitude floating point value.
+For example, `[-2.235143, 53.482358]`, where `-2.235143` is the longitude. 
+
+|bottom_right
+|Object or Array
+|Yes
+a| Set the geo location value to use as the bottom-right corner point of the rectangle search area. 
+
+If you use `bottom_right` as an object, you must set two values: 
+
+* `lon`: The longitude of the geo location to use as the bottom-right corner of the rectangle. 
+* `lat`: The latitude of the geo location to use as the bottom-right corner of the rectangle. 
+
+If you use `bottom_right` as an array, your array must contain a longitude floating point value followed by a latitude floating point value.
+For example, `[-2.235143, 53.482358]`, where `-2.235143` is the longitude.
+
+|====
+
+[#geopoint-queries-polygon]
+=== Polygon-Based Geopoint Queries
+
+Use a Geopoint polygon-based query to search for geo location values in a defined polygon:
+
+[source,json]
+----
+include::example$query-geopoint.jsonc[tag=polygon]
+----
+
+The Search Service takes an array of latitude and longitude values and connects them in the specified order to form a polygon. 
+The resulting polygon is used as the search area for geo location values. 
+
+To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|polygon_points
+|Array
+|Yes
+a| Set an array of latitude and longitude string values to use as the points in your polygon search area. 
+
+For example, an array of `[ "37.79393211306212,-122.44234633404847", "37.77995881733997,-122.43977141339417", "37.788031092020155,-122.42925715405579"]` is interpreted as 3 separate polygon points and creates a 3-sided polygon. 
+
+For `polygon_points`, the first value in the string is the latitude, and the second is the longitude. 
+
+You can set the last value in the array to the same value as the first latitude and longitude to explicitly close your polygon. 
+Otherwise, the Search Service infers the polygon's closure. 
+
+|====
+
+[#geojson-queries-point]
+=== Point GeoJSON Queries
+
+Use a GeoJSON Point query to search for a single latitude and longitude coordinate that intersects or is contained inside a GeoJSON shape in your documents: 
+
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=point]
+----
+
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<point-shape,shape property>> and <<point-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[point-shape]]shape
+|Object
+|Yes
+a| Contains the <<point-type,type property>> and <<point-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[point-type]]type
+|String
+|Yes
+a| Set `type` to `point`.
+
+|[[point-coordinates]]coordinates
+|Array
+|Yes
+a| An array of coordinate floating point values that define the GeoJSON shape. 
+
+For a `point` query, set the `coordinates` array to a single array with a longitude and latitude value. 
+
+The Search Service uses the first value in the `coordinates` array as the longitude value. 
+
+|[[point-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON Point search. 
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: The defined query Point overlaps a defined Point or LineString, or exists within the defined area for a Polygon, Circle, or Envelope.
++
+For multi-shape geometries, the query point must only overlap with one Point, LineString, or Polygon. 
+
+* `contains`: The defined query Point overlaps a defined Point or LineString, or exists within the defined area for a Polygon, Circle, or Envelope. 
++
+For multi-shape geometries, the query point must only overlap with one Point, LineString, or Polygon. 
+
+* `within`: Not supported for Point queries. 
+
+|====
+
+
+[#geojson-queries-linestring]
+=== LineString GeoJSON Queries
+
+Use a GeoJSON LineString query to search for a line of coordinates that intersects or is contained inside a GeoJSON shape in your documents: 
+
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=linestring]
+----
+
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<linestring-shape,shape property>> and <<linestring-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[linestring-shape]]shape
+|Object
+|Yes
+a| Contains the <<linestring-type,type property>> and <<linestring-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[linestring-type]]type
+|String
+|Yes
+a| Set `type` to `linestring`.
+
+|[[linestring-coordinates]]coordinates
+|Array of Arrays
+|Yes
+a| An array that contains arrays of 2 coordinate floating point values that define the GeoJSON LineString shape. 
+
+For a `linestring` query, the `coordinates` array can contain multiple coordinate point arrays. 
+
+The Search Service uses the first value in any nested `coordinates` array as the longitude value for the coordinate.  
+
+|[[linestring-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON LineString search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: The defined query LineString overlaps a defined Point or LineString, or intersects with the defined edges of a Polygon, Circle, or Envelope.
++
+For multi-shape geometries, the defined LineString must only overlap one Point, or intersect one LineString or Polygon. 
+
+* `contains`: The start and end points of the LineString are within the defined area of a Polygon, Circle, or Envelope.
++
+Points and LineStrings are not supported. 
+For MultiPolygon or GeometryCollection shapes, only one Polygon must contain both the start and end points of the LineString. 
+
+* `within`: Not supported for LineString queries. 
+
+|====
+
+[#geojson-queries-polygon]
+=== Polygon GeoJSON Queries
+
+Use a GeoJSON Polygon query to search for a defined area that intersects, is contained inside, or surrounds a GeoJSON shape in your documents: 
+
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=polygon]
+----
+
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<polygon-shape,shape property>> and <<polygon-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[polygon-shape]]shape
+|Object
+|Yes
+a| Contains the <<polygon-type,type property>> and <<polygon-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[polygon-type]]type
+|String
+|Yes
+a| Set `type` to `polygon`.
+
+|[[polygon-coordinates]]coordinates
+|Array of Arrays
+|Yes
+a| An array that contains an outer array, and arrays of 2 coordinate floating point values that define the GeoJSON Polygon shape. 
+
+The Search Service uses the first value in any nested `coordinates` array as the longitude value for the coordinate.  
+
+The Search Service also follows strict GeoJSON syntax, and expects exterior coordinates in a polygon to be in counterclockwise order.
+
+|[[polygon-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON Polygon search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: The defined query Polygon contains a Point, or one of its edges intersects a LineString, Polygon, Circle, or Envelope.
++
+For multi-shape geometries, only one Point must be contained, or only one LineString or Polygon must intersect. 
+
+* `contains`: The entire defined area of the query Polygon exists inside a Polygon, Circle, or Envelope. 
++
+Points and LineStrings are not supported. 
+For multi-shape geometries, one shape must contain the entirety of the defined query Polygon. 
+
+* `within`: The query Polygon contains a Point, the endpoints of a LineString, or the entirety of a Polygon, Circle, or Envelope. 
++
+For multi-shape geometries, the query Polygon must contain the entirety of each defined Point, LineString, or Polygon. 
+
+|====
+
+
+[#geojson-queries-multipoint]
+=== MultiPoint GeoJSON Queries
+
+Use a GeoJSON MultiPoint query to search for multiple coordinate points that intersect or are contained inside a GeoJSON shape in your documents: 
+
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=multipoint]
+----
+
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<multipoint-shape,shape property>> and <<multipoint-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[multipoint-shape]]shape
+|Object
+|Yes
+a| Contains the <<multipoint-type,type property>> and <<multipoint-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[multipoint-type]]type
+|String
+|Yes
+a| Set `type` to `multipoint`.
+
+|[[multipoint-coordinates]]coordinates
+|Array of Arrays
+|Yes
+a| An array that contains arrays of 2 coordinate floating point values that define the GeoJSON MultiPoint shape. 
+
+The Search Service uses the first value in any nested `coordinates` array as the longitude value for the coordinate.  
+
+|[[multipoint-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON MultiPoint search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: One of the points in the MultiPoint overlaps a Point or a LineString endpoint, or exists inside the area of a Polygon, Circle, or Envelope.
++
+For multi-shape geometries, only one Point must inside the shape or overlap a Point or endpoint. 
+
+* `contains`: All points in the MultiPoint exist inside a Polygon, Circle, or Envelope. 
++
+Points and LineStrings are not supported. 
+A MultiPoint shape can return a match if all points in the query overlap with the MultiPoint in the document. 
++
+A MultiPolygon or GeometryCollection returns a match if all query points exist within any of the defined Polygons or MultiPoints. 
+
+* `within`: Any of the points in the query MultiPoint overlap with a defined Point. 
++
+A MultiPoint shape returns a match if all points in the query overlap with the MultiPoint in the document. 
+
+|====
+
+[#geojson-queries-multilinestring]
+=== MultiLineString GeoJSON Queries
+
+Use a GeoJSON MultiLineString query to search for multiple <<geojson-queries-linestring,LineStrings>> that intersect or are contained inside a GeoJSON shape in your documents: 
+
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=multilinestring]
+----
+
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<multilinestring-shape,shape property>> and <<multilinestring-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[multilinestring-shape]]shape
+|Object
+|Yes
+a| Contains the <<multilinestring-type,type property>> and <<multilinestring-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[multilinestring-type]]type
+|String
+|Yes
+a| Set `type` to `multilinestring`.
+
+|[[multilinestring-coordinates]]coordinates
+|Array of Arrays
+|Yes
+a| An array that contains nested arrays, each with their own nested arrays of 2 coordinate floating point values. 
+
+For example, the following `coordinates` array defines 2 LineStrings with start and end points: 
+----
+"coordinates": [ 
+    [ 
+        [1.954764, 50.962097], [3.029578, 49.868547] 
+    ], 
+        
+    [ 
+        [3.029578, 49.868547], [-0.387444, 48.545836] 
+    ] 
+]
+---- 
+
+The innermost arrays define the individual points for a LineString in the MultiLineString shape. 
+
+The Search Service uses the first value in the nested `coordinates` arrays as the longitude value for a coordinate. 
+
+|[[multilinestring-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON MultiLineString search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: Any LineString inside the defined query MultiLineString overlaps a defined Point or LineString, or intersects with the defined edges of a Polygon, Circle, or Envelope.
++
+For multi-shape geometries, any defined LineString must only overlap one Point, or intersect one LineString or Polygon. 
+
+* `contains`: The start and end points of every LineString inside the defined query MultiLineString are within the defined area of a Polygon, Circle, or Envelope.
++
+Points and LineStrings are not supported. 
+For MultiPolygon or GeometryCollection shapes, only one Polygon must contain both the start and end points of every LineString. 
+
+* `within`: Not supported for MultiLineString queries.  
+
+|====
+
+[#geojson-queries-multipolygon]
+=== MultiPolygon GeoJSON Queries 
+
+Use a GeoJSON MultiPolygon query to search for a group of defined <<geojson-queries-polygon,Polygons>> that intersect, are contained inside, or surround a GeoJSON shape in your documents: 
+
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=multipolygon]
+----
+
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<multipolygon-shape,shape property>> and <<multipolygon-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[multipolygon-shape]]shape
+|Object
+|Yes
+a| Contains the <<multipolygon-type,type property>> and <<multipolygon-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[multipolygon-type]]type
+|String
+|Yes
+a| Set `type` to `multipolygon`.
+
+|[[multipolygon-coordinates]]coordinates
+|Array of Arrays
+|Yes
+a| An array that contains arrays that describe a GeoJSON Polygon shape. 
+
+Each inner array that describes a Polygon can contain multiple arrays with 2 coordinate floating point values. 
+These innermost arrays describe the coordinates of the Polygon. 
+
+The Search Service uses the first value in any nested `coordinates` array as the longitude value for the coordinate.  
+
+The Search Service also follows strict GeoJSON syntax, and expects exterior coordinates in a polygon to be in counterclockwise order.
+
+|[[multipolygon-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON MultiPolygon search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: Any of the Polygons defined in the query MultiPolygon contain a Point, or one of their edges intersects a LineString, Polygon, Circle, or Envelope.
++
+For multi-shape geometries, only one Point must be contained in a query Polygon, or only one LineString or Polygon must intersect. 
+
+* `contains`: Every Polygon defined in the query MultiPolygon exists inside a Polygon, Circle, or Envelope. 
++
+Points and LineStrings are not supported. 
+For multi-shape geometries, one shape must contain the entirety of the defined query Polygons. 
+
+* `within`: Any of the Polygons defined in the query MultiPolygon contain a Point, the endpoints of a LineString, or the entirety of a Polygon, Circle, or Envelope. 
++
+For multi-shape geometries, any of the query Polygons must collectively contain the entirety of each defined Point, LineString, or Polygon. 
+
+|====
+
+[#geojson-queries-geometrycollection]
+=== GeometryCollection GeoJSON Queries
+
+Use a GeoJSON GeometryCollection query to search for a group of defined <<geojson-queries-point,Points>>, <<geojson-queries-linestring,LineStrings>>, or <<geojson-queries-polygon,Polygons>> that intersect, are contained inside, or surround a GeoJSON shape in your documents: 
+
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=geometrycollection]
+----
+
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<geometrycollection-shape,shape property>> and <<geometrycollection-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[geometrycollection-shape]]shape
+|Object
+|Yes
+a| Contains the <<geometrycollection-type,type property>> and <<geometrycollection-geometries,geometries property>>. 
+
+|[[geometrycollection-type]]type
+|String
+|Yes
+a| Set `type` to `geometrycollection`.
+
+|[[geometrycollection-geometries]]geometries
+|Array of Objects
+|Yes
+a| Contains objects to define each GeoJSON shape in the GeometryCollection. 
+
+Each object in the `geometries` array has a `type` property and a <<geometrycollection-coordinates,coordinates property>>. 
+
+Set the `type` property inside the object to the specific shape type you want to define: 
+
+* <<geojson-queries-point,point>>
+* <<geojson-queries-linestring,linestring>>
+* <<geojson-queries-polygon,polygon>>
+* <<geojson-queries-multipoint,multipoint>>
+* <<geojson-queries-multilinestring,multilinestring>>
+* <<geojson-queries-multipolygon,multipolygon>>
+
+|[[geometrycollection-coordinates]]coordinates
+|Array or Array of Arrays
+|Yes
+a| An array or array of arrays that describes a GeoJSON shape. 
+
+The exact structure of the arrays depends on the shape:
+
+* <<geojson-queries-point,Point>>
+* <<geojson-queries-linestring,LineString>>
+* <<geojson-queries-polygon,Polygon>>
+* <<geojson-queries-multipoint,MultiPoint>>
+* <<geojson-queries-multilinestring,MultiLineString>>
+* <<geojson-queries-multipolygon,MultiPolygon>>
+
+For any array that contains only floating point values, the Search Service uses the first value as the longitude.  
+
+The Search Service also follows strict GeoJSON syntax, and expects exterior coordinates in a polygon to be in counterclockwise order.
+
+|[[geometrycollection-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON GeometryCollection search.
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: If any of the shapes in the query intersect with a shape in the document, the Search Service returns the document. 
+
+* `contains`: Every shape in the query must be contained, cumulatively, inside the shape or shapes defined in a document. 
+
+* `within`: Any of the shapes in a document must be contained within a shape in the query. 
+
+|====
+
+[#geojson-queries-circle]
+=== Circle GeoJSON Queries
+
+Use a GeoJSON Circle query to search in a radius around a single latitude and longitude coordinate: 
+
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=circle]
+----
+
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<circle-shape,shape property>> and <<circle-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[circle-shape]]shape
+|Object
+|Yes
+a| Contains the <<circle-type,type property>>, <<circle-coordinates,coordinates property>>, and <<circle-radius,radius property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[circle-type]]type
+|String
+|Yes
+a| Set `type` to `circle`.
+
+|[[circle-coordinates]]coordinates
+|Array
+|Yes
+a| An array of coordinate floating point values that define the center point of the Circle. 
+
+Set the `coordinates` array to a single array with a longitude and latitude value. 
+
+The Search Service uses the first value in the `coordinates` array as the longitude value.
+
+|[[circle-radius]]radius
+|String
+|Yes
+a| Set the radius of the Circle. 
+
+Enter the radius as a single string, with a numeric value and a unit value. For example, `100.5mi`.
+
+You can use the following distance units: 
+
+* `mm`: Millimeters 
+* `cm`: Centimeters
+* `in`: Inches
+* `yd`: Yards
+* `ft`: Feet
+* `m`: Meters
+* `km`: Kilometers
+* `mi`: Miles
+* `nm`: Nautical miles
+
+|[[circle-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON Circle search. 
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: A defined Point exists within the radius of the Circle, or a LineString, Polygon, Envelope or Circle intersects the Circle.
++
+For multi-shape geometries, the Circle must only contain with one Point, or intersect one LineString or Polygon. 
+
+* `contains`: A defined Polygon, Envelope, or Circle contains the entire defined query Circle.
++
+Points and LineStrings are not supported. 
+For MultiPolygons or GeometryCollections containing only Polygons, the query Circle must be contained by one Polygon. 
+
+* `within`: All defined GeoJSON shapes in the document must exist inside the defined query Circle.  
+
+|====
+
+[#geojson-queries-envelope]
+=== Envelope GeoJSON Queries
+
+Use a GeoJSON Envelope query to search in a bounded rectangle, based on a pair of coordinates that define the minimum and maxium longitude and latitude: 
+
+[source,json]
+----
+include::example$query-geojson.jsonc[tag=envelope]
+----
+
+To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+The `geoshape` field must contain a `type` property and a `coordinates` array. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|geometry
+|Object
+|Yes
+a| Contains the <<envelope-shape,shape property>> and <<envelope-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+|[[envelope-shape]]shape
+|Object
+|Yes
+a| Contains the <<envelope-type,type property>> and <<envelope-coordinates,coordinates property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[envelope-type]]type
+|String
+|Yes
+a| Set `type` to `envelope`.
+
+|[[envelope-coordinates]]coordinates
+|Array of 2 Arrays
+|Yes
+a| An array of 2 different arrays that contain coordinate floating point values. 
+
+The first `coordinates` nested array contains the minimum longitude and maximum latitude, or the top-left corner of the rectangle.
+
+The second nested array contains the maximum longitude and minimum latitude, or the bottom-right corner. 
+
+The Search Service uses the first value in the nested `coordinates` array as the longitude value.
+
+|[[envelope-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for a GeoJSON Envelope search. 
+
+Your selected `relation` type determines which shapes return a match for your query.
+
+You can use the following string values in the `relation` property:
+
+* `intersects`: A defined Point exists within the Envelope, or a LineString, Polygon, Envelope or Circle intersects the Envelope.
++
+For multi-shape geometries, the Envelope must only contain with one Point, or intersect one LineString or Polygon. 
+
+* `contains`: A defined Polygon, Envelope, or Circle contains the entire defined query Envelope.
++
+Points and LineStrings are not supported. 
+For MultiPolygons or GeometryCollections containing only Polygons, the query Envelope must be contained by one Polygon. 
+
+* `within`: All defined GeoJSON shapes in the document must exist inside the defined query Envelope.  
+
+|====
+
+=== Special Queries 
+
+You can use the following special queries as the only properties inside a `query` object to return all or no documents from your Search index in search results. 
+
+[cols="1,1,4,4"]
+|====
+|Property |Type |Description |Examples
+
+| match_all
+| Object
+| Use the `match_all` object as the only property in your `query` object to return all documents from the Search index in search results.
+a|
+.Return all documents in the Search index
+[source,json]
+----
+include::example$query-special.jsonc[tag=match_all]
+----
+
+| match_none
+| Object
+| Use the `match_none` object as the only property in your `query` object to return no documents from the Search index in search results.
+a|
+.Return no documents from the Search index
+[source,json]
+----
+include::example$query-special.jsonc[tag=match_none]
+----
+
+|====
+
+[#additional-query-properties]
+=== Additional Query Object Properties 
+
+You can use the following properties to modify the results returned by specific query types. 
+
+[cols="1,1,4,4"]
+|====
+|Property |Type |Description |Examples
+
+| [[analyzer]]analyzer
+| String
+a| Use the `analyzer` property to modify the behavior of a <<match,match query>> or a <<match_phrase,match phrase query>>.
+
+Set the `analyzer` property to the name of the analyzer you want to use on the contents of the <<match,match property>> or <<match_phrase,match_phrase property>>.
+
+The specified analyzer only applies to the content of your Search request.
+It does not apply to the contents of documents in the Search index.
+a|
+
+.Match query for "location" and "hostel" in reviews.content with the "en" analyzer
+[source,json]
+----
+include::example$query-analytic.jsonc[tag=match_analyzer]
+----
+
+|[[boost]]boost
+| Integer
+a| If you use multiple clauses in a query, you can use the `boost` property to assign the relative importance to a clause. 
+
+Clauses with a higher value in the `boost` property score higher and appear earlier in search results. 
+a|
+.Disjunction query with boost property on the city field containing glossop
+[source,json]
+----
+include::example$query-boost.jsonc[tag=long]
+----
+
+| [[field]]field
+| String
+a| Specify a specific field name, using dot notation, where the Search Service should search for a match to your search query. 
+a| 
+.Search for documents where the pets_ok field is true
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=bool]
+----
+
+| [[fuzziness]]fuzziness 
+| Integer 
+a| Use the `fuzziness` property to run a fuzzy query. 
+
+The `fuzziness` property uses your specified edit distance to match terms based on their similarity, rather than exact matches. 
+
+You can set `fuzziness` to a maximum value of `2`.
+
+Use the `fuzziness` property with the <<term,term property>> for a term query or the <<match,match property>> for a match query. 
+a| 
+.Search for a match the term "interest" inside the reviews.content field with a fuzziness of 2
+[source,json]
+----
+include::example$query-non-analytic.jsonc[tag=term]
+----
+
+|[[operator]]operator
+| String
+a| Use the `operator` property to modify the behavior of a <<match,match query>>:
+
+* "and": Any spaces between terms in the <<match,match property>> are interpreted as the `AND` operator. Documents must match all of the terms in the query. 
+* "or": Any spaces between terms in the <<match,match property>> are interpreted as the `OR` operator. Documents must match at least one of the terms in the query. 
+
+For example, if you set a `match` property to the value `"good great"` and the `operator` property to `"and"`, the Search Service only returns matches for documents that contain `good` and `great`. 
+
+If you set the `operator` property to `"or"`, a document only needs to contain one of the terms from the `match` property: `good` or `great`.
+a| 
+
+.Match query for "best" or "worst" in reviews.content
+[source,json]
+----
+include::example$query-analytic.jsonc[tag=match_operator]
+----
+
+|[[prefix-length]]prefix_length
+| Integer
+a| Use the `prefix_length` property to modify the behavior of a <<match,match query>>.
+
+The `prefix_length` changes a <<match,match query>> to a prefix match query. 
+The Search Service matches terms based on the query and the result sharing a prefix of the specified length. 
+a|
+.Match query for "location hostel" in reviews.content with a prefix_length of 4
+[source,json]
+----
+include::example$query-analytic.jsonc[tag=match_prefix_length]
+----
 
 |====
 
@@ -487,7 +2098,7 @@ Set the order for search results when the `field` contains multiple values, such
 
 |missing |String |Yes a|
 
-Set how the Search Service sorts documents that don't have a value for the field specified in `field`:
+Set how the Search Service sorts documents that do not have a value for the field specified in `field`:
 
 * `first`: Documents with a missing value appear first and before other results in search results. 
 * `last`: Documents with a missing value appear last and after other results in search results. 
@@ -499,5 +2110,11 @@ Set the data type of the field specified in `field`:
 * `string`: The field contains a string. 
 * `date`: The field contains date/time data. 
 * `number`: The field contains a number or geographic data, like a latitude or longitude value. 
+
+|unit |String |No a|
+
+When running a <<geopoint-queries-distance,Geopoint Distance/Radius query>>, you can set the unit of distance to use when sorting documents. 
+
+The unit of distance does not have to match the unit specified in the <<query-object,query object>>.
 
 |====
