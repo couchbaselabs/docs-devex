@@ -92,6 +92,27 @@ function OnUpdate(doc, meta) {
     }
 }
 ----
+.Results
+[source,javascript]
+----
+{
+    "meta": {
+        "id": "test_adv_insert:1",
+        "cas": "1610041053310025728"
+    },
+    "success": true
+}
+
+{
+    "error": {
+        "code": 272,
+        "name": "LCB_KEY_EEXISTS",
+        "desc": "The document key already exists in the server.",
+        "key_already_exists": true
+    },
+    "success": false
+}
+----
 ====
 
 You can use the <<optional-params-recursion,optional parameter `{ "self_recursion": true }`>> with the INSERT operation.
@@ -193,6 +214,27 @@ function OnUpdate(doc, meta) {
     }
 }
 ----
+.Results
+[source,javascript]
+----
+{
+    "meta": {
+        "id": "test_adv_replace:10",
+        "cas": "1610130177286144000"
+    },
+    "success": true
+}
+
+{
+    "error": {
+        "code": 272,
+        "name": "LCB_KEY_EEXISTS",
+        "desc": "The document key exists but it has a CAS value that is different from the specified value.",
+        "cas_mismatch": true
+    },
+    "success": false
+}
+----
 ====
 
 You can use the <<optional-params-recursion,optional parameter `{ "self_recursion": true }`>> with the REPLACE operation.
@@ -255,6 +297,37 @@ function OnUpdate(doc, meta) {
     } else {
         log('failure adv. delete: id', new_meta.id, 'result', result);
     }
+}
+----
+.Results
+[source,javascript]
+----
+{
+    "meta": {
+        "id": "key::10",
+        "cas": "1609374065129816064"
+    },
+    "success": true
+}
+
+{
+    "error": {
+        "code": 272,
+        "name": "LCB_KEY_EEXISTS",
+        "desc": "The document key exists with a CAS value different than the specified value",
+        "cas_mismatch": true
+    },
+    "success": false
+}
+
+{
+    "error": {
+        "code": 272,
+        "name": "LCB_KEY_ENOENT",
+        "desc": "The document key does not exist on the server",
+        "key_not_found": true
+    },
+    "success": false
 }
 ----
 ====
@@ -358,6 +431,27 @@ function OnUpdate(doc, meta) {
     } else {
         log('failure adv. touch: id', req.id, 'result', result);
     }
+}
+----
+.Results
+[source,javascript]
+----
+{
+  "meta": {
+    "id": "doc1",
+    "cas": "1708978502129614848"
+  },
+  "success": true
+}
+
+{
+  "error": {
+    "code": 1,
+    "name": "LCB_KEY_ENOENT",
+    "desc": "The document key does not exist on the server",
+    "key_not_found": true
+  },
+  "success": false
 }
 ----
 ====
@@ -476,6 +570,46 @@ function OnUpdate(doc, meta) {
     } else {
         log('failure adv. get: id', new_meta.id, 'result',result);
     }
+}
+----
+.Results
+[source,javascript]
+----
+{
+    "doc": {
+        "id": 1,
+        "type": "test_adv_get"
+    },
+    "meta": {
+        "id": "test_adv_get::1",
+        "cas": "1610034762747412480",
+        "datatype": "json"
+    },
+    "success": true
+}
+
+{
+    "doc": {
+        "a": 1,
+        "random": 0.09799092443129842
+    },
+    "meta": {
+        "id": "test_adv_insert:1",
+        "cas": "1610140272584884224",
+        "expiry_date": "2021-01-08T21:12:12.000Z",
+        "datatype": "json"
+    },
+    "success": true
+}
+
+{
+    "error": {
+        "code": 272,
+        "name": "LCB_KEY_ENOENT",
+        "desc": "The document key does not exist on the server",
+        "key_not_found": true
+    },
+    "success": false
 }
 ----
 ====
