@@ -1,6 +1,7 @@
 = Advanced Keyspace Accessors
 :description: Use Advanced Keyspace Accessors to access advanced Key Value functionality.
 :page-aliases: eventing:eventing-advanced-bucket-accessors.adoc
+:page-toclevels: 2
 
 [abstract]
 {description}
@@ -13,7 +14,7 @@ These operators can be used to:
 * Manipulate KV items under high contention using JavaScript inside Eventing Functions
 * Perform distributed atomic counter operations
 
-Couchbase supports the following Advanced Keyspace Accessors:
+Couchbase supports the following:
 
 * <<advanced-get-op,GET>>
 * <<advanced-insert-op,INSERT>>
@@ -25,6 +26,8 @@ Couchbase supports the following Advanced Keyspace Accessors:
 * <<advanced-touch-op,TOUCH>>
 * <<advanced-subdoc-array-op,Sub-document Operations>>
 * <<multiple-collection-functions,Operations that Listen to Multiple Collections>>
+* <<optional-params,Optional Parameters>>
+
 
 [#advanced-get-op]
 == Advanced GET Operation
@@ -54,75 +57,8 @@ function OnUpdate(doc, meta) {
 ----
 ====
 
-=== Optional `{ "cache": true }` parameter
+You can use the <<optional-params-cache,optional parameter `{ "cache": true }`>> with the GET operation. 
 
-You can use an optional third parameter `{ "cache": true }` to enable a bucket backed cache to hold the documents for one second. 
-This cache exists on each Eventing node and is shared across all Eventing Functions in the same node.
-
-The cache has "read your own write" (RYOW) semantics. Writing and then reading the same document with `{ "cache": true }` always retrieves the value that has just been written.
-
-This parameter loads near static data from the Data Service, where every mutation needs external data to drive the business logic of Eventing Functions.
-The performance of this operator is usually 18 to 25 times faster than reading data directly from the Data Service.
-
-==== Example using the optional parameter `{ "cache": true }`
-====
-.Operation
-[source,javascript]
-----
-function OnUpdate(doc, meta) {
-    log('input doc', doc);
-    log('input meta', meta);
-    // Can be the same or different
-    var new_meta = {"id": "test_adv_get::1"};
-    var result = couchbase.get(src_col, new_meta, {"cache": true});
-    if (result.success) {
-        log('success adv. get: result', result);
-    } else {
-        log('failure adv. get: id', new_meta.id, 'result',result);
-    }
-}
-----
-.Results
-[source,javascript]
-----
-{
-    "doc": {
-        "id": 1,
-        "type": "test_adv_get"
-    },
-    "meta": {
-        "id": "test_adv_get::1",
-        "cas": "1610034762747412480",
-        "datatype": "json"
-    },
-    "success": true
-}
-
-{
-    "doc": {
-        "a": 1,
-        "random": 0.09799092443129842
-    },
-    "meta": {
-        "id": "test_adv_insert:1",
-        "cas": "1610140272584884224",
-        "expiry_date": "2021-01-08T21:12:12.000Z",
-        "datatype": "json"
-    },
-    "success": true
-}
-
-{
-    "error": {
-        "code": 272,
-        "name": "LCB_KEY_ENOENT",
-        "desc": "The document key does not exist on the server",
-        "key_not_found": true
-    },
-    "success": false
-}
-----
-====
 
 [#advanced-insert-op]
 == Advanced INSERT Operation
@@ -179,6 +115,9 @@ function OnUpdate(doc, meta) {
 ----
 ====
 
+You can use the <<optional-params-recursion,optional parameter `{ "self_recursion": true }`>> with the INSERT operation.
+
+
 [#advanced-upsert-op]
 == Advanced UPSERT Operation
 
@@ -225,6 +164,9 @@ function OnUpdate(doc, meta) {
 }
 ----
 ====
+
+You can use the <<optional-params-recursion,optional parameter `{ "self_recursion": true }`>> with the UPSERT operation.
+
 
 [#advanced-replace-op]
 == Advanced REPLACE Operation
@@ -305,6 +247,9 @@ function OnUpdate(doc, meta) {
 }
 ----
 ====
+
+You can use the <<optional-params-recursion,optional parameter `{ "self_recursion": true }`>> with the REPLACE operation.
+
 
 [#advanced-delete-op]
 == Advanced DELETE Operation
@@ -398,6 +343,7 @@ function OnUpdate(doc, meta) {
 ----
 ====
 
+
 [#advanced-increment-op]
 == Advanced INCREMENT Operation
 
@@ -446,6 +392,7 @@ function OnUpdate(doc, meta) {
 ----
 ====
 
+
 [#advanced-decrement-op]
 == Advanced DECREMENT Operation
 
@@ -493,6 +440,7 @@ function OnUpdate(doc, meta) {
 }
 ----
 ====
+
 
 [#advanced-touch-op]
 == Advanced TOUCH Operation
@@ -546,6 +494,7 @@ function OnUpdate(doc, meta) {
 }
 ----
 ====
+
 
 [#advanced-subdoc-array-op]
 == Sub-Document Operations
@@ -606,6 +555,7 @@ function OnUpdate(doc, meta) {
 
 For more information about Sub-Document operations using SDKs, see <<link here>>.
 
+
 [#multiple-collection-functions]
 == Eventing Functions that Listen to Multiple Collections
 
@@ -635,6 +585,134 @@ couchbase.insert(
 ====
 
 See the xref:eventing-examples.adoc#examples-scriptlets-advanced-accessors[multiCollectionEventing example] for a detailed example of Eventing Functions that listen to multiple collections.
+
+
+[#optional-params]
+== Optional Parameters
+
+=== Optional `{ "cache": true }` Parameter
+
+You can use an optional third parameter `{ "cache": true }` to enable a bucket backed cache to hold the documents for one second. 
+This cache exists on each Eventing node and is shared across all Eventing Functions in the same node.
+
+The cache has "read your own write" (RYOW) semantics. Writing and then reading the same document with `{ "cache": true }` always retrieves the value that has just been written.
+
+This parameter loads near static data from the Data Service, where every mutation needs external data to drive the business logic of Eventing Functions.
+The performance of this operator is usually 18 to 25 times faster than reading data directly from the Data Service.
+
+This parameter can be used with the <<advanced-get-op,GET>> advanced operation.
+
+[#optional-params-cache]
+==== Example using the optional `{ "cache": true }` parameter
+====
+.Operation
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    log('input doc', doc);
+    log('input meta', meta);
+    // Can be the same or different
+    var new_meta = { "id": "test_adv_get::1" };
+    var result = couchbase.get(src_col, new_meta, { "cache": true });
+    if (result.success) {
+        log('success adv. get: result', result);
+    } else {
+        log('failure adv. get: id', new_meta.id, 'result',result);
+    }
+}
+----
+.Results
+[source,javascript]
+----
+{
+    "doc": {
+        "id": 1,
+        "type": "test_adv_get"
+    },
+    "meta": {
+        "id": "test_adv_get::1",
+        "cas": "1610034762747412480",
+        "datatype": "json"
+    },
+    "success": true
+}
+
+{
+    "doc": {
+        "a": 1,
+        "random": 0.09799092443129842
+    },
+    "meta": {
+        "id": "test_adv_insert:1",
+        "cas": "1610140272584884224",
+        "expiry_date": "2021-01-08T21:12:12.000Z",
+        "datatype": "json"
+    },
+    "success": true
+}
+
+{
+    "error": {
+        "code": 272,
+        "name": "LCB_KEY_ENOENT",
+        "desc": "The document key does not exist on the server",
+        "key_not_found": true
+    },
+    "success": false
+}
+----
+====
+
+[#optional-params-recursion]
+=== Optional `{ "self_recursion": true }` Parameter
+
+ifeval::['{page-component-version}' == '7.6'] 
+_(Introduced in Couchbase Server 7.6)_ 
+endif::[]
+
+You can use the optional fourth parameter `{ "self_recursion": true }` to prevent the suppression of recursive source bucket mutations and to process the mutations that you have just created.
+
+If you do not add `{ "self_recursion": true }` to your operation, all source bucket mutations are suppressed.
+
+This parameter can be used with the <<advanced-insert-op,INSERT>>, <<advanced-upsert-op,UPSERT>>, and <<advanced-replace-op,REPLACE>> advanced operations.
+
+==== Example using the optional parameter `{ "self_recursion": true }`
+====
+.Operation
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    if (!doc.count) {
+        doc = { "count": 1, "id": meta.id };
+        meta.id = meta.id + "_test";
+        couchbase.insert(src, meta, doc, { "self_recursion": true });
+        return;
+    }
+
+    if (doc.count < 3) {
+        doc.count++
+        couchbase.upsert(src, meta, doc, { "self_recursion": true });
+        return;
+    }
+
+    if (doc.count < 6) {
+        doc.count++;
+        couchbase.replace(src, meta, doc, { "self_recursion": true });
+        return;
+    }
+
+    couchbase.delete(src, { "id": meta.id });
+    couchbase.delete(src, { "id": doc.id });
+}
+
+----
+.Results
+[source,javascript]
+----
+
+----
+====
+
 
 == Return Values
 
