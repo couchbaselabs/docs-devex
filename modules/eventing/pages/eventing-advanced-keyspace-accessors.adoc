@@ -24,7 +24,7 @@ Couchbase supports the following:
 * <<advanced-increment-op,INCREMENT>>
 * <<advanced-decrement-op,DECREMENT>>
 * <<advanced-touch-op,TOUCH>>
-* <<advanced-subdoc-array-op,Sub-document Operations>>
+* <<advanced-subdoc-array-op,Sub-Document MUTATEIN Operation>>
 * <<multiple-collection-functions,Operations that Listen to Multiple Collections>>
 * <<optional-params,Optional Parameters>>
 
@@ -458,14 +458,21 @@ function OnUpdate(doc, meta) {
 
 
 [#advanced-subdoc-array-op]
-== Sub-Document Operations
+== Sub-Document MUTATEIN Operation
+
+ifeval::['{page-component-version}' == '7.6'] 
+_(Introduced in Couchbase Server 7.6)_ 
+endif::[]
 
 `result = couchbase.mutateIn(binding, meta, subdoc_operation_array, options)`
 
-Sub-Document operations let you access and change only parts of a document.
-This makes them faster and more efficient than full-document operations like GET, REPLACE, and UPSERT.
+Sub-Document operations let you modify only parts of a document instead of the entire document.
+This makes them faster and more efficient than full-document operations like REPLACE and UPSERT.
 
 Sub-Document array operations do not have concurrency issues and can be performed without checking CAS.
+
+NOTE: Couchbase only supports Sub-Document MUTATEIN operations. 
+It does not support Sub-Document LOOKUPIN operations.
 
 ==== Examples
 ====
@@ -499,12 +506,10 @@ function OnUpdate(doc, meta) {
         couchbase.MutateInSpec.arrayPrepend("arrayTest", 1),
         couchbase.MutateInSpec.arrayInsert("arrayTest[0]", 0),
         couchbase.MutateInSpec.arrayAddUnique("arrayTest", 3)
-    ]);
-}
+    ])
+};
 ----
 ====
-
-For more information about Sub-Document operations using SDKs, see <<link here>>.
 
 
 [#multiple-collection-functions]
@@ -668,7 +673,7 @@ function OnUpdate(doc, meta) {
 |Description
 
 |`binding`
-|-
+|string
 |The name of the binding that references the target bucket.
 
 For the Advanced GET operation, the binding can have an access level of read or read/write.
