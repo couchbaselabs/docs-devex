@@ -23,7 +23,7 @@ Couchbase supports the following Advanced Keyspace Accessors:
 * <<advanced-increment-op,INCREMENT>>
 * <<advanced-decrement-op,DECREMENT>>
 * <<advanced-touch-op,TOUCH>>
-* <<advanced-subdoc-array-op,Sub-document Operations>>
+* <<advanced-subdoc-array-op,Sub-Document Operations>>
 * <<multiple-collection-functions,Operations that Listen to Multiple Collections>>
 
 [#advanced-get-op]
@@ -548,14 +548,17 @@ function OnUpdate(doc, meta) {
 ====
 
 [#advanced-subdoc-array-op]
-== Sub-Document Operations
+== Sub-Document MUTATEIN Operation
 
 `result = couchbase.mutateIn(binding, meta, subdoc_operation_array, options)`
 
-Sub-Document operations let you access and change only parts of a document.
-This makes them faster and more efficient than full-document operations like GET, REPLACE, and UPSERT.
+Sub-Document operations let you modify only parts of a document instead of the entire document.
+This makes them faster and more efficient than full-document operations like REPLACE and UPSERT.
 
 Sub-Document array operations do not have concurrency issues and can be performed without checking CAS.
+
+NOTE: Couchbase only supports Sub-Document MUTATEIN operations. 
+It does not support Sub-Document LOOKUPIN operations.
 
 ==== Examples
 ====
@@ -578,7 +581,13 @@ function OnUpdate(doc, meta) {
 .Results
 [source,javascript]
 ----
-
+{
+    "meta": {
+        "id": "key::10",
+        "cas": "1609374065129816064"
+    },
+    "success": true
+}
 ----
 ====
 
