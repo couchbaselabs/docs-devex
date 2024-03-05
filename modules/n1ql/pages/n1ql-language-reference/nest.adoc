@@ -61,6 +61,7 @@ image::n1ql-language-reference/ansi-nest-clause.png["Syntax diagram", align=left
 
 [horizontal.compact]
 ansi-nest-type:: <<ansi-nest-type>> icon:caret-down[]
+ansi-nest-lateral:: <<ansi-nest-lateral>> icon:caret-down[]
 ansi-nest-rhs:: <<ansi-nest-rhs>> icon:caret-down[]
 ansi-nest-predicate:: <<ansi-nest-predicate>> icon:caret-down[]
 
@@ -86,6 +87,24 @@ For each nested object produced, only the left-hand source objects must be non-M
 
 This clause is optional.
 If omitted, the default is `INNER`.
+
+[#ansi-nest-lateral]
+==== LATERAL Nest
+
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+When an expression on the right-hand side of an ANSI nest references a keyspace that is already specified in the same FROM clause, the expression is said to be correlated.
+In relational databases, a join which contains correlated expressions is referred to as a lateral join.
+In {sqlpp}, lateral correlations are detected automatically, and there is no need to specify that a nest or join is lateral.
+
+In Couchbase Server 7.6 and later, you can use the LATERAL keyword as a visual reminder that a nest contains correlated expressions.
+The LATERAL keyword is not required -- the keyword is included solely for compatibility with queries from relational databases.
+
+If you use the LATERAL keyword in a nest that has no lateral correlation, the keyword is ignored.
+
+INNER NEST and LEFT OUTER NEST support the optional LATERAL keyword in front of the right-hand side keyspace.
 
 [#ansi-nest-rhs]
 ==== Nest Right-Hand Side
@@ -163,6 +182,24 @@ include::example$select/ansi-nest-inner.n1ql[]
 [source,JSON]
 ----
 include::example$select/ansi-nest-inner.jsonc[tags=extract;ellipsis]
+----
+====
+
+[#ANSI-NEST-Example-1A]
+.Inner LATERAL NEST
+====
+This example is the same as <<ANSI-NEST-Example-1,Example 1>>, but it includes the optional LATERAL keyword.
+
+.Query
+[source,sqlpp]
+----
+include::example$select/ansi-nest-lateral.n1ql[]
+----
+
+.Results
+[source,JSON]
+----
+include::example$select/ansi-nest-lateral.jsonc[tags=extract;ellipsis]
 ----
 ====
 

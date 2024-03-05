@@ -145,6 +145,28 @@ In Couchbase Server 6.5 and later, if you create either of the following:
 Then the query is transformed internally into an INNER JOIN for greater efficiency.
 --
 
+[#ansi-join-lateral]
+==== LATERAL Join
+
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+When an expression on the right-hand side of an ANSI join references a keyspace that is already specified in the same FROM clause, the expression is said to be correlated.
+In relational databases, a join which contains correlated expressions is referred to as a lateral join.
+In {sqlpp}, lateral correlations are detected automatically, and there is no need to specify that a join is lateral.
+
+In Couchbase Server 7.6 and later, you can use the LATERAL keyword as a visual reminder that a join contains correlated expressions.
+The LATERAL keyword is not required -- the keyword is included solely for compatibility with queries from relational databases.
+
+If you use the LATERAL keyword in a join that has no lateral correlation, the keyword is ignored.
+
+INNER JOINS and LEFT OUTER JOINS support the optional LATERAL keyword in front of the right-hand side keyspace.
+
+RIGHT OUTER JOINS do not support the optional LATERAL keyword.
+
+NOTE: Using the LATERAL keyword in an ANSI join implies that the right-hand side of the join must appear after the left-hand side of the join. This may prevent the cost-based optimizer from reordering joins in the query to give the optimal join order. For details, see xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#join-enumeration[Join Enumeration].
+
 [#ansi-join-predicate]
 ==== Join Predicate
 
@@ -191,6 +213,25 @@ include::example$select/ansi-join-inner.jsonc[tags=extract;ellipsis]
 ----
 
 The INNER JOIN only returns results where a left-side document matches a right-side document.
+====
+
+[#ANSI-Join-Example-1A]
+.Inner LATERAL Join
+====
+This example is the same as <<ANSI-Join-Example-1,Example 1>>, but it includes the optional LATERAL keyword.
+
+[source,sqlpp]
+----
+include::example$select/ansi-join-lateral.n1ql[]
+----
+
+.Results
+[source,JSON]
+----
+include::example$select/ansi-join-lateral.jsonc[tags=extract;ellipsis]
+----
+
+The INNER LATERAL JOIN returns the same results as <<ANSI-Join-Example-1,Example 1>>.
 ====
 
 [#ANSI-Join-Example-2]
