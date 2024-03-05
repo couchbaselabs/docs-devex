@@ -23,6 +23,8 @@ Couchbase supports the following Advanced Keyspace Accessors:
 * <<advanced-increment-op,INCREMENT>>
 * <<advanced-decrement-op,DECREMENT>>
 * <<advanced-touch-op,TOUCH>>
+* <<advanced-subdoc-array-op,Sub-document Operations>>
+* <<multiple-collection-functions,Operations that Listen to Multiple Collections>>
 
 [#advanced-get-op]
 == Advanced GET Operation
@@ -544,6 +546,73 @@ function OnUpdate(doc, meta) {
 }
 ----
 ====
+
+
+
+
+
+[#advanced-subdoc-array-op]
+== Sub-document Operations
+
+`result = couchbase.mutateIn(binding, meta, subdoc_operation_array, options)`
+
+Sub-document operations let you access and change only parts of a document.
+This makes them faster and more efficient than full-document operations like GET, REPLACE, and UPSERT.
+
+Sub-document array operations do not have concurrency issues and can be performed without checking CAS.
+
+==== Examples
+====
+.Operation
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    meta = {"id": meta.id};
+    couchbase.mutateIn(dst_bucket, meta, [
+        couchbase.MutateInSpec.insert("testField", "insert")
+    ]);
+    couchbase.mutateIn(dst_bucket, meta, [
+        couchbase.MutateInSpec.replace("testField", "replace")
+    ]);
+    couchbase.mutateIn(dst_bucket, meta, [
+        couchbase.MutateInSpec.remove("testField")
+    ]);
+}
+----
+.Results
+[source,javascript]
+----
+
+----
+====
+
+====
+.Operation
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    meta = {"id": meta.id};
+    couchbase.mutateIn(dst_bucket, meta, [
+        couchbase.MutateInSpec.upsert("arrayTest", []),
+        couchbase.MutateInSpec.arrayAppend("arrayTest", 2),
+        couchbase.MutateInSpec.arrayPrepend("arrayTest", 1),
+        couchbase.MutateInSpec.arrayInsert("arrayTest[0]", 0),
+        couchbase.MutateInSpec.arrayAddUnique("arrayTest", 3)
+    ]);
+}
+----
+.Results
+[source,javascript]
+----
+
+----
+====
+
+For more information on sub-document operations using SDKs, see <<link here>>.
+
+
+
+
 
 [#multiple-collection-functions]
 == Eventing Functions that Listen to Multiple Collections
