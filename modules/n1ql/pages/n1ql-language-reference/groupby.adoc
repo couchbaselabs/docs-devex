@@ -72,6 +72,29 @@ For each group, `GROUP AS` preserves all of the objects in the group, as they we
 The name of the array is the alias in the GROUP AS clause. 
 You can then use the array name in the `FROM` clause of a subquery to process and return the individual objects in the group.
 
+If the `FROM` clause of the query includes an alias or aliases, the `GROUP AS` array wraps each object in an outer object identified by its `FROM` alias. 
+Identifying the objects with their aliases helps avoid ambiguity.
+
+For example, a query has a `FROM` clause of `FROM airline as a, route as r`, and a `GROUP AS` clause of `GROUP AS g`. 
+The `GROUP AS` clause preserves the airline and route objects together in the same array. 
+These objects might contain field names that are the same, such as `"id"`. 
+However, the resulting array `g` identifies each of the object separately with its alias, as follows:
+
+[source,json]
+----
+[
+	{
+		"a": { an original airline object },
+		"r": { an original route object }
+	},
+	{
+		"a": { an original airline object },
+		"r": { an original route object }
+	},
+	...
+]
+----
+
 [[letting-clause]]
 === LETTING Clause
 
