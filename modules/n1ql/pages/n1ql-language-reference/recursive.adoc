@@ -1,7 +1,8 @@
-= Recursive WITH Clause
-:description: Use the RECURSIVE keyword to enable recursive referencing in WITH clause common table expressions.
+= WITH RECURSIVE Clause
+:description: Use the WITH RECURSIVE clause to enable recursive referencing in common table expressions.
 :imagesdir: ../../assets/images
 :page-topic-type: reference
+:page-status: Couchbase Server 7.6
 
 [abstract]
 {description}
@@ -11,7 +12,11 @@
 
 The common table expressions (CTEs) created by the WITH clause simplify complex queries and create temporary result sets which can be used as data sources or as expressions for queries.
 
-The SELECT definition for CTEs is split by the UNION/UNION ALL operators.
+The WITH RECURSIVE clause is an extension of the WITH clause which enables you to create recursive queries.
+You can use recursive queries with hierarchical data, or data in a tree structure.
+In these cases, the data may have an arbitrary number of levels, and you won't know in advance how deeply you need to traverse the data.
+
+The CTE for a recursive query includes a UNION or UNION ALL xref:n1ql:n1ql-language-reference/union.adoc[set operator]. 
 
 * The left arm of UNION/UNION ALL contains an anchor clause, which is non-recursive. 
 The anchor clause produces an initial set of documents as an intermediate result set for the CTE keyspace.
@@ -28,43 +33,74 @@ The intermediate result sets are appended to produce a final output.
 
 [source,ebnf]
 ----
-include::partial$grammar/dql.ebnf[tag=recursive-with-clause]
+include::partial$grammar/dql.ebnf[tag=with-recursive-clause]
 ----
 
-image::n1ql-language-reference/recursive-with-clause.png["Syntax diagram", align=left]
+image::n1ql-language-reference/with-recursive-clause.png["Syntax diagram", align=left]
 
+[[recursive-select]]
+=== Recursive SELECT
 ----
-include::partial$grammar/dql.ebnf[tag=recursive-with-clause-union]
+include::partial$grammar/dql.ebnf[tag=recursive-select]
 ----
 
-image::n1ql-language-reference/recursive-with-clause-union.png["Syntax diagram UNION/UNION ALL", align=left]
+image::n1ql-language-reference/recursive-select.png["Syntax diagram", align=left]
 
-[#arguments]
-== Arguments
+The definition for a recursive CTE must be a SELECT statement that includes a UNION or UNION ALL set operator.
+If it isn't, the CTE is treated as a non-recursive CTE.
 
-The following arguments are optional.
+anchor-select::
+A xref:n1ql:n1ql-language-reference/select-syntax.adoc[SELECT query] that represents the anchor clause of the CTE.
+
+recursive-select-term::
+A xref:n1ql:n1ql-language-reference/select-syntax.adoc#select-term[select term] that represents the recursive clause of the CTE.
+
+[[cycle-clause]]
+=== CYCLE Clause
 
 [source,ebnf]
 ----
-include::partial$grammar/dql.ebnf[tag=recursive-with-clause-options]
+include::partial$grammar/dql.ebnf[tag=cycle-clause]
 ----
 
-image::n1ql-language-reference/recursive-with-clause-options.png["Argument diagram", align=left]
+image::n1ql-language-reference/cycle-clause.png["Syntax diagram", align=left]
 
-options:: Object that signals an early exit.
-* `levels`: An exit after level `N`. 
-This object assumes the Anchor is at level 0.
-* `documents`: An exit after accumulating `N` documents. 
+The optional CYCLE clause provides one method for avoiding infinite recursions.
+It enables you to specify one or more fields whose values are likely to repeat.
 
+expr::
+(Required) An identifier representing a field.
+
+[[options-clause]]
+=== OPTIONS Clause
 [source,ebnf]
 ----
-include::partial$grammar/dql.ebnf[tag=recursive-with-clause-cycle]
+include::partial$grammar/dql.ebnf[tag=options-clause]
 ----
 
-image::n1ql-language-reference/recursive-with-clause-cycle.png["Argument diagram", align=left]
+image::n1ql-language-reference/options-clause.png["Syntax diagram", align=left]
 
-cycle:: `CYCLE <fieldnames_list> RESTRICT`. 
-List of field names in which you want to perform cycle detection.
+The optional OPTIONS clause provides another method for avoiding infinite recursions.
+It enables you to specify that the recursion should exit after a specified level, or after accumulating a specified number of documents.
+
+expr::
+(Required) An object with the following properties.
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**levels** +
+__optional__
+|Recursion should exit after reaching this level.
+This assumes the anchor is at level 0.
+|Integer
+
+|**documents** +
+__optional__
+|Recursion should exit after accumulating this many documents.
+|Integer
+|===
 
 [#limitations]
 == Limitations
