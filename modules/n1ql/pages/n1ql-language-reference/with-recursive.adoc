@@ -216,6 +216,8 @@ SELECT * FROM rcte;
 ====
 [source,sqlpp]
 ----
+CREATE INDEX srcdestidx ON travel-sample.inventory.route( sourceairport, destinationairport );
+
 WITH RECURSIVE recroute AS (
     SELECT sourceairport, destinationairport, 0 as depth,
     [ sourceairport, destinationairport ] as route
@@ -229,7 +231,7 @@ WITH RECURSIVE recroute AS (
         recroute.destinationairport = r.sourceairport
     WHERE r.sourceairport!="TLV" and recroute.depth<2 
 )
-SELECT * FROM recroute LIMIT 10;
+SELECT * FROM recroute LIMIT 2000;
 ----
 
 .Results
@@ -258,94 +260,58 @@ SELECT * FROM recroute LIMIT 10;
       "sourceairport": "TLV"
     }
   },
+// ...
   {
     "recroute": {
-      "depth": 0,
-      "destinationairport": "EWR",
+      "depth": 1,
+      "destinationairport": "AGP",
       "route": [
         "TLV",
-        "EWR"
+        "BSL",
+        "AGP"
       ],
-      "sourceairport": "TLV"
+      "sourceairport": "BSL"
     }
   },
   {
     "recroute": {
-      "depth": 0,
-      "destinationairport": "FCO",
+      "depth": 1,
+      "destinationairport": "AJA",
       "route": [
         "TLV",
-        "FCO"
+        "BSL",
+        "AJA"
       ],
-      "sourceairport": "TLV"
+      "sourceairport": "BSL"
+    },
+// ...
+  {
+    "recroute": {
+      "depth": 2,
+      "destinationairport": "BFS",
+      "route": [
+        "TLV",
+        "BSL",
+        "AGP",
+        "BFS"
+      ],
+      "sourceairport": "AGP"
     }
   },
   {
     "recroute": {
-      "depth": 0,
-      "destinationairport": "GVA",
+      "depth": 2,
+      "destinationairport": "BHD",
       "route": [
         "TLV",
-        "GVA"
+        "BSL",
+        "AGP",
+        "BHD"
       ],
-      "sourceairport": "TLV"
+      "sourceairport": "AGP"
     }
   },
-  {
-    "recroute": {
-      "depth": 0,
-      "destinationairport": "JFK",
-      "route": [
-        "TLV",
-        "JFK"
-      ],
-      "sourceairport": "TLV"
-    }
-  },
-  {
-    "recroute": {
-      "depth": 0,
-      "destinationairport": "LAX",
-      "route": [
-        "TLV",
-        "LAX"
-      ],
-      "sourceairport": "TLV"
-    }
-  },
-  {
-    "recroute": {
-      "depth": 0,
-      "destinationairport": "LGW",
-      "route": [
-        "TLV",
-        "LGW"
-      ],
-      "sourceairport": "TLV"
-    }
-  },
-  {
-    "recroute": {
-      "depth": 0,
-      "destinationairport": "LHR",
-      "route": [
-        "TLV",
-        "LHR"
-      ],
-      "sourceairport": "TLV"
-    }
-  },
-  {
-    "recroute": {
-      "depth": 0,
-      "destinationairport": "LTN",
-      "route": [
-        "TLV",
-        "LTN"
-      ],
-      "sourceairport": "TLV"
-    }
-  }
+// ...
 ]
 ----
 ====
