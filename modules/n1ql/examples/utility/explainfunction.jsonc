@@ -1,0 +1,72 @@
+[
+  {
+    "function": "default:travel-sample.inventory.func1",
+    "plans": [
+      {
+        "cardinality": 24024,
+        "cost": 33346.763562464446,
+        "plan": {
+          "#operator": "Sequence",
+          "~children": [
+            {
+              "#operator": "PrimaryScan3",
+              "bucket": "travel-sample",
+              "index": "def_inventory_route_primary",
+              "index_projection": {
+                "primary_key": true
+              },
+              "keyspace": "route",
+              "namespace": "default",
+              "optimizer_estimates": {
+                "cardinality": 24024,
+                "cost": 4108.612246388904,
+                "fr_cost": 12.170521655277593,
+                "size": 11
+              },
+              "scope": "inventory",
+              "using": "gsi"
+            },
+            {
+              "#operator": "Fetch",
+              "bucket": "travel-sample",
+              "keyspace": "route",
+              "namespace": "default",
+              "optimizer_estimates": {
+                "cardinality": 24024,
+                "cost": 32773.70177195316,
+                "fr_cost": 25.36320769946525,
+                "size": 569
+              },
+              "scope": "inventory"
+            },
+            {
+              "#operator": "Parallel",
+              "~child": {
+                "#operator": "Sequence",
+                "~children": [
+                  {
+                    "#operator": "InitialProject",
+                    "discard_original": true,
+                    "optimizer_estimates": {
+                      "cardinality": 24024,
+                      "cost": 33346.763562464446,
+                      "fr_cost": 25.387061420349003,
+                      "size": 569
+                    },
+                    "result_terms": [
+                      {
+                        "expr": "self",
+                        "star": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "statement": "select self.* from `default`:`travel-sample`.`inventory`.`route`"
+      }
+    ]
+  }
+]

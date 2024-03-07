@@ -497,6 +497,10 @@ function OnUpdate(doc, meta) {
 [#advanced-touch-op]
 == Advanced TOUCH Operation
 
+ifeval::['{page-component-version}' == '7.6'] 
+_(Introduced in Couchbase Server 7.6)_ 
+endif::[]
+
 `result = couchbase.touch(binding, meta)`
 
 The TOUCH operation lets you modify the expiration time of a document without the need to access that document first.
@@ -546,6 +550,7 @@ function OnUpdate(doc, meta) {
 }
 ----
 ====
+
 
 [#advanced-subdoc-array-op]
 == Sub-Document MUTATEIN Operation
@@ -750,3 +755,185 @@ Programming logic should not be tied to the specific contents of this field.
 Exceptions are only thrown during system failure conditions.
 
 |===
+=======
+[source,javascript]
+----
+{
+  "meta": {
+    "id": "doc1",
+    "cas": "1708978502129614848"
+  },
+  "success": true
+}
+
+{
+  "error": {
+    "code": 1,
+    "name": "LCB_KEY_ENOENT",
+    "desc": "The document key does not exist on the server",
+    "key_not_found": true
+  },
+  "success": false
+}
+----
+====
+
+[#multiple-collection-functions]
+== Eventing Functions that Listen to Multiple Collections
+
+You can use the wildcard `{asterisk}` in an Eventing Function's scope or collection to listen to multiple collections.
+
+If the binding used by the Advanced Keyspace Accessor also contains a wildcard `{asterisk}` for its scope or collection, you must use the additional `meta.keyspace` parameter.
+
+The following example includes a `meta.keyspace` parameter that specifies the keyspace in which the INSERT operation is to take place:
+
+==== Example
+====
+.Operation
+[source,javascript]
+----
+couchbase.insert(
+    src_col, {
+        "id": id_str,
+        "keyspace": {
+            "bucket_name": "bkt01",
+            "scope_name": "scp01",
+            "collection_name": "col01"
+        }
+    },
+    some_doc
+)
+----
+====
+
+See the xref:eventing-examples.adoc#examples-scriptlets-advanced-accessors[multiCollectionEventing example] for a detailed example of Eventing Functions that listen to multiple collections.
+
+== Return Values
+
+[cols="40,25,60",options="header"]
+
+|===
+|Value
+|Type
+|Description
+
+|`binding`
+|-
+|The name of the binding that references the target bucket.
+
+For the Advanced GET operation, the binding can have an access level of read or read/write.
+
+For all other operations, the binding must have an access level of read/write.
+
+|`meta`
+|Object
+|The positional parameter that represents the metadata of the operation.
+
+|`meta.id`
+|string
+|The key of the document to be used in the operation.
+This is a mandatory parameter that must be a JavaScript string.
+
+|`meta.keyspace`
+|Object
+|The keyspace of the document to be used for the operation.
+
+Must be in the JavaScript format `"keyspace": { "bucket_name": string, "scope_name": string, "collection_name": string }`.
+
+|`meta.cas`
+|string
+|(Optional) Specifies the CAS value to be used as a pre-condition for the operation.
+
+If the CAS value of the document does not match the CAS value specified in this field, the operation fails and sets the parameter `cas_mismatch` to true in the error return object.
+
+|`meta.expiry_date`
+|Date
+|(Optional) Sets the expiry time for the document.
+If specified, must be in the JavaScript format `Date`.
+
+|`doc`
+|string, number, boolean, null, Object, or Array
+|The document content of the operation.
+
+|`result`
+|Object
+|Indicates the success or failure of the operation.
+
+If the operation is successful, it returns the data that was fetched.
+If the operation fails, it returns the details of the error.
+
+|`result.success`
+|boolean
+|Indicates if the operation is successful or not.
+This field is always present in the return object.
+
+|`result.meta`
+|Object
+|Contains metadata about the object that was fetched.
+This field is only present is the operation is successful.
+
+If the specified key is not present in the bucket, the operation fails and returns `key_not_found` in the error object.
+
+|`result.meta.id`
+|string
+|The key of the document fetched by the operation.
+
+|`result.meta.cas`
+|string
+|The CAS value of the document fetched by the operation.
+
+|`result.meta.expiry_date`
+|Date
+|The expiration date of the document.
+This field is only present if an expiration is set on the document.
+
+|`result.meta.datatype`
+|string
+|Indicates whether the document is `json` or `binary`.
+
+|`result.doc`
+|string, number, boolean, null, Object, or Array
+|Returns the content of the requested document if the operation is successful.
+
+|`result.error`
+|Object
+|Returns an error if the operation fails.
+
+|`result.error.cas_mismatch`
+|boolean
+|If true, this field indicates that the operation failed because a CAS value was not specified or because the CAS value on the object did not match the CAS value in the request.
+
+|`result.error.key_not_found`
+|boolean
+|If true, this field indicates that the operation failed because the specified key did not exist in the bucket.
+
+|`result.error.key_already_exists`
+|boolean
+|If true, this field indicates that the operation failed because the specified key already exists in the bucket.
+
+|`result.error.code`
+|number
+|Represents the SDK error code that triggered the operation to fail.
+Usually returns an internal numeric code.
+
+|`result.error.name`
+|string
+|Indicates the error that the SDK triggered and that caused the operation to fail.
+
+|`result.error.desc`
+|string
+|A description of the error.
+This description can be used for diagnostics and logging, and can change over time.
+Programming logic should not be tied to the specific contents of this field.
+
+|`exceptions`
+|-
+|Indicates errors through the error object in the return value.
+Exceptions are only thrown during system failure conditions.
+
+|===
+
+== See Also
+
+* xref:eventing-examples.adoc#examples-scriptlets-advanced-accessors[Advanced Accessor Handler scriptlets] for complete examples of Advanced Keyspace Accessors, including JavaScript, input mutations, output mutations, and log messages
+* xref:eventing-language-constructs.adoc#bucket_accessors[Basic Keyspace Accessors]

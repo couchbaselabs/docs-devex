@@ -1,33 +1,214 @@
 = Language Constructs
-:description: The language constructs are fundamental units of a language.
+:description: Language constructs are the fundamental units of a language.
 :page-toclevels: 2
-:page-edition: Enterprise Edition
 
 [abstract]
 {description}
-This topic discusses the JavaScript constructs that have been removed and new constructs that have been added in order to support the requirements of Couchbase Functions.
 
-Using JavaScript, you can write your custom Functions.
-Couchbase Functions inherit support for most ECMAScript constructs by using Google v8 as the execution container.
-However, to support the ability to shard and scale Function-execution automatically, some capabilities have been removed.
-Additionally, to optimize language-utilization of the server environment, some new constructs have been added.
+This page describes which JavaScript constructs Eventing Functions do and do not support.
 
-NOTE: While every effort is made to ensure the accuracy of the content of the Eventing documentation herein, it should be noted that the controlling technical document is the https://github.com/couchbase/eventing/blob/master/docs/specification-70.pdf[Couchbase 7.0 Eventing Specification] available on GitHub.
+NOTE: Couchbase functions inherit support for most ECMAScript constructs by using Google v8 as the execution container.
+Certain capabilities have been removed and are not supported in order to handle the automatic sharding and scaling of functions.
 
-[#removed-lang-features]
-== Removed Language Features
+[#supported-lang-features]
+== Supported Language Features
 
-The following JavaScript features have been removed and cannot be used in Eventing Functions:
+Eventing Functions support the following features:
+
+* <<basic_bucket_accessors,Basic Keyspace Accessors>>
+* <<advanced_bucket_accessors,Advanced Keyspace Accessors>>
+* <<logging,Logging>>
+* <<n1ql_statements,{sqlpp} Statements>>
+
+[#basic_bucket_accessors]
+=== Basic Keyspace Accessors
+
+Buckets that are bound to an Eventing Function appear as a global JavaScript map.
+Map operations like GET, SET, and DELETE are exposed to the GET, SET, and DELETE Data Service provider operations.
+
+If the bucket binding has a wildcard `*` for its scope or collection, you cannot use a Basic Keyspace Accessor to access the Data Service. Instead, you must use an <<advanced_bucket_accessors,Advanced Keyspace Accessor>>.
+
+[cols="20,80",options="header"]
+
+|===
+|Operation
+|Description
+
+|GET
+|`operator[]` is applied on a bucket binding and used as a value expression.
+
+Fetches the object from the KV bucket that the variable is bound to.
+Returns the parsed JSON value as a JavaScript object.
+
+Fetching a non-existent object from a bucket returns an undefined value.
+This operation throws an exception if the underlying bucket GET operation fails with an unexpected error.
+
+|SET
+|`operator[]` appears to the left of the `=` assignment statement.
+
+Sets the provided JavaScript value into the KV bucket that the variable is bound to.
+Replaces any existing value with the specified key.
+
+This operation throws an exception if the underlying bucket SET operation fails with an unexpected error.
+
+|DELETE
+|`operator[]` appears afer the JavaScript delete keyword.
+
+Deletes the provided key from the KV bucket that the variable is bound to.
+Returns a no-op if the object does not exist.
+
+This operation throws an exception if the underlying bucket DELETE operation fails with an unexpected error.
+
+|===
+
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+  // Assuming 'dest' is a bucket alias or binding to a keyspace
+  var val = dest[meta.id];         // this is a bucket GET operation
+  dest[meta.id] = {"status":3};    // this is a bucket SET operation
+  delete dest[meta.id];            // this is a bucket DEL operation
+}
+----
+
+[#advanced_bucket_accessors]
+=== Advanced Keyspace Accessors
+
+Advanced Keyspace Accessors expose a larger set of options and operators than <<basic_bucket_accessors,Basic Keyspace Accessors>>.
+They have non-trivial argument sets and return values.
+
+See xref:eventing-advanced-keyspace-accessors.adoc[Advanced Keyspace Accessors] for more details.
+
+[#logging]
+=== Logging
+
+The `log()` function allows Eventing Functions to log user-defined messages.
+`log()` statements are logged in each Eventing Function's log file.
+
+`log()` does not throw exceptions.
+
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+  log("Now processing: " + meta.id);
+}
+----
+
+The Eventing Service also creates a system log file named `eventing.log`.
+This file exists in all Eventing Functions and captures management and lifecycle information.
+The end-user cannot write to this file.
+
+See xref:eventing-debugging-and-diagnosability.adoc#logging-functions[Logging Functions] for more information.
+
+[#n1ql_statements]
+=== {sqlpp} Statements
+
+You can use top-level {sqlpp} keywords like SELECT, UPDATE, INSERT, and DELETE as inline words in Eventing Functions.
+These operations are accessible through the returned iterable handle.
+
+{sqlpp} Query results, through the SELECT operation, are streamed in batches to the iterable handle as the iteration progresses through the result set.
+
+NOTE: To avoid recursion, an Eventing Function can listen for mutations in a bucket. 
+{sqlpp} DML statement canot manipulate documents in that same bucket.
+To work around this, you can use the exposed data service KV map in your Eventing Function.
+
+The following Function has a feed boundary of "Everything", which means the same {sqlpp} statement is executed 7,303 times.
+To execute only one query, you can configure your feed boundary to be "From now" and to mutate only one document in the keyspace `beer-sample`.`_default`.`_default`.
+
+You can also make sure you have an optimal index, which improves query performance by 24 times.
+
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    var strong = 70;
+    var results =
+        SELECT *                               /* SQL++ queries are embedded directly */
+        FROM `beer-sample`._default._default   /* Token escaping is standard SQL++ style */
+        WHERE abv > $strong;                   // Local variable reference using $ syntax
+    for (var beer of results) {                // Stream results using 'for' iterator
+        log(beer);
+        break;
+    }
+    results.close();                           // End the query and free resources held
+}
+----
+
+The embedded {sqlpp} call starts the query and returns a JavaScript iterable object that represents the result set of the query. You can iterate the returned handle using standard JavaScript mechanisms like `for...of` loops.
+
+The iterator is an input iterator, meaning the elements are read-only. 
+The variables created inside the iterator are local to it.
+You cannot use the keyword `this` in the body of the iterator.
+
+You must close each result set with the `close()` method, which stops the underlying {sqlpp} query and releases associated resources.
+In some cases like nested {sqlpp} lookups, failing to explicitly call `close()` can use too many {sqlpp} resources and lead to poor performance.
+
+==== Valid and Invalid Statements
+
+{sqlpp} is not syntactically part of the JavaScript language. 
+Eventing transpiles the Eventing Function code to identify {sqlpp} statements and convert them to a standard JavaScript function call. 
+This call then returns an iterable object with a `close()` method.
+
+To use a JavaScript variable in a query statement, you must use `$<variable>`.
+This parameter is substituted in the query by the corresponding JavaScript variable's runtime value.
+
+You cannot use the `meta.id` expression in the query statement. 
+Instead, you can use `var id = meta.id` in a {sqlpp} query.
+
+The following is a valid statement:
+[source, sqlpp]
+----
+var id = meta.id;
+DELETE FROM mybucket.myscope.transactions WHERE username = $id;
+----
+
+The following is an invalid statement:
+[source, sqlpp]
+----
+DELETE FROM mybucket.myscope.transactions WHERE username = $meta.id;
+----
+
+==== Escaped Identifiers
+
+When you use a {sqlpp} query inside an Eventing Function, you must also use an escaped identifier for keyspaces with special characters. To escape an identifier, enclose it in back ticks (``).
+
+If the bucket name is `beer-sample` and the scope and collection are both `_default`, you only need to escape the bucket in the {sqlpp} query:
+[source, sqlpp]
+----
+SELECT * FROM `beer-sample`._default._default WHERE type ...
+----
+
+If the bucket name is `beersample`, you do not need to escape the keyspace of the {sqlpp} query:
+[source, sqlpp]
+----
+SELECT * FROM beersample._default._default WHERE type ...
+----
+
+==== End of Line Comments
+
+In multiline {sqlpp} statements, you cannot use single line `// end of line comments` before the semicolon at the end of the statement. 
+This causes syntax errors in the transformation and compilation of the {sqlpp} statement.
+
+To include comments in multiline statements, use `/* this format */`.
+
+
+[#unsupported-lang-features]
+== Unsupported Language Features
+
+The following features are not supported by Eventing Functions:
 
 * <<global_state,Global State>>
 * <<asynchrony,Asynchrony>>
-* <<browser_extensions,Browser and other Extensions>>
+* <<browser_extensions,Browser and Other Extensions>>
 * <<library_imports,Library Imports>>
 
-[#global_state]
+[#global-state]
 === Global State
 
-Eventing Functions do not allow global variables. All state must be saved and retrieved from persistence providers. In Couchbase Server, the Data Service is used as a persistence provider. Therefore, all global states are contained in the Data Service bucket(s) made available to the Eventing Functions through bindings. This restriction is mandatory for the Eventing Function logic to remain agnostic of the rebalance operation.
+Eventing Functions do not support global variables.
+This restriction makes sure that the logic of Eventing Functions remains agnostic of rebalance operations.
+
+Instead of using global variables, you must save and retrieve all states from persistence providers like the Data Service.
+You can use bindings to make all global states contained in Data Service buckets available to Eventing Functions.
 
 [source,javascript]
 ----
@@ -37,12 +218,19 @@ function OnUpdate(doc, meta) {
 }
 ----
 
-Note the use of 'Constant alias' bindings in the Function's settings can be used to provide global constants accessible within a Function's JavaScript.  For example you might have a Constant alias of _debug_ with a value of _true_ (or _false_) to control verbose logging this would behave just like adding a statement `const debug = true;` at the beginning of your JavaScript code.
+You can use Constant alias bindings in your Function's settings to access global constants within a Function's JavaScript.
+For example, a Constant alias of `debug` with a value of `true` or `false` behaves in the same way as the statement `const debug = true`.
 
 [#asynchrony]
 === Asynchrony
 
-Asynchrony, particularly asynchronous callbacks, to be useful needs to retain access to their parent scope. As such asynchrony forms a node specific, long-running state that prevents the capture of the entire state in the persistence providers. Therefore, Eventing Functions are restricted to executing as short-running, straight-line code, without sleep and wakeups. 
+Eventing Functions do not support asynchronous flows.
+
+Asynchrony creates a node-specific, long-running state that prevents persistence providers from capturing the entire state.
+This limits Eventing Functions to execute short-running, straight-line code without sleep and wakeups.
+
+You can use Timers to add limited asynchrony back into your Function. 
+Timers are designed specifically to prevent a state from being node-specific.
 
 [source,javascript]
 ----
@@ -51,16 +239,12 @@ function OnUpdate(doc, meta) {
 }
 ----
 
-Limited asynchrony is added back through time observers (or Timers). Time observers are designed specifically not to make the state node specific.
-
 [#browser_extensions]
-=== Browser and other Extensions
+=== Browser and Other Extensions
 
-Eventing Functions execute as server-side code on Couchbase Server similar to the JavaScript code that is used in browsers.
+Eventing Functions do not support browser extensions, like window methods and DOM events.
 
-Because Eventing Functions do not execute in the context of a browser, the extensions that browsers add to the core language, such as window methods, DOM events etc. are not available. The Couchbase Server prevents these browser extensions from executing in an Eventing Function.  However a limited subset is added back (such as function timers in lieu of setTimeout, and curl calls in lieu of XHR).
-
-For example some code that runs in the browser is excluded from use in Eventing Functions. The ‘window’ term in the code *window.XMLHttpRequest()*, is not a server-side construct but is in the context of a browser and as such is not available to your Eventing Functions.
+You can use Timers instead of `setTimeout` and curl calls instead of `XMLHttpRequests`.
 
 [source,javascript]
 ----
@@ -72,274 +256,54 @@ function OnUpdate(doc, meta) {
 [#library_imports]
 === Library Imports
 
-Eventing service restricts importing libraries into eventing functions.
+The Eventing Service does not support importing libraries into Eventing Functions.
 
-[#added-lang-features]
-== Added Language Features
-
-The following constructs have been added:
-
-* <<bucket_accessors,Basic Keyspace Accessors>>
-* <<advanced_bucket_accessors,Advanced Keyspace Accessors>>
-* <<logging,Logging>>
-* <<n1ql_statements,{sqlpp} Statements>>
-
-[#bucket_accessors]
-=== Basic Keyspace Accessors
-
-Couchbase buckets, when bound to a Function, appear as a global JavaScript map.
-The map operations such as get, set and delete are exposed to the Data Service providers get, set, and delete operations respectively.
-
-Note, if the bucket binding has a wild card of `+++*+++` for the scope and/or the collection you can not use a basic keyspace accessors but must use the advanced bucket accessors to access the Data Service. 
-
-[source,javascript]
-----
-function OnUpdate(doc, meta) {
-  // Assuming 'dest' is a bucket alias or binding to a keyspace
-  var val = dest[meta.id];         // this is a bucket GET operation.
-  dest[meta.id] = {"status":3};    // this is a bucket SET operation.
-  delete dest[meta.id];            // this is a bucket DEL operation.
-}
-----
-
-* *The GET operation* _(operator [] applied on a bucket binding and used as a value expression)_
-+
-This fetches the corresponding object from the KV bucket the variable is bound to, and returns the parsed JSON value as a JavaScript object. Fetching a non-existent object from a bucket will return JavaScript undefined value. This operation throws an exception if the underlying bucket GET operation fails with an unexpected error.
-
-* *The SET operation* _(operator [] appearing on left of = assignment statement)_
-+
-This sets the provided JavaScript value into the KV bucket the variable is bound to, replacing any existing value with the specified key. This operation throws an exception if the underlying bucket SET operation fails with an unexpected error.
-
-* *The DELETE operation* _(operator [] appearing after JavaScript delete keyword)_
-+
-This deletes the provided key from the KV bucket the variable is bound to. If the object does not exist, this call is treated as a no-op. This operation throws an exception if the underlying bucket DELETE operation fails with an unexpected error.
-
-
-[#advanced_bucket_accessors]
-=== Advanced Keyspace Accessors
-
-The following advanced bucket accessors have been added to expose a richer set of options and operators.  
-Unlike the basic bucket accessors these operations have non-trivial argument sets and return values for complete details refer to xref:eventing-advanced-keyspace-accessors.adoc[Advanced Keyspace Accessors Details].
-
-Note, if the bucket binding has a wild card of `+++*+++` for the scope and/or the collection you must also provide _meta.keyspace_ in addition to _meta.id_ in the _meta_ object.
-
-[#advanced-get-op]
-* *The Advanced GET operation*: _result = couchbase.get(binding, meta)_
-+
-This operation allows reading a document from the bucket with an ability to specify the CAS value to be matched during the read.
-For more information see xref:eventing-advanced-keyspace-accessors.adoc#advanced-get-op[advanced GET operation].
-
-[#advanced-insert-op]
-
-* *The Advanced INSERT operation*: _result = couchbase.insert(binding, meta, doc)_
-+
-This operation allows creating a fresh document in the bucket.
-This operation will fail if the document with the specified key already exists. 
-It allows specifying an expiration time (or TTL) to be set on the document.
-For more information see xref:eventing-advanced-keyspace-accessors.adoc#advanced-insert-op[advanced INSERT operation].
-
-[#advanced-upsert-op]
-
-* *The Advanced UPSERT operation*: _result = couchbase.upsert(binding, meta, doc)_
-+
-This operation allows updating an existing document in the bucket, or if absent, creating a fresh document with the specified key.
-The operation does not allow specifying CAS (it will silently ignore it).
-It also allows specifying an expiration time (or TTL) to be set on the document.
-For more information see xref:eventing-advanced-keyspace-accessors.adoc#advanced-upsert-op[advanced UPSERT operation].
-
-[#advanced-replace-op]
-
-* *The Advanced REPLACE operation*: _result = couchbase.replace(binding, meta, doc)_
-+
-This operation replaces an existing document in the bucket
-This operation will fail if the document with the specified key does not exist. 
-This operation allows specifying a CAS value that must be matched as a pre-condition before proceeding with the operation. 
-It also allows specifying an expiration time (or TTL) to be set on the document. 
-For more information see xref:eventing-advanced-keyspace-accessors.adoc#advanced-replace-op[advanced REPLACE operation].
-
-[#advanced-delete-op]
-
-* *The Advanced DELETE operation*: _result = couchbase.delete(binding, meta)_
-+
-This operation allows deleting a document in the bucket specified by key.
-Optionally, a CAS value may be specified which will be matched as a pre-condition to proceed with the operation.
-For more information see xref:eventing-advanced-keyspace-accessors.adoc#advanced-delete-op[advanced DELETE operation].
-
-[#advanced-increment-op]
-
-* *The Advanced INCREMENT operation*: _result = couchbase.incrment(binding, meta)_
-+
-This operation atomically increments the field _"count"_ in the specified document.
-For more information see xref:eventing-advanced-keyspace-accessors.adoc#advanced-increment-op[advanced INCREMENT operation].
-+
-The document must have the below structure:
-+
-[source,javascript]
-----
-{"count": 23} // 23 is the current counter value
-----
-+
-The _increment_ operation returns the post-increment value. 
-+
-If the specified counter document does not exist, one is created with _count_ value as 0 and the structure noted above. And so, the first returned value will be 1.
-+
-Due to limitations in KV engine API, this operation cannot currently manipulate full document counters.
-
-[#advanced-decrement-op]
-
-* *The Advanced DECREMENT operation*: _result = couchbase.decrement(binding, meta)_
-+
-This operation atomically decrements the field _"count"_ in the specified document.
-For more information see xref:eventing-advanced-keyspace-accessors.adoc#advanced-decrement-op[advanced DECREMENT operation].
-+
-The document must have the below structure:
-+
-[source,javascript]
-----
-{"count": 23} // 23 is the current counter value
-----
-+
-The _decrement_ operation returns the post-decrement value. 
-+
-If the specified counter document does not exist, one is created with _count_ value as 0 and the structure noted above. And so, the first returned value will be -1.
-+
-Due to limitations in KV engine API, this operation cannot currently manipulate full document counters.
-
-
-//****
-
-[#logging]
-=== Logging
-
-An additional function, log() has been introduced to the language, which allows Eventing Functions to log user defined messages. These log() statements will go the specific Eventing Function's log file also known as the application log.  
-The messages go files located in the Eventing data directory and do not contain any system log messages. 
-The function takes a string to write to the file. If non-string types are passed, a best effort string representation will be logged, but the format of these may change over time. 
-This function does not throw exceptions.
-For more information see xref:eventing-debugging-and-diagnosability.adoc#application-logs[application logs].
-
-
-[source,javascript]
-----
-function OnUpdate(doc, meta) {
-  log("Now processing: " + meta.id);
-}
-----
-
-The Eventing Service also creates a system log file named *eventing.log* common across all Eventing Functions to capture management and lifecycle information, however the end-user cannot write to this file. 
-For more information see xref:eventing-debugging-and-diagnosability.adoc#system-log[system log].
-
-[#n1ql_statements]
-=== {sqlpp} Statements
-
-Top level {sqlpp} keywords, such as SELECT, UPDATE, INSERT and DELETE, are available as inline keywords in Eventing Functions. Operations that return values such as SELECT are accessible through a returned iterable handle. {sqlpp} Query results, via a SELECT, are streamed in batches to the iterable handle as the iteration progresses through the result set.
-
-NOTE: {sqlpp} DML statements cannot manipulate documents in the same bucket as the Eventing Function is listening for mutations on to avoid recursion. Workaround: use the exposed data service KV map in your Eventing function.
-
-JavaScript variables can be referred by {sqlpp} statements using *$<variable>* syntax. Such parameters will be substituted with the corresponding JavaScript variable's runtime value using {sqlpp} named parameters substitution facility.
-
-When deploying the below Function with a feed boundary of "Everything" the same {sqlpp} statement will execute 7,303 times. If the feed boundary is configured to "From now" and you then mutate just one (1) document in the keyspace `beer-sample`.`_default`.`_default` only one (1) query will be executed.  Also keep in mind that adding an optimal index can speed up the query performance by 24X.
-
-[source,javascript]
-----
-function OnUpdate(doc, meta) {
-    var strong = 70;
-    var results =
-        SELECT *                               /* SQL++ queries are embedded directly.    */
-        FROM `beer-sample`._default._default   /* Token escaping is standard SQL++ style. */
-        WHERE abv > $strong;                   // Local variable reference using $ syntax.
-    for (var beer of results) {                // Stream results using 'for' iterator.
-        log(beer);
-        break;
-    }
-    results.close();                           // End the query and free resources held
-}
-----
-
-The embedded {sqlpp} call starts the query and returns a JavaScript Iterable object representing the result set of the query. The query is streamed in batches as the iteration proceeds. The returned handle can be iterated using any standard JavaScript mechanism including _for...of_ loops.
-
-In multiline {sqlpp} statements (as above) you cannot use single line [.var]`// end of line comments like this` +
-prior to the terminating semicolon as it will cause a syntax error in the transpilation of the {sqlpp} statement, however multiline [.var]`/* comments like this */` are allowed.
-
-The iterator is an input iterator (elements are read-only). The keyword _this_ cannot be used in the body of the iterator. The variables created inside the iterator are local to the iterator.
-
-The returned handle must be closed using the [.var]`close()` method defined on it, which stops the underlying {sqlpp} query and releases associated resources.
-
-NOTE: When an Eventing Function completes for a given mutation and exits all resources will be freed even if you omit the [.var]`close()` statement for your result set(s). However in some complex use cases such as nested {sqlpp} lookups a failure to explicitly call [.var]`close()` after each result set is no longer needed can tie up an excessive amount of {sqlpp} resources and lead to poor performance.
-
-All three operations, i.e., the {sqlpp} statement, iterating over the result set, and closing the Iterable handle can throw exceptions if unexpected error arises from the underlying {sqlpp} query.
-
-As {sqlpp} is not syntactically part of the JavaScript language, the Eventing Function code is transpiled to identify valid {sqlpp} statements which are then converted to a standard JavaScript function call that returns an Iterable object with addition of a [.var]`close()` method.
-
-You must use [.var]`$<variable>`, as per {sqlpp} specification, to use a JavaScript variable in the query statement.
-The object expressions for substitution are not supported and therefore you cannot use the [.param]`meta.id` expression in the query statement.
-
-Instead of [.param]`meta.id` expression, you can use `var id = meta.id` in an {sqlpp} query.
-
-* Invalid {sqlpp} Statement
-+
-[source, sqlpp]
-----
-DELETE FROM mybucket.myscope.transactions WHERE username = $meta.id;
-----
-
-* Valid {sqlpp} Statement
-+
-[source, sqlpp]
-----
-var id = meta.id;
-DELETE FROM mybucket.myscope.transactions WHERE username = $id;
-----
- 
-When you use a {sqlpp} query inside a Eventing Function, remember to use an escaped identifier for keyspaces (bucket.scope.collection) with special characters
-(+++`+++[.param]`bucket-name`+++`+++).
-Escaped identifiers are surrounded by back ticks and support all identifiers in JSON
-
-For example:
-
-* If the bucket name is [.param]`beer-sample` and the scope and collection are both _default, then only the bucket in the {sqlpp} needs to be escaped:
-+
-[source, sqlpp]
-----
-SELECT * FROM `beer-sample`._default._default WHERE type ...
-----
-
-* However if the bucket name was [.param]`beersample`, then the keyspace of the {sqlpp} query needs no escaping:
-+
-[source, sqlpp]
-----
-SELECT * FROM beersample._default._default WHERE type ...
-----
 
 [#build-in-functions]
 == Built-in Functions
 
-The following built in functions have been added:
+Eventing Functions support the following built-in functions:
 
-* <<n1ql_call,The N1QL() function call>>
-* <<crc64_call,The crc64() function call>>
-* <<createtimer_call,The createTimer() function call>>
-* <<canceltimer_call,The cancelTimer() function call>>
-* <<curl_call,The curl() function call>>
+* <<n1ql_call,`N1QL()` Function Call>>
+* <<analytics_call,`ANALYTICS()` Function Call>>
+* <<crc64_call,`crc64()` Function Call>>
+* <<timers_general,`createTimer()` and `cancelTimer()` Function Calls>>
+* <<curl_call,`curl()` Function Call>>
 
 [#n1ql_call]
-=== The N1QL() Function Call
+=== `N1QL()` Function Call
 
-The _N1QL()_ function call  is documented below for reference purposes but should not used directly as doing so would bypass the various semantic and syntactic checks of the transpiler (notably: recursive mutation checks will no longer function, and the statement will need to manual escaping of all {sqlpp} special sequences and keywords).
+You cannot use the `N1QL()` function call directly because it bypasses the semantic and syntactic checks of the transpiler.
 
-NOTE: In addition the _N1qlQuery()_ is now deprecated and has been replaced with the _N1QL()_ call which has a different parameter format.
+NOTE: The `N1QL()` function has replaced the deprecated `N1qlQuery()`.
 
-* _statement_
-+
-This is the identified {sqlpp} statement. This will be passed to {sqlpp} via SDK to run as a prepared statement. All referenced JS variables in the statement (using the $var notation) will be treated by {sqlpp} as named parameters.
+The `N1QL()` function contains the following parameters:
 
-* _params_
-+
-This can be either a JavaScript array (for positional parameters) or a JavaScript map. When the {sqlpp} statement utilizes positional parameters (i.e., $1, $2 ...), then params is expected to be a JavaScript array corresponding to the values to be bound to these positional parameters. When the {sqlpp} statement utilizes named parameters (i.e., $name), then params is expected to be a JavaScript map object providing the name-value pairs corresponding to the variables used by the {sqlpp} statement. Positional and named value parameters cannot be mixed.
-+
-Note, adding an optimal index to the `travel-sample`.`_default.`_default` keyspace for the below query can increase the performance by 57X.
-+
-_iterator using a positional params array_
-+
+[cols="35,70",options="header"]
+
+|===
+|Parameter
+|Description
+
+|`statement`
+|The identified {sqlpp} statement. 
+This is passed to {sqlpp} through SDK to run as a prepared statement.
+
+All of the JavaScript variables referenced in the statement using the `$variable` notation are treated as named parameters.
+
+|`params`
+a|Can be a JavaScript array or a JavaScript map object.
+
+`params` is a JavaScript array when the {sqlpp} statement executes positional parameters.
+This array corresponds to the values bound to the positional parameters.
+
+`params` is a JavaScript map object when the {sqlpp} statement executes named parameters.
+This map object provides the name-value pairs that correspond to the variables used by the {sqlpp} statement.
+
+You cannot mix positional and named parameters.
+
+Example of an iterator using a positional `params` array:
+
 [source,javascript]
 ----
     // Using `travel-sample`._default._default to demonstrate params.
@@ -359,9 +323,9 @@ _iterator using a positional params array_
         { 'isPrepared': true }
     );
 ----
-+
-_Example iterator using a named params object_
-+
+
+Example of an iterator using a named `params` map object:
+
 [source,javascript]
 ----
     // Using `travel-sample`._default._default to demonstrate named params.
@@ -382,49 +346,104 @@ _Example iterator using a named params object_
     );
 ----
 
-* _options_
-+
-This is a JSON object having various query runtime options as keys. Currently, the following settings are recognized:
+|`options`
+|A JSON object that has various query runtime options as keys.
+The following settings are available:
 
-** _isPrepared_
-+
-This controls if the statement will be prepared. Normally, this defaults to _false_ but can be set on a per statement basis to _true_ for any {sqlpp} query that needs increased performance.
+`isPrepared` determines if the statement is prepared.
+This setting defaults to `false`, but you can change it to `true` to increase the performance of any {sqlpp} query.
 
-** _consistency_
-+
-This controls the consistency level for the statement. Normally, this defaults to the consistency level specified in the overall Eventing Function settings but can be set on a per statement basis. The valid values are "none" and "request".
+`consistency` determines the consistency level for the statement.
+This setting defaults to the consistency level specified in your Eventing Function settings, but you can change it on any individual statement.
+Valid values are `none` and `request`.
 
-* _return value (handle)_
-+
-The call returns a JavaScript Iterable object representing the result set of the query. The query is streamed in batches as the iteration proceeds. The returned handle can be iterated using any standard JavaScript mechanism including for...of loops.
+|`return value (handle)`
+|Returns a JavaScript iterable object that represents the result set of the query.
+You can iterate the returned handle using standard JavaScript mechanisms like `for...of` loops.
 
-** _close() Method on handle object (return value)_
-+
-This releases the resources held by the {sqlpp} query. If the query is still streaming results, the query is cancelled.
+You can use the `close()` method on the handle object to release the resources held by the {sqlpp} query.
+This method also cancels queries that are in the process of streaming results.
 
-* _Exceptions Thrown_
-+
-The N1QL() function throws an exception if the underlying {sqlpp} query fails to parse or start executing. The returned Iterable handler throws an exception if the underlying {sqlpp} query fails after starting. The close() method on the iterable handle can throw an exception if underlying {sqlpp} query cancellation encounters an unexpected error.
+|Exceptions thrown
+|The `N1QL()` function throws an exception if the underlying {sqlpp} query fails to parse or does not start to execute.
 
+The returned iterable handle throws an exception if the underlying {sqlpp} query fails after it has started.
+
+The `close()` method on the iterable handle can throw an exception if the underlying {sqlpp} query cancellation finds an unexpected error.
+
+|===
+
+[#analytics_call]
+=== `ANALYTICS()` Function Call
+
+ifeval::['{page-component-version}' == '7.6'] 
+_(Introduced in Couchbase Server 7.6)_ 
+endif::[]
+
+The `ANALYTICS()` function provides integration with {sqlpp} Analytics directly from the Eventing Service.
+
+Integrating Eventing with Analytics:
+
+* Allows Eventing to benefit from the high availability and load balancing of Analytics, where requests can take turns being submitted across nodes
+* Simplifies Eventing code logic and improves code readability
+* Eliminates security and network latency issues with the `curl()` function
+
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    // Ignore information we don't care about
+    if (doc.type !== 'airline') return;
+
+    // Get the total routes per IATA
+    var route_cnt = 0;     
+    // Uses a true variable as a SQL++ parameter  
+    var airline = doc.iata;  
+
+    var results = ANALYTICS(
+        "SELECT COUNT(*) AS cnt
+        FROM `travel-sample`.`inventory`.`route`
+        WHERE type = \"route\" 
+		AND airline = $1", [doc.iata]
+    );
+
+    // Stream results using the 'for' iterator
+    for (var item of results) {   
+        route_cnt = item.cnt;
+    }
+
+    // End the query and free the resources held
+    results.close();    
+
+    // Log the KEY, AIRLINE and ROUTE_CNT
+    log("key: " + meta.id + ", airline: " + doc.iata + ", route_cnt: " + route_cnt);
+}
+----
 
 [#crc64_call]
-=== The crc64() Function Call
+=== `crc64()` Function Call
 
-_crc64()_: This function calculates the CRC64 hash of an object using the ISO polynomial. The function
-takes one parameter, the object to checksum, and this can be any JavaScript object that can be
-encoded to JSON. The hash is returned as a string (because JavaScript numeric types offers only
-53-bit precision). Note that the hash is sensitive to ordering of parameters in case of map
-objects.
+The `crc64()` function calculates the CRC64 hash of an object using the ISO polynomial.
+
+The function takes the object to checksum as its only parameter.
+The parameter can be any JavaScript object that can be encoded to JSON.
+
+The function returns the hash as a string. 
+The hash is sensitive to the order of the parameters in case of map objects.
 
 [source,javascript]
 ----
 function OnUpdate(doc, meta) {
     var crc_str = crc64(doc);
-    /// code here ...
+    /// Code goes here
 }
 ----
 
-The *crc64* function can be useful in cases like suppressing a duplicate mutation from the Sync Gateway (SG), when both the Sync Gateway & Eventing are leveraging the same bucket. Basically, Sync Gateway updates metadata of the document within the bucket, which in turn generates an event for Eventing to process. Eventing can't differentiate between events from Sync Gateway and other events (doc updates via SDK, {sqlpp}, and others).  A workaround to this double mutation issue is possible via the *crc64()* function.
+A double mutation can happen when the Sync Gateway and the Eventing Function leverage the same bucket.
+
+The Sync Gateway updates the metadata of the document inside the bucket and generates an event for the Eventing Function to process.
+The Eventing Function cannot differentiate between events from the Sync Gateway and events from SDKs, {sqlpp}, and other sources.
+
+To suppress a double mutation, use the `crc64` function.
 
 [source,javascript]
 ----
@@ -441,37 +460,44 @@ function OnUpdate(doc, meta) {
    // Business logic goes in here
 }
 ----
-Note that if multiple Eventing Functions share the same Sync Gateway crc64() checksum documents, real mutations will be suppressed and missed. In this use case make the checksum documents unique to each Eventing Function, i.e. checksum_bucket["evfunc1:" + meta.id], checksum_bucket["evfunc2:" + meta.id], etc.
+
+If multiple Eventing Functions share the same `crc64` checksum documents as the Sync Gateway, real mutations can be suppressed and missed.
+To prevent this from happening, you can make the checksum documents unique to each Eventing Function.
 
 [#timers_general]
-== Timers
+=== `createTimer()` and `cancelTimer()` Function Calls
 
-Timers are asynchronous compute, which offers Eventing Functions the ability to execute in reference to wall-clock events, refer to the detailed xref:eventing-timers.adoc[Timers] documentation. 
+Timers are asynchronous compute.
+They provide Eventing Functions with the ability to execute in reference to wall-clock events.
 
 [#createtimer_call]
-*The createTimer() Function Call*: _createTimer(callback, date, reference, context)_
+To create a Timer, call the `createTimer()` function.
+The function call is `createTimer(callback, date, reference, context)`.
+This function executes at or close to a specified date.
 
-To create a timer a callback or JavaScript function will be executed at or close to the desired date. The reference is an identifier for the timer scoped to an Eventing function and callback. The context must be serializable data that is available to the callback when the timer is fired. 
-For more information see xref:eventing-timers.adoc#createtimer-function[createTimer function].
+The reference is an identifier for the Timer that is scoped to an Eventing Function and callback.
+The context must be serializable data that is available to the callback when the Timer is fired.
 
 [#canceltimer_call]
-*The cancelTimer() Function Call*: cancelTimer(callback, reference)
+To cancel a Timer:
 
-To cancel a timer you can either by invoking _createTimer()_ with the same reference of an existing timer or you can use the _cancelTimer() function.
-For more information see xref:eventing-timers.adoc#canceltimer-function[cancelTimer function].
+* Call the `createTimer()` function again using a reference from the existing Timer you want to cancel.
+* Call the `cancelTimer()` function. The function is `cancelTimer(callback, reference)`.
 
-== cURL
+For more information about Timers, see xref:eventing-timers.adoc[Timers].
 
 [#curl_call]
-*The curl() Function Call*: response_object = curl(method, binding, [request_object])
+=== `curl()` Function Call
 
-The curl() function provides a way of interacting with external entities via a REST endpoint from Eventing Functions using either HTTP or HTTPS.
-For more information see xref:eventing-curl-spec.adoc[curl function].
+The `curl()` function lets you interact with external entities through a REST endpoint from Eventing Functions, using either HTTP or HTTPS.
+
+For more information about the `curl()` function, see xref:eventing-curl-spec.adoc[cURL].
+
 
 [#handler-signatures]
 == Handler Signatures
 
-The Eventing Service calls the following entry points or JavaScript functions on events (mutations or fired timers).
+The Eventing Service calls the following JavaScript functions on events like mutations and fired Timers:
 
 * <<onupdate_handler,OnUpdate Handler>>
 * <<ondelete_handler,OnDelete Handler>>
@@ -480,38 +506,34 @@ The Eventing Service calls the following entry points or JavaScript functions on
 [#onupdate_handler]
 === OnUpdate Handler
 
-The *OnUpdate* handler gets called when a document is created or modified, e.g. Insert/Update. The entry point OnUpdate(doc,meta) listens to mutations (the creation or modification of documents) in the associated source Bucket.
+The `OnUpdate` handler is called when you create or modify a document using an operation like insert or update.
+The entry point `OnUpdate(doc, meta)` listens to mutations in the associated source bucket.
 
-In this handler the following limitations exist, both limitations arise due to KV engine design choices and may be revisited in the future:
+The `OnUpdate` handler has the following limitations:
 
-* If a document is modified several times in a short duration, the calls may be coalesced into a single event due to deduplication.
-* It is not possible to distinguish between a Create and an Update operation.
-
-A sample *OnUpdate* handler is displayed below:
+* If a document is modified several times in a short period of time, the handler calls might be combined into a single event due to deduplication.
+* You cannot distinguish between a Create and Update operation.
 
 [source,javascript]
 ----
 function OnUpdate(doc, meta) {
   if (doc.type === 'order' && doc.value > 5000) {
-    // ‘phonverify’ is a bucket alias or binding to a keyspace.
+    // ‘phonverify’ is a bucket alias or binding to a keyspace
     phoneverify[meta.id] = doc.customer;
   }
 }
 ----
 
-
 [#ondelete_handler]
 === OnDelete Handler
 
-The *OnDelete* handler gets called when a document is deleted or removed due to an expiry.
+The `OnDelete` handler is called when a document is deleted or removed due to expiration.
+The entry point `OnDelete(meta, options)` listens to mutations like deletions and expirations in the associated source bucket.
 
-The entry point OnDelete(meta,options) listens to mutations (deletions or expirations) in the associated source Bucket.  You can determine if the document was deleted or expired via inspecting the optional argument "options" (a JavaScript map object with a boolean property named 'expired').
+To make sure that a document has been deleted or has expired, you can inspect the optional argument `options`.
+The `options` argument is a JavaScript map object that contains the boolean property `expired`.
 
-In this handler the following limitation exists. This limitation arises due to KV engine design choices and may be revisited in the future:
-
-* it is not possible to get the value of the document that was just deleted or expired.
-
-A sample *OnDelete* handler is displayed below:
+You cannot get the value of a deleted or expired document.
 
 [source,javascript]
 ----
@@ -529,7 +551,8 @@ function OnDelete(meta,options) {
 }
 ----
 
-Note that the pre-6.6.0 argument syntax, OnDelete(meta), that lacks "options" is still fully supported, but you will not be able to differentiate deletion from expiration.
+In versions of Couchbase Server before version 6.6.0, the entry point `OnDelete(meta)` does not have `options`.
+This entry point is still supported, but using it means you are unable to differentiate deletion from expiration.
 
 [source,javascript]
 ----
@@ -541,104 +564,64 @@ function OnDelete(meta) {
 [#timer_callback_handler]
 === Timer Callback Handler
 
-Timer callbacks are user defined JavaScript functions passed as the callback argument to the built-in createTimer(callback, date, reference, context) function call.
+Timer callbacks are user-defined JavaScript functions passed as the callback argument in the built-in `createTimer(callback, date, reference, context)` function call.
 
-These handlers (JavaScript functions) are the entry points for the event when a timer (created by the specific Eventing Function) matures and fires.
-
-A sample Timer Callback Handler, the user defined JavaScript function *DocTimerCallback*, is displayed below:
+The Timer Callback handler is an entry point for the event when a timer, created by the specific Eventing Function, matures and fires.
 
 [source,javascript]
 ----
-// Timer Callback Handler (user defined entry point)
+// Timer Callback Handler (user-defined entry point)
 function DocTimerCallback(context) {
 	log("Timer fired running callback 'DocTimerCallback' with context: " + context);
 }
 
 // Insert/Update Handler or entry point
 function OnUpdate(doc, meta) {
-	// filter out docs of no interest.
+	// filter out docs of no interest
 	if (meta.id != 'make_timer:1') return;
 	// Create a Date value 60 seconds from now
-	var oneMinuteFromNow = new Date(); // Get current time & add 60 sec. to it.
+	var oneMinuteFromNow = new Date(); // Get current time & add 60 sec. to it
 	oneMinuteFromNow.setSeconds(oneMinuteFromNow.getSeconds() + 60);
-	// Create a doc to hold context to pass state to the callback function.
+	// Create a doc to hold context to pass state to the callback function
 	var context = { docId: meta.id, random_text: "arbitrary text" };
-	// Create a timer that will fire an event in the future.
+	// Create a timer that will fire an event in the future
 	log("createTimer with callback 'DocTimerCallback'");
 	createTimer(DocTimerCallback, oneMinuteFromNow, meta.id, context);
 }
 ----
 
-For more information see the <<timers_general,Timers>> section above and the detailed xref:eventing-timers.adoc[Timers] documentation.
+For more information about Timers, see xref:eventing-timers.adoc[Timers].
+
 
 == Reserved Words
 
-Reserved words are words that cannot be used in a Eventing Function as a variable name, function name, or as a property in the Eventing Function's JavaScript code. The following table lists the reserved words that you must refrain from using as they are used by the transpiler to integrate with Couchbase's query language, {sqlpp} with Eventing.
+You cannot use reserved words as variable names, function names, or JavaScript code properties in Eventing Functions.
+If you use a reserved word, the Eventing Function returns a deployment error.
+
+The following reserved words are used by the transpiler to integrate {sqlpp} with Eventing:
 
 |===
-4+| {sqlpp} Keywords
+6+|{sqlpp} Reserved Words
 
-| ALTER
-| EXECUTE
-| MERGE
-| UPDATE
+|ALTER
+|BUILD
+|CREATE
+|DELETE
+|DROP
+|EXECUTE
 
-| BUILD
-| EXPLAIN
-| PREPARE
-| UPSERT
+|EXPLAIN
+|GRANT
+|INFER
+|INSERT
+|MERGE
+|PREPARE
 
-| CREATE
-| GRANT
-| RENAME
+|RENAME
+|REVOKE
+|SELECT
+|UPDATE
+|UPSERT
 |
 
-| DELETE
-| INFER
-| REVOKE
-|
-
-| DROP
-| INSERT
-| SELECT
-|
 |===
-
-*What Happens If You Use a Reserved Word?*
-
-Let's say you try to create a new Eventing Function with JavaScript code using a reserved word for variable names, for function names, and as a property binding value. All three cases generate a deployment error.
-
-Reserved words as a variable name:
-
-[source,javascript]
-----
-function get_numip_first_3_octets(ip) {
-    var grant = 0;
-    if (ip) {
-        var parts = ip.split('.');
-    }
-}
-----
-
-Reserved words as a function name:
-
-[source,javascript]
-----
-function grant(ip) {
-    var return_val = 0;
-    if (ip) {
-        var parts = ip.split('.');
-    }
-}
-----
-
-During the Function deployment step, when the system validates the Eventing Function's JavaScript code, it displays an error message such as the following:
-
-....
-Sample Error Message - Deployment failed: Syntax error (<line and column numbers>)
-- grant is a reserved name in N1QLJs
-....
-
-Reserved words as a property bindings value:
-
-image::reserved-words-7_0.png[,642]
