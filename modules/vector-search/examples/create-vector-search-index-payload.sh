@@ -1,12 +1,11 @@
-curl -s -XPUT -H "Content-Type: application/json" \
-    -u $CB_USERNAME:$CB_PASSWORD http://$CB_HOSTNAME:8094/api/bucket/vector-sample/scope/color/index/color-index 
+curl -k -s -XPUT -H "Content-Type: application/json" \
+    -u ${CB_USERNAME}:${CB_PASSWORD} https://${CB_HOSTNAME}:18094/api/bucket/vector-sample/scope/color/index/color-index 
     -d \
   '{
     "type": "fulltext-index",
     "name": "vector-sample.color.color-index",
     "sourceType": "gocbcore",
     "sourceName": "vector-sample",
-    "sourceUUID": "789365cccdf940ee2814a5dd2752040a",
     "planParams": {
       "maxPartitionsPerPIndex": 1024,
       "indexPartitions": 1
