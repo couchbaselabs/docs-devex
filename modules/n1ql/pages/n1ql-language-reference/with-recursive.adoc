@@ -212,6 +212,47 @@ SELECT * FROM rcte;
 ----
 ====
 
+.Examples using the OPTIONS clause and the CYCLE clause to avoid infinite recursion
+====
+.Example resulting in infinite recursion
+[source,sqlpp]
+----
+WITH RECURSIVE similar_items AS (
+  SELECT p.*, 0 as lvl FROM products p WHERE p.id=1
+    UNION
+  SELECT p1.*, similar_items.lvl+1 as lvl FROM products p1,
+    similar_items WHERE p1.id IN similar_items.related_items
+)
+SELECT * FROM similar_items;
+----
+
+.Solution using the OPTIONS clause to add a level limit
+[source,sqlpp]
+----
+WITH RECURSIVE similar_items AS (
+  SELECT p.*, 0 as lvl FROM products p WHERE p.id=1
+    UNION
+  SELECT p1.*, similar_items.lvl+1 as lvl FROM products p1,
+    similar_items WHERE p1.id IN similar_items.related_items
+)
+OPTIONS {"levels:2"}
+SELECT * FROM similar_items;
+---- 
+
+.Solution using the CYCLE clause to track which fields are likely to repeat and cause a cycle
+[source,sqlpp]
+----
+WITH RECURSIVE similar_items AS (
+  SELECT p.*, 0 as lvl FROM products p WHERE p.id=1
+    UNION
+  SELECT p1.*, similar_items.lvl+1 as lvl FROM products p1,
+    similar_items WHERE p1.id IN similar_items.related_items
+)
+CYCLE id RESTRICT
+SELECT * FROM similar_items;
+---- 
+====
+
 .Example finding all possible routes leaving from the TLV airport and going to 2 other airports
 ====
 [source,sqlpp]
