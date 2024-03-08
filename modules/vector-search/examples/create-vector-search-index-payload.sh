@@ -62,19 +62,6 @@ curl -k -XPUT -H "Content-Type: application/json" \
                 }
               ]
             },
-            "colorvect_dot": {
-              "dynamic": false,
-              "enabled": true,
-              "fields": [
-                {
-                  "dims": 3,
-                  "index": true,
-                  "name": "colorvect_dot",
-                  "similarity": "dot_product",
-                  "type": "vector"
-                }
-              ]
-            },
             "colorvect_l2": {
               "dynamic": false,
               "enabled": true,
