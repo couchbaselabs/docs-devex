@@ -17,4 +17,4 @@ curl -k -XPOST -H "Content-Type: application/json" \
       "vector": [ 176,  0, 176 ]
     }
   ]
-}'
+}' | jq .
