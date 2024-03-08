@@ -124,6 +124,4 @@ curl -k -XPUT -H "Content-Type: application/json" \
     }
   },
   "sourceParams": {}
-},
-    "sourceParams": {}
-  }'
+}'
