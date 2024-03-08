@@ -12,8 +12,8 @@ curl -XPOST -H "Content-Type: application/json" \
       "knn": [
         {
           "k": 10, 
-          "field": "colorvect_dot", 
-          "vector": [ 0.707106781186548, 0, 0.707106781186548 ]
+          "field": "colorvect_l2", 
+          "vector": [ 176, 0, 176 ]
         }
       ]
     }'
