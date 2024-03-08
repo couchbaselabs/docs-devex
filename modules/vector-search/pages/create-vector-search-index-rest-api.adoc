@@ -20,8 +20,6 @@ For more information, see xref:cloud:clusters:data-service/manage-buckets.adoc[]
 
 * You have documents in a keyspace inside your bucket that contain vector embeddings. 
 
-* You have installed the Couchbase command-line tool (CLI).
-
 * You have the hostname for your database.
 +
 For more information about how to find the hostname for your Capella database, see xref:clouds:get-capella-host-name.adoc[].
@@ -31,8 +29,8 @@ For more information about how to find the hostname for your Capella database, s
 To create a Search index with the REST API and Couchbase Capella: 
 
 . In your command-line tool, enter a `curl` command with the `XPUT` verb. 
-. Set your header content to include `Content-Type: application/json`.
-. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the index you want to create: 
+. Set your header content to include `"Content-Type: application/json"`.
+. Enter your username, password, and the Search Service endpoint on port `18094` with the name of the index you want to create: 
 +
 [source,console]
 ----
@@ -47,13 +45,20 @@ For more information about how to create a Vector Search index with the UI, see 
 
 === Example
 
-In the following example, the JSON payload creates an index named `color-index` on the `vector-sample` bucket. It creates two child field mappings, `colorvect_dot` and `colorvect_l2` on two different vector fields in the documents under the `color.rgb` keyspace:
-+
+In the following example we create an Search index on the keyspace `vector-sample.color.rgb` named `color-index`. 
+The JSON payload defines: 
+
+* Two child field mappings,`colorvect_l2` and `embedding_vector_dot` on two different vectors fields (numeric arrays) in the documents.  
+
+* One traditional search index on the child field mapping `brightness` where the data is both indexed stored.
+
+* Two child field mappings, `color` and `description`, where we only store the data.
+
 [source,console]
 ----
 include::example$create-vector-search-index-payload.sh[]
 ----
-+
+
 For more information about all the available JSON properties for a Search index, see xref:search:search-index-params.adoc[].
 
 == Next Steps
