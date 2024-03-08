@@ -10,10 +10,6 @@
 * You have the Search Service enabled on a node in your database.
 For more information about how to change Services on your database, see xref:cloud:clusters:modify-database.adoc[].
 
-* Your user account has the *Search Admin* or *Search Reader* role. 
-
-* You have installed the Couchbase command-line tool (CLI).
-
 * You have the hostname for your database.
 +
 For more information about how to find the hostname for your Capella database, see xref:clouds:get-capella-host-name.adoc[].
@@ -27,29 +23,33 @@ For more information about how to create a Vector Search index, see xref:create-
 To run a Vector search with the REST API: 
 
 . In your command-line tool, enter a `curl` command with the `XPOST` verb. 
-. Set your header content to include `Content-Type: application/json`.
-. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the Vector Search index you want to query: 
+. Set your header content to include `"Content-Type: application/json"`.
+. Enter your username, password, and the Search Service endpoint on port `18094` with the name of the Vector Search index you want to query: 
 +
 [source,console]
 ----
 include::example$run-vector-search-header.sh[]
 ----
 +
-To use SSL, use the `https` protocol in the Search Service endpoint URL and port `18094`. 
 . Enter the JSON payload for your query. 
 +
 TIP: You can copy the JSON for a Query Request from the Capella UI to use in your REST API call.
 For more information about how to perform a search with the UI, see xref:search:simple-search-ui.adoc[].
 
-+
-In the following example, the JSON payload uses a hybrid Vector Search and Search query on an index named `color-index`. 
-The query searches for a specified normalized color vector, but uses the regular query parameters to limit the brightness of the returned color to the range of `70-80`:
-+
+=== Example 
+
+In the following example, the JSON payload uses both a `query` and `knn` object to run both a Vector Search and traditional Search query on an index named `color-index`.
+
+The query searches for a specified Euclidean distance color vector, but uses the `query` object to search for a color with a `brightness` value in the range of `70-80`:
+
 [source,console]
 ----
 include::example$run-vector-search-payload.sh[]
 ----
-+
+
+The Search Service combines the Vector search results from the `knn` object with the traditional `query` object by using an `OR` function. 
+If the same documents match the `knn` and `query` objects, the Search Service ranks those documents higher in search results. 
+
 For more information about the available properties for a Search query JSON payload, see xref:search:search-request-params.adoc[].
 
 == Next Steps 
