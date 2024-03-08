@@ -1,0 +1,358 @@
+= WITH RECURSIVE Clause
+:description: Use the WITH RECURSIVE clause to enable recursive referencing in common table expressions.
+:imagesdir: ../../assets/images
+:page-topic-type: reference
+:page-status: Couchbase Server 7.6
+
+[abstract]
+{description}
+
+[#purpose]
+== Purpose
+
+The common table expressions (CTEs) created by the WITH clause simplify complex queries and create temporary result sets which can be used as data sources or as expressions for queries.
+
+The WITH RECURSIVE clause is an extension of the WITH clause which enables you to create recursive queries.
+You can use recursive queries with hierarchical data, or data in a tree structure.
+In these cases, the data may have an arbitrary number of levels, and you won't know in advance how deeply you need to traverse the data.
+
+The CTE for a recursive query includes a UNION or UNION ALL xref:n1ql:n1ql-language-reference/union.adoc[set operator]. 
+
+* The left arm of UNION/UNION ALL contains an anchor clause, which is non-recursive. 
+The anchor clause produces an initial set of documents as an intermediate result set for the CTE keyspace.
+
+* The right arm of UNION/UNION ALL contains the recursive clause.
+The recursive clause produces a new set of documents.
+
+The recursive clause is executed again, with the CTE keyspace now referring to the result produced by the initial recursive clause.
+This process repeats until it results in an empty intermediate result set.
+The intermediate result sets are appended to produce a final output.
+
+[#syntax]
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=with-recursive-clause]
+----
+
+image::n1ql-language-reference/with-recursive-clause.png["Syntax diagram", align=left]
+
+[[recursive-select]]
+=== Recursive SELECT
+----
+include::partial$grammar/dql.ebnf[tag=recursive-select]
+----
+
+image::n1ql-language-reference/recursive-select.png["Syntax diagram", align=left]
+
+The definition for a recursive CTE must be a SELECT statement that includes a UNION or UNION ALL set operator.
+If it isn't, the CTE is treated as a non-recursive CTE.
+
+anchor-select::
+A xref:n1ql:n1ql-language-reference/select-syntax.adoc[SELECT query] that represents the anchor clause of the CTE.
+
+recursive-select-term::
+A xref:n1ql:n1ql-language-reference/select-syntax.adoc#select-term[select term] that represents the recursive clause of the CTE.
+
+[[cycle-clause]]
+=== CYCLE Clause
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=cycle-clause]
+----
+
+image::n1ql-language-reference/cycle-clause.png["Syntax diagram", align=left]
+
+The optional CYCLE clause provides one method for avoiding infinite recursions.
+It enables you to specify one or more fields whose values are likely to repeat.
+
+expr::
+(Required) An identifier representing a field.
+
+[[options-clause]]
+=== OPTIONS Clause
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=options-clause]
+----
+
+image::n1ql-language-reference/options-clause.png["Syntax diagram", align=left]
+
+The optional OPTIONS clause provides another method for avoiding infinite recursions.
+It enables you to specify that the recursion should exit after a specified level, or after accumulating a specified number of documents.
+
+expr::
+(Required) An object with the following properties.
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**levels** +
+__optional__
+|Recursion should exit after reaching this level.
+This assumes the anchor is at level 0.
+|Integer
+
+|**documents** +
+__optional__
+|Recursion should exit after accumulating this many documents.
+|Integer
+|===
+
+[#limitations]
+== Limitations
+
+* The recursive reference is only allowed once in the FROM clause.
+It's not allowed anywhere else.
+
+* ORDER BY, LIMIT, and OFFSET clauses are not allowed in the SELECT statement in the subquery used to define the anchor and the recursive clause.
+
+* The DISTINCT quantifier is not allowed in anchor and recursive clauses.
+
+* GROUP BY, WINDOW, and AGGREGATE functions are not allowed in recursive clauses.
+
+* OUTER JOINS are not allowed in recursive clauses because they can lead to potential infinite recursion.
+
+* Recursive clauses do not support NEST and UNNEST clauses.
+
+* If there is no UNION/UNION ALL separation for the recursive CTE, the query defaults to a normal CTE.
+
+* A syntax error is returned when optional subclauses are used without the RECURSIVE keyword.
+
+* In general, recursion is also limited by:
+** The logic in the recursive statement.
+** The stop in the options argument.
+** Breaching the request timeout, if configured.
+** Breaching the request memory quota, if configured.
+** Exceeding the implicit document limit (10000) when a memory quota is not in use and when no explicit document limit is set in the options.
+** Exceeding the implicit level limit (1000) when the level option is not in use.
+
+[#examples_section]
+== Examples
+
+The following examples follow linear recursion.
+Only one recursive reference is allowed in the FROM clause.
+Self-joins or set-ops are not allowed in the recursive reference.
+
+.Example of simple recursive referencing
+====
+[source,sqlpp]
+----
+WITH RECURSIVE cte AS (
+    SELECT 1 AS r 
+        UNION 
+    SELECT cte.r+1 AS r 
+    FROM cte 
+    WHERE cte.r<4 
+) 
+SELECT cte.r FROM cte;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "r": 1
+  },
+  {
+    "r": 2
+  },
+  {
+    "r": 3
+  },
+  {
+    "r": 4
+  }
+]
+----
+====
+
+.Example combining recursive and non-recursive CTEs with the WITH clause
+====
+[source,sqlpp]
+----
+WITH RECURSIVE cte AS (SELECT 1 r) ,
+    rcte AS ( 
+        SELECT cte.r FROM cte 
+            UNION 
+        SELECT rcte.r+2 r FROM rcte WHERE rcte.r<7
+    )
+SELECT * FROM rcte;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "rcte": {
+      "r": 1
+    }
+  },
+  {
+    "rcte": {
+      "r": 3
+    }
+  },
+  {
+    "rcte": {
+      "r": 5
+    }
+  },
+  {
+    "rcte": {
+      "r": 7
+    }
+  }
+]
+----
+====
+
+.Examples using the OPTIONS clause and the CYCLE clause to avoid infinite recursion
+====
+.Example resulting in infinite recursion
+[source,sqlpp]
+----
+WITH RECURSIVE similar_items AS (
+  SELECT p.*, 0 as lvl FROM products p WHERE p.id=1
+    UNION
+  SELECT p1.*, similar_items.lvl+1 as lvl FROM products p1,
+    similar_items WHERE p1.id IN similar_items.related_items
+)
+SELECT * FROM similar_items;
+----
+
+.Solution using the OPTIONS clause to add a level limit
+[source,sqlpp]
+----
+WITH RECURSIVE similar_items AS (
+  SELECT p.*, 0 as lvl FROM products p WHERE p.id=1
+    UNION
+  SELECT p1.*, similar_items.lvl+1 as lvl FROM products p1,
+    similar_items WHERE p1.id IN similar_items.related_items
+)
+OPTIONS {"levels:2"}
+SELECT * FROM similar_items;
+---- 
+
+.Solution using the CYCLE clause to track which fields are likely to repeat and cause a cycle
+[source,sqlpp]
+----
+WITH RECURSIVE similar_items AS (
+  SELECT p.*, 0 as lvl FROM products p WHERE p.id=1
+    UNION
+  SELECT p1.*, similar_items.lvl+1 as lvl FROM products p1,
+    similar_items WHERE p1.id IN similar_items.related_items
+)
+CYCLE id RESTRICT
+SELECT * FROM similar_items;
+---- 
+====
+
+.Example finding all possible routes leaving from the TLV airport and going to 2 other airports
+====
+[source,sqlpp]
+----
+CREATE INDEX srcdestidx ON travel-sample.inventory.route( sourceairport, destinationairport );
+
+WITH RECURSIVE recroute AS (
+    SELECT sourceairport, destinationairport, 0 as depth,
+    [ sourceairport, destinationairport ] as route
+    FROM `travel-sample`.inventory.route 
+    WHERE sourceairport="TLV"
+        UNION
+    SELECT r.sourceairport, r.destinationairport, 
+    ARRAY_APPEND ( recroute.route, r.destinationairport ) as route,
+        recroute.depth+1 as depth
+    FROM `travel-sample`.inventory.route r JOIN recroute ON 
+        recroute.destinationairport = r.sourceairport
+    WHERE r.sourceairport!="TLV" and recroute.depth<2 
+)
+SELECT * FROM recroute LIMIT 2000;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "BSL",
+      "route": [
+        "TLV",
+        "BSL"
+      ],
+      "sourceairport": "TLV"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 0,
+      "destinationairport": "CDG",
+      "route": [
+        "TLV",
+        "CDG"
+      ],
+      "sourceairport": "TLV"
+    }
+  },
+// ...
+  {
+    "recroute": {
+      "depth": 1,
+      "destinationairport": "AGP",
+      "route": [
+        "TLV",
+        "BSL",
+        "AGP"
+      ],
+      "sourceairport": "BSL"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 1,
+      "destinationairport": "AJA",
+      "route": [
+        "TLV",
+        "BSL",
+        "AJA"
+      ],
+      "sourceairport": "BSL"
+    },
+// ...
+  {
+    "recroute": {
+      "depth": 2,
+      "destinationairport": "BFS",
+      "route": [
+        "TLV",
+        "BSL",
+        "AGP",
+        "BFS"
+      ],
+      "sourceairport": "AGP"
+    }
+  },
+  {
+    "recroute": {
+      "depth": 2,
+      "destinationairport": "BHD",
+      "route": [
+        "TLV",
+        "BSL",
+        "AGP",
+        "BHD"
+      ],
+      "sourceairport": "AGP"
+    }
+  },
+// ...
+]
+----
+====
