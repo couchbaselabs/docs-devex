@@ -12,7 +12,7 @@ include::partial$n1ql-language-reference/horizontal-style.adoc[]
 == Purpose
 
 Use the GROUP BY clause to arrange aggregate values into groups of one or more fields.
-This `GROUP BY` clause follows the `WHERE` clause and precedes the optional `LETTING`, `HAVING`, and `ORDER BY` clauses.
+This `GROUP BY` clause follows the `WHERE` clause and can contain the optional `GROUP AS`, `LETTING`, and `HAVING` clauses.
 
 == Syntax
 
@@ -25,6 +25,7 @@ image::n1ql-language-reference/group-by-clause.png["Syntax diagram", align=left]
 
 [horizontal.compact]
 group-term:: <<group-term>> icon:caret-down[]
+group-as-clause:: <<group-as>> icon:caret-down[]
 letting-clause:: <<letting-clause>> icon:caret-down[]
 having-clause:: <<having-clause>> icon:caret-down[]
 
@@ -48,6 +49,51 @@ For details, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS C
 
 Assigning an alias to the group term is optional.
 If you assign an alias, the `AS` keyword may be omitted.
+
+[[group-as]]
+=== GROUP AS Clause
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=group-as-clause]
+----
+
+image::n1ql-language-reference/group-as-clause.png["Syntax diagram", align=left]
+
+JSON is a hierarchical format, and a fully featured JSON query language needs to be able to produce hierarchies of its own, with computed data at every level of the hierarchy. 
+The key feature of SQL{pp} that makes this possible is the `GROUP AS` clause.
+
+A query can include a `GROUP AS` clause only if it has a `GROUP BY` clause. 
+The effect of a `GROUP BY` clause is to hide the original objects in each group, exposing only the grouping expressions and special aggregation functions on the non-grouping fields. 
+The purpose of the `GROUP AS` clause is to make the original objects in the group visible to subsequent clauses. 
+As a result, the query can generate output data both for the group as a whole and for the individual objects inside the group.
+
+For each group, `GROUP AS` preserves all of the objects in the group, as they were before grouping, in an array. 
+The name of the array is the alias in the GROUP AS clause. 
+You can then use the array name in the `FROM` clause of a subquery to process and return the individual objects in the group.
+
+In the `GROUP AS` array, each object is wrapped in an outer object that gives it the name of the alias specified in the `FROM` clause, or its implicit alias if no alias was specified.
+Identifying the objects with their aliases in this way helps avoid ambiguity.
+
+For example, a query has a `FROM` clause of `FROM airline as a, route as r`, and a `GROUP AS` clause of `GROUP AS g`. 
+The result of the `GROUP AS` clause is an array of objects, each of which contains both an airline object and a route object.
+These objects might contain field names that are the same, such as `"id"`. 
+The resulting array `g` identifies each of the objects it contains separately with its alias, as follows:
+
+[source,json]
+----
+[
+	{
+		"a": { an original airline object },
+		"r": { an original route object }
+	},
+	{
+		"a": { an original airline object },
+		"r": { an original route object }
+	},
+	...
+]
+----
 
 [[letting-clause]]
 === LETTING Clause
@@ -104,6 +150,34 @@ include::example$select/group-by.n1ql[]
 [source,json]
 ----
 include::example$select/group-by.jsonc[]
+----
+====
+
+.Group airlines by country and also list all airlines for each country
+====
+[source,sqlpp]
+----
+include::example$select/group-as.n1ql[]
+----
+
+.Results
+[source,json]
+----
+include::example$select/group-as.jsonc[]
+----
+====
+
+.Group airlines by country and also list the name and id of two airlines from each country
+====
+[source,sqlpp]
+----
+include::example$select/group-as-subclause.n1ql[]
+----
+
+.Results
+[source,json]
+----
+include::example$select/group-as-subclause.jsonc[]
 ----
 ====
 
