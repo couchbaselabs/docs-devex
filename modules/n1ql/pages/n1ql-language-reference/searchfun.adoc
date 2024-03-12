@@ -51,6 +51,10 @@ The Search Service then creates a temporary index in memory to perform the searc
 This process may be slower than using a suitable Search index.
 --
 
+NOTE: From Couchbase Server 7.6 and later, when you use the SEARCH function, you do not need to use the xref:search:default-analyzers-reference.adoc#keyword[keyword analyzer] in your Search index to run a non-analytic query. 
+You also do not need to match the analyzer in a query to the analyzer in the Search index for an analytic query. 
+For more information about how to set the analyzer for a Search index, see xref:search:set-advanced-settings.adoc[] or the xref:search:search-index-params.adoc#mapping[Mapping Object].
+
 === Arguments
 
 identifier::
@@ -141,7 +145,7 @@ For more information, refer to xref:search:customize-index.adoc[].
 | `indexUUID`
 [Optional]
 | string
-| A string, containing the UUID of a Search index in the keyspace.
+| A string, containing the xref:search:search-index-params.adoc#uuid[UUID] of a Search index in the keyspace.
 This provides an index hint to the Query engine.
 If the Search index cannot be identified, an error occurs.
 
@@ -149,8 +153,10 @@ You can use the `indexUUID` field alongside the `index` field to help identify a
 The `indexUUID` field and the `index` field must both identify the same Search index.
 If they identify different Search indexes, or if either of them does not identify a Search index, an error occurs.
 
-You can find the UUID of a Search index by viewing the index definition.
-You can do this using the xref:fts:fts-creating-indexes.adoc#using-the-index-definition-preview[Index Definition Preview] in the Query Workbench, or the xref:rest-api:rest-fts-indexing.adoc[Index Definition] endpoints provided by the Full Text Search REST API.
+View the UUID for an existing index from the Couchbase Server Web Console by selecting an existing index, and clicking btn:[Edit Index]. 
+The UUID displays in the Index Definition Preview on the Edit Index page. 
+
+You can also use the xref:rest-api:rest-fts-indexing.adoc[Index Definition] endpoints provided by the Search REST API.
 
 | `out`
 [Optional]
@@ -368,8 +374,8 @@ WHERE t1.type = "hotel" AND SEARCH(t1.description, "amazing");
 If the Full Text Search index being queried has its default mapping disabled and has a custom type mapping defined, the query needs to specify the type explicitly.
 The above query uses the demonstration index xref:fts:fts-demonstration-indexes.adoc#travel-sample-index-hotel-description[travel-sample-index-hotel-description], which has the custom type mapping "hotel".
 
-For more information on defining custom type mappings within the Full Text Search index, refer to xref:search:create-type-mapping.adoc[].
-Note that for {sqlpp} queries, only Full Text Search indexes with one type mapping are searchable.
+For more information about defining custom type mappings within a Search index, refer to xref:search:create-type-mapping.adoc[Create a Type Mapping].
+Note that for {sqlpp} queries, only Search indexes with one type mapping are searchable.
 Also the supported type identifiers at the moment are "type_field" and "docid_prefix"; "docid_regexp" isn't supported yet for SEARCH queries via {sqlpp}.
 ====
 
