@@ -500,6 +500,8 @@ Analytic queries use an analyzer to analyze the contents of your Search query, a
 
 For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the Capella UI].
 
+NOTE: From Couchbase Server 7.6 and later, when you run a Search query with the xref:n1ql:n1ql-language-reference/searchfun.adoc[{sqlpp} Search Function], the analyzer used in your Analytic query does not need to match the analyzer used in the Search index.
+
 [cols="1,1,4,4"]
 |====
 |Property |Type |Description |Examples
@@ -552,6 +554,8 @@ include::example$query-analytic.jsonc[tag=match_phrase]
 Use Non-Analytic queries to run a search query without using an analyzer on the contents of your Search query. 
 
 For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the Capella UI].
+
+NOTE: From Couchbase Server 7.6 and later, when you run a Search query with the xref:n1ql:n1ql-language-reference/searchfun.adoc[{sqlpp} Search Function], you do not need to use the xref:default-analyzers-reference.adoc#keyword[keyword analyzer] in your Search index to run a non-analytic query.
 
 [cols="1,1,4,4"]
 |====
@@ -835,6 +839,35 @@ a| Set whether the Search Service should return documents that contain the exact
 If you set `inclusive_max` to `false`, only terms that would occur before `max` in the dictionary count as a match to your Search query. 
 
 If you do not set the `inclusive_max` value, by default, `max` is exclusive to the range.
+
+|====
+
+=== IP Address Range Queries
+
+Use an IP Address Range query to search for IP address data in your Search index.
+
+You can use IPv4 or IPv6 CIDR syntax in your query. 
+
+For example, the following query searches for any IP addresses in the range `2.7.13.141/32` and `2001:4860:4860::8888/24`: 
+
+[source,json]
+----
+include::example$query-ip-range.jsonc[]
+----
+
+NOTE: If your IP range includes over 1024 IP addresses, you must update the `bleveMaxResultWindow` setting to accommodate your results.
+For more information about how to change this setting, see xref:server:fts:fts-advanced-settings-bleveMaxResultWindow.adoc[].
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|cidr
+|String Containing An IPv4 or IPv6 IP Address
+|Yes
+a| Enter an IP address range or single IP address, in IPv4 or IPv6 CIDR notation. 
+
+The Search Service returns documents with IP addresses that fall inside the specified range or match the specified IP address.
 
 |====
 
@@ -1666,7 +1699,9 @@ include::example$query-special.jsonc[tag=match_all]
 
 | [[match_none]]match_none
 | Object
-| Use the `match_none` object as the only property in your `query` object to return no documents from the Search index in search results.
+a| Use the `match_none` object as the only property in your `query` object to return no documents from the Search index in search results.
+
+If you're using the <<knn,knn object>>, the `match_none` object returns only matches to the Vector Search query inside the `knn` object. 
 a|
 .Return no documents from the Search index
 [source,json]
