@@ -30,7 +30,7 @@ A placeholder parameter may be a _named parameter_ or a _positional parameter_.
 
 * To add a named parameter to a query, enter a dollar sign `$` or an at sign `@` followed by the parameter name.
 
-* To add a positional parameter to a query, either enter a dollar sign `$` followed by the number of the parameter, or enter a question mark `?`.
+* To add a positional parameter to a query, enter a dollar sign `$` or an at sign `@` followed by the number of the parameter, or enter a question mark `?`.
 
 The following example includes two named parameters.
 
@@ -87,15 +87,27 @@ To run a query containing placeholder parameters, you must supply values for the
 {sqlpp}::
 +
 --
-To supply values for placeholder parameters:
-
 ifdef::flag-devex-command-line[]
-* If you are using the cbq shell, use the `\SET` command to set the parameters, then run the statement.
+To supply values for placeholder parameters using the cbq shell:
+
+* Use the `\SET` command to set the parameters before running the statement.
+* Use the `-args` parameter to specify positional parameters.
+* Use `-$` or `-@` followed by a parameter name to specify named parameters.
 endif::flag-devex-command-line[]
 
-* If you are using the {sqlpp} REST API, specify the parameters in the request body or the query URI, alongside the statement.
+ifdef::flag-devex-rest-api[]
+To supply values for placeholder parameters using the {sqlpp} REST API:
 
-* If you are using the Query tab, click *Query Options* to display the Query Options window and set the parameters, then run the statement.
+* Specify the parameters in the request body or the query URI, alongside the statement.
+* Use the `args` parameter to specify positional parameters.
+* Use `$` or `@` followed by a parameter name to specify named parameters.
+endif::flag-devex-rest-api[]
+
+To supply values for placeholder parameters using the Query tab:
+
+* Click *Query Options* to display the Query Options window before running the statement.
+* Use the *Positional Parameters* options to specify positional parameters.
+* Use the *Named Parameters* options to specify named parameters.
 
 TIP: When you are executing a prepared statement, the `EXECUTE` statement provides another, easier way to supply parameter values.
 Refer to <<execute>> below.
@@ -137,9 +149,6 @@ include::server:settings:example$param-names.n1ql[tag=statement]
 ----
 
 ifdef::flag-devex-settings[]
-<1> In the cbq shell, parameter names must be prefixed by a hyphen.
-<2> In the cbq shell, the REST API, or the Query Workbench, named parameters must begin with a dollar sign `$` or an at sign `@`.
-
 For more information and examples, refer to xref:settings:query-settings.adoc[Settings and Parameters].
 endif::flag-devex-settings[]
 --
@@ -530,8 +539,10 @@ Overview:
 
 Reference:
 
-* xref:manage:monitor/monitoring-n1ql-query.adoc#sys-prepared[Monitoring Prepared Statements]
+* xref:server:manage:monitor/monitoring-n1ql-query.adoc#sys-prepared[Monitoring Prepared Statements]
+ifdef::flag-devex-rest-api[]
 * xref:n1ql:n1ql-rest-api/admin.adoc#_prepared_statements_resource[{sqlpp} Admin REST API for Prepared Statements]
+endif::flag-devex-rest-api[]
 
 Querying with SDKs:
 
