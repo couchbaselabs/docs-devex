@@ -71,7 +71,7 @@ The dual catalog has been added for evaluating constant expressions.
 It contains a single entry with no attributes.
 
 [#querying-datastores]
-== Querying Datastores
+== Query Datastores
 
 You can query datastores using the `system:datastores` keyspace as follows:
 
@@ -80,14 +80,25 @@ You can query datastores using the `system:datastores` keyspace as follows:
 SELECT * FROM system:datastores
 ----
 
-The query returns the following attributes:
+This catalog contains the following attributes:
 
-[horizontal]
-`id`:: (string) ID of the datastore
-`url`:: (string) URL of the datastore instance
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**id** +
+__required__
+|ID of the datastore.
+|String
+
+|**url** +
+__required__
+|URL of the datastore instance.
+|String
+|===
 
 [#querying-namespaces]
-== Querying Namespaces
+== Query Namespaces
 
 You can query namespaces using the `system:namespaces` keyspace as follows:
 
@@ -96,15 +107,30 @@ You can query namespaces using the `system:namespaces` keyspace as follows:
 SELECT * FROM system:namespaces
 ----
 
-The query returns the following attributes:
+This catalog contains the following attributes:
 
-[horizontal]
-`id`:: (string) ID of the namespace
-`name`:: (string) Name of the namespace
-`datastore_id`:: (string) ID of the datastore to which the namespace belongs
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**id** +
+__required__
+|ID of the namespace.
+|String
+
+|**name** +
+__required__
+|Name of the namespace.
+|String
+
+|**datastore_id** +
+__required__
+|ID of the datastore to which the namespace belongs.
+|String
+|===
 
 [#querying-buckets]
-== Querying Buckets
+== Query Buckets
 
 You can query buckets using the `system:buckets` keyspace as follows:
 
@@ -113,17 +139,40 @@ You can query buckets using the `system:buckets` keyspace as follows:
 SELECT * FROM system:buckets
 ----
 
-The query returns the following attributes:
+This catalog contains the following attributes:
 
-[horizontal]
-`datastore_id`:: (string) ID of the datastore to which the bucket belongs
-`name`:: (string) Name of the bucket
-`namespace`:: (string) Namespace to which the bucket belongs
-`namespace_id`:: (string) ID of the namespace to which the bucket belongs
-`path`:: (string) Path of the bucket
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**datastore_id** +
+__required__
+|ID of the datastore to which the bucket belongs.
+|String
+
+|**name** +
+__required__
+|Name of the bucket.
+|String
+
+|**namespace** +
+__required__
+|Namespace to which the bucket belongs.
+|String
+
+|**namespace_id** +
+__required__
+|ID of the namespace to which the bucket belongs.
+|String
+
+|**path** +
+__required__
+|Path of the bucket.
+|String
+|===
 
 [#querying-scopes]
-== Querying Scopes
+== Query Scopes
 
 You can query scopes using the `system:scopes` keyspace as follows:
 
@@ -132,21 +181,48 @@ You can query scopes using the `system:scopes` keyspace as follows:
 SELECT * FROM system:scopes
 ----
 
-The query returns the following attributes:
+This catalog contains the following attributes:
 
-[horizontal]
-`bucket`:: (string) Bucket to which the scope belongs
-`datastore_id`:: (string) ID of the datastore to which the scope belongs
-`name`:: (string) Name of the scope
-`namespace`:: (string) Namespace to which the scope belongs
-`namespace_id`:: (string) ID of the namespace to which the scope belongs
-`path`:: (string) Path of the scope
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**bucket** +
+__required__
+|Bucket to which the scope belongs.
+|String
+
+|**datastore_id** +
+__required__
+|ID of the datastore to which the scope belongs.
+|String
+
+|**name** +
+__required__
+|Name of the scope.
+|String
+
+|**namespace** +
+__required__
+|Namespace to which the scope belongs.
+|String
+
+|**namespace_id** +
+__required__
+|ID of the namespace to which the scope belongs.
+|String
+
+|**path** +
+__required__
+|Path of the scope.
+|String
+|===
 
 NOTE: Querying `system:scopes` only returns named scopes -- that is, non-default scopes.
 To return all scopes, including the default scopes, you can query `system:all_scopes`.
 
 [#querying-keyspaces]
-== Querying Collections
+== Query Collections
 
 You can query collections using the `system:keyspaces` keyspace as follows:
 
@@ -155,33 +231,72 @@ You can query collections using the `system:keyspaces` keyspace as follows:
 SELECT * FROM system:keyspaces
 ----
 
-For the default collection in the default scope, the query returns the following attributes:
+This catalog contains the following attributes:
 
-[horizontal]
-`datastore_id`:: (string) ID of the datastore to which the keyspace belongs
-`id`:: (string) ID of the bucket to which the keyspace belongs
-`name`:: (string) Bucket to which the keyspace belongs
-`namespace`:: (string) Namespace to which the keyspace belongs
-`namespace_id`:: (string) ID of the namespace to which the keyspace belongs
-`path`:: (string) Path of the keyspace
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
 
-For a named, non-default collection, the query returns the following attributes:
+|**bucket** +
+__optional__
+|For a named, non-default collection:
+Bucket to which the keyspace belongs.
+|String
 
-[horizontal]
-`bucket`:: (string) Bucket to which the keyspace belongs
-`datastore_id`:: (string) ID of the datastore to which the keyspace belongs
-`id`:: (string) ID of the keyspace
-`name`:: (string) Name of the keyspace
-`namespace`:: (string) Namespace to which the keyspace belongs
-`namespace_id`:: (string) ID of the namespace to which the keyspace belongs
-`path`:: (string) Path of the keyspace
-`scope`:: (string) Scope to which the keyspace belongs
+|**datastore_id** +
+__required__
+|ID of the datastore to which the keyspace belongs.
+|String
+
+|**id** +
+__required__
+|For the default collection in the default scope:
+ID of the bucket to which the keyspace belongs.
+
+'''
+
+For a named, non-default collection:
+ID of the keyspace.
+|String
+
+|**name** +
+__required__
+|For the default collection in the default scope:
+Bucket to which the keyspace belongs.
+
+'''
+
+For a named, non-default collection:
+Name of the keyspace.
+|String
+
+|**namespace** +
+__required__
+|Namespace to which the keyspace belongs.
+|String
+
+|**namespace_id** +
+__required__
+|ID of the namespace to which the keyspace belongs.
+|String
+
+|**path** +
+__required__
+|Path of the keyspace.
+|String
+
+|**scope** +
+__optional__
+|For a named, non-default collection:
+Scope to which the keyspace belongs.
+|String
+|===
 
 NOTE: Querying `system:keyspaces` only returns non-system keyspaces.
 To return all keyspaces, including the system keyspaces, you can query `system:all_keyspaces`.
 
 [#querying-indexes]
-== Querying Indexes
+== Query Indexes
 
 You can query indexes using the `system:indexes` keyspace as follows:
 
@@ -190,40 +305,123 @@ You can query indexes using the `system:indexes` keyspace as follows:
 SELECT * FROM system:indexes
 ----
 
-For an index on the default collection in the default scope, the query returns the following attributes:
+This catalog contains the following attributes:
 
-[horizontal]
-`condition`:: (string) Index filter, if present
-`datastore_id`:: (string) ID of the datastore to which the index belongs
-`id`:: (string) ID of the index
-`index_key`:: (array of strings) List of index keys
-`is_primary`:: (boolean) True if the index is a primary index
-`keyspace_id`:: (string) ID of the bucket to which the index belongs
-`name`:: (string) Name of the index
-`namespace_id`:: (string) ID of the namespace to which the index belongs
-`state`:: (string) State of index, for example, online
-`using`:: (string) Type of index, for example, gsi
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
 
-For an index on a named, non-default collection, the query returns the following attributes:
+|**bucket_id** +
+__optional__
+|For an index on a named, non-default collection:
+ID of the bucket to which the index belongs.
+|String
 
-[horizontal]
-`bucket_id`:: (string) ID of the bucket to which the index belongs
-`condition`:: (string) Index filter, if present
-`datastore_id`:: (string) ID of the datastore to which the index belongs
-`id`:: (string) ID of the index
-`index_key`:: (array of strings) List of index keys
-`is_primary`:: (boolean) True if the index is a primary index
-`keyspace_id`:: (string) ID of the keyspace to which the index belongs
-`name`:: (string) Name of the index
-`namespace_id`:: (string) ID of the namespace to which the index belongs
-`state`:: (string) State of index, for example, online
-`using`:: (string) Type of index, for example, gsi
+|**condition** +
+__optional__
+|Index filter, if present.
+|String
+
+|**datastore_id** +
+__required__
+|ID of the datastore to which the index belongs.
+|String
+
+|**id** +
+__required__
+|ID of the index.
+|String
+
+|**index_key** +
+__required__
+|List of index keys.
+|String array
+
+|**is_primary** +
+__required__
+|True if the index is a primary index.
+|Boolean
+
+|**keyspace_id** +
+__required__
+|For an index on the default collection in the default scope:
+ID of the bucket to which the index belongs.
+
+'''
+
+For an index on a named, non-default collection:
+ID of the keyspace to which the index belongs.
+|String
+
+|**name** +
+__required__
+|Name of the index.
+|String
+
+|**metadata** +
+__required__
+|Metadata for the index.
+|<<metadata,Metadata>> object
+
+|**namespace_id** +
+__required__
+|ID of the namespace to which the index belongs.
+|String
+
+|**state** +
+__required__
+|State of index.
+
+*Example*: `online`
+|String
+
+|**using** +
+__required__
+|Type of index.
+
+*Example*: `gsi`
+|String
+|===
+
+[[metadata]]
+**Metadata**
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**last_scan_time** +
+__required__
+|The last scan timestamp of the index.
+|String
+
+|**num_replica** +
+__required__
+|The index replica count.
+|String
+
+|**stats** +
+__required__
+|Statistics for the index.
+|<<stats,Stats>> object
+|===
+
+[[stats]]
+**Stats**
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**last_known_scan_time** +
+__required__
+|The index last scan time from the indexer, in UNIX Epoch format.
+|Number
+|===
 
 NOTE: Querying `system:indexes` only returns indexes on non-system keyspaces.
 To return all indexes, including indexes on system keyspaces, you can query `system:all_indexes`.
 
 [#querying-dual]
-== Querying Dual
+== Query Dual
 
 You can use dual to evaluate constant expressions.
 
