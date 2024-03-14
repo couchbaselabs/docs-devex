@@ -109,13 +109,13 @@ These operations are accessible through the returned iterable handle.
 {sqlpp} Query results, through the SELECT operation, are streamed in batches to the iterable handle as the iteration progresses through the result set.
 
 NOTE: To avoid recursion, an Eventing Function can listen for mutations in a bucket. 
-{sqlpp} DML statement canot manipulate documents in that same bucket.
+{sqlpp} DML statements canot manipulate documents in that same bucket.
 To work around this, you can use the exposed data service KV map in your Eventing Function.
 
-The following Function has a feed boundary of "Everything", which means the same {sqlpp} statement is executed 7,303 times.
-To execute only one query, you can configure your feed boundary to be "From now" and to mutate only one document in the keyspace `beer-sample`.`_default`.`_default`.
+The following Function has a feed boundary of *Everything*, which means the same {sqlpp} statement is executed 7,303 times.
+To execute only one query, you can configure your feed boundary to be *From now* and to mutate only one document in the keyspace `beer-sample`.`_default`.`_default`.
 
-You can also make sure you have an optimal index, which improves query performance by 24 times.
+You can also use an optimal index, which makes your query performance 24 times faster.
 
 [source,javascript]
 ----
@@ -152,7 +152,7 @@ To use a JavaScript variable in a query statement, you must use `$<variable>`.
 This parameter is substituted in the query by the corresponding JavaScript variable's runtime value.
 
 You cannot use the `meta.id` expression in the query statement. 
-Instead, you can use `var id = meta.id` in a {sqlpp} query.
+Instead, you must use `var id = meta.id`.
 
 The following is a valid statement:
 [source, sqlpp]
@@ -188,7 +188,7 @@ SELECT * FROM beersample._default._default WHERE type ...
 In multiline {sqlpp} statements, you cannot use single line `// end of line comments` before the semicolon at the end of the statement. 
 This causes syntax errors in the transformation and compilation of the {sqlpp} statement.
 
-To include comments in multiline statements, use `/* this format */`.
+To include comments in multiline statements, use `/* this format */` instead.
 
 
 [#unsupported-lang-features]
@@ -289,15 +289,15 @@ The `N1QL()` function contains the following parameters:
 |The identified {sqlpp} statement. 
 This is passed to {sqlpp} through SDK to run as a prepared statement.
 
-All of the JavaScript variables referenced in the statement using the `$variable` notation are treated as named parameters.
+All of the JavaScript variables referenced in the statement using the `$<variable>` notation are treated as named parameters.
 
 |`params`
 a|Can be a JavaScript array or a JavaScript map object.
 
-`params` is a JavaScript array when the {sqlpp} statement executes positional parameters.
+* `params` is a JavaScript array when the {sqlpp} statement executes positional parameters.
 This array corresponds to the values bound to the positional parameters.
 
-`params` is a JavaScript map object when the {sqlpp} statement executes named parameters.
+* `params` is a JavaScript map object when the {sqlpp} statement executes named parameters.
 This map object provides the name-value pairs that correspond to the variables used by the {sqlpp} statement.
 
 You cannot mix positional and named parameters.
@@ -347,13 +347,13 @@ Example of an iterator using a named `params` map object:
 ----
 
 |`options`
-|A JSON object that has various query runtime options as keys.
+a|A JSON object that has various query runtime options as keys.
 The following settings are available:
 
-`isPrepared` determines if the statement is prepared.
+* `isPrepared` determines if the statement is prepared.
 This setting defaults to `false`, but you can change it to `true` to increase the performance of any {sqlpp} query.
 
-`consistency` determines the consistency level for the statement.
+* `consistency` determines the consistency level for the statement.
 This setting defaults to the consistency level specified in your Eventing Function settings, but you can change it on any individual statement.
 Valid values are `none` and `request`.
 
@@ -424,13 +424,19 @@ For more information about {sqlpp} Analytics, see xref:server:analytics:1_intro.
 [#crc64_call]
 === `crc64()` Function Call
 
-The `crc64()` function calculates the CRC64 hash of an object using the ISO polynomial.
+The `crc64()` function:
 
-The function takes the object to checksum as its only parameter.
+* Calculates the CRC64 hash of an object using the ISO polynomial
+* Suppresses double mutations
+
+The `crc64()` function takes the object to checksum as its only parameter.
 The parameter can be any JavaScript object that can be encoded to JSON.
 
 The function returns the hash as a string. 
 The hash is sensitive to the order of the parameters in case of map objects.
+
+If multiple Eventing Functions share the same `crc64` checksum documents as the Sync Gateway, real mutations can be suppressed and missed.
+To prevent this from happening, you can make the checksum documents unique to each Eventing Function.
 
 [source,javascript]
 ----
@@ -440,12 +446,11 @@ function OnUpdate(doc, meta) {
 }
 ----
 
+You can also use the `crc64` function to suppress a double mutation.
 A double mutation can happen when the Sync Gateway and the Eventing Function leverage the same bucket.
 
 The Sync Gateway updates the metadata of the document inside the bucket and generates an event for the Eventing Function to process.
 The Eventing Function cannot differentiate between events from the Sync Gateway and events from SDKs, {sqlpp}, and other sources.
-
-To suppress a double mutation, use the `crc64` function.
 
 [source,javascript]
 ----
@@ -463,28 +468,25 @@ function OnUpdate(doc, meta) {
 }
 ----
 
-If multiple Eventing Functions share the same `crc64` checksum documents as the Sync Gateway, real mutations can be suppressed and missed.
-To prevent this from happening, you can make the checksum documents unique to each Eventing Function.
 
 [#timers_general]
 === `createTimer()` and `cancelTimer()` Function Calls
 
 Timers are asynchronous compute.
-They provide Eventing Functions with the ability to execute in reference to wall-clock events.
+They allow Eventing Functions to execute in reference to wall-clock events.
 
 [#createtimer_call]
-To create a Timer, call the `createTimer()` function.
-The function call is `createTimer(callback, date, reference, context)`.
+To create a Timer, call the `createTimer()` function using `createTimer(callback, date, reference, context)`.
 This function executes at or close to a specified date.
 
 The reference is an identifier for the Timer that is scoped to an Eventing Function and callback.
 The context must be serializable data that is available to the callback when the Timer is fired.
 
 [#canceltimer_call]
-To cancel a Timer:
+To cancel a Timer, you can do one of the following:
 
 * Call the `createTimer()` function again using a reference from the existing Timer you want to cancel.
-* Call the `cancelTimer()` function. The function is `cancelTimer(callback, reference)`.
+* Call the `cancelTimer()` function using `cancelTimer(callback, reference)`.
 
 For more information about Timers, see xref:eventing-timers.adoc[Timers].
 
@@ -514,13 +516,13 @@ The entry point `OnUpdate(doc, meta)` listens to mutations in the associated sou
 The `OnUpdate` handler has the following limitations:
 
 * If a document is modified several times in a short period of time, the handler calls might be combined into a single event due to deduplication.
-* You cannot distinguish between a Create and Update operation.
+* You cannot distinguish between a Create and an Update operation.
 
 [source,javascript]
 ----
 function OnUpdate(doc, meta) {
   if (doc.type === 'order' && doc.value > 5000) {
-    // ‘phonverify’ is a bucket alias or binding to a keyspace
+    // ‘phoneverify’ is a bucket alias or binding to a keyspace
     phoneverify[meta.id] = doc.customer;
   }
 }
@@ -553,8 +555,8 @@ function OnDelete(meta,options) {
 }
 ----
 
-In versions of Couchbase Server before version 6.6.0, the entry point `OnDelete(meta)` does not have `options`.
-This entry point is still supported, but using it means you are unable to differentiate deletion from expiration.
+In versions of Couchbase Server before version 6.6.0, the optional argument `options` is not present and the entry point for the handler is `OnDelete(meta)`.
+The entry point is still supported, but using it means you're unable to differentiate deletion from expiration.
 
 [source,javascript]
 ----
@@ -568,7 +570,7 @@ function OnDelete(meta) {
 
 Timer callbacks are user-defined JavaScript functions passed as the callback argument in the built-in `createTimer(callback, date, reference, context)` function call.
 
-The Timer Callback handler is an entry point for the event when a timer, created by the specific Eventing Function, matures and fires.
+The Timer callback handler is an entry point for the event when a timer, created by the specific Eventing Function, matures and fires.
 
 [source,javascript]
 ----
