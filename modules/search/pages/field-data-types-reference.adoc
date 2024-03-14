@@ -1,5 +1,7 @@
 = Field Data Types 
-:page-topic-type: reference 
+:page-topic-type: reference
+:page-ui-name: {ui-name}
+:page-product-name: {product-name} 
 :description: You can assign a data type to a field to tell the Search Service how to analyze its data. 
 
 [abstract]
@@ -7,7 +9,8 @@
 
 When you xref:create-child-field.adoc[create a child field] on a type mapping or xref:create-quick-index.adoc[], you need to set a field's data type. 
 
-When you create a Search index and don't set a data type for a field, the Search Service automatically assigns a field data type.
+If you create a Search index and do not set a data type for a field, the Search Service automatically assigns a field data type.
+For example, if you created a xref:customize-index.adoc#type-mappings[dynamic type mapping], the Search Service automatically assigns data types to all fields in the type mapping.
 
 The following field data types are available: 
 
@@ -15,15 +18,18 @@ The following field data types are available:
 |====
 |Field Data Type |Description 
 
-|text |The field contains a string. The string can contain numbers and special characters.
+|text |The field contains a string. 
+The string can contain numbers and special characters.
 
-|number |The field contains a number. It doesn't contain any alphabetic characters. 
+|number |The field contains a number.
+It does not contain any alphabetic characters. 
 
 |datetime |The field contains a date/time value that matches the format of a xref:customize-index.adoc#date-time[Date/Time Parser] in the index. 
 
 |boolean |The field contains a true or false value. 
 
-|disabled | This field data type is deprecated. It's included for compatibility only. 
+|disabled | This field data type is deprecated. 
+It's included for compatibility only. 
 
 |geopoint a|
 
@@ -34,7 +40,31 @@ The field contains geopoint (latitude and longitude) data, represented as either
 * An array, as two floating point integers. 
 * A JSON object, with the properties `lon`/`lng` and `lat`.
 
-|geoshape |The field contains a GeoJSON object. For more information about GeoJSON objects, see xref:server:fts:fts-supported-queries-geojson-spatial.adoc[].
+|geoshape a|
+
+The field contains a GeoJSON object. 
+
+A GeoJSON object describes a shape made of floating point coordinates with the following JSON properties: 
+
+* A `type` string, for the type of GeoJSON object.
+For example, a `point` or `MultiLineString`. 
+
+* A `coordinates` array of floating point numbers, for each latitude and longitude coordinate point in the GeoJSON shape.
+
+For example: 
+----
+{ 
+    "type": "LineString",
+    "coordinates": [ 
+
+        [-2.753735609842721, 53.94860827535115],
+        [-2.599898256093695,53.65007434185782] 
+    ]
+}
+----
+This JSON object describes a `LineString` GeoJSON object with 2 latitude and longitude coordinates.
+
+For more information about GeoJSON queries, see xref:search-request-params.adoc#query-object[the Query object].
 
 |ip a| 
 
@@ -47,4 +77,12 @@ For example:
     "ipv6": "2001:4800:0000:0000:0000:0000:0000:0000"
 }
 ----
+
+|vector a|
+
+The field contains an array of floating point numbers. 
+
+Use the `vector` type to perform vector similarity searches with Vector Search. 
+
+For more information about Vector Search, see xref:vector-search:vector-search.adoc[].
 |====

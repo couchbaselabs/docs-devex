@@ -1,0 +1,86 @@
+= Create a Vector Search Index with the Web Console
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: You can create a Vector Search index with the Couchbase {page-ui-name}. 
+
+[abstract]
+{description}
+
+You must create a Vector Search index before you can xref:run-vector-search-ui.adoc[run a search] that supports vector comparisons.
+
+TIP: Vector Search indexes can include all the same features and settings as a Search index. 
+For more information about Search indexes, see the xref:search:search.adoc[Search documentation].
+
+== Prerequisites
+
+* You have the Search Service enabled on a node in your database.
+For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+
+* You have a bucket with scopes and collections in your database.
+For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[]. 
+
+* You have documents in a keyspace inside your bucket that contain vector embeddings.
++
+include::partial$download-sample-partial.adoc[]
+
+* Your user account has the *Search Admin* role for the bucket where you want to create the index.  
+
+* You have logged in to the Couchbase {page-ui-name}. 
+
+== Procedure 
+
+To create a Vector Search index with the Couchbase {page-ui-name}: 
+
+. Go to *Search*.
+. Click btn:[Add Index].
+. In the *Index Name* field, enter a name for the Vector Search index. 
++
+[NOTE]
+====
+Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
+
+For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope.
+You cannot have 2 indexes with the same name inside the same bucket and scope.
+====
+
+. In the *Bucket* list, select the bucket that contains the documents you want to include in your index. 
+. Expand *Customize Index*. 
+. Select *Use non-default scope/collection(s)*.
+.. In the *Scope* list, select the scope that contains the documents you want to include in your index.
+. Expand *Mappings* and xref:search:create-type-mapping.adoc[create a new type mapping on a collection]:
+.. Click btn:[Add Type Mapping].
+.. In the *Collection* list, select the collection that contains the documents you want to include in your index. 
+.. Select *Only index specified fields*. 
+.. Click btn:[OK].
+. xref:search:create-child-field.adoc[] on the new collection type mapping with the following settings: 
+.. In the *Field* field, enter the name of the field in your documents that contains your vector embeddings.
++
+Vectors must be represented as an array of floating point numbers. 
+.. In the *Type* list, select *vector*. 
+.. In the *Dimension* field, enter the total number of elements in the array that holds the vector embeddings for your documents.
++ 
+The Search Service supports arrays up to 2048 elements.
+Arrays can be an array of arrays.  
+.. In the *Similarity metric* list, select the method to use to calculate the similarity between search term and Search index vectors.
++ 
+For more information, see xref:search:child-field-options-reference.adoc[].
+.. In the *Optimized for* list, select whether the Search Service should optimize Search queries for accuracy (*recall*) or speed (*latency*).
++
+For more information, see xref:search:child-field-options-reference.adoc[].
+.. Select *Index*.
+.. Click btn:[OK].
+. (Optional) xref:search:create-child-field.adoc[Create another child field] on the new collection type mapping for any additional fields you want to return in your search results.
++
+For example, you could add the text field that you used to generate your vector embeddings. 
+. Click btn:[Create Index].
+
+== Next Steps 
+
+This basic Vector Search index includes the vector embeddings from the child field you specified in your type mapping.
+If you chose to add additional child fields and enabled *Include in search results*, the Search Service can also return data from those fields when you run a Vector Search query.  
+
+You can customize your Vector Search index like any other Search index to add additional data and improve search results. 
+For more information about how to customize an index, see xref:search:customize-index.adoc[].
+
+For more information about how to run a search against a Vector Search index, see xref:run-vector-search-ui.adoc[] or xref:run-vector-search-rest-api.adoc[].

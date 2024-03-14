@@ -1,5 +1,7 @@
 = Create a Search Index 
-:page-topic-type: concept 
+:page-topic-type: concept
+:page-ui-name: {ui-name}
+:page-product-name: {product-name} 
 :description: Create a Search index to get started with the Search Service in your database. 
 
 [abstract]
@@ -7,26 +9,43 @@
 
 You can create a Search index with: 
 
-* The <<ui,Couchbase Server Web Console>>. 
+* The <<ui,Couchbase {page-ui-name}>>. 
 * The <<api,Search Service REST API>>. 
 
-TIP: If you're new to developing with the Search Service, xref:create-search-index-ui.adoc[create a Search index with the UI]. 
-You can copy the JSON payload from the UI to create your index with the REST API. 
+TIP: If you're new to developing with the Search Service, <<ui,create a Search index with the UI>>. 
+You can copy the Search index definition JSON payload from the UI to create your index xref:create-search-index-rest-api.adoc[with the REST API], or xref:import-search-index.adoc[].  
 
 [#ui]
 == Creating a Search Index with the Web Console
 
-To xref:create-search-index-ui.adoc[create a basic Search index], you only need to provide the following information: 
+To xref:create-search-index-ui.adoc[create a basic Search index], provide the following information: 
 
 * The name of the index. 
 * The bucket where you want to create the index. 
+
+[NOTE]
+====
+For indexes created with Couchbase Server version 7.6 and later, index names must be unique inside a bucket and scope.
+You cannot have 2 indexes with the same name inside the same bucket and scope on a Couchbase Server database running version 7.6.
+
+The Couchbase {page-ui-name} marks indexes as scoped or not scoped to a specific bucket and scope. 
+
+Indexes created with a previous version of Couchbase Server are not scoped.
+
+To view the full, scoped name for an index, go to the *Search* tab and point to the *Index Name*.
+Use the scoped name with the xref:rest-api:rest-fts.adoc[Search Service REST API], for any endpoints that do not include the bucket and scope in their path. 
+==== 
 
 If you want to restrict the documents you add to an index, you can also: 
 
 * xref:create-type-mapping.adoc[]. 
 * xref:create-child-field.adoc[Add child fields] to add or remove document fields from the index. 
 
-For more information about how you can customize a Search index with the Web Console, see xref:customize-index.adoc[].
+After you create a Search index, the Search Service streams data from your chosen collection or collections, and any document mutations, into the index builder.
+Before your index finishes building, you can run a search and return partial results. 
+
+You can also customize a Search index to improve search results and performance. 
+For more information about how you can customize a Search index with the Web Console, see xref:customize-index.adoc[]. 
 
 === Creating a Search Index with the Quick Editor
 
@@ -35,7 +54,7 @@ The Web Console also has a Quick Index editor.
 You can use the Quick Index editor to create a Search index by selecting fields from a document from your database.
 
 You can edit an index that you created with the Quick Index editor in the standard editor later. 
-You can't edit an index that you created with the standard editor in the Quick Index editor. 
+You cannot edit an index that you created with the standard editor in the Quick Index editor. 
 
 For more information about how to create an index with the Quick Index editor, see xref:create-quick-index.adoc[].
 
@@ -43,6 +62,21 @@ For more information about how to create an index with the Quick Index editor, s
 == Creating a Search Index with the REST API
 
 You can create a Search index with the REST API through a JSON payload. 
-The properties in the JSON payload correspond to the settings in the Web Console. 
+Most properties in the JSON payload correspond to settings in the Web Console. 
+You can also copy the Search index definition JSON payload from a Search index in the Web Console to use in a REST API call. 
 
-For more information about the available properties for a Search index, see xref:search-index-params.adoc[].
+[NOTE]
+====
+Use the scoped name for an index with the xref:rest-api:rest-fts.adoc[Search Service REST API] for any endpoints that do not include the bucket and scope in their path. 
+For example, you must use `bucket.scope.index_name` as the format for your index name with the `analyzeDoc` endpoint, but not with the new 7.6 `query` endpoint.
+====
+
+For more information about how to use the REST API to create a Search index, see xref:create-search-index-rest-api.adoc[].
+
+For more information about the available properties for a Search index, see xref:search-index-params.adoc[Search Index JSON Properties].
+
+== See Also 
+
+* xref:customize-index.adoc[]
+* xref:index-aliases.adoc[]
+* xref:run-searches.adoc[]
