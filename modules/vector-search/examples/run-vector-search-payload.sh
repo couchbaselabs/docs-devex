@@ -1,5 +1,5 @@
 curl -XPOST -H "Content-Type: application/json" \
-  -u $CB_USERNAME:$CB_PASSWORD http://$CB_HOSTNAME:8094/api/bucket/vector-sample/scope/color/index/color-index/query \
+  -u ${CB_USERNAME}:${CB_PASSWORD} http://${CB_HOSTNAME}:8094/api/bucket/vector-sample/scope/color/index/color-index/query \
 -d '{
       "fields": ["*"], 
       "query": { 
