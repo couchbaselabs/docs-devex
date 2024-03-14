@@ -1,48 +1,71 @@
-= Run a Geospatial Search Query with the Capella UI
+= Run a Geospatial Search Query with the {page-ui-name}
 :page-topic-type: guide
-:description: Search for geospatial data in your Couchbase Capella database with a compatible Search index and the Capella UI.
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Search for geospatial data in your Couchbase Capella database with a compatible Search index and the {page-ui-name}.
 
 [abstract]
 {description}
 
 == Prerequisites
 
-* You've deployed the Search Service on a node in your database. 
+* You have the Search Service enabled on a node in your database.
+For more information about how to change Services on your database, see xref:cloud:clusters:modify-database.adoc[].
 
 * You have a bucket with scopes and collections in your database. 
+For more information, see xref:cloud:clusters:data-service/manage-buckets.adoc[].
 
-* You've logged in to the Couchbase Capella UI.
+* You have documents in your database that contain geospatial data. 
+
+* You have logged in to the Couchbase {page-ui-name}.
 
 == Procedure
 
-To run a geospatial Search query, <<geospatial-index,create a Search index with a geospatial type mapping>>. 
+To run a geospatial Search query, <<geospatial-index,create a Search index with a geospatial type mapping in Advanced Mode>>. 
 
-Then, <<geospatial-query,run a Search query from the Capella UI>>.  
+Then, <<geospatial-query,run a Search query from the {page-ui-name}>>.  
 
 [#geospatial-index]
 === Create a Search Index with a Geospatial Type Mapping
 
-To create the Search index from the Capella UI: 
+To create the Search index in the {page-ui-name} with Advanced Mode: 
 
-. On the *Databases* page, select the database where you want to create the Search index. 
+. On the *Databases* page, select the database where you want to create a Search index. 
 . Go to menu:Data Tools[Search].
 . Click btn:[Create Search Index].
+. Click the btn:[Advanced Mode] toggle.
 . In the *Index Name* field, enter a name for the Search index. 
 +
-NOTE: Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
-. xref:create-type-mapping.adoc[] on the scope and collection in your database that you want to search. 
-. xref:create-child-field.adoc[] on the new type mapping with the following settings: 
-.. In the *Field* field, enter the name of the field in your documents that contains the geospatial data you want to search.
-.. In the *Type* list, select *geopoint*. 
-.. Select *Index*. 
+[NOTE]
+====
+Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
+
+For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope. You cannot have 2 indexes with the same name inside the same bucket and scope.
+====
+ 
+. Under *Type Mappings*, in the *Bucket* list, select the bucket where you want to create your Search index. 
+. In the *Scope* list, select the scope where you want to create the index. 
+. In the *Filter by collection or field* field, enter the name of the collection you want to search.
+.. When the collection appears, click the collection name. 
+.. Click btn:[Add].
+. In the *Filter by collection or field* field, enter the name of the field that contains the geospatial data you want to search.
++
+This field should contain child fields with `lat` and `long` data.
++
+.. When the field appears, click the field name. 
+.. Click the btn:[Child] toggle. 
+.. In the *Type* list, select *Geopoint*. 
+.. Select *Index this field*. 
 .. Select *Include in _all field*. 
-. Click btn:[Submit].
-. Click btn:[Create Index].
+.. Click btn:[Add].
+. Click btn:[Create Index]
+
+include::partial$large-index-caution.adoc[tag=regular-search]
 
 [#geospatial-query]
 === Run a Geospatial Search Query
 
-To run a Search query against the Search index from the Capella UI: 
+To run a Search query against the Search index from the {page-ui-name}: 
 
 . Next to your <<geospatial-index,geospatial type mapping Search index>>, click btn:[Search].
 . In the *Search* field, enter a search query for geospatial data. 
@@ -56,6 +79,6 @@ include::example$geospatial-search-query.jsonc[]
 
 == Next Steps
 
-You can xref:customize-index.adoc[customize your Search index] to improve search results and performance.
+For more information about the different features you can add to your Search index to improve performance and search results, see xref:customize-index.adoc[].
 
 If you want to add autocomplete to your database's search, see xref:search-query-auto-complete.adoc[].

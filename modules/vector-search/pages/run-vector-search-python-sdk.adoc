@@ -1,0 +1,87 @@
+= Run a Vector Search with the Python SDK
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Using Couchbase's Python SDK, you can run a simple or more complex vector search against a Vector Search index.
+
+[abstract]
+{description}
+
+
+== Prerequisites
+
+* You have the Search Service enabled on a node in your database.
+For more information about how to change Services on your database, see xref:cloud:clusters:modify-database.adoc[].
+
+* You have the hostname for the node in your database that's running the Search Service.
++
+For more information about how to find the hostname for a node in your Capella database, see xref:clouds:get-capella-host-name.adoc[].
+
+* You have created a Vector Search index. 
++
+For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
++
+include::partial$download-sample-partial.adoc[]
+
+* Create and activate a virtual environment using `venv` and install packages.
++
+For more information about how to set up your virtual environment, see https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/[the Python Packaging User Guide].
++
+Make sure to install all dependencies for the Couchbase Python SDK and make a `requirements.txt` file with the following: 
++
+----
+couchbase==4.1.12
+openai==1.12.0
+----
++
+Run `pip install -r requirements.txt` to pull in all needed dependancies
+
+== Example: Searching for a Similar Color Vector with a Python Program 
+
+The sample dataset inside `rgb.json` has small embedding vectors inside the `colorvect_l2` field. 
+These embedding vectors describe a color using RGB values. 
+For example, the color red has an embedding vector of `[255, 0, 0]`. 
+
+The following example code searches for the color navy (`[0.0, 0.0, 128.0]`) in the `rgb.json` dataset: 
+
+[source,python]
+----
+include::example$run-vector-search-simple-color.py[]
+----
+
+== Example: Semantic Search with Color Descriptions 
+
+[NOTE]
+====
+The following code sample requires you to have a paid subscription to the OpenAI API to generate an embedding vector from a sample text string.
+For more information about pricing for the OpenAI API, see https://openai.com/pricing[OpenAI's Pricing page^] for embedding models.
+
+The `rgb_questions.json` and sample data contains ready-made embedding vectors for different questions.
+For an example of how to use a ready-made vector with Vector Search, see xref:run-vector-search-rest-api.adoc[] or xref:run-vector-search-ui.adoc[].
+====
+
+Still using the sample dataset inside `rgb.json`, you can use the OpenAI API to generate an embedding from any text string. 
+
+The following code generates an embedding vector with the question `What color hides everything like the night?`:
+
+[source,python]
+----
+include::example$run-vector-search-generate-embed.py[]
+----
+
+You can try other questions from `rgb_questions.json`, such as: 
+
+* `"What is the most romantic color?"`
+
+* `"What color makes people fall in love?"`
+
+* `"What is the most depressing color?"`
+
+== Next Steps
+
+Edit and update your Search index, `color-index`, and store the `description` field and rerun the second example.  This will also return the `description` paragraph with the results.
+
+If you did not get the search results you were expecting, you can try to recreate your Vector Search index xref:create-vector-search-index-rest-api.adoc[with the REST API].
+
+Vector Search indexes can use the same settings and features as regular Search indexes.
+If you want to add additional fields and features to your index, see xref:search:customize-index.adoc[].

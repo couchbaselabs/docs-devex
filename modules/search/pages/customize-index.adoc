@@ -1,51 +1,71 @@
-= Customize a Search Index with the Capella UI
+= Search Index Features
 :page-topic-type: concept
-:description: Configure additional options for a Search index to improve performance and fine tune your search results. 
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Search indexes in Couchbase Capella have multiple features that you can configure to improve performance and fine tune your search results. 
 
 [abstract]
 {description}
 
+Some features are only available in xref:create-search-index-ui.adoc[Advanced Mode]. 
+
 You can add the following components and configure the following options for a Search index: 
 
-[cols="1,2"]
+[cols="2,1,1,4"]
 |====
-|Option |Description 
+|Option |Quick Mode |Advanced Mode |Description 
 
-|[[type-mappings]]Mappings a|
+|[[type-mappings]]Type Mappings and Mappings 
+|&check;
+|&check;
+a|Use a type mapping to include or exclude specific documents in a collection from an index.
 
-Use a type mapping to include or exclude specific documents in a scope or collection from an index, based on their type. 
+Type mappings can also set a field's data type and other settings. 
 
-You can create two types of type mappings: 
+You can create two types of type mappings with the Search Service: 
 
-* *Dynamic type mappings*: Add all available fields from a matching document type to an index. 
-* *Static type mappings*: Add only specific fields from a matching document type to an index. 
+* *Dynamic type mappings*: When you do not know the structure of your data fields ahead of time, use a dynamic type mapping to add all available fields from a matching document type to an index.
+For example, you could create a dynamic type mapping to include all documents from the `hotel` collection in your Search index, or include all fields under a JSON object from your document schema.
++
+Configure this type of mapping by selecting a collection in xref:create-quick-index.adoc[Quick Mode] or by clearing *Only index specified fields* when you xref:create-type-mapping.adoc[].
 
-By default, all indexes have a dynamic type mapping that includes all documents from the *_default* scope and *_default* collection in a bucket. 
+* *Static type mappings*: When your data fields are stable and unlikely to change, use a static type mapping to add and define only specific fields from a matching document type to an index. 
+For example, you could create a static type mapping to only include the contents of the `city` field from the `hotel` collection in your Search index, as a text field with an `en` analyzer.
++ 
+Configure this type of mapping by selecting a field in your document schema in xref:create-quick-index.adoc[Quick Mode].
++
+In Advanced Mode, xref:create-type-mapping.adoc[create a type mapping] and xref:create-child-field.adoc[add a child field mapping] to create a static type mapping.
 
-Add xref:create-child-field.adoc[child fields] to a type mapping to create a static type mapping.
-Child fields set the specific fields from a document that you want to include or exclude from an index. 
+Type mappings start at the collection level. 
+Create additional mappings for child fields or JSON objects under a collection's type mapping to restrict the documents added to your index.
+This can improve Search index performance over indexing entire collections.
 
-For more information about how to add a type mapping to an index, see xref:create-type-mapping.adoc[].
+For more information about how to configure settings for mappings and type mappings in Quick Mode, see xref:quick-index-field-options.adoc[].
 
-|General Settings a|
+For more information about how to configure a type mapping in Advanced Mode, see xref:create-type-mapping.adoc[].
 
-Set general settings to change your index's default analyzer, replication, and more. 
+|Advanced Settings 
+|
+|&check;
+a|Set advanced settings with xref:create-search-index-ui.adoc[Advanced Mode] to change your index's default analyzer, replication, and more. 
 
 For more information about how to change general settings, see xref:set-advanced-settings.adoc[].
 
-|[[type-identifiers]]Type Identifier a|
-
-Set a type identifier to add a filter to the documents added to your Search index:
+|[[type-identifiers]]Document Filter 
+|
+|&check;
+a|In xref:create-search-index-ui.adoc[Advanced Mode], configure a document filter to add or remove documents in your Search index that meet certain conditions:
 
 * JSON Type Field: Selects only documents that contain a specific field with a specified string value.
 * Doc ID up to Separator: Selects only documents with an ID or key up to a specific substring.
 * Doc ID with Regex: Selects only documents with an ID or key that matches a regular expression.
 
-For more information about how to configure a type identifier, see xref:set-type-identifier.adoc[].
+For more information about how to configure a document filter, see xref:set-type-identifier.adoc[].
 
-|[[analyzers]]Analyzers a|
-
-Use analyzers to improve and customize the search results in your index.  
+|[[analyzers]]Analyzers
+|
+|&check;
+a|In xref:create-search-index-ui.adoc[Advanced Mode], use analyzers to improve and customize the search results in your index.  
 
 Analyzers transform input text into tokens, which give you greater control over your index's text matching.  
 
@@ -54,18 +74,19 @@ For more information about how to create a custom analyzer, see xref:create-cust
 
 Analyzers have different components that control how text is transformed for search. 
 When you create a custom analyzer, you can choose these components. 
+For more information, see <<custom-filters,>>.
 
-Both custom and default analyzers can contain custom filters. 
-
-|[[custom-filters-table]]Custom Filters a|
-
-Use custom filters to add more customization to a custom analyzer.
+|[[custom-filters-table]]Custom Filters
+|
+|&check;
+a|In xref:create-search-index-ui.adoc[Advanced Mode], use custom filters to add more customization to a custom analyzer.
 
 For more information about these filters, see the <<custom-filters,>> section.
 
-|[[date-time]]Date/Time Parsers a|
-
-If the documents in your index contain date and time data in a format other than RFC-3339 (ISO-8601), then you need to create a date/time parser.
+|[[date-time]]Date/Time Parsers
+|
+|&check;
+a|In xref:create-search-index-ui.adoc[Advanced Mode], if the documents in your index contain date and time data in a format other than RFC-3339 (ISO-8601), then you need to create a date/time parser.
 
 A custom date/time parser tells the Search index how to interpret date data from your documents. 
 
@@ -76,9 +97,9 @@ For more information about how to add a custom date/time parser, see xref:create
 [#custom-filters]
 == Custom Filters 
 
-Custom filters are components of a Search index <<analyzers,analyzer>>. 
+Custom filters are components of a Search index <<analyzers,analyzer>>.
 
-Create and add these components to a custom analyzer to improve search results and performance for an index. 
+Create and add these components to a custom analyzer to improve search results and performance for an index in xref:create-search-index-ui.adoc[Advanced Mode].
 
 You can create the following custom filters: 
 
@@ -141,6 +162,15 @@ For more information about how to create your own wordlist, see xref:create-cust
 
 == See Also 
 
-* xref:create-search-indexes.adoc[]
-* xref:index-aliases.adoc[]
+* xref:set-type-identifier.adoc[]
+* xref:create-type-mapping.adoc[]
+* xref:create-child-field.adoc[]
+* xref:create-child-mapping.adoc[]
+* xref:create-custom-analyzer.adoc[]
+* xref:create-custom-character-filter.adoc[]
+* xref:create-custom-tokenizer.adoc[]
+* xref:create-custom-token-filter.adoc[]
+* xref:create-custom-wordlist.adoc[]
+* xref:set-advanced-settings.adoc[]
 * xref:run-searches.adoc[]
+* xref:index-aliases.adoc[]
