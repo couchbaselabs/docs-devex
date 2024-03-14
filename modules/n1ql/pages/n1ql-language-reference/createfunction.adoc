@@ -5,6 +5,10 @@
 :imagesdir: ../../assets/images
 :page-partial:
 :page-toclevels: 2
+:keywords: library namespacing
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 [abstract]
 {description}
@@ -13,12 +17,15 @@
 
 There are two types of user-defined function:
 
-* [def]_Inline functions_ are defined using {sqlpp} expressions, including subqueries.
+* [def]_Inline functions_ are defined using {sqlpp} expressions.
 They enable you to name and reuse complex or repetitive expressions, including subqueries, in order to simplify your queries.
 
 * [def]_External functions_ are defined using an external language.
 They enable you to create functions that may be difficult or impossible to define using built-in {sqlpp} expressions.
 The only supported language is JavaScript.
+
+External functions in {sqlpp} support most of the language constructs available in ECMAScript.
+For more information about the restrictions and extensions that come with the Couchbase implementation, see xref:javascript-udfs:javascript-functions-with-couchbase.adoc[].
 
 [[context]]
 === Global Functions and Scoped Functions
@@ -46,7 +53,11 @@ Finally, it is important to note that a global function is _not_ the same as a s
 === External Libraries
 
 (((library namespacing)))
-External functions are stored in _libraries_.
+You can store external functions in _libraries_.
+This enables you to share external function code in more than one user-defined function.
+
+You must create the external library and the external function code using the xref:tools:udfs-ui.adoc[Query Workbench] or the {sqlpp} xref:n1ql-rest-api/functions.adoc[Functions REST API].
+
 Like user-defined functions, these libraries may also be scoped or global.
 This enables you to keep the code for external functions separate where required.
 
@@ -56,21 +67,55 @@ Code which is stored in a _global library_ is available to users of all scopes.
 A global library may have the same name as a scoped library, and scoped libraries may have the same name as each other.
 For example, you may have a global `math` library, and a `math` library in each scope.
 
-== RBAC Privileges
+=== {sqlpp} Managed User-Defined Functions
 
-To manage global internal functions, you must have the *Manage Global Functions* role.
-To manage scoped internal functions, you must have the *Manage Scope Functions* role, with permissions on the specified bucket and scope.
+ifeval::['{page-component-version}' == '7.6']
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
 
-To manage global external functions, you must have the *Manage Global External Functions* role.
-To manage scoped external functions, you must have the *Manage Scope External Functions* role, with permissions on the specified bucket and scope.
+In Couchbase Server 7.6 and later, you can create the code for an external function and the corresponding {sqlpp} user-defined function in a single operation.
+This means that you don't have to specify an external library and create the code for the external function, before creating the {sqlpp} user-defined function.
+
+With a {sqlpp} managed user-defined function, the external function code is stored inline, along with the {sqlpp} user-defined function.
+You cannot share this external function code with other user-defined functions, or access it from any external libraries.
+
+== Prerequisites
+
+[cols="2,3"]
+|===
+| To manage ... | You must have ...
+
+| Global inline functions
+| *Manage Global Functions* role.
+
+| Scoped inline functions
+| *Manage Scope Functions* role, with permissions on the specified bucket and scope.
+
+| Global external functions
+| *Manage Global External Functions* role.
+
+| Scoped external functions
+| *Manage Scope External Functions* role, with permissions on the specified bucket and scope.
+|===
 
 Users with the *Manage Scope External Functions* role also have read-only access to any global external library.
 
-To execute global internal functions, you must have the *Execute Global Functions* role.
-To execute scoped internal functions, you must have the *Execute Scope Functions* role, with permissions on the specified bucket and scope.
+[cols="2,3"]
+|===
+| To execute ... | You must have ...
 
-To execute global external functions, you must have the *Execute Global External Functions* role.
-To execute scoped external functions, you must have the *Execute Scope External Functions* role, with permissions on the specified bucket and scope.
+| Global inline functions
+| *Execute Global Functions* role.
+
+| Scoped inline functions
+| *Execute Scope Functions* role, with permissions on the specified bucket and scope.
+
+| Global external functions
+| *Execute Global External Functions* role.
+
+| Scoped external functions
+| *Execute Scope External Functions* role, with permissions on the specified bucket and scope.
+|===
 
 For more details about user roles, see
 xref:learn:security/authorization-overview.adoc[Authorization].
@@ -103,11 +148,30 @@ image::n1ql-language-reference/create-function-inline.png["Syntax diagram: refer
 
 // TODO: Automatic links in EBNF.
 
-function:: (Required) Refer to <<inline-name>> below.
+[horizontal.compact]
+function:: <<inline-name>> icon:caret-down[]
+params:: <<inline-parameter>> icon:caret-down[]
+body:: <<inline-expression>> icon:caret-down[]
 
-params:: (Optional) Refer to <<inline-parameter>> below.
+// tag::replace[]
+[id='{section}-replace']
+==== OR REPLACE / IF NOT EXISTS
 
-body:: (Required) Refer to <<inline-expression>> below.
+The optional `OR REPLACE` clause enables you to redefine a user-defined function if it already exists, whereas the optional `IF NOT EXISTS` clause enables the statement to complete successfully without replacing the function.
+
+When a function with the same name already exists within the same context:
+footnote:context[That is, you are creating a global function, and a function with the same name already exists within the same namespace; or, you are creating a scoped function, and a function with the same name already exists within the same scope.]
+
+* If the `OR REPLACE` clause is present, the existing function is replaced.
+
+* If the `IF NOT EXISTS` clause is present, the statement does nothing and completes without error.
+
+* If neither of these two clauses is present, an error is generated.
+
+NOTE: These clauses are exclusive.
+If the statement contains both the `OR REPLACE` clause and the `IF NOT EXISTS` clause, an error is generated.
+
+// end::replace[]
 
 // tag::arguments[]
 [id='{section}-name']
@@ -165,29 +229,11 @@ For inline functions, the result and type of the function are the result and typ
 If you need to return multiple values, construct an array.
 ====
 
-// tag::replace[]
-[id='{section}-replace']
-==== OR REPLACE / IF NOT EXISTS
-
-The optional `OR REPLACE` clause enables you to redefine a user-defined function if it already exists, whereas the optional `IF NOT EXISTS` clause enables the statement to complete successfully without replacing the function.
-
-When a function with the same name already exists within the same context:
-footnote:context[That is, you are creating a global function, and a function with the same name already exists within the same namespace; or, you are creating a scoped function, and a function with the same name already exists within the same scope.]
-
-* If the `OR REPLACE` clause is present, the existing function is replaced.
-
-* If the `IF NOT EXISTS` clause is present, the statement does nothing and completes without error.
-
-* If neither of these two clauses is present, an error is generated.
-
-NOTE: These clauses are exclusive.
-If the statement contains both the `OR REPLACE` clause and the `IF NOT EXISTS` clause, an error is generated.
-
-// end::replace[]
-
 [[create-function-external]]
 :section: external
 === External Functions
+
+There are two alternative syntaxes for defining an external function: one where the function code is stored in an external library, and one for creating a {sqlpp} managed user-defined function.
 
 [source,ebnf]
 ----
@@ -198,36 +244,46 @@ image::n1ql-language-reference/create-function-external.png["Syntax diagram: ref
 
 // TODO: Automatic links in EBNF.
 
-function:: (Required) Refer to <<external-name>> below.
+[horizontal.compact]
+function:: <<external-name>> icon:caret-down[]
+params:: <<external-parameter>> icon:caret-down[]
+obj:: <<external-object>> icon:caret-down[]
+library:: <<external-library>> icon:caret-down[]
+javascript:: <<javascript>> icon:caret-down[]
 
-params:: (Optional) Refer to <<external-parameter>> below.
-
-obj:: (Required) Refer to <<external-object>> below.
-
-library:: (Required) Refer to <<external-library>> below.
+include::createfunction.adoc[tag=replace]
 
 include::createfunction.adoc[tag=arguments]
 
 [[external-object]]
 ==== External Object
 
+[Optional] Use this parameter where the function code is stored in an external library.
+
 The name of the JavaScript function that you want to use for the user-defined function.
 This parameter is a string and must be wrapped in quotes.
-// FIXME:
-External functions in {sqlpp} _only_ support plain JavaScript, without any of the xref:eventing:eventing-language-constructs.adoc#added-lang-features[added language features] supported by functions in the Eventing Service.
 
 [[external-library]]
 ==== External Library
 
-The name of the JavaScript library that contains the function you want to use.
+[Optional] Use this parameter where the function code is stored in an external library.
+
+The name of the JavaScript library that contains the JavaScript function you want to use.
 This parameter is a string and must be wrapped in quotes.
-You must create the JavaScript library and the JavaScript function using the {sqlpp} Functions REST API.
-For details, refer to xref:n1ql-rest-api/functions.adoc[Functions REST API].
 
 The name of a scoped external library must include the bucket name, the scope name, and the library name, separated by slashes.
 For example, to refer to a scoped library called `my-library` located in the `inventory` scope within the `travel-sample` bucket, you would specify the library name as `travel-sample/inventory/my-library`.
 
-include::createfunction.adoc[tag=replace]
+[[javascript]]
+==== Function Body
+
+[Optional] Use this parameter to create a {sqlpp} managed user-defined function.
+
+The external JavaScript function code.
+This must contain a function with the same name and the same number of parameters as the {sqlpp} user-defined function.
+This parameter is a string and must be wrapped in quotes.
+
+The JavaScript code can contain multiple function definitions, but these functions can only be referenced within this {sqlpp} user-defined function, and cannot be shared.
 
 == Examples
 
@@ -425,6 +481,32 @@ EXECUTE FUNCTION phi();
 ----
 ====
 
+[[ex-managed]]
+.{sqlpp} managed user-defined function
+====
+The following statement creates external JavaScript function code and the corresponding {sqlpp} user-defined function in one operation.
+
+[source,sqlpp]
+----
+CREATE FUNCTION add100(num) LANGUAGE JAVASCRIPT AS
+"function add100(param1) {return param1+100;}";
+----
+
+.Test
+[source,sqlpp]
+----
+EXECUTE FUNCTION add100(100);
+----
+
+.Result
+[source,json]
+----
+[
+  200
+]
+----
+====
+
 [[ex-external]]
 .External functions
 ====
@@ -572,8 +654,10 @@ At this level of precision, the geohash should appear to be in almost exactly th
 
 == Related Links
 
-* To manage external libraries of user-defined functions, refer to xref:n1ql-rest-api/functions.adoc[Functions REST API].
-* To execute user-defined functions, refer to xref:n1ql-language-reference/execfunction.adoc[EXECUTE FUNCTION].
-* To include user-defined functions in an expression, refer to xref:n1ql-language-reference/userfun.adoc[User-Defined Functions].
-* To view user-defined functions, refer to xref:manage:monitor/monitoring-n1ql-query.adoc#sys-functions[Monitor Queries].
-* To drop user-defined functions, refer to xref:n1ql-language-reference/dropfunction.adoc[DROP FUNCTION].
+* To manage user-defined functions in the Query Workbench, see xref:tools:udfs-ui.adoc[].
+* To manage external libraries and external functions, see xref:n1ql-rest-api/functions.adoc[].
+* To execute a user-defined function, see xref:n1ql-language-reference/execfunction.adoc[].
+* To see the execution plan for a user-defined function, see xref:n1ql-language-reference/explainfunction.adoc[].
+* To include a user-defined function in an expression, see xref:n1ql-language-reference/userfun.adoc[].
+* To monitor user-defined functions, see xref:manage:monitor/monitoring-n1ql-query.adoc#sys-functions[Monitor Functions].
+* To drop a user-defined function, see xref:n1ql-language-reference/dropfunction.adoc[].
