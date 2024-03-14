@@ -1,0 +1,186 @@
+= Run a Vector Search with a Couchbase SDK
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Using a Couchbase SDK, you can run a simple or more complex vector search against a Vector Search index.
+:tabs:
+:tabs-sync-option:
+
+[abstract]
+{description}
+
+
+== Prerequisites
+
+Choose your preferred programming language to view the applicable prerequisites for the examples on this page. 
+
+[{tabs}]
+====
+Go:: 
++
+* You have the Search Service enabled on a node in your database.
+For more information about how to change Services on your database, see xref:cloud:clusters:modify-database.adoc[].
+
+* You have the hostname for the node in your database that's running the Search Service.
++
+For more information about how to find the hostname for a node in your {page-product-name} database, see xref:clouds:get-capella-host-name.adoc[].
+
+* You have created a Vector Search index. 
++
+For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
++
+include::partial$download-sample-partial.adoc[]
+
+* You have installed the Couchbase Go SDK. 
++
+For more information about installing and using the Couchbase Go SDK, see xref:go-sdk:hello-world:start-using-sdk.adoc[].
+
+Java:: 
++
+* You have the Search Service enabled on a node in your database.
+For more information about how to change Services on your database, see xref:cloud:clusters:modify-database.adoc[].
+
+* You have the hostname for the node in your database that's running the Search Service.
++
+For more information about how to find the hostname for a node in your {page-product-name} database, see xref:clouds:get-capella-host-name.adoc[].
+
+* You have created a Vector Search index. 
++
+For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
++
+include::partial$download-sample-partial.adoc[]
+
+* You have installed the Couchbase Java SDK. 
++
+For more information about installing and using the Couchbase Java SDK, see xref:java-sdk:hello-world:start-using-sdk.adoc[].
+
+Python::
++
+* You have the Search Service enabled on a node in your database.
+For more information about how to change Services on your database, see xref:cloud:clusters:modify-database.adoc[].
+
+* You have the hostname for the node in your database that's running the Search Service.
++
+For more information about how to find the hostname for a node in your {page-product-name} database, see xref:clouds:get-capella-host-name.adoc[].
+
+* You have created a Vector Search index. 
++
+For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
++
+include::partial$download-sample-partial.adoc[]
+
+* You have installed the Couchbase Python SDK.
++
+For more information about installing and using the Couchbase Python SDK, see xref:python-sdk:hello-world:start-using-sdk.adoc[].
+
+* You have created and activated a virtual environment using `venv` and installed packages.
++
+For more information about how to set up your virtual environment, see https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/[the Python Packaging User Guide].
+
+* You have made a `requirements.txt` file with the following: 
++
+----
+couchbase==4.1.12
+openai==1.12.0
+----
+
+* You have pulled in all dependencies for the Couchbase Python SDK by running: 
++
+----
+pip install -r requirements.txt
+----
+====
+
+== Example: Searching for a Similar Color Vector
+
+The sample dataset inside `rgb.json` has small embedding vectors inside the `colorvect_l2` field. 
+These embedding vectors describe a color using RGB values. 
+For example, the color red has an embedding vector of `[255, 0, 0]`. 
+
+The following example code searches for the color navy (`[0.0, 0.0, 128.0]`) in the `rgb.json` dataset: 
+
+[{tabs}]
+====
+Go:: 
++
+[source,go]
+----
+include::example$run-vector-search-simple-color.go[]
+----
+
+Java::
++
+[source,Java]
+----
+include::example$run-vector-search-simple-color.java[]
+----
+
+Python::
++
+[source,python]
+----
+include::example$run-vector-search-simple-color.py[]
+----
+====
+
+
+
+[#semantic]
+== Example: Semantic Search with Color Descriptions
+
+[NOTE]
+====
+The following code sample requires you to have a paid subscription to the OpenAI API to generate an embedding vector from a sample text string.
+For more information about pricing for the OpenAI API, see https://openai.com/pricing[OpenAI's Pricing page^] for embedding models.
+
+The `rgb_questions.json` and sample data contains ready-made embedding vectors for different questions.
+For an example of how to use a ready-made vector with Vector Search, see xref:run-vector-search-rest-api.adoc[] or xref:run-vector-search-ui.adoc[].
+====
+
+Still using the sample dataset inside `rgb.json`, you can use the OpenAI API to generate an embedding from any text string. 
+
+The following code generates an embedding vector with the question `What color hides everything like the night?`:
+
+[{tabs}]
+====
+Go:: 
++
+[source,go]
+----
+include::example$run-vector-search-generate-embed.go[]
+----
+
+Java::
++
+[source,java]
+----
+include::example$run-vector-search-generate-embed.java[]
+----
+
+Python::
++
+[source,python]
+----
+include::example$run-vector-search-generate-embed.py[]
+----
+====
+
+
+You can try other questions from `rgb_questions.json`, such as: 
+
+* `"What is the most romantic color?"`
+
+* `"What color makes people fall in love?"`
+
+* `"What is the most depressing color?"`
+
+== Next Steps
+
+You can xref:search:create-child-field.adoc[create a child field] or xref:search:create-quick-index.adoc[use the Quick Mode editor] to update your Vector Search index to include the `description` field with your search results.
+
+Run the example in <<semantic,>> again to see the `description` paragraphs in your results.
+
+If you did not get the search results you were expecting, you can try to recreate your Vector Search index xref:create-vector-search-index-rest-api.adoc[with the REST API].
+
+Vector Search indexes can use the same settings and features as regular Search indexes.
+If you want to add additional fields and features to your index, see xref:search:customize-index.adoc[].

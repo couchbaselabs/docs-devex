@@ -11,7 +11,7 @@ from couchbase.options import SearchOptions
 from couchbase.vector_search import VectorQuery, VectorSearch
 from openai import OpenAI
 
-# Change the question as desired
+# Change the question to whatever you want to ask
 question = "What color hides everything like the night?"
 
 # Make sure to replace OPENAI_API_KEY with your own API Key
