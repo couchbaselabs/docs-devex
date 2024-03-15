@@ -368,9 +368,80 @@ The return value is a flattened list of array elements for use in an array index
 
 For examples, refer to xref:n1ql:n1ql-language-reference/indexing-arrays.adoc#examples[Array Indexing Examples].
 
+[[formalize,FORMALIZE()]]
+== FORMALIZE(`statement` [ `,query_context` ])
+
+=== Description
+
+Fully expands all references within a query, using the specified query context.
+
+This function has a synonym FORMALISE().
+
+=== Arguments
+
+statement:: A string containing the statement to formalize.
+
+query_context:: [ Optional ]
+A string query context value for the function to use when formalizing.
+
+=== Return Value
+
+Returns a query with all references fully specified.
+
+=== Examples
+
+[[formalize-ex1,FORMALIZE() Example 1]]
+.Formalize a query
+====
+.Query
+[source,sqlpp]
+----
+SELECT formalize("SELECT * FROM landmark WHERE country = 'United Kingdom'","default:`travel-sample`.inventory")
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": "select self.* from `default`:`travel-sample`.`inventory`.`landmark` where ((`landmark`.`country`) = \"United Kingdom\")"
+  }
+]
+----
+====
+
+[[formalize-ex2,FORMALIZE() Example 2]]
+.Formalize recently completed requests
+====
+.Query
+[source,sqlpp]
+----
+SELECT statement,
+       NVL(queryContext,"") AS queryContext,
+       formalize(statement, queryContext) AS formalized 
+FROM system:completed_requests;
+
+----
+.Results
+[source,json]
+----
+[
+  {
+      "statement": "select * from `travel-sample`.inventory.landmark where country = 'United Kingdom' limit 1;",
+      "queryContext": "",
+      "formalized": "select self.* from `default`:`travel-sample`.`inventory`.`landmark` where ((`landmark`.`country`) = \"United Kingdom\") limit 1"
+  },
+  {
+      "statement": "select * from landmark where country = 'United Kingdom' limit 1;",
+      "queryContext": "`travel-sample`.inventory",
+      "formalized": "select self.* from `default`:`travel-sample`.`inventory`.`landmark` where ((`landmark`.`country`) = \"United Kingdom\") limit 1"
+  },
+  // ...
+]
+----
+====
+
 [[len,LEN()]]
 == LEN(`expression`)
-
 
 === Description
 
