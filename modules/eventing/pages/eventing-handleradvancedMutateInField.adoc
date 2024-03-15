@@ -1,0 +1,88 @@
+= Function: Advanced Sub-Document MUTATEIN operation
+:description: pass:q[Perform the Advanced Sub-Document MUTATEIN operation on a field where Eventing interacts with the Data service.]
+:page-edition: Enterprise Edition
+:tabs:
+
+*Goal*: {description}
+
+* This function *advancedMutateInField* merely demonstrates the CAS free MutateIn operation on a document field.
+* Requires Eventing Storage (or metadata collection) and a "source" collection.
+* Needs a Binding of type "bucket alias" (as documented in the Scriptlet).
+* Will operate on any mutation where meta.id or the KEY starts with "mutateinfield:".
+* For more information refer to xref:eventing-advanced-keyspace-accessors.adoc#sub-document-mutatein-operation[Sub-Document MUTATEIN Operation] in the detailed documentation.
+
+[{tabs}]
+====
+advancedMutateInField::
++
+--
+[source,javascript]
+----
+// To run configure the settings for this Function, advancedTouchOp, as follows:
+//
+// Version 7.6+
+//   "Function Scope"
+//     *.* (or try bulk.data if non-privileged)
+//   "Listen to Location"
+//     bulk.data.source
+//   "Eventing Storage"
+//     rr100.eventing.metadata
+//   Binding(s)
+//    1. "binding type", "alias name...", "bucket.scope.collection", "Access"
+//       "bucket alias", "src_col",       "bulk.data.source",        "read and write"
+
+function OnUpdate(doc, meta) {
+  if (meta.id.startsWith("mutateinfield:") === false) return;
+  
+  var meta = { "id": meta.id };
+  var res;
+  var opcnt = 1;
+  
+  res =
+    couchbase.mutateIn(src_col, meta, [
+      couchbase.MutateInSpec.insert("testField", "insert")
+    ]);
+  log(opcnt++,res);
+  
+  res =
+    couchbase.mutateIn(src_col, meta, [
+      couchbase.MutateInSpec.replace("testField", "replace")
+    ]);
+  log(opcnt++,res);
+  
+  res =
+    couchbase.mutateIn(src_col, meta, [
+      couchbase.MutateInSpec.remove("testField")
+    ]);
+  log(opcnt++,res);
+}
+----
+--
+
+Input Data/Mutation::
++
+--
+[source,json]
+----
+INPUT: KEY mutateinfield:001
+
+{
+    "id": "mutateinfield:001",
+}
+
+----
+--
+
+Output Data/Logged::
++
+--
+[source,json]
+----
+2024-03-15T14:42:53.314-07:00 [INFO] 1 {"meta":{"id":"mutateinfield:001","cas":"1710538973313433600"},"success":true} 
+
+2024-03-15T14:42:53.316-07:00 [INFO] 2 {"meta":{"id":"mutateinfield:001","cas":"1710538973315596288"},"success":true} 
+
+2024-03-15T14:42:53.317-07:00 [INFO] 3 {"meta":{"id":"mutateinfield:001","cas":"1710538973316841472"},"success":true} 
+----
+--
+====
