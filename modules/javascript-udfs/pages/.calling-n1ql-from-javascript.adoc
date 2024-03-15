@@ -1,5 +1,5 @@
 = Calling {sqlpp} from JavaScript
-:description: Executing {sqlpp} statements from Javascript functions.
+:description: Executing {sqlpp} statements from JavaScript functions.
 ifndef::flag-devex-javascript-udfs[]
 :page-embargo: EMBARGOED
 endif::flag-devex-javascript-udfs[]
@@ -11,19 +11,19 @@ endif::flag-devex-javascript-udfs[]
 
 == Introduction
 
-As well as being able to call JavaScript functions from {sqlpp}, you can also call {sqlpp} statements from inside your Javascript functions.
+As well as being able to call JavaScript functions from {sqlpp}, you can also call {sqlpp} statements from inside your JavaScript functions.
 
 [#calling-statements-inline]
-== Calling {sqlpp} statements inline
+== Calling {sqlpp} Statements Inline
 
-You can embed a {sqlpp} statement directly in your Javascript code:
+You can embed a {sqlpp} statement directly in your JavaScript code:
 
 [source,javascript]
 ----
 include::example$add-airline-inline-call.js[]
 ----
 
-== Executing {sqlpp} statements using the N1QL() call
+== Executing {sqlpp} Statements Using the N1QL() Call
 
 In addition, you can also execute a {sqlpp} statement by calling it from the `N1QL(…)` function.
 [source, javascript]
@@ -49,12 +49,12 @@ will generate an error because the `AddAirline()` function will attempt to alter
 IMPORTANT: Functions that change data must be called using the `EXECUTE FUNCTION` statement.
 
 
-== Returning values from {sqlpp} statements
+== Returning Values from {sqlpp} Statements
 
 As shown in the <<calling-statements-inline, examples above>>, embedded {sqlpp} statements  return values which can be used later on in your code.
 
-The values returned from the statement calls are Javascript https://www.w3schools.com/js/js_object_iterables.asp[iterators^]: lists of values or documents returned from the database. 
-In the next example, we're going to retrieve a list of the hotels stored in the `travel-sample` database:
+The values returned from the statement calls are JavaScript https://www.w3schools.com/js/js_object_iterables.asp[iterators^]: lists of values or documents returned from the database. 
+In the next example, you're going to retrieve a list of the hotels stored in the `travel-sample` database:
 
 [source, javascript]
 ----
@@ -62,13 +62,13 @@ include::example$select-hotels-inline.js[]
 ----
 
 <.> The {sqlpp} statement returns an iterator containing the items retrieved by the query.
-<.> Using the standard Javascript iterator pattern to loop through the items returned in `q`.
+<.> Using the standard JavaScript iterator pattern to loop through the items returned in `q`.
 <.> Add the current document from the iterator to the result array `res`.
 <.> Once all the items have been retrieved, return the result array.
 
 [IMPORTANT]
 ====
-If an inline statement/{sqlpp} call does not return a value, then the associated {sqlpp} statement is executed as part of a synchronous operation. i.e. the runtime will wait until the statement completes before moving on to the next line of Javascript.
+If an inline statement/{sqlpp} call does not return a value, then the associated {sqlpp} statement is executed as part of a synchronous operation. i.e. the runtime will wait until the statement completes before moving on to the next line of JavaScript.
 
 If the inline statement/{sqlpp} call returns a value then it is executed _asynchronously_: execution continues before the iterator is returned.
 Each document is fetched from the bucket as it requested by the iterator.
@@ -79,9 +79,9 @@ include::partial$diagrams/inline-call-sequence.puml[]
 ....
 ====
 
-== Passing Parameters to {sqlpp} statements
+== Passing Parameters to {sqlpp} Statements
 
-You can pass parameters from your Javascript to your {sqlpp} statements.
+You can pass parameters from your JavaScript to your {sqlpp} statements.
 Parameters can either be _positional_ or _named_.
 
 Positional:: The parameters are applied to the statement in the order they appear in the list.
@@ -98,7 +98,7 @@ Named:: The parameters are given a mnemonic name attached to the value, so they 
 include::example$add-airline-named-parameters.js[]
 ----
 +
-NOTE: The names of the parameters passed into the Javascript function are used in the {sqlpp} statement without any need to assign the parameters in a separate step.
+NOTE: The names of the parameters passed into the JavaScript function are used in the {sqlpp} statement without any need to assign the parameters in a separate step.
 
 [sidebar]
 ****
@@ -123,7 +123,7 @@ Inline calls only support named parameters.
 
 == Transactions
 
-Transactions are supported from {sqlpp} statements called from Javascript functions.
+Transactions are supported from {sqlpp} statements called from JavaScript functions.
 
 * The function can run statements in a transaction that was started before the function was executed. 
 * The function can run a statement that starts the transaction.
@@ -142,13 +142,13 @@ include::partial$diagrams/transactions-and-iterators.puml[]
 
 == Role-Based Access Control
 
-In order to execute {sqlpp} statements as part of a Javascript function, the user executing the function must have the appropriate privileges to perform the action on any objects referenced in the {sqlpp} statement.
+In order to execute {sqlpp} statements as part of a JavaScript function, the user executing the function must have the appropriate privileges to perform the action on any objects referenced in the {sqlpp} statement.
 
-== Executing {sqlpp} statements that call functions
+== Executing {sqlpp} Statements that Call Functions
 
-It is often the case that Javascript function will call a {sqlpp} statement that may itself call another Javascript function.
-However, it is important to be aware that each Javascript function call executed from a parent call will use a new Javascript worker process to run. 
-The deeper the calls are nested, the fewer Javascript workers are available to run, so the calling chain will eventually fail and throw an error.
+It is often the case that JavaScript function will call a {sqlpp} statement that may itself call another JavaScript function.
+However, it is important to be aware that each JavaScript function call executed from a parent call will use a new JavaScript worker process to run. 
+The deeper the calls are nested, the fewer JavaScript workers are available to run, so the calling chain will eventually fail and throw an error.
 This can be demonstrated using a recursive call sequence as shown below:
 
 [source, javascript]
@@ -170,7 +170,7 @@ returns the following result:
 ----
 include::example$do-recursion-response.jsonc[]
 ----
-<.> The call failed after {number-of-calls} nested call, which exhausted the number of Javascript workers available during the call sequence. 
+<.> The call failed after {number-of-calls} nested call, which exhausted the number of JavaScript workers available during the call sequence. 
 
 [NOTE]
 ====
@@ -178,8 +178,7 @@ The JavaScript workers are created when the Couchbase server is started up.
 
 asciimath:["Number of JavaScript Workers" = 4 xx "Number of CPUs"]
 
-The service will automatically prevent recursive calls if there are less than 50% javascript workers available
-
+The service will automatically prevent recursive calls if there are fewer than 50% JavaScript workers available.
 ====
 
 == Further Reading

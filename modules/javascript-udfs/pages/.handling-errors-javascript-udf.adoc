@@ -1,16 +1,18 @@
-= Handling Errors in Javascript Functions
-:description: Error handling in Javascript user-defined functions use the same standard exception mechanism as part of the language standard.
+= Handling Errors in JavaScript Functions
+:description: Error handling in JavaScript user-defined functions use the same standard exception mechanism as part of the language standard.
 ifndef::flag-devex-javascript-udfs[]
 :page-embargo: EMBARGOED
 endif::flag-devex-javascript-udfs[]
-:page-topic-type: guide
+:page-topic-type: reference
 :page-toclevels: 2
 
 [abstract]
 {description}
 
+== Handle Errors with the Runtime
+
 Errors that occur during the execution of a {sqlpp} statement are usually handled by the runtime, which will return a JSON object giving details of the error.
-For example, if we execute a record insertion function with a key that already exists:
+For example, if you execute a record insertion function with a key that already exists:
 
 [source, sqlpp]
 ----
@@ -24,7 +26,9 @@ then an error object is returned:
 include::example$duplicate-key-error.json5[]
 ----
 
-In most cases, it's a lot better if the Javascript function itself can handle errors that are likely to occur. 
+== Handle Errors with the Function
+
+In most cases, it's a lot better if the JavaScript function itself can handle errors that are likely to occur. 
 This gives the developer the option of responding with a more user-friendly message, or taking an alternative course of action.
 
 The following function will add an airline record, but will return an `failure` message if the attempt isn't successful.
@@ -41,7 +45,7 @@ If the record key already exists, then calling this method with `EXECUTE FUNCTIO
 include::example$add-airline-with-check-failure-return-response.jsonc[]
 ----
 
-Alternatively, we can simply throw the error, rather than returning it as a string:
+Alternatively, you can simply throw the error, rather than returning it as a string:
 
 [source, javascript]
 ----
@@ -55,16 +59,15 @@ which will produce the following result:
 include::example$add-airline-with-check-failure-throw-response.jsonc[]
 ----
 
-As well as wrapping the expection in a detailed JSON object, there is another fundamental difference between throwing an error or returning it:
+As well as wrapping the expection in a detailed JSON object, there is another fundamental difference between throwing an error or returning it.
 
-.Throw vs Return
-****
+=== Throw vs Return
+
 Aside from the data returned, throwing an error or returning a value/error will affect how subsequent {sqlpp} operations are processed.
 
 *Returning an  error*:: If the JavaScript function _returns_ any value, then the {sqlpp} runtime will assume that the function completed successfully, and the caller will continue to run subsequent statements.
 
 *Throwing an error*::  If an error is _thrown_ then this is treated as an error condition, so further statements in the request will not be run.
-****
 
 You can, of course, throw the error object itself, rather than just a string.
 
@@ -79,6 +82,8 @@ which deliver a lot more useful information than just posting back a string:
 ----
 include::example$add-airline-with-check-failure-throw-object-response.jsonc[]
 ----
+
+=== Parse the Error
 
 Another approach is to parse the error using the `JSON.parse()` function and return the resulting object: 
 
@@ -95,7 +100,9 @@ This code will send back the entire message structure.
 include::example$parsed-error-in-full.json5[]
 ----
 
-Once we know the structure of the error message, there's no reason why we can't carry out alternative actions depending on the type of error encountered:
+=== Carry Out Alternative Actions
+
+Once you know the structure of the error message, there's no reason why you can't carry out alternative actions depending on the type of error encountered:
 
 [source, javascript]
 ----
