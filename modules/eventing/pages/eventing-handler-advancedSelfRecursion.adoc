@@ -1,0 +1,195 @@
+= Function: Advanced Self Recursion option
+:description: pass:q[Perform the Advanced Self Recursion option where Eventing interacts with the Data service.]
+:page-edition: Enterprise Edition
+:tabs:
+
+*Goal*: {description}
+
+* This function *advancedSelfRecursion* merely demonstrates the Advanced Self Recursion option.
+* Requires Eventing Storage (or metadata collection) and a "source" collection.
+* Needs a Binding of type "bucket alias" (as documented in the Scriptlet).
+* Will operate on any mutation where meta.id or the KEY starts with "doquery:".
+* The example shows how to break up and restart a long running process like a N1QL query.
+** The logic counts up the number of hotels that start with a particular letter.
+* For more information refer to xref:eventing-advanced-keyspace-accessors.adoc#optional-params-recursion[Advanced Self Recursion option] in the detailed documentation.
+
+[{tabs}]
+====
+advancedSelfRecursion::
++
+--
+[source,javascript]
+----
+// To run configure the settings for this Function, advancedSelfRecursion, as follows:
+//
+// Version 7.6+
+//   "Function Scope"
+//     *.* (or try bulk.data if non-privileged)
+//   "Listen to Location"
+//     bulk.data.source
+//   "Eventing Storage"
+//     rr100.eventing.metadata
+//   Binding(s)
+//    1. "binding type", "alias name...", "bucket.scope.collection", "Access"
+//       "bucket alias", "src_col",       "bulk.data.source",        "read and write"
+//
+//   Must have the sample dataset travel-sample installed
+
+function OnUpdate(doc, meta) {
+    if ( meta.id.startsWith("doquery:") === false ) return;
+    if (doc.done && doc.done === true) return;
+  
+    if (! doc.continue)  {
+        doc.queryBeg = new Date();
+        doc.queryCnt = 0;
+        doc.currentQueryOffset = 0;
+        doc.namesProcessed = 0;
+        doc.letterHash = {};
+        log(meta.id,'Query initialized at ' + doc.queryBeg);
+    }
+    
+    var offset = doc.currentQueryOffset;
+    var results =
+        SELECT name
+        FROM `travel-sample`.`inventory`.`hotel`
+        LIMIT 100
+        OFFSET $offset;
+
+    doc.queryCnt++; 
+    doc.currentQueryOffset = doc.currentQueryOffset + 100;
+
+    var loopCnt = 0;
+    for (var item of results) {
+        loopCnt++;
+        doc.namesProcessed++;
+        var name = item.name;
+        if (name && name.length > 0) {
+            // Extract the first character and convert it to lowercase
+            var firstChar = name[0].toLowerCase();
+
+            // If the letter exists in the hash, increment its count, otherwise initialize it to 1
+            if (doc.letterHash[firstChar]) {
+                doc.letterHash[firstChar]++;
+            } else {
+                doc.letterHash[firstChar] = 1;
+            }
+        }
+    }
+    results.close();
+    
+    if (loopCnt < 100) {
+        // we are done
+        if (doc.continue) delete doc.continue
+        doc.done = true;
+        doc.queryEnd = new Date();
+        log(meta.id,'Query cnt complete mutations    ' + doc.queryCnt + ' namesProcessed ' + doc.namesProcessed );
+        log(meta.id,'Query completed at ' + doc.queryEnd);
+        log(meta.id,'Result hotels starting with "a" ' + doc.letterHash['a'] + ', hotels starting with "b" ' + doc.letterHash['b'] + ', ...');
+        // no self recursion
+        src_col[meta.id] = doc;
+    } else {
+        // we are not done
+        doc.continue = true;
+        log(meta.id,'Query cnt in progress mutations ' + doc.queryCnt + ' namesProcessed ' + doc.namesProcessed );
+        // use self recursion, will reslt in a continuation of the query
+        couchbase.upsert(src_col, meta, doc, { "self_recursion": true });
+    }
+}
+----
+--
+
+Input Data/Mutation::
++
+--
+[source,json]
+----
+INPUT: KEY doquery:001
+
+{
+  "id": "doquery:001"
+}
+
+----
+--
+
+Output Data/Logged::
++
+--
+[source,json]
+----
+OUTPUT: KEY doquery:001
+{
+  "id": "doquery:001",
+  "queryBeg": "2024-03-15T21:07:38.114Z",
+  "queryCnt": 10,
+  "currentQueryOffset": 1000,
+  "namesProcessed": 917,
+  "letterHash": {
+    "1": 1,
+    "5": 2,
+    "8": 1,
+    "m": 58,
+    "t": 127,
+    "l": 41,
+    "g": 25,
+    "w": 27,
+    "a": 33,
+    "b": 48,
+    "r": 35,
+    "h": 168,
+    "n": 19,
+    "o": 15,
+    "p": 41,
+    "s": 64,
+    "c": 84,
+    "i": 23,
+    "u": 8,
+    "k": 15,
+    "j": 7,
+    "'": 1,
+    "e": 16,
+    "d": 21,
+    "q": 4,
+    "f": 16,
+    "y": 5,
+    "v": 12
+  },
+  "done": true,
+  "queryEnd": "2024-03-15T21:07:38.425Z"
+}
+----
+--
+
+Output Log::
++ 
+-- 
+[source,json]
+----
+2024-03-15T14:07:38.116-07:00 [INFO] "doquery:001" "Query initialized at Fri Mar 15 2024 14:07:38 GMT-0700 (Pacific Daylight Time)"
+
+2024-03-15T14:07:38.159-07:00 [INFO] "doquery:001" "Query cnt in progress mutations 1 namesProcessed 100"
+
+2024-03-15T14:07:38.175-07:00 [INFO] "doquery:001" "Query cnt in progress mutations 2 namesProcessed 200"
+
+2024-03-15T14:07:38.191-07:00 [INFO] "doquery:001" "Query cnt in progress mutations 3 namesProcessed 300"
+
+2024-03-15T14:07:38.204-07:00 [INFO] "doquery:001" "Query cnt in progress mutations 4 namesProcessed 400"
+
+2024-03-15T14:07:38.217-07:00 [INFO] "doquery:001" "Query cnt in progress mutations 5 namesProcessed 500"
+
+2024-03-15T14:07:38.351-07:00 [INFO] "doquery:001" "Query cnt in progress mutations 6 namesProcessed 600"
+
+2024-03-15T14:07:38.376-07:00 [INFO] "doquery:001" "Query cnt in progress mutations 7 namesProcessed 700"
+
+2024-03-15T14:07:38.396-07:00 [INFO] "doquery:001" "Query cnt in progress mutations 8 namesProcessed 800"
+
+2024-03-15T14:07:38.413-07:00 [INFO] "doquery:001" "Query cnt in progress mutations 9 namesProcessed 900"
+
+2024-03-15T14:07:38.425-07:00 [INFO] "doquery:001" "Query cnt complete mutations    10 namesProcessed 917"
+
+2024-03-15T14:07:38.425-07:00 [INFO] "doquery:001" "Query completed at Fri Mar 15 2024 14:07:38 GMT-0700 (Pacific Daylight Time)"
+
+2024-03-15T14:07:38.425-07:00 [INFO] "doquery:001" "Result hotels starting with \"a\" 33, hotels starting with \"b\" 48, ..."
+----
+--
+====
