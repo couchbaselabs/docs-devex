@@ -1,0 +1,109 @@
+= Function: Advanced TOUCH operation
+:description: pass:q[Perform the Advanced TOUCH operation where Eventing interacts with the Data service.]
+:page-edition: Enterprise Edition
+:tabs:
+
+*Goal*: {description}
+
+* This function *advancedTouchOp* merely demonstrates the Advanced TOUCH operation.
+* Requires Eventing Storage (or metadata collection) and a "source" collection.
+* Needs a Binding of type "bucket alias" (as documented in the Scriptlet).
+* Will operate on any mutation where meta.id or the KEY starts with "ten_seconds:".
+* Does not require sending the document back to the Data Service to update the TTL.
+* For more information refer to xref:eventing-advanced-keyspace-accessors.adoc#advanced-touch-op[Advanced TOUCH operation] in the detailed documentation.
+
+[{tabs}]
+====
+advancedTouchOp::
++
+--
+[source,javascript]
+----
+// To run configure the settings for this Function, advancedTouchOp, as follows:
+//
+// Version 7.6+
+//   "Function Scope"
+//     *.* (or try bulk.data if non-privileged)
+//   "Listen to Location"
+//     bulk.data.source
+//   "Eventing Storage"
+//     rr100.eventing.metadata
+//   Binding(s)
+//    1. "binding type", "alias name...", "bucket.scope.collection", "Access"
+//       "bucket alias", "src_col",       "bulk.data.source",        "read and write"
+
+function OnUpdate(doc, meta) {
+    if (! meta.id.startsWith("ten_seconds:") ) return;
+
+    log('input meta', meta);
+    log('input doc', doc);
+
+    var expiry = new Date();
+    expiry.setSeconds(expiry.getSeconds() + 10);
+
+    var req = {"id": meta.id, "expiry_date": expiry};
+    var result = couchbase.touch(src_col, req);
+    if (result.success) {
+        log('success adv. touch: result', result);
+    } else {
+        log('failure adv. touch: id', req.id, 'result', result);
+    }
+}
+----
+--
+
+Input Data/Mutation::
++
+--
+[source,json]
+----
+INPUT: KEY ten_seconds:001
+
+{
+    "id": "ten_seconds:001",
+    "type": "Will auto delete in 10 seconds so keep keep retreiving docs and refreshing"
+}
+
+----
+--
+
+Output Data/Logged::
++
+--
+[source,json]
+----
+2024-03-15T11:57:51.103-07:00 [INFO] "input meta"
+{
+  "cas": "1710529071079817216",
+  "id": "ten_seconds:001",
+  "expiration": 0,
+  "flags": 33554438,
+  "vb": 679,
+  "seq": 102,
+  "datatype": "json",
+  "keyspace":
+  {
+    "bucket_name": "travel-sample",
+    "scope_name": "tenant_agent_00",
+    "collection_name": "bookings"
+  },
+  "cid": 18
+}
+
+2024-03-15T11:57:51.108-07:00 [INFO] "success adv. touch: result"
+{
+  "meta":
+  {
+    "id": "ten_seconds:001",
+    "cas": "1710529071107276800"
+  },
+  "success": true
+}
+
+2024-03-15T11:58:03.302-07:00 [INFO] "Doc deleted/expired" "ten_seconds:001"
+{
+  "expired": true
+}
+----
+--
+====
