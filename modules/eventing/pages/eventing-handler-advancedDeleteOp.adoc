@@ -1,17 +1,20 @@
-= Function: Advanced DELETE operation
-:description: pass:q[Perform the Advanced DELETE operation where Eventing interacts with the Data service.]
+= Function: Advanced DELETE Operation
+:description: pass:q[Perform the Advanced DELETE operation where Eventing interacts with the Data Service.]
 :page-edition: Enterprise Edition
 :tabs:
 
-*Goal*: {description}
+{description}
 
-* This function *advancedDeleteOp* merely demonstrates the Advanced DELETE operation.
-* Requires Eventing Storage (or metadata collection) and a "source" collection.
-* Needs a Binding of type "bucket alias" (as documented in the Scriptlet).
-* Will operate on any mutation where doc.type === "control_adv_delete".
-* Always tries to insert the test document, any insert error will be ignored.
-* There are 4 modes of operation: no_cas, bad_cas, no_key, and good_cas.
-* For more information refer to xref:eventing-advanced-keyspace-accessors.adoc#advanced-delete-op[Advanced DELETE operation] in the detailed documentation.
+The `advancedDeleteOp` function:
+
+* Performs the Advanced DELETE operation
+* Requires Eventing Storage (or a metadata collection) and a source collection
+* Requires a binding of type `bucket alias`
+* Operates on any mutation where `doc.type === "control_adv_delete"`
+* Always tries to insert the test document and ignores insert errors
+* Has 4 modes of operation: `no_cas`, `bad_cas`, `good_cas`, and `no_key`
+
+For more information about the Advanced Self-Recursion Parameter, see xref:eventing-advanced-keyspace-accessors.adoc#advanced-delete-op[Advanced DELETE Operation].
 
 [{tabs}] 
 ====
@@ -20,7 +23,7 @@ advancedDeleteOp::
 --
 [source,javascript]
 ----
-// To run configure the settings for this Function, advancedDeleteOp, as follows:
+// Configure the settings for the advancedDeleteOp function as follows:
 //
 // Version 7.1+
 //   "Function Scope"
@@ -49,23 +52,23 @@ function OnUpdate(doc, meta) {
     log('input meta', meta);
     log('input doc ', doc); 
     
-    // Setup, make sure we have our doc to "delete", ignore any errors
+    // Setup, make sure there is a doc to "delete", ignore any errors
     couchbase.insert(src_col,{"id":"test_adv_delete:" + doc.ins_id},{"a:": 1});
     
     var new_meta;
     if (doc.mode && doc.mode === "no_cas") {
-        // Here we pass no CAS it will always succeed
+        // No CAS is passed - it always succeeds
         new_meta = {"id":"test_adv_delete:" + doc.ins_id};
     }
     if (doc.mode && doc.mode === "bad_cas") {
-        // Here we pass a non-matching CAS it will always fail
+        // Pass a non-matching CAS - it always fails
         new_meta = {"id":"test_adv_delete:" + doc.ins_id, "cas":"1111111111111111111"}; 
     }
     if (doc.mode && doc.mode === "good_cas") {
-        // Here we will pass the matching or current CAS it will succeed
+        // Pass the matching or current CAS - it succeeds
         var tmp_r = couchbase.get(src_col,{"id":"test_adv_delete:" + doc.ins_id});
         if (tmp_r.success) {
-            // Here we use the current CAS just read via couchbase.get(...)
+            // Use the current CAS to read via couchbase.get(...)
             new_meta = {"id":"test_adv_delete:" + doc.ins_id, "cas": tmp_r.meta.cas}; 
         } else {
             log('Cannot delete due to no such key',"test_adv_delete:" + doc.ins_id);
@@ -86,7 +89,7 @@ function OnUpdate(doc, meta) {
 }
 ----
 --
-Input Data/Mutation::
+Input data::
 +
 --
 [source,json]
@@ -137,9 +140,11 @@ INPUT: KEY control_adv_delete::4
 ----
 --
 +
-Output Data/Log::
+Output data::
 +
-We do four (4) deletion attempts the second fails due to a CAS missmatch and the third fails due to no such key.
+Perform 4 deletion attempts.
+The second attempt fails because of a CAS mismatch.
+The third attempt fails because the document key does not exist.
 +
 -- 
 [source,json]

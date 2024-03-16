@@ -1,17 +1,20 @@
-= Function: Advanced REPLACE operation
-:description: pass:q[Perform the Advanced REPLACE operation where Eventing interacts with the Data service.]
+= Function: Advanced REPLACE Operation
+:description: pass:q[Perform the Advanced REPLACE operation where Eventing interacts with the Data Service.]
 :page-edition: Enterprise Edition
 :tabs:
 
-*Goal*: {description}
+{description}
 
-* This function *advancedReplaceOp* merely demonstrates the Advanced REPLACE operation.
-* Requires Eventing Storage (or metadata collection) and a "source" collection.
-* Needs a Binding of type "bucket alias" (as documented in the Scriptlet).
-* Will operate on any mutation where doc.type === "control_adv_replace".
-* Always tries to insert the test document, any insert error will be ignored.
-* There are 3 modes of operation: no_cas, bad_cas, and good_cas.
-* For more information refer to xref:eventing-advanced-keyspace-accessors.adoc#advanced-replace-op[Advanced REPLACE operation] in the detailed documentation.
+The `advancedReplaceOp` function:
+
+* Performs the Advanced REPLACE operation
+* Requires Eventing Storage (or a metadata collection) and a source collection
+* Requires a binding of type `bucket alias`
+* Operates on any mutation where `doc.type === "control_adv_replace"`
+* Always tries to insert the test document and ignores insert errors
+* Has 3 modes of operation: `no_cas`, `bad_cas`, and `good_cas`
+
+For more information about the Advanced Self-Recursion Parameter, see xref:eventing-advanced-keyspace-accessors.adoc#advanced-replace-op[Advanced REPLACE Operation].
 
 [{tabs}] 
 ====
@@ -20,7 +23,7 @@ advancedReplaceOp::
 --
 [source,javascript]
 ----
-// To run configure the settings for this Function, advancedReplaceOp, as follows:
+// Configure the settings for the advancedReplaceOp function as follows:
 //
 // Version 7.1+
 //   "Function Scope"
@@ -49,25 +52,25 @@ function OnUpdate(doc, meta) {
     log('input meta', meta);
     log('input doc ', doc); 
     
-    // Setup, make sure we have our doc to "replace", ignore any errors
+    // Setup, make sure there is a doc to "replace", ignore any errors
     couchbase.insert(src_col,{"id":"test_adv_replace:" + doc.ins_id},{"a:": 1});
     
     var new_meta;
     if (doc.mode && doc.mode === "no_cas") {
-        // Here we pass no CAS it will always succeed
+        // No CAS is passed - it always succeeds
         new_meta = {"id":"test_adv_replace:" + doc.ins_id};
-        // optional set an expiry 60 seconds in the future
+        // (Optional) Set an expiry 60 seconds in the future
         // new_meta.expiry_date = new Date(Date.now() + 60 * 1000);
     }
     if (doc.mode && doc.mode === "bad_cas") {
-        // Here we pass a non-matching CAS it will always fail
+        // Pass a non-matching CAS - it always fails
         new_meta = {"id":"test_adv_replace:" + doc.ins_id, "cas":"1111111111111111111"}; 
     }
     if (doc.mode && doc.mode === "good_cas") {
-        // Here we will pass the matching or current CAS it will succeed
+        // Pass the matching or current CAS - it succeeds
         var tmp_r = couchbase.get(src_col,{"id":"test_adv_replace:" + doc.ins_id});
         if (tmp_r.success) {
-            // Here we use the current CAS just read via couchbase.get(...)
+            // Use the current CAS to read via couchbase.get(...)
             new_meta = {"id":"test_adv_replace:" + doc.ins_id, "cas": tmp_r.meta.cas}; 
         } else {
             log('Cannot replace due to no such key',"test_adv_replace:" + doc.ins_id);
@@ -84,7 +87,7 @@ function OnUpdate(doc, meta) {
 }
 ----
 --
-Input Data/Mutation::
+Input data::
 +
 --
 [source,json]
@@ -124,9 +127,10 @@ INPUT: KEY control_adv_replace::3
 ----
 --
 +
-Output Data::
+Output data::
 +
-We try to replace three (3) documents the first and last replacements succeed but the second, fails because of a CAS missmatch.
+Replace 3 documents.
+The first and last replacements are successful; the second replacement fails because of a CAS mismatch.
 +
 --
 [source,json]
@@ -141,7 +145,7 @@ KEY: test_adv_replace:10
 ----
 --
 +
-Output Log::
+Output log::
 + 
 -- 
 [source,json]

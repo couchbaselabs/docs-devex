@@ -1,43 +1,46 @@
 = Function: Advanced Document Controlled Expiry
-:description: pass:q[Purge a document automatically based on self-contained start and duration fields.]
+:description: pass:q[Purge a document automatically based on the document's self-contained start and duration fields.]
 :page-edition: Enterprise Edition
 :tabs:
 
-*Goal*: {description}
+{description}
 
-* This function *advancedDocControlledSelfExpiry* demonstrates self-expiry of a document; for example, a user trial.
-* Requires Eventing Storage (or metadata collection) and a "source" collection.
-* Needs a Binding of type "bucket alias" (as documented in the Scriptlet).
-* When documents are created, they will have no expiration value. This function processes the initial mutation to calculate and set the proper TTL.
-* In Couchbase, when using a simple integer expiry value (as opposed to a proper date or time object), the expiration can be specified in two ways:
-** As an offset from the current time. If the absolute value of the expiry is less than 30 days (60 * 60 * 24 * 30 seconds), it is considered an offset.
-** As an absolute Unix time stamp. If the value is greater than 30 days (60 * 60 * 24 * 30 seconds), it is considered an absolute time stamp.
-** As described in xref:learn:data/expiration.adoc[Expiration], if a "Bucket Max Time-To-Live" is set (specified in seconds), it is an enforced hard upper limit. As such, any subsequent document mutation (by {sqlpp}, Eventing, or any Couchbase SDK) will result in the document having its expiration adjusted and set to the bucket’s maximum TTL if the operation has:
-*** No TTL.
-*** A TTL of zero.
-*** A TTL greater than the bucket TTL.
-* As we are using Advanced Bucket Accessors setting document expirations (or TTLs) we use a JavaScript Data object.
-* Will operate on any document with type == "trial_customers".
-* Will ignore any doc with a non-zero TTL
-* This is different than setting a TTL on a bucket or a collection which will typically update (or extend) the TTL of a document on each mutation.
+The `advancedDocControlledSelfExpiry` function:
+
+* Demonstrates the self-expiry of a document (for example, a user trial)
+* Requires Eventing Storage (or a metadata collection) and a source collection
+* Requires a binding of type `bucket alias`
+* Processes the initial mutation to calculate and set the TTL of a newly-created document
+* Uses a JavaScript data object to set document expiration
+* Operates on any document where `type == "trial_custoimers"`
+* Ignores any document with a TTL that is not zero
+
+When you use a simple integer instead of a proper date or time object for your document's expiration value, the expiration value is specified in one of the following ways:
+
+* As an offset from the current time if the value is less than 30 days (60 * 60 * 24 * 30 seconds).
+* As an absolute Unix time stamp if the value is greater than 30 days (60 * 60 * 24 * 30 seconds).
+
+If a `Bucket Max Time-to-Live` is set and specified in seconds, it's enforced as a hard upper limit.
+Any subsequent document mutation, whether by {sqlpp}, Eventing, or a Couchbase SDK, results in the document having its expiration adjusted and set to the bucket's maximum TTL if the operation has:
+
+* No TTL
+* A TTL of zero
+* A TTL greater than the bucket's TTL
 
 [{tabs}]
 ====
 advancedDocControlledSelfExpiry::
 +
 --
-Two variants of this function are available - a 6.6 version that relies on {sqlpp} and a 6.6.1+/7.0.0+ version (*this Function*) that directly sets the expiration.
-You can completely avoid _N1QL(...)_ and use _couchbase.replace(bucket_binding, meta, doc)_ as the advancedDocControlledSelfExpiry variant is much faster.
+There are two variants of this function available: a xref:eventing-handler-docControlledSelfExpiry.adoc[Couchbase Server version 6.6 that relies on {sqlpp}], and a Couchbase Server version 6.6.1+/7.0.0+ that directly sets the expiration.
 
-* xref:eventing-handler-docControlledSelfExpiry.adoc[docControlledSelfExpiry (indirect TTL via {sqlpp})]
-* <<advancedDocControlledSelfExpiry,advancedDocControlledSelfExpiry (direct TTL)>>
+You can improve your function's performance by avoiding N1QL() and using `couchbase.replace(bucket_binding, meta, doc)` instead.
 
-[#advancedDocControlledSelfExpiry]
-advancedDocControlledSelfExpiry (direct TTL)
+The following example directly sets the expiration.
 
 [source,javascript]
 ----
-// To run configure the settings for this Function, advancedDocControlledSelfExpiry, as follows:
+// Configure the settings for the advancedDocControlledSelfExpiry function as follows:
 //
 // Version 7.1+
 //   "Function Scope"
@@ -61,36 +64,36 @@ advancedDocControlledSelfExpiry (direct TTL)
 //       "bucket alias", "src_col",       "source", "read and write"
 
 function OnUpdate(doc, meta) {
-    // Filter items that don't have been updated
+    // Filter items that have not been updated
     if (meta.expiration !== 0) {
         log(meta.id, "IGNORE expiration "+meta.expiration+" !== 0 or "+
             new Date(meta.expiration).toString());
         return;
     }
 
-    // Optional filter to a specic field like 'type'
+    // Optional filter to a specific field like 'type'
     if (doc.type !== 'trial_customers') return;
 
-    // Our expiry is based on a JavaScript date parsable field, it must exist
+    // The expiry is based on a JavaScript date parsable field
     if (!doc.trialStartDate || !doc.trialDurationDays) return;
 
-    // Convert the doc's field timeStamp and convert to unix epoch time (in ms.).
+    // Convert the doc field timeStamp to Unix epoch time in milliseconds 
     var docTimeStampMs = Date.parse(doc.trialStartDate);
 
     var keepDocForMs = doc.trialDurationDays * 1000 * 60 * 60 * 24 ;
-    var nowMs = Date.now();  // get current unix time (in ms.).
+    var nowMs = Date.now();  // Get current Unix time in milliseconds
 
-    // Archive if we have kept it for too long no need to set the expiration
+    // Archive if it has been kept for too long; you do not need to set an expiration
     if( nowMs >= (docTimeStampMs + keepDocForMs) ) {
 
-        // Delete the document form the source collection via the map alias
+        // Delete the document from the source collection through the map alias
         delete src_col[meta.id];
 
         log(meta.id, "DELETE from src_col to dst_bkt alias as our expiration " +
             new Date(docTimeStampMs + keepDocForMs).toString()) + " is already past";
     } else {
         var key = meta.id;
-        //set the meta.expiration=ttlMs
+        // Set the meta.expiration=ttlMs
         var	ttlMs = docTimeStampMs + keepDocForMs;
 
         if (ttlMs !== 0) {
@@ -98,7 +101,7 @@ function OnUpdate(doc, meta) {
                 ttlMs+" or " + new Date(ttlMs).toString());
             // Advanced Bucket Accessors use JavaScript Date objects
             var expiryDate = new Date(ttlMs);
-            // This is 4X to 5X faster than using N1QL(...) and no need to worry about recursion.
+            // This is 4X to 5X faster than using N1QL(...) and you do not need to worry about recursion
             var res = couchbase.replace(src_col,{"id":meta.id,"expiry_date":expiryDate},doc);
             if (!res.success) {
                 log(meta.id,'Setting TTL to',expiryDate,'failed',res);
@@ -109,13 +112,13 @@ function OnUpdate(doc, meta) {
 ----
 --
 
-Input Data/Mutation::
+Input data::
 +
 --
+Create a test set of 4 documents using the Query Editor to insert the data items.
+You do not need an Index.
 
-We want to create a test set of four (4) documents, use the Query Editor to insert the the data items (you do not need an index).
-
-Note, if the today is past 08-25-2021 (MM-DD-YYYY) just change the `trialStartDate` for the last two records to at least 90 days from now.
+If today's date is past 08-25-2021 (MM-DD-YYYY), you can change the `trialStartDate` for the last two records to at least 90 days from today.
 
 [source,sqlpp]
 ----
@@ -154,7 +157,7 @@ Note, if the today is past 08-25-2021 (MM-DD-YYYY) just change the `trialStartDa
 ----
 --
 
-Output Data/Mutation::
+Output data::
 +
 --
 [source,json]
@@ -179,7 +182,7 @@ NEW/OUTPUT: KEY trial_customers::3
   "type": "trial_customers"
 }
 
-We end up with two (2) of the four documents (obviously you may need to adjust the {sqlpp} INSERT in a few months as all the document would be immediately deleted).
+Returns 2 of the 4 documnents.
 
 * "trial_customers::0" was deleted
 * "trial_customers::1" was deleted

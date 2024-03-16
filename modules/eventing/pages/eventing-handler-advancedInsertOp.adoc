@@ -1,15 +1,18 @@
-= Function: Advanced INSERT operation
-:description: pass:q[Perform the Advanced INSERT operation where Eventing interacts with the Data service.]]
+= Function: Advanced INSERT Operation
+:description: pass:q[Perform the Advanced INSERT operation where Eventing interacts with the Data Service.]]
 :page-edition: Enterprise Edition
 :tabs:
 
-*Goal*: {description}
+{description}
 
-* This function *advancedInsertOp* merely demonstrates the Advanced INSERT operation.
-* Requires Eventing Storage (or metadata collection) and a "source" collection.
-* Needs a Binding of type "bucket alias" (as documented in the Scriptlet).
-* Will operate on any mutation where doc.type === "control_adv_insert".
-* For more information refer to xref:eventing-advanced-keyspace-accessors.adoc#advanced-insert-op[Advanced INSERT operation] in the detailed documentation.
+The `advancedInsertOp` function:
+
+* Performs the Advanced INSERT operation
+* Requires Eventing Storage (or a metadata collection) and a source collection
+* Requires a binding of type `bucket alias`
+* Operates on any mutation where `doc.type === "control_adv_insert"` 
+
+For more information about the Advanced Self-Recursion Parameter, see xref:eventing-advanced-keyspace-accessors.adoc#advanced-insert-op[Advanced INSERT Operation].
 
 [{tabs}] 
 ====
@@ -18,7 +21,7 @@ advancedInsertOp::
 --
 [source,javascript]
 ----
-// To run configure the settings for this Function, advancedInsertOp, as follows:
+// Configure the settings for the advancedInsertOp function as follows:
 //
 // Version 7.1+
 //   "Function Scope"
@@ -45,7 +48,7 @@ function OnUpdate(doc, meta) {
     if (!meta.id.startsWith("control_adv_insert")) return;
     log('input meta', meta);
     log('input doc ', doc);
-    // two modes typical insert or setting a expiration/TTL
+    // two modes: typical insert and setting an expiration/TTL
     var new_meta = {"id":"test_adv_insert:"+doc.ins_id};
     if (doc.set_expiry && doc.set_expiry === true) {
         new_meta = {"id":"test_adv_insert:"+doc.ins_id, expiry_date: new Date(Date.now() + 60 * 1000)};
@@ -60,7 +63,7 @@ function OnUpdate(doc, meta) {
 }
 ----
 --
-Input Data/Mutation::
+Input data::
 +
 --
 [source,json]
@@ -100,9 +103,12 @@ INPUT: KEY control_adv_insert::3
 ----
 --
 +
-Output Data::
+Output data::
 +
-We try to insert three (3) documents the first two (2) inserts succeed but the second, test_adv_insert:2, will expire in 60 seconds because we set an expiration.  The third insert attempt will fail since test_adv_insert:1 already exists.
+The output data inserts 3 documents. 
+The first 2 insertions are successful.
+The `test_adv_insert: 2` has an expiration of 60 seconds.
+The third insertion attempt fails because `test_adv_insert: 1` already exists.
 +
 --
 [source,json]
@@ -125,7 +131,7 @@ KEY: test_adv_insert:2
 ----
 --
 +
-Output Log::
+Output log::
 + 
 -- 
 [source,json]
