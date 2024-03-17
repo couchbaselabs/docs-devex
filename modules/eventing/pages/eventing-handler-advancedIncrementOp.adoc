@@ -1,15 +1,19 @@
-= Function: Advanced INCREMENT operation
-:description: pass:q[Perform the Advanced INCREMENT operation where Eventing interacts with the Data service.]
+= Function: Advanced INCREMENT Operation
+:description: pass:q[Perform the Advanced INCREMENT operation where Eventing interacts with the Data Service.]
 :page-edition: Enterprise Edition
 :tabs:
 
-*Goal*: {description}
+{description}
 
-* This function *advancedIncrementOp* merely demonstrates the Advanced INCREMENT operation.
-* Requires Eventing Storage (or metadata collection) and a "source" collection.
-* Needs a Binding of type "bucket alias" (as documented in the Scriptlet).
-* Will operate on any mutation and count the mutations subject to DCP dedup.
-* For more information refer to xref:eventing-advanced-keyspace-accessors.adoc#advanced-increment-op[Advanced INCREMENT operation] in the detailed documentation.
+The `advancedIncrementOp` function:
+
+* Performs the Advanced INCREMENT operation
+* Requires Eventing Storage (or a metadata collection) and a source collection
+* Requires a binding of type `bucket alias`
+* Operates on any mutation
+* Counts the mutations subject to DCP deduplication
+
+For more information about the Advanced Self-Recursion Parameter, see xref:eventing-advanced-keyspace-accessors.adoc#advanced-increment-op[Advanced INCREMENT Operation].
 
 [{tabs}] 
 ====
@@ -18,7 +22,7 @@ advancedIncrementOp::
 --
 [source,javascript]
 ----
-// To run configure the settings for this Function, advancedIncrementOp, as follows:
+// Configure the settings for the advancedIncrementOp function as follows:
 //
 // Version 7.1+
 //   "Function Scope"
@@ -46,7 +50,7 @@ function OnUpdate(doc, meta) {
     // log('input meta', meta);
     // log('input doc ', doc);
 
-    // if doc.count doesn't exist it will be created
+    // Creates doc.count if it does not already exist
     var ctr_meta = {"id": "my_atomic_counter:1" };
     var result = couchbase.increment(src_col,ctr_meta);
     if (result.success) {
@@ -57,7 +61,7 @@ function OnUpdate(doc, meta) {
 }
 ----
 --
-Input Data/Mutation::
+Input data::
 +
 --
 [source,json]
@@ -76,9 +80,9 @@ UPSERT INTO `bulk`.`data`.`source` (KEY,VALUE)
 ----
 --
 
-Output Data::
+Output data::
 +
-We insert ten (10) documents and count the mutations
+Insert 10 documents and count the mutations through incrementing.
 +
 --
 [source,json]
@@ -91,7 +95,7 @@ KEY: my_atomic_counter:1
 ----
 --
 
-Output Log::
+Output log::
 + 
 -- 
 [source,json]

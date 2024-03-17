@@ -1,19 +1,22 @@
 = Function: Multi Collection Eventing
-:description: pass:q[Show how to access the Data Service when Eventing is listening to multiple collections.]
+:description: pass:q[Access the Data Service when Eventing is listening to multiple collections.]
 :page-edition: Enterprise Edition
 
+{description}
 
-*Goal*: {description}
+The `multiCollectionEventing` function:
 
-* This function *multiCollectionEventing* demonstrates how to access the Data Service when using wildcard bindings.
-* Requires four (4) keyspaces in two buckets "rr100" and "source"
-** rr100.eventing.metadata
-** source._default._default
-** source.myscope.mycol1
-** source.myscope.mycol2
-* Needs two Bindings of type "bucket alias" (as documented in the Scriptlet).
-* Will operate on three test documents.  Add them one at a time after the function is deployed.
-* Highlights the use of _meta.keyspace_
+* Demonstrates how to access the Data Service when using `{asterisk}` wildcard bindings
+* Requires 2 bindings of type `bucket alias`
+* Requires the following 4 keyspaces in two buckets, `rr100` and source:
+** `rr100.eventing.metadata`
+** `source._default._default`
+** `source.myscope.mycol1`
+** `source.myscope.mycol2`
+* Operates on 3 test documents
+* Highlights the use of `meta.keyspace`
+
+For more information about the Advanced Self-Recursion Parameter, see xref:eventing-advanced-keyspace-accessors.adoc#multiple-collection-functions[Eventing Functions that Listen to Multiple Collections].
 
 [tabs]
 ====
@@ -22,9 +25,9 @@ multiCollectionEventing::
 --
 [source, javascript]
 ----
-// To run configure the settings for this Function, multiCollectionEventing, as follows:
+// Configure the settings for the multiCollectionEventing function as follows:
 //
-// Setup four (4) required keyspaces in two buckets "rr100" and "source"
+// Set up four (4) required keyspaces in two buckets "rr100" and "source"
 //   rr100.eventing.metadata
 //   source._default._default
 //   source.myscope.mycol1
@@ -58,15 +61,15 @@ function OnUpdate(doc, meta) {
         {"bucket_name": "source","scope_name": "myscope","collection_name": "mycol2"}});
     log('>>>B fixed read',"res1", res1); 
     
-    // protect against reading from something outside the alias
+    // Protect against reading from something outside the alias
     if (meta.keyspace.scope_name == "myscope") {
-        // TEST GET with keyspace form meta
+        // TEST GET with keyspace from meta
         var res2 = couchbase.get(alias_ro,meta);
         log('>>>C read using passed meta (must be myscope)',"res2", res2);
         
         if (meta.keyspace.collection_name == "mycol2") {
             // TEST UPSERT with hardcode keyspace
-            // add a field to the doc we read in res1
+            // Add a field to the document read in res1
             res1.doc.random1 = Math.random();
             var res3 = couchbase.upsert(alias_rw,{"id": "doc2", "keyspace": 
                 {"bucket_name": "source","scope_name": "myscope","collection_name": "mycol2"}}, res1.doc)
@@ -82,13 +85,13 @@ function OnUpdate(doc, meta) {
             var res5 = couchbase.get(alias_rw,meta);
             log('>>>F get (show added fields)',"res5", res5);
         
-            // TEST DELETE with hardcode keyspace (so we can TEST the insert)
+            // TEST DELETE with hardcode keyspace (so the insert can be tested)
             var res6 = couchbase.delete(alias_rw,{"id": "doc2", "keyspace": 
                 {"bucket_name": "source","scope_name": "myscope","collection_name": "mycol2"}})
             log('>>>G delete',"res6", res6);
             
             // TEST INSERT with hardcode keyspace
-            // now remove the added items put thnigs back
+            // Remove the added items
             delete res1.doc.random1;
             delete res1.doc.random2;
             var res7 = couchbase.insert(alias_rw,{"id": "doc2", "keyspace": 
@@ -100,13 +103,13 @@ function OnUpdate(doc, meta) {
 ----
 --
 
-Input Data/Mutation::
+Input data::
 +
 --
+Create a test document set of 3 documents using the Query Editor to insert the data items.
+You do not need an Index.
 
-We want to create a small test doc set of three documents
-
-Use the Query Editor to insert the above data items (you do not need an Index) add them one at a time and check the Eventing log each time.
+Add one test document at a time.
 
 [source,sqlpp]
 ----
@@ -118,7 +121,7 @@ Use the Query Editor to insert the above data items (you do not need an Index) a
 ----
 --
 
-Output Log (reverse order)/Mutation::
+Output log in reverse order::
 + 
 -- 
 [source,log]

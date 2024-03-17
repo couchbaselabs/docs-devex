@@ -1,15 +1,18 @@
-= Function: Advanced UPSERT operation
-:description: pass:q[Perform the Advanced UPSERT operation where Eventing interacts with the Data service.]
+= Function: Advanced UPSERT Operation
+:description: pass:q[Perform the Advanced UPSERT operation where Eventing interacts with the Data Service.]
 :page-edition: Enterprise Edition
 :tabs:
 
-*Goal*: {description}
+{description}
 
-* This function *advancedUpsertOp* merely demonstrates the Advanced UPSERT operation.
-* Requires Eventing Storage (or metadata collection) and a "source" collection.
-* Needs a Binding of type "bucket alias" (as documented in the Scriptlet).
-* Will operate on any mutation where doc.type === "control_adv_insert".
-* For more information refer to xref:eventing-advanced-keyspace-accessors.adoc#advanced-upsert-op[Advanced UPSERT operation] in the detailed documentation.
+The `advancedUpsertOp` function:
+
+* Performs the Advanced UPSERT operation
+* Requires Eventing Storage (or a metadata collection) and a source collection
+* Requires a binding of type `bucket alias`
+* Operates on any mutation where `doc.type === "control_adv_insert"` 
+
+For more information about the Advanced Self-Recursion Parameter, see xref:eventing-advanced-keyspace-accessors.adoc#advanced-upsert-op[Advanced UPSERT Operation].
 
 [{tabs}] 
 ====
@@ -18,7 +21,7 @@ advancedUpsertOp::
 --
 [source,javascript]
 ----
-// To run configure the settings for this Function, advancedGetOp, as follows:
+// Configure the settings for the advancedUpsertOp function as follows:
 //
 // Version 7.1+
 //   "Function Scope"
@@ -45,8 +48,8 @@ function OnUpdate(doc, meta) {
     if (!meta.id.startsWith("control_adv_upsert")) return;
     log('input meta', meta);
     log('input doc ', doc);
-    // two modes typical upsert or setting a expiration/TTL
-    // note CAS if supplied will be ignored (use replace for this)
+    // two modes: typical upsert and setting an expiration/TTL
+    // note that CAS, if supplied, is ignored. You can use REPLACE instead.
     var new_meta = {"id":"test_adv_upsert:"+doc.ins_id};
     if (doc.set_expiry && doc.set_expiry === true) {
         new_meta = {"id":"test_adv_upsert:"+doc.ins_id, expiry_date: new Date(Date.now() + 60 * 1000)};
@@ -61,7 +64,7 @@ function OnUpdate(doc, meta) {
 }
 ----
 --
-Input Data/Mutation::
+Input data::
 +
 --
 [source,json]
@@ -101,10 +104,12 @@ INPUT: KEY control_adv_upsert::3
 ----
 --
 +
-Output Data::
+Output data::
 +
-We try to upsert three (3) documents all three (2) upserts succeed but the second, test_adv_upsert:2, will expire in 60 seconds because we set an expiration.  
-Note, third upsert attempt will overwrite test_adv_upsert:1 thus we are left with two documents.
+The output data upserts 3 documents. 
+The first 2 upsertions are successful.
+The `test_adv_insert: 2` has an expiration of 60 seconds.
+The third upsertion attempt fails because `test_adv_insert: 1` already exists.
 +
 --
 [source,json]
@@ -127,7 +132,7 @@ KEY: test_adv_upsert:2
 ----
 --
 +
-Output Log::
+Output log::
 + 
 -- 
 [source,json]
