@@ -5,28 +5,184 @@
 [abstract]
 {description}
 
+== Eventing Service
+
+The Eventing Service executes user-defined code and responds in real time whenever applications interact and cause your data to change.
+
+The Eventing Service can run one or more Eventing Functions.
 
 
+== Eventing Functions
+
+Eventing Functions handle data changes in the Eventing Service. 
+They're standalone JavaScript fragments that trigger in real time as a response to document mutations and that must execute from start to finish before a specified timeout is reached.
+
+Eventing Functions allow you to:
+
+* Integrate with the Data Service to:
+** Read, write, and delete documents
+** Work with Atomic Counters, CAS, and TTLS
+* Integrate with the Query Service to use inline {sqlpp} queries or statements
+* Enable a Timer to schedule functions to run in the future
+* Interact with external REST endpoints through cURL functionality
+* Route mutations to the entry points `OnUpdate` and `OnDelete`
+* Route fired timers to a user-defined Timer callback
+
+NOTE: The JavaScript code in an Eventing Function is compressed in Couchbase Server versions 6.5.0 and later.
+The compressed size is limited to 128KB.
 
 
+=== Handlers
+
+The Eventing Service calls the `OnUpdate`, `OnDelete`, and Timer Callback handlers on mutations and fired timers.
+
+==== `OnUpdate`
+
+The `OnUpdate` handler is called when you create or modify a document.
+
+The entry point `OnUpdate(doc,meta)` passes `doc`, the document, and `meta`, which contains additional data like the document ID, CAS, expiration date, and data type. 
+
+There are two limitations to the `OnUpdate` handler:
+
+* If you modify a document several times in a short period of time, the handler calls can merge into a single event due to deduplication
+* It is not possible to distinguish between Create and Update operations
+
+NOTE: To prevent the suppression of binary documents, you must set the language compatibility of your Function to Couchbase Server version 6.6.2 or later.
+
+==== `OnDelete`
+
+The `OnDelete` handler is called when you delete a document or when the document expires.
+
+The entry point `OnDelete(meta,options)` passes `meta`, which contains information like the document, and `options`, which contains the boolean parameter `options.expired` that indicates if the document was removed because of a deletion or an expiration.
+
+It is not possible to get the value of a document that has been deleted or expired.
+
+==== Timer Callback
+
+Timer callbacks are user-defined JavaScript functions passed as the `callback` argument to the built-in function call `createTimer(callback,date,reference,context)`.
+
+When you create a Timer, the `callback` argument is executed at or close to the `date` argument.
+The `reference` argument works as an identifier for the Timer scoped to an Eventing Function and callback.
+The `context` argument must be serializable data that is available to the callback when the Timer is fired.
+
+For more information about Timer callbacks, see xref:eventing-timers.adoc#createtimer-function[`createTimer()` and `cancelTimer()`].
 
 
+=== Statelessness
+
+The persistent state of an Eventing Function is captured in the following external elements:
+
+* Documents or mutations and their extended attributes
+* Listen to Location, or the Eventing source: a collection that is the source of mutations sent to the Function through the Database Change Protocol (DCP)
+* Eventing Storage, or the Eventing metadata: a collection used as a scratchpad for the state of the Function
+* Optional bindings for the Function:
+** Bucket alias: an alias and access mode used by the Function to access a collection
+** URL alias: an alias and HTTP/S setting used by the Function to access external REST APIs
+** Constant alias: an alias to an integer, decimal number, string, boolean, or a JSON object used as a global variable within the Function
+
+All states in the execution stack are short-lived.
 
 
-Typically you should set Function Scope to the bucket.scope that holds the collection that is the source of your mutations to your Eventing Function.  This best practice ensures that you _*do not*_  inadvertently cause an Eventing Function to undeploy by removing a *Function Scope* pointing to a resource that is not required for the function to run.
+=== Deduplication
+
+Couchbase does not store every version a document permanently.
+When a handler receives the mutation history of documents from Eventing, it sees a truncated history of each document.
+
+NOTE: Because the current state of a document is always available in the database, the final state of a document is always present in the mutation history.
+
+To ensure high performance, the KV data engine deduplicates multiple mutations made to an individual document in succession.
+Handlers might not see all intermediate states of a document when it mutates quickly, but they do see its final state.
 
 
+=== Recursive Mutation
+
+A potentially recursive mutation happens when a handler manipulates documents in a keyspace that also serves as the mutation source for this or another handler.
+The write originated by the handler causes a mutation to be seen by itself or by another handler.
+
+
+[#json_number_precision]
+=== JSON Number Precision
+
+JSON does not have specialized types for integral and floating-point numbers, so many JavaScript runtimes use floating-point numbers to hold JSON numbers.
+This means that JavaScript numbers have a large range but less precision when it comes to traditional integers of the same size.
+
+The JavaScript and WebAssembly engine V8 uses 64-bit floating-point numbers that yield a 53-bit precision.
+Only integers up to +/- 253 can be safely handled by Eventing JavaScript.
+
+To handle large integers of 15 or more digits, you can use JavaScript `BigInt` types.
+The constants `Number.MAX_SAFE_INTEGER` and `Number.MIN_SAFE_INTERGER` show the exact numbers where integral precision is defined and lost by JavaScript.
+
+Large integers are usually tokens that require equality comparisons.
+In Eventing, this can be seen in the CAS values generated by Advanced Keyspace Operations and in the results generated by the `crc64()` Function.
+In these cases, you can hold the large integers as strings. 
+The strings ensure full fidelity and retain the ability to do equality comparisons.
+
+For more information about the `crc64()` Function, see xref:eventing-language-constructs.adoc#crc64_call[`crc64()` Function Call].
 
 
 [#function-scope]
 === Function Scope
 
-You can use the Function scope, or `bucket.scope`, to identify Functions that belong to the same group.
+You can use a `bucket.scope` to identify Functions that belong to the same group.
 
-To set the `bucket.scope` to `+`.`+`, you must have the `Eventing Full Admin` or the `Full Admin` role.
+As a best practice, you should set your Function scope to the `bucket.scope` that contains the collection that's the source of your Eventing Function mutations.
+This makes sure that your Function does not undeploy by removing a scope that points to a resource that's not required for the Function to run.
+
+NOTE: To set the `bucket.scope` to `+`.`+`, you must have the `Eventing Full Admin` or the `Full Admin` role.
 All other users must use a scope that references an existing resource of their `bucket.scope`.
 
 
+[#section_mzd_l1p_m2b]
+=== Bindings
+
+A binding is a construct that lets you separate environment-specific variables, like keyspace names, external endpoint URLS and credentials, and global constrains, from the source code of the Eventing Function.
+
+A binding provides indirection between environment-specific artifacts and symbolic names, and helps move a Function definition from development to a production environment without changing your code.
+Binding names must be valid JavaScript identifiers, and cannot conflict with built-in types.
+
+Your Eventing Function can have no binding, one binding, or several bindings.
+
+==== Bucket alias
+
+A bucket alias binding gives the JavaScript of a Function access to the Couchbase KV collections from the Data Service or KV.
+The keyspaces `bucket.scope.collection` are accessible by the bound name as a JavaScript map in the global space of the Function.
+
+You can add bucket aliases by selecting *Bucket alias* and entering an alias-name, a keyspace, and the access level.
+This sequence of values does the following:
+
+* alias-name is the name you can use to refer to the keyspace or collection from your Eventing Function code
+* keyspace is the full path to a collection in the cluster
+* the access level provides access to the keyspace as `read only` or `read and write`
+** `read only` lets you read documents from the collection but not write (create, update, or delete) documents in the collection
+** `read and write` lets you read and write documents in the collection
+
+NOTE: You must have one or more bucket alias bindings for your Eventing Function to perform operations directly against the Data Service.
+
+An Eventing Function can listen to multiple collections when you use the `{asterisk}` wildcard in its scope or collection.
+You can also use the `{asterisk}` wildcard in the scope or collection of the bucket alias code.
+If the bucket alias has a `{asterisk}` wildcard, only the Advanced Keyspace Accessors can read or write the Data Service.
+
+==== URL alias
+
+A URL alias binding is used by the cURL language construct to access external resources.
+The URL alias specifies the endpoint, the HTTP/S protocol, and the credentials.
+
+You can enable cookie support through the binding when you access trusted remote nodes.
+The target of a URL alias should not be a node that belongs to the Couchbase cluster.
+
+You can add URL aliases by selecting *URL alias* and entering an alias-name, a URL, settings to allow cookies, security settings to validate SSL certificate, and an authorization type of `no auth`, `basic`, `bearer`, and `digest`.
+
+For more information about URL aliases, see xref:eventing-curl-spec.adoc#bindings[cURL Bindings].
+
+==== Constant alias
+
+A constant alias is used by the JavaScript code of the Eventing Function as a global variable.
+
+You can add constant aliases by selecting *Constant alias* and entering an alias-name and a value.
+The valuje can be an integer, a decimal number, a string, a boolean, or a JSON object.
+
+For example, you can have an alias of `debug` with a value of `true` or `false` that controls logging.
+This alias acts in the same way as adding a `const debug = true` statement at the beginning of your JavaScript code.
 
 
 [#eventing-keyspaces]
@@ -35,7 +191,7 @@ All other users must use a scope that references an existing resource of their `
 A keyspace is a path to a collection in the format `bucket-name.scope-name.collection-name`.
 
 For backward compatibility, you can also use the format `bucket-name._default._default`.
-This is the format of a bucket from Couchbase Server version 6.6 that is upgraded to version 7.0.
+This is the format of a bucket from Couchbase Server version 6.6 that has been upgraded to version 7.0.
 
 The following are the two keyspaces used by Eventing Functions:
 
@@ -260,3 +416,5 @@ This continues until you stop the operation.
 
 * xref:eventing-advanced-keyspace-accessors.adoc[Advanced Keyspace Accessors]
 * xref:eventing-language-constructs.adoc#basic_bucket_accessors[Basic Keyspace Accessors]
+* xref:eventing-curl-spec.adoc[cURL]
+* xref:troubleshooting-best-practices.adoc[Troubleshooting and Best Practices]
