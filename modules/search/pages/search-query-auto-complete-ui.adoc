@@ -1,40 +1,51 @@
 = Configure an Autocomplete Search Index
-:page-topic-type: guide 
-:description: Create a Search index with the Capella UI or the REST API to start using autocomplete with the Search Service.
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name} 
+:description: Create a Search index with the {page-ui-name} or the REST API to start using autocomplete with the Search Service.
 
 [abstract]
 {description}
 
 == Prerequisites 
 
-* You've deployed the Search Service on a node in your database. 
+* You have the Search Service enabled on a node in your database.
+For more information about how to change Services on your database, see xref:cloud:clusters:modify-database.adoc[].
 
 * You have a bucket with scopes and collections in your database. 
+For more information, see xref:cloud:clusters:data-service/manage-buckets.adoc[].
 
-* You've logged in to the Couchbase Capella UI. 
+* You have logged in to the Couchbase {page-ui-name}.
  
 
 == Procedure 
 
-You can create a compatible Search index with the <<ui,Capella UI>> or the <<api,REST API>>.  
+You can create a compatible Search index with the <<ui,{page-ui-name} in Advanced Mode>> or the <<api,REST API>>.  
 
 [#ui]
-=== Create an Autocomplete Search Index with the Capella UI
+=== Create an Autocomplete Search Index with the {page-ui-name}
 
-To create the Search index with the Capella UI:
+To create the Search index in the {page-ui-name} with Advanced Mode:
 
 . On the *Databases* page, select the database where you want to create the Search index. 
 . Go to menu:Data Tools[Search].
 . Click btn:[Create Search Index].
+. Click the btn:[Advanced Mode] toggle.
 . In the *Index Name* field, enter a name for the Search index. 
 +
-NOTE: Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
-. Expand *Analyzers*. 
+[NOTE]
+====
+Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
+
+For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope. 
+You cannot have 2 indexes with the same name inside the same bucket and scope.
+====
+. Under *Advanced Settings*, expand *Analyzers*. 
 . xref:create-custom-analyzer.adoc[] with the following settings:
 .. In the *Name* field, enter `keyword_to_lower`.
 .. In the *Tokenizer* list, select *single*. 
 .. In the *Token Filters* list, select and add the *to_lower* token filter. 
-. Expand *Custom Filters*. 
+. Under *Advanced Settings*, expand *Custom Filters*. 
 . xref:create-custom-token-filter.adoc#edge-ngram[Create a custom token filter] with the following settings: 
 .. In the *Name* field, enter `edge_ngram_2_8`. 
 .. In the *Type* list, select *edge_ngram*.
@@ -44,21 +55,21 @@ NOTE: Your index name must start with an alphabetic character (a-z or A-Z). It c
 .. In the *Name* field, enter `edge_ngram`.
 .. In the *Tokenizer* list, select *unicode*.  
 .. In the *Token Filters* list, click both the *to_lower* and your custom *edge_ngram_2_8* token filter.
-. xref:create-type-mapping.adoc[] with the following settings: 
-.. Clear *index all contained fields*.
-. (Optional) If the field you want to search with autocomplete is nested inside a JSON object in your documents, xref:create-child-mapping.adoc[] for the JSON object with the following settings: 
-.. Clear *index all contained fields*.
-. Under the type mapping or child mapping, xref:create-child-field.adoc[] with the following settings:
-.. In the *Field* field, enter the name of a text field in a document from your selected scope and collection. 
-.. In the *Analyzer* list, select your *edge_ngram* analyzer. 
-.. Select *Index*.
-.. Select *Store*. 
-.. Select *Include in _all field*. 
+. Under *Type Mappings*, in the *Bucket* list, select the bucket where you want to create your Search index. 
+. In the *Scope* list, select the scope where you want to create the index.
+. In the *Filter by collection or field* field, enter the name of the collection you want to search from your Search index.
+.. When the collection appears, click the collection name. 
+.. Clear *Index everything from collection: "$COLLECTION_NAME"*.
+.. Click btn:[Add].
+. In the *Filter by collection or field* field, enter the name of a field in your collection's document schema that contains the data you want to search. 
+. Configure the field: 
+.. In the *Analyzer/Language* list, select your *edge_ngram* analyzer. 
+.. Select *Index this field*.
+.. Select *Store field values*. 
+.. Select *Include in _all field*.
 . Expand *General Settings*. 
 . In the *Default Analyzer* list, select your *keyword_to_lower* analyzer. 
-. Click btn:[Create Index]
-
-TIP: You can use the generated index definition JSON payload from the UI to create a Search index with the REST API. To view the generated JSON, click btn:[Index Definition]. 
+. Click btn:[Create Index].
 
 [#api]
 === Create an Autocomplete Search Index with the REST API 

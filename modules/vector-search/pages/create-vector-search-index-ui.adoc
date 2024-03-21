@@ -1,0 +1,88 @@
+= Create a Vector Search Index in Quick Mode
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Use Quick Mode to create a Vector Search index in Couchbase Capella.
+
+[abstract]
+{description}
+
+Quick Mode works best when you need to create a basic Search index to start testing and prototyping with the Search Service.
+You must use Advanced Mode to have greater control over how the Search Service returns such results, such as changing your xref:search:customize-index.adoc#analyzers[analyzer]. 
+
+For more information about how to create a Search index in Advanced Mode, see xref:search:create-search-index-ui.adoc[].
+
+TIP: Vector Search indexes can include all the same features and settings as a Search index. 
+For more information about Search indexes, see the xref:search:search.adoc[Search documentation].
+
+You must create a Vector Search index before you can xref:run-vector-search-ui.adoc[run a search] that supports vector comparisons.
+
+== Prerequisites 
+
+* You have the Search Service enabled on a node in your database.
+For more information about how to change Services on your database, see xref:cloud:clusters:modify-database.adoc[].
+
+* You have a bucket with scopes and collections in your database. 
+For more information, see xref:cloud:clusters:data-service/manage-buckets.adoc[].
+
+* You have documents in a keyspace inside your bucket that contain vector embeddings.
++
+include::partial$download-sample-partial.adoc[]
+
+* You have logged in to the Couchbase {page-ui-name}. 
+
+== Procedure 
+
+To create a Vector Search index with Quick Mode in Capella:
+
+. On the *Databases* page, select the database where you want to create a Search index.
+. Go to menu:Data Tools[Search].
+. Click btn:[Create Search Index].
++
+By default, *Quick Mode* should be on.
+. In the *Index Name* field, enter a name for the Vector Search index. 
++
+[NOTE]
+====
+Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
+
+For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope. You cannot have 2 indexes with the same name inside the same bucket and scope.
+====
+. Under *Type Mappings*, in the *Bucket* list, select the bucket that contains the documents you want to include in your index. 
+. In the *Scope* list, select the scope that contains these documents. 
+. Expand the collection that contains these documents. 
+. In your document schema, select the child field that contains your vector embeddings. 
++
+Vectors must be represented as an array of floating point numbers.
+They appear as `\{field-name} [ number ]` in the Capella Quick Mode editor.
+The Search Service also supports arrays of arrays. 
+. Configure the options for your new child field as follows:
+.. In the *Dimension* field, check that the value matches the total number of elements in your vector field's array. 
++
+The Search Service supports arrays up to 2048 elements.
+Capella automatically fills in the dimension value for your selected array field.
+.. In the *Similarity metric* list, select the method to use to calculate the similarity between search term and Search index vectors.
++ 
+For more information, see xref:search:quick-index-field-options.adoc#quick-field[Quick Field Type Mapping Options].
+.. In the *Optimized for* list, select whether the Search Service should optimize Search queries for accuracy (*recall*) or speed (*latency*).
++
+For more information, see xref:search:quick-index-field-options.adoc#quick-field[Quick Field Type Mapping Options].
+.. Select *Index*.
+. Click btn:[Submit].
+. (Optional) Add additional collections or child field type mappings to your index.
++
+For example, you could add the text field that you used to generate your vector embeddings. 
+. Click btn:[Create Index].
+
+== Next Steps 
+
+This basic Vector Search index includes the vector embeddings from the child field you specified in your type mapping.
+If you chose to add additional child fields and enabled *Include in search results*, the Search Service can also return data from those fields when you run a Vector Search query. 
+
+You can customize your Vector Search index like any other Search index to add additional data and improve search results. 
+For more information about how to customize an index, see xref:search:customize-index.adoc[].
+
+CAUTION: Some Search index features are only available in Advanced Mode.
+If you edit your Search index in Advanced Mode, you cannot make any additional edits in Quick Mode without losing all Advanced Mode settings. 
+
+For more information about how to run a search against a Vector Search index, see xref:run-vector-search-ui.adoc[] or xref:run-vector-search-rest-api.adoc[].

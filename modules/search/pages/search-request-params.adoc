@@ -1,5 +1,7 @@
 = Search Request JSON Properties 
 :page-topic-type: reference
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
 :description: You can add additional properties to a Search request to control how the Search Service returns results. 
 :page-toclevels: 3
 
@@ -25,13 +27,19 @@ An object that contains the properties for one of the supported query types.
 
 For more information about how to configure the `query` object, see <<query-object,>>.
 
+|[[knn]]knn |Array of Objects |Vector Only a|
+
+An array that contains objects that describe a xref:vector-search:vector-search.adoc[Vector Search] query. 
+
+For more information about how to configure the objects inside a `knn` array, see <<knn-object,>>.
+
 |ctl |Object |No a|
 
 An object that contains properties for query consistency. 
 
 For more information about how to configure Search query consistency inside the `ctl` object, see <<ctl,>>.
 
-|size/limit |Integer |No a|
+|[[size-limit]]size/limit |Integer |No a|
 
 Set the total number of results to return for a single page of search results. 
 
@@ -92,7 +100,7 @@ For more information about the properties for a `sort` JSON object, see <<sort,>
 To return the position of each occurrence of a search term inside a document, set `includeLocations` to `true`. 
 
 NOTE: You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on a field to use `includeLocations`.
-For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+For more information about how to enable term vectors, see xref:child-field-options-reference.adoc#term-vectors[Child Field Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
 
 To turn off term locations, set `includeLocations` to `false`.
 
@@ -129,6 +137,52 @@ You must provide the values in the same order that they appear in the `sort` arr
 For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_before` set to `8`, documents 2-6 appear on the same page. 
 
 |[[collections]]collections |Array |No |Contains an array of strings that specify the collections where you want to run the query. 
+
+|====
+
+[#knn-object]
+== Knn Objects 
+
+Each object inside the `knn` array in a Search query describes a xref:vector-search:vector-search.adoc[Vector Search] query. 
+
+Add the `knn` array with at least one object to run a Vector Search query:
+
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=knn]
+----
+
+NOTE: To run a Vector Search query, you must still include a `query` object with your Search request. 
+To return only results from your Vector Search query, you can set the `query` object to a <<match_none,match_none>> query.
+To run a hybrid query that uses regular Search Service parameters together with Vector Search to return results, see the <<query-object,Query Object>> section. 
+
+An object in the `knn` array can contain the following properties: 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|k |Integer |Yes a|
+
+Enter the total number of results that you want to return from your Vector Search query. 
+
+The Search Service returns the `k` closest vectors to the vector given in `vector`.
+
+NOTE: The <<size-limit,size or limit property>> overrides any value set in `k`.
+
+|field |String |Yes a|
+
+The name of the field that contains the vector data you want to search. 
+
+|vector |Array of Floats |Yes a| 
+
+Enter the vector that you want to compare to the vector data in `field`.
+
+The Search Service uses the similarity metric defined in the xref:search-index-params.adoc#similarity[Search index definition] to return the `k` closest vectors from the Search index. 
+
+NOTE: The vector in your Search query must match the dimension of the vectors stored in your Search index. 
+If the dimensions do not match, your Search query does not return any results.
+For more information about the dimension value, see the xref:search-index-params.adoc#dims[dims property] or the xref:child-field-options-reference.adoc#dimension[Dimension option] in the UI. 
 
 |====
 
@@ -430,7 +484,7 @@ To use a match phrase query:
 * You must specify a field to search with the <<field,field property>> or the <<field-name,{field-name}>> syntax in your search query. 
 * You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
 
-For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+For more information about how to enable term vectors, see xref:child-field-options-reference.adoc#term-vectors[Child Field Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
 
 The Search Service searches for exact matches to the phrase you specify.
 
@@ -446,7 +500,9 @@ include::example$query-analytic.jsonc[tag=short_match_phrase]
 
 Analytic queries use an analyzer to analyze the contents of your Search query, and find a match in the documents inside your Search index.
 
-For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the Capella UI].
+For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the {page-ui-name}].
+
+NOTE: From Couchbase Server 7.6 and later, when you run a Search query with the xref:n1ql:n1ql-language-reference/searchfun.adoc[{sqlpp} Search Function], the analyzer used in your Analytic query does not need to match the analyzer used in the Search index.
 
 [cols="1,1,4,4"]
 |====
@@ -471,7 +527,7 @@ a|
 include::example$query-analytic.jsonc[tag=match]
 ----
 
-| match_phrase
+| [[match_phrase]]match_phrase
 | String 
 a| Use the `match_phrase` property to run a match phrase query.
 The Search Service searches for exact matches to the phrase you specify.
@@ -483,7 +539,7 @@ To use a match phrase query:
 * You must specify a field to search with the <<field,field property>> or the <<field-name,{field-name}>> syntax in your search query. 
 * You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
 
-For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+For more information about how to enable term vectors, see xref:child-field-options-reference.adoc#term-vectors[Child Field Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
 
 For more information about the additional properties you can specify with a match phrase query, see <<additional-query-properties,Additional Query Object Properties>>.
 a|
@@ -499,7 +555,9 @@ include::example$query-analytic.jsonc[tag=match_phrase]
 
 Use Non-Analytic queries to run a search query without using an analyzer on the contents of your Search query. 
 
-For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the Capella UI].
+For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the {page-ui-name}].
+
+NOTE: From Couchbase Server 7.6 and later, when you run a Search query with the xref:n1ql:n1ql-language-reference/searchfun.adoc[{sqlpp} Search Function], you do not need to use the xref:default-analyzers-reference.adoc#keyword[keyword analyzer] in your Search index to run a non-analytic query.
 
 [cols="1,1,4,4"]
 |====
@@ -589,7 +647,7 @@ To use a phrase query:
 * You must set the <<field,field property>> in your search query. 
 * You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
 
-For more information about how to enable term vectors, see xref:create-child-field.adoc#term-vectors[Create a Child Field] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].  
+For more information about how to enable term vectors, see xref:child-field-options-reference.adoc#term-vectors[Child Field Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties]. 
 a|
 .Search for the phrase "nice view" in the reviews.content field
 [source,json]
@@ -786,6 +844,35 @@ If you do not set the `inclusive_max` value, by default, `max` is exclusive to t
 
 |====
 
+=== IP Address Range Queries
+
+Use an IP Address Range query to search for IP address data in your Search index.
+
+You can use IPv4 or IPv6 CIDR syntax in your query. 
+
+For example, the following query searches for any IP addresses in the range `2.7.13.141/32` and `2001:4860:4860::8888/24`: 
+
+[source,json]
+----
+include::example$query-ip-range.jsonc[]
+----
+
+NOTE: If your IP range includes over 1024 IP addresses, you must update the `bleveMaxResultWindow` setting to accommodate your results.
+For more information about how to change this setting, see xref:server:fts:fts-advanced-settings-bleveMaxResultWindow.adoc[].
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|cidr
+|String Containing An IPv4 or IPv6 IP Address
+|Yes
+a| Enter an IP address range or single IP address, in IPv4 or IPv6 CIDR notation. 
+
+The Search Service returns documents with IP addresses that fall inside the specified range or match the specified IP address.
+
+|====
+
 [#geopoint-queries-distance]
 === Distance/Radius-Based Geopoint Queries
 
@@ -955,7 +1042,7 @@ Defines the specific GeoJSON shape to use in the query.
 |[[point-type]]type
 |String
 |Yes
-a| Set `type` to `point`.
+a| Set `type` to `Point`.
 
 |[[point-coordinates]]coordinates
 |Array
@@ -1023,7 +1110,7 @@ Defines the specific GeoJSON shape to use in the query.
 |[[linestring-type]]type
 |String
 |Yes
-a| Set `type` to `linestring`.
+a| Set `type` to `LineString`.
 
 |[[linestring-coordinates]]coordinates
 |Array of Arrays
@@ -1091,7 +1178,7 @@ Defines the specific GeoJSON shape to use in the query.
 |[[polygon-type]]type
 |String
 |Yes
-a| Set `type` to `polygon`.
+a| Set `type` to `Polygon`.
 
 |[[polygon-coordinates]]coordinates
 |Array of Arrays
@@ -1162,7 +1249,7 @@ Defines the specific GeoJSON shape to use in the query.
 |[[multipoint-type]]type
 |String
 |Yes
-a| Set `type` to `multipoint`.
+a| Set `type` to `MultiPoint`.
 
 |[[multipoint-coordinates]]coordinates
 |Array of Arrays
@@ -1232,7 +1319,7 @@ Defines the specific GeoJSON shape to use in the query.
 |[[multilinestring-type]]type
 |String
 |Yes
-a| Set `type` to `multilinestring`.
+a| Set `type` to `MultiLineString`.
 
 |[[multilinestring-coordinates]]coordinates
 |Array of Arrays
@@ -1313,7 +1400,7 @@ Defines the specific GeoJSON shape to use in the query.
 |[[multipolygon-type]]type
 |String
 |Yes
-a| Set `type` to `multipolygon`.
+a| Set `type` to `MultiPolygon`.
 
 |[[multipolygon-coordinates]]coordinates
 |Array of Arrays
@@ -1384,7 +1471,7 @@ a| Contains the <<geometrycollection-type,type property>> and <<geometrycollecti
 |[[geometrycollection-type]]type
 |String
 |Yes
-a| Set `type` to `geometrycollection`.
+a| Set `type` to `GeometryCollection`.
 
 |[[geometrycollection-geometries]]geometries
 |Array of Objects
@@ -1396,11 +1483,11 @@ Each object in the `geometries` array has a `type` property and a <<geometrycoll
 Set the `type` property inside the object to the specific shape type you want to define: 
 
 * <<geojson-queries-point,point>>
-* <<geojson-queries-linestring,linestring>>
+* <<geojson-queries-linestring,LineString>>
 * <<geojson-queries-polygon,polygon>>
-* <<geojson-queries-multipoint,multipoint>>
-* <<geojson-queries-multilinestring,multilinestring>>
-* <<geojson-queries-multipolygon,multipolygon>>
+* <<geojson-queries-multipoint,MultiPoint>>
+* <<geojson-queries-multilinestring,MultiLineString>>
+* <<geojson-queries-multipolygon,MultiPolygon>>
 
 |[[geometrycollection-coordinates]]coordinates
 |Array or Array of Arrays
@@ -1472,7 +1559,7 @@ Defines the specific GeoJSON shape to use in the query.
 |[[circle-type]]type
 |String
 |Yes
-a| Set `type` to `circle`.
+a| Set `type` to `Circle`.
 
 |[[circle-coordinates]]coordinates
 |Array
@@ -1559,7 +1646,7 @@ Defines the specific GeoJSON shape to use in the query.
 |[[envelope-type]]type
 |String
 |Yes
-a| Set `type` to `envelope`.
+a| Set `type` to `Envelope`.
 
 |[[envelope-coordinates]]coordinates
 |Array of 2 Arrays
@@ -1612,9 +1699,11 @@ a|
 include::example$query-special.jsonc[tag=match_all]
 ----
 
-| match_none
+| [[match_none]]match_none
 | Object
-| Use the `match_none` object as the only property in your `query` object to return no documents from the Search index in search results.
+a| Use the `match_none` object as the only property in your `query` object to return no documents from the Search index in search results.
+
+If you're using the <<knn,knn object>>, the `match_none` object returns only matches to the Vector Search query inside the `knn` object. 
 a|
 .Return no documents from the Search index
 [source,json]
@@ -2050,9 +2139,9 @@ Sets what value to use for the sort:
 
 * `id`: Uses the document's ID value. 
 * `score`: Uses the document's score. 
-* `field`: Uses the value of a specific field to sort. See <<field,field>>.
+* `field`: Uses the value of a specific field to sort. See <<by-field,field>>.
 
-|[[field]]field |String |No |When `by` is set to `field`, specify the name of the field to use to sort search results.
+|[[by-field]]field |String |No |When `by` is set to `field`, specify the name of the field to use to sort search results.
 
 |desc |Boolean |Yes a|
 

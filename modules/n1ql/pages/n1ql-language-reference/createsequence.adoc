@@ -1,0 +1,413 @@
+= CREATE SEQUENCE
+:page-topic-type: reference
+:imagesdir: ../../assets/images
+:description: The CREATE SEQUENCE statement enables you to create a sequence in a given scope.
+
+// Cross-references
+:authorization-overview: xref:server:learn:security/authorization-overview.adoc
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+:identifiers: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql-intro/sysinfo.adoc#logical-hierarchy
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+== Purpose
+
+include::./sequenceops.adoc[tags=overview;attributes]
+
+=== Cache
+
+Sequences operate most efficiently with an in-memory cache of values.
+You can specify the size of this cache when you create the sequence.
+A block of values is reserved by a node, and requests for values are satisfied from this cache.
+When exhausted, a new block of values is reserved.
+Reserving a cached block offers a performance boost, as it enables the Query service to return values directly from memory.
+
+Note however that if a Query node shuts down, or if you alter the sequence, the unused values in the cached block are lost: a new block is reserved when you restart the node, or request the next value.
+You should choose a cache size with this in mind, along with the expected usage patterns for the sequence.
+
+=== Storage
+
+Sequences are stored in the bucket's hidden `&lowbar;system` scope.
+When you back up a bucket, sequences are included automatically, in accordance with the backup filters.
+Similarly, when you restore a bucket, sequences are restored in accordance with the restore command -- if you select to restore specific scopes, the sequences associated with those scopes are restored, and no others.
+
+== Prerequisites
+
+.RBAC Privileges
+To execute the CREATE SEQUENCE statement, you must have the _Query Manage Sequences_ privilege granted on the scope.
+For more details about user roles, see {authorization-overview}[Authorization].
+
+== Syntax
+
+[source,ebnf]
+----
+include::{partialsdir}/grammar/ddl.ebnf[tag=create-sequence]
+----
+
+image::n1ql-language-reference/create-sequence.png["Syntax diagram: refer to source code listing", align=left]
+
+The CREATE SCOPE statement provides two possible syntaxes for specifying options for a sequence.
+
+// TODO: Automatic links in EBNF.
+
+[horizontal]
+sequence:: (Required) A name that identifies the sequence within a namespace, bucket, and scope.
+See <<sequence>> below.
+
+create-sequence-options:: (Optional) One possible syntax for specifying options for the sequence.
+See <<create-sequence-options>> below.
+
+sequence-with:: (Optional) The other possible syntax for specifying options for the sequence.
+See <<sequence-with>> below.
+
+[[sequence]]
+=== Sequence Name
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=sequence]
+----
+
+image::n1ql-language-reference/sequence.png["Syntax diagram: refer to source code listing", align=left]
+
+The sequence name specifies the name of the sequence to create.
+
+Each sequence is associated with a given namespace, bucket, and scope.
+You must specify the namespace, bucket, and scope to name the sequence correctly.
+
+[horizontal]
+namespace::
+(Optional) The {logical-hierarchy}[namespace] of the bucket in which you want to create the sequence.
+
+bucket::
+(Optional) The bucket in which you want to create the sequence.
+
+scope::
+(Optional) The scope in which you want to create the sequence.
+
+identifier::
+(Required) The name of the sequence.
+The sequence name must be unique within the scope.
+
+Currently, only the `default` namespace is available.
+If you omit the namespace, the default namespace in the current session is used.
+
+If the {query-context}[query context] is set, you can omit the bucket and scope from the statement.
+In this case, the bucket and scope for the sequence are taken from the query context.
+
+The namespace, bucket, scope, and sequence name must follow the rules for {identifiers}[identifiers].
+If the namespace, bucket, scope, or sequence name contain any special characters such as hyphens (-), you must wrap that part of the expression in backticks ({backtick} {backtick}).
+
+[[if-not-exists]]
+=== IF NOT EXISTS Clause
+
+The optional `IF NOT EXISTS` clause enables the statement to complete successfully when the specified sequence already exists.
+If a sequence with the same name already exists within the specified scope, then:
+
+* If this clause is not present, an error is generated.
+
+* If this clause is present, the statement does nothing and completes without error.
+
+[[create-sequence-options]]
+=== Sequence Options
+
+[source,ebnf]
+----
+include::{partialsdir}/grammar/ddl.ebnf[tag=create-sequence-options]
+----
+
+image::n1ql-language-reference/create-sequence-options.png["Syntax diagram: refer to source code listing", align=left]
+
+You can use the following optional clauses to specify individual attributes for the sequence.
+These clauses can occur in any order, but none of them can occur more than once in the statement.
+
+[horizontal.compact]
+start-with:: <<start-with>> icon:caret-down[]
+increment-by:: <<increment-by>> icon:caret-down[]
+maxvalue:: <<maxvalue>> icon:caret-down[]
+minvalue:: <<minvalue>> icon:caret-down[]
+cycle:: <<cycle>> icon:caret-down[]
+cache:: <<cache>> icon:caret-down[]
+
+[[start-with]]
+==== START WITH Clause
+
+[source,ebnf]
+----
+include::{partialsdir}/grammar/ddl.ebnf[tag=start-with]
+----
+
+image::n1ql-language-reference/start-with.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the START WITH clause to specify the starting value for the sequence.
+
+If this clause is omitted, the default start value is `0`.
+
+[horizontal#start-with-args]
+integer::
+(Required) The starting value for the sequence.
+
+[[increment-by]]
+==== INCREMENT BY Clause
+
+[source,ebnf]
+----
+include::{partialsdir}/grammar/ddl.ebnf[tag=increment-by]
+----
+
+image::n1ql-language-reference/increment-by.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the INCREMENT BY clause to specify the increment value of each step in the sequence.
+
+If this clause is omitted, the increment value is `1` -- that is, at each step in the sequence, the value goes up by `1`.
+
+[horizontal#increment-by-args]
+integer::
+(Required) The step size for the sequence.
+Use a negative value for a descending sequence.
+
+[[maxvalue]]
+==== MAXVALUE Clause
+
+[source,ebnf]
+----
+include::{partialsdir}/grammar/ddl.ebnf[tag=maxvalue]
+----
+
+image::n1ql-language-reference/maxvalue.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the MAXVALUE clause to specify the maximum value for the sequence.
+
+Use NO MAXVALUE to specify that the maximum value is the highest signed 64-bit integer, `2^63^-1`.
+
+If this clause is omitted, the default is NO MAXVALUE.
+
+[horizontal#maxvalue-args]
+integer::
+(Optional) The maximum value for the sequence.
+
+[[minvalue]]
+==== MINVALUE Clause
+
+[source,ebnf]
+----
+include::{partialsdir}/grammar/ddl.ebnf[tag=minvalue]
+----
+
+image::n1ql-language-reference/minvalue.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the MINVALUE clause to specify the minimum value for the sequence.
+
+Use NO MINVALUE to specify that the minimum value is the lowest signed 64-bit integer, `-2^63^`.
+
+If this clause is omitted, the default is NO MINVALUE.
+
+[horizontal#minvalue-args]
+integer::
+(Optional) The minimum value for the sequence.
+
+[[cycle]]
+==== CYCLE Clause
+
+[source,ebnf]
+----
+include::{partialsdir}/grammar/ddl.ebnf[tag=cycle]
+----
+
+image::n1ql-language-reference/cycle.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the CYCLE clause to specify the whether the sequence should begin again when it reaches the maximum or minimum value.
+
+Use NO CYCLE to specify that the sequence should stop when it reaches the maximum or minimum value.
+
+If this clause is omitted, the default is NO CYCLE.
+
+[[cache]]
+==== CACHE Clause
+
+[source,ebnf]
+----
+include::{partialsdir}/grammar/ddl.ebnf[tag=cache]
+----
+
+image::n1ql-language-reference/cache.png["Syntax diagram: refer to source code listing", align=left]
+
+Use the CACHE clause to specify the cache size for the sequence.
+
+Use NO CACHE to specify a cache size of `1`.
+
+If this clause is omitted, the default is NO CACHE.
+
+[horizontal#cache-args]
+integer::
+(Optional) The cache size for the sequence.
+The value must be greater than `0`.
+
+[[sequence-with]]
+=== WITH Clause
+
+[source,ebnf]
+----
+include::{partialsdir}/grammar/ddl.ebnf[tag=sequence-with]
+----
+
+image::n1ql-language-reference/sequence-with.png["Syntax diagram: refer to source code listing", align=left]
+
+You can use the WITH clause to specify options for the sequence using a JSON object.
+
+[horizontal#sequence-with-args]
+expr::
+(Required) An object with the following properties.
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**start** +
+__optional__
+|The starting value for the sequence.
+
+**Default:** `0`
+|Integer
+
+|**increment** +
+__optional__
+|The step size for the sequence.
+Use a negative value for a descending sequence.
+
+**Default:** `1`
+|Integer
+
+|**max** +
+__optional__
+|The maximum value for the sequence.
+If unspecified, the maximum is the highest signed 64-bit integer.
+
+
+**Default:** `2^63^-1`
+|Integer (int64)
+
+|**min** +
+__optional__
+|The minimum value for the sequence.
+If unspecified, the minimum is the lowest signed 64-bit integer.
+
+**Default:** `-2^63^`
+|Integer (int64)
+
+|**cycle** +
+__optional__
+|Whether the sequence should begin again when it reaches the maximum or minimum value.
+
+**Default:** `false`
+|Boolean
+
+|**cache** +
+__optional__
+|The cache size for the sequence.
+The value must be greater than `0`.
+
+[%hardbreaks]
+**Default:** `50`
+**Minimum:** `1`
+|Integer
+|===
+
+== Examples
+
+include::ROOT:partial$query-context.adoc[tag=section]
+
+[[ex-create-seq1]]
+.Create a sequence in a specified scope
+====
+This statement creates a sequence with default attributes in the specified scope.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE `travel-sample`.inventory.seq1;
+----
+====
+
+[[ex-create-seq2]]
+.Create a sequence in the current query context
+====
+This statement creates a sequence with default attributes in the current query context, as long as a sequence of the same name does not already exist.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE seq2 IF NOT EXISTS;
+----
+====
+
+[[ex-create-seq3]]
+.Create a sequence which cycles
+====
+This statement creates a sequence starting at 5 and incrementing by 5 each time.
+When the sequence reaches the maximum value of 1000, it starts again at 0.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE seq3 IF NOT EXISTS START WITH 5 INCREMENT BY 5 MAXVALUE 1000 MINVALUE 0 CYCLE;
+----
+
+The following query tests the sequence.
+
+[source,sqlpp]
+----
+SELECT NEXT VALUE FOR seq3;
+----
+
+The query returns the specified starting value, 5.
+
+[source,json]
+----
+[
+  {
+    "$1": 5
+  }
+]
+----
+====
+
+[[ex-create-seq4]]
+.Create a descending sequence
+====
+This statement creates a sequence that starts at 10 and counts down to 0.
+When it reaches the minimum value, the sequence stops.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE seq4 IF NOT EXISTS WITH {"start": 10, "increment": -1, "min": 0};
+----
+
+The following query tests the sequence.
+
+[source,sqlpp]
+----
+SELECT NEXT VALUE FOR seq4;
+----
+
+The query returns the specified starting value, 10.
+
+[source,json]
+----
+[
+  {
+    "$1": 10
+  }
+]
+----
+====
+
+See xref:n1ql-language-reference/sequenceops.adoc[] for detailed examples using sequences.
+
+== Related Links
+
+* To alter a sequence, see xref:n1ql-language-reference/altersequence.adoc[].
+* To drop a sequence, see xref:n1ql-language-reference/dropsequence.adoc[].
+* To use a sequence in an expression, see xref:n1ql-language-reference/sequenceops.adoc[].

@@ -1,6 +1,9 @@
 = Search Index JSON Properties
 :page-topic-type: reference
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
 :description: Use a JSON payload to control the settings for a Search index. 
+:page-toclevels: 2
 
 [abstract]
 {description}
@@ -45,12 +48,15 @@ The UUID for the Search index.
 
 The Search Service automatically generates a UUID for a Search index. 
 
-If you use an existing UUID, the Search Service updates the existing Search index. Don't include the `uuid` property when you want to copy an index to a different cluster or create a new index.
+If you use an existing UUID, the Search Service updates the existing Search index. 
+Do not include the `uuid` property when you want to copy an index to a different cluster or create a new index.
+
+View the UUID for an existing index from the {page-ui-name} by selecting an existing index and clicking btn:[Index Definition].
+The UUID displays in the Index Definition on the Update Index page.
 
 |sourceType |String |Yes |The `sourceType` is always `"gocbcore"`.
 
-|sourceName |String |Yes a|
-The name of the bucket where you want to create the Search index. 
+|sourceName |String |Yes |The name of the bucket where you want to create the Search index. 
 
 |[[sourceuuid]]sourceUUID |String |No a|
 
@@ -58,13 +64,13 @@ The UUID of the bucket where you want to create the Search index.
 
 The Search Service automatically finds the UUID for the bucket.
 
-Don't include the `sourceUUID` property when you want to copy an index to a different cluster, or create a new index.
+Do not include the `sourceUUID` property when you want to copy an index to a different cluster, or create a new index.
 
 |sourceParams |Object |No a|
 
 This object contains advanced settings for index behavior.
 
-Don't add content into this object unless instructed by Couchbase Support.
+Do not add content into this object unless instructed by Couchbase Support.
 
 |planParams |Object |Yes |An object that sets the Search index's partitions and replications. 
 For more information, see <<planparams,>>.
@@ -93,7 +99,12 @@ The `planParams` object contains the following properties:
 |Property |Type |Required? |Description
 
 |maxPartitionsPerPIndex |n/a |No |This setting is deprecated. Use `indexPartitions`, instead.
-|indexPartitions |Number |Yes |The number of partitions to split the Search index into, across the nodes you have available in your database with the Search Service enabled. Use index partitions to increase index and query performance on large datasets.
+|indexPartitions |Number |Yes a|The number of partitions to split the Search index into, across the nodes you have available in your database with the Search Service enabled.
+Use index partitions to increase index and query performance on large datasets.
+
+NOTE: The scoring calculation for regular Search queries can be affected by the number of partitions in your Search index, and how the Search Service distributes documents across partitions.
+This is a limitation of the https://en.wikipedia.org/wiki/Tf%E2%80%93idf[tf-idf^] weighting scheme.
+
 |numReplicas |Number |Yes a|
 
 For high-availability, set the number of replicas the Search Service creates for the Search index. 
@@ -143,7 +154,7 @@ The `doc_config` object is a child object of the <<params,>>. It contains the fo
 
 |mode |String |Yes a|
 
-Set a xref:customize-search-index.adoc#type-identifiers[type identifier] for the Search index to filter documents from search results: 
+Set a xref:customize-index.adoc#type-identifiers[type identifier] for the Search index to filter documents from search results: 
 
 * `type_field`: Use the value from a specific field in the documents. 
 * `docid_prefix_delim`: Use the leading characters in the documents' ID values, up to but not including a specified separator.
@@ -229,7 +240,7 @@ For more information about the properties inside the `default_mapping` object, s
 |default_type |String |No |This setting is included for compatibility with earlier indexes only. 
 
 |docvalues_dynamic |Boolean |Yes a|
-To include the values for an indexed field in the Search index, set `docvalues_dynamic` to `true`.
+To include the value for each instance of an indexed field in the Search index to support xref:search-request-params.adoc#facet-name[facets] and sorting search results, set `docvalues_dynamic` to `true`.
 
 To exclude the values for an indexed field in the index, set `docvalues_dynamic` to `false`.
 
@@ -833,7 +844,7 @@ To only index the fields you specify in the type mapping, set `dynamic` to `fals
 |enabled |Boolean |Yes a|
 To enable the Search Service's default type mapping, set `enabled` to `true`. 
 
-The default type mapping includes all documents in the bucket in the Search index, even if they don't match another configured type mapping.
+The default type mapping includes all documents in the bucket in the Search index, even if they do not match another configured type mapping.
 This can increase index size and indexing time. 
 
 To disable the default type mapping, set `enabled` to `false`.
@@ -871,9 +882,9 @@ TIP: To add a type identifier as an additional filter to your type mapping, add 
 |====
 
 [#scope-collection]
-=== \{Scope\}.\{collection\} Object
+=== \{Scope\}.\{collection\} Object and JSON Object Field Objects
 
-The `\{scope\}.\{collection\}` object defines a custom type mapping for a Search index:
+The `\{scope\}.\{collection\}` object defines a custom type mapping for a Search index, on a specific scope and collection in the database:
 
 [source,json]
 ----
@@ -881,7 +892,12 @@ include::example$simple-search-index-payload.jsonc[tag=scope_collection]
 ----
 
 A `\{scope\}.\{collection\}` object is a child object of the <<types,>>.
-It contains the following properties:
+
+A JSON object field object is a child object of the `\{scope\}.\{collection\}` object. 
+It defines a mapping for a field that contains a JSON object in your document schema. 
+It can contain additional mappings as <<child-fields,>> under its <<properties,properties>> object. 
+
+Both objects can contain the following properties:
 
 [cols="1,1,1,2"]
 |====
@@ -905,7 +921,7 @@ The `properties` object is only enabled if `dynamic` is set to `false`.
 
 Specifies properties for the fields to index in the type mapping. Contains any number of `\{field_name\}` objects. 
 
-For more information, see <<child-fields,>>
+For more information, see <<child-fields,>>.
 
 |====
 
@@ -965,6 +981,16 @@ It contains the following properties:
 |====
 |Property |Type |Required? |Description
 
+|analyzer |String |Text Only a|
+
+If the child field's `type` is `text`, set the analyzer to use for the child field. 
+
+NOTE: If you want to use the default analyzer for the content of this child field, you don't need to include an `analyzer` property.  
+
+|[[dims]]dims |Number |Vector Only a|
+
+include::partial$vector-search-field-descriptions.adoc[tag=dimension]
+
 |docvalues |Boolean |Yes a|
 
 To include the value for each instance of the field in the Search index to support xref:search-request-params.adoc#facet-name[facets] and sorting search results, set `docvalues` to `true`.
@@ -997,6 +1023,10 @@ To exclude the child field from the index, set `index` to `false`.
 
 |name |String |Yes |The child field's name.
 
+|[[similarity]]similarity |String |Vector Only a|
+
+include::partial$vector-search-field-descriptions.adoc[tag=similarity_metric]
+
 |store |Boolean |Yes a|
 
 To include the content of the child field in the Search index and allow its content to be viewed in search results, set `store` to `true`.
@@ -1014,13 +1044,13 @@ The child field's type. Can be one of:
 * `geopoint`
 * `geoshape`
 * `disabled`
+* `ip`
+* `vector`
 
 For more information about the available field data types, see xref:field-data-types-reference.adoc[].
 
-|analyzer |String |No a|
+|vector_index_optimized_for |String |Vector Only a|
 
-If the child field's `type` is `text`, set the analyzer to use for the child field. 
-
-NOTE: If you want to use the default analyzer for the content of this child field, you don't need to include an `analyzer` property.  
+include::partial$vector-search-field-descriptions.adoc[tag=optimized_for] 
 
 |====

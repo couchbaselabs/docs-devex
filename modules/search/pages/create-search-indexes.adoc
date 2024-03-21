@@ -1,5 +1,7 @@
 = Create a Search Index 
 :page-topic-type: concept 
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
 :description: Create a Search index to get started with the Search Service in your database. 
 
 [abstract]
@@ -7,27 +9,39 @@
 
 You can create a Search index with: 
 
-* The <<ui,Couchbase Capella UI>>. 
+* The <<ui,Couchbase {page-ui-name}>>. 
 // * The <<sdks,Couchbase SDKs>>.
 * The <<api,Search Service REST API>>. 
 
-TIP: If you're new to developing with the Search Service, xref:create-search-index-ui.adoc[create a Search index with the UI]. 
-You can copy the Search index definition JSON payload from the UI to create your index xref:create-search-index-rest-api.adoc[with the REST API]. 
+TIP: If you're new to developing with the Search Service, <<ui,create a Search index with the UI>>. 
+You can export the Search index definition JSON payload from the UI to create your index xref:create-search-index-rest-api.adoc[with the REST API], or xref:import-search-index.adoc[]. 
 
 [#ui]
-== Creating a Search Index with the Capella UI
+== Creating a Search Index with the {page-ui-name}
 
-To xref:create-search-index-ui.adoc[create a basic Search index], provide the following information:
+Couchbase {page-product-name} supports two editing modes for the Search Service: 
 
-* The name of the index. 
-* The bucket, scope and collection or collections where you want to create the index.
-* A xref:customize-index.adoc#type-mappings[type mapping] for the documents that you want to add to the index.
+* xref:create-quick-index.adoc[Quick Mode]
+* xref:create-search-index-ui.adoc[Advanced Mode]
+
+[NOTE]
+====
+For indexes created with Couchbase Server version 7.6 and later, index names must be unique inside a bucket and scope.
+You cannot have 2 indexes with the same name inside the same bucket and scope on a {page-product-name} database running version 7.6.
+
+The {page-ui-name} marks indexes as scoped or not scoped to a specific bucket and scope.
+
+Indexes created with a previous version of Couchbase Server are not scoped. 
+==== 
+
+Use Quick Mode for a streamlined editing experience. 
+Use Advanced Mode to fully customize your Search index with advanced settings and features.
 
 After you create a Search index, the Search Service streams data from your chosen collection or collections, and any document mutations, into the index builder.
 Before your index finishes building, you can run a search and return partial results. 
 
 You can also customize a Search index to improve search results and performance. 
-For more information about how you can customize a Search index with the Capella UI, see xref:customize-index.adoc[]. 
+For more information about how you can customize a Search index with the {page-ui-name}, see xref:customize-index.adoc[]. 
 
 //[#sdks]
 //== Creating a Search Index with Couchbase SDKs
@@ -43,8 +57,14 @@ For more information about how you can customize a Search index with the Capella
 
 You can create a Search index with the REST API through a JSON payload.
 
-Most properties in the JSON payload correspond to settings in the Capella UI. 
-You can also copy the Search index definition JSON payload from a Search index in the Capella UI to use in a REST API call. 
+Most properties in the JSON payload correspond to settings in the {page-ui-name}. 
+You can also copy the Search index definition JSON payload from a Search index in the {page-ui-name} to use in a REST API call. 
+
+[NOTE]
+====
+Use the scoped name for an index with the xref:server:rest-api:rest-fts.adoc[Search Service REST API] for any endpoints that do not include the bucket and scope in their path. 
+For example, you must use `bucket.scope.index_name` as the format for your index name with the `analyzeDoc` endpoint, but not with the new 7.6 `query` endpoint.
+====
 
 For more information about how to use the REST API to create a Search index, see xref:create-search-index-rest-api.adoc[].
 
