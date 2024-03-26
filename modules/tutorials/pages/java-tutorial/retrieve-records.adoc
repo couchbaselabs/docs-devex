@@ -1,0 +1,299 @@
+= Retrieve Records
+:description: Retrieve your records from your collections using {sqlpp}, Couchbase's SQL-based query language.
+:page-topic-type: tutorial
+:page-pagination: full
+:imagesdir: ../../images
+
+[abstract]
+{description}
+
+You can retrieve your records using the query editor or the SDK.
+
+== With the Query Editor
+
+=== Define an Index
+
+Before you can retrieve your records, you must first define an index in your bucket.
+The index helps your database quickly find specific data when you run a query.
+
+To define an index:
+
+. In your Couchbase cluster in your browser, click menu:Query[] to open the query editor.
+. Select *student-bucket* and *art-school-scope* in the *context* drop-down.
+Using these filters means you can narrow down the scope of your queries, and that you don't need to add the names of your bucket and scope to your queries.
++
+image::query-editor-filters.png[alt="Filters in the Query Editor"]
++
+. Enter the following query into your query editor:
++
+[source, sqlpp]
+----
+create primary index course_idx on `course-record-collection`
+----
++
+. Click btn:[Execute] to create a single index called `course_idx` in your `course-record-collection`.
+
+
+=== Retrieve Your Records
+
+To retrieve all of your course records in your `course-record-collection`:
+
+. Enter the following query into your query editor:
++
+[source, sqlpp]
+----
+select crc.* from `course-record-collection` crc
+----
++
+. Click btn:[Execute] to retrieve all course records.
++
+[source, json]
+----
+[
+  {
+    "course-name": "art history",
+    "credit-points": 100,
+    "faculty": "fine art"
+  },
+  {
+    "course-name": "fine art",
+    "credit-points": 50,
+    "faculty": "fine art"
+  },
+  {
+    "course-name": "graphic design",
+    "credit-points": 200,
+    "faculty": "media and communication"
+  }
+]
+----
+
+You can also use a query to narrow your search down further.
+To retrieve only courses with less than 200 `credit-points` in your `course-record-collection`:
+
+. Enter the following query into your query editor:
++
+[source, sqlpp]
+----
+select crc.* from `course-record-collection` crc where crc.`credit-points` < 200
+----
++
+. Click btn:[Execute] to retrieve all courses with less than 200 credits.
++
+[source, json]
+----
+[
+  {
+    "course-name": "art history",
+    "credit-points": 100,
+    "faculty": "fine art"
+  },
+  {
+    "course-name": "fine art",
+    "credit-points": 50,
+    "faculty": "fine art"
+  }
+]
+----
+
+
+
+
+
+
+
+
+Okay, now try something else: returning the courses with `credit-points` of less than 200:
+
+[source, sqlpp]
+----
+select crc.* from `course-record-collection` crc where crc.`credit-points` < 200
+----
+
+which will bring back:
+
+[source, json]
+----
+[
+  {
+    "course-name": "art history",
+    "credit-points": 100,
+    "faculty": "fine art"
+  },
+  {
+    "course-name": "fine art",
+    "credit-points": 50,
+    "faculty": "fine art"
+  }
+]
+----
+
+=== But what about the primary id field?
+
+Good question. You may want to get hold of `id` field, which as you can see, isn't returned with the document, even if we're asking for all the fields in the call. The primary key exists as part of the document's "meta" structure, which can be interrogated along with the rest of the document. Make the following small adjustment to the `{sqlpp}` statement and run the query again:
+
+[source, sqlpp]
+----
+select META().id, crc.* from `course-record-collection` crc where crc.`credit-points` < 200
+----
+
+The `META()` function call will return any property contained in the document's metadata, including its id:
+
+[source, json]
+----
+[
+  {
+    "course-name": "art history",
+    "credit-points": 100,
+    "faculty": "fine art",
+    "id": "ART-HISTORY-000001"    // <1>
+  },
+  {
+    "course-name": "fine art",
+    "credit-points": 50,
+    "faculty": "fine art",
+    "id": "FINE-ART-000002"    // <1>
+  }
+]
+----
+
+<1> id fields added to the returned document.
+
+You can find a full rundown of the {sqlpp} language here: xref:n1ql:n1ql-language-reference/index.adoc[].
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NOTE: {sqlpp} is very similar to standard SQL. Once you have mastered the document database model, you'll find it very easy to adapt.
+
+image::attempt-first-query.png[alt="Query to retrieve the course collection"]
+
+What happens when you hit btn:[Execute]?
+
+You should get a result:
+
+[source, json]
+----
+[
+  {
+    "course-name": "art history",
+    "credit-points": 100,
+    "faculty": "fine art"
+  },
+  {
+    "course-name": "fine art",
+    "credit-points": 50,
+    "faculty": "fine art"
+  },
+  {
+    "course-name": "graphic design",
+    "credit-points": 200,
+    "faculty": "media and communication"
+  }
+]
+----
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+include::partial$retrieve-documents-using-query-bench-section.adoc[leveloffset="+1"]
+
+== Using the SDK
+
+Of course, you can also retrieve documents using the JDK. In this section, you're going to use the same {sqlpp} queries as part of a small Java application.
+Let's start with a basic record retrieval:
+
+[source, java]
+----
+include::{java-sample-location}ArtSchoolRetriever.java[]
+----
+
+If you build and run this program:
+
+[source, sh]
+----
+mvn exec:java -Dexec.mainClass="ArtSchoolRetriever" -Dexec.cleanupDaemonThreads=false
+----
+
+Then you'll get a list of the classes in the output.
+
+image::retrieve-courses-cli.png[alt="Terminal window showing course records retrieved with the Java SDK"]
+
+You may have noticed a difference between the SQL statement we used in the web console, and the statement used as part of the application:
+
+[source, sqlpp]
+----
+select crc.* from `student-bucket`.`art-school-scope`.`course-record-collection` crc
+----
+
+The name of the collection in the {sqlpp} statement has to be fully qualified, including the name of the bucket as well as the containing scope.
+
+You can, of course, set parameters as part of your query, as shown in the next example:
+
+[source, java]
+----
+include::{java-sample-location}ArtSchoolRetrieverParameters.java[]
+----
+
+<1> The {sqlpp} statement takes a parameters `$creditPoints` which will be substituted with a correctly typed value when the statement is called.
+
+<2> The value to substitute is provided in the `QueryOptions` given as the second parameter in the call.
+The value of the map entry is the actual parameter value (in this case, 200 which we're using to test the `credit-points`).
+
+You can use `maven` to run the program:
+
+[source, sh]
+----
+mvn exec:java -Dexec.mainClass="ArtSchoolRetrieverParameters" -Dexec.cleanupDaemonThreads=false
+----
+
+== Next steps
+
+Now you can add and search for records, the next section will consolidate what you've learned so far by demonstrating how to amend existing records by adding enrollment details.
+So when you're ready carry on to xref:java-tutorial/adding-course-enrollments.adoc[].

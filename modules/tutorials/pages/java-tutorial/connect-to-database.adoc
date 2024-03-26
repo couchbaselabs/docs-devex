@@ -1,0 +1,102 @@
+= Connect the SDK to Your Database
+:description: Use the SDK to connect to your Couchbase database.
+:page-topic-type: tutorial
+:page-pagination: full
+:imagesdir: ../../images
+
+[abstract]
+{description}
+
+[#connect-to-the-database]
+== Connect to the Database
+
+To connect to the database:
+
+. Go to your `java` directory and create a new file called `ConnectStudent.java`.
++
+....
+📂 ~ (your home directory)
+  📂 student
+    📃 pom.xml
+    📂 src
+      📂 main
+        📂 java
+          📃 ConnectStudent.java ⬅ here!
+....
++
+. Paste the following code block into your `ConnectStudent.java` file:
++
+[source, java]
+----
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.Scope;
+
+import java.time.Duration;
+
+public class ConnectStudent {
+
+    public static void main(String[] args) {
+
+        Cluster cluster = Cluster.connect("localhost",
+                "Administrator", "password"); //1     
+
+        Bucket bucket = cluster.bucket("student-bucket"); //2    
+
+        bucket.waitUntilReady(Duration.ofSeconds(10)); //3    
+
+        Scope scope = bucket.scope("art-school-scope"); //4    
+
+        Collection student_records = scope.collection("student-record-collection"); //5    
+
+        System.out.println("The name of this collection is " + student_records.name()); //6   
+
+        cluster.disconnect(); //7
+    }
+}
+----
++
+<1> Calling `Cluster.connect` creates a channel to the named server (in this case, `localhost` is running on your local machine) and supplies your username and password to authenticate the connection.
+<2> The `cluster.bucket` retrieves the bucket you set up when you xref:tutorial-install-server.adoc[installed the Couchbase server].
+<3> Most of the Couchbase APIs are non-blocking. When you call one of them, your application carries on and continues to perform other actions while the function you called executes. 
+When the function has finished executing, it sends a notification to the caller and the output of the call is processed.
+While this usually works, in this code sample the application carries on without waiting for the bucket retrieval to complete after you make the call to `cluster.bucket`.
+This means that you now have to try to retrieve the scope from a bucket object that has not been fully initialized yet.
+To fix this, you can use the `waitUntilReady` call. This call forces the application to wait until the bucket object is ready.
+<4> The `bucket.scope` retrieves the `art-school-scope` from the bucket.
+<5> The `scope.collection` retrieves the student collection from the scope.
+<6> The following line is a check to make sure the collection is connected and retrieved when you run the application. You can see the output using maven.
+<7> Like with all database systems, it's good practice to disconnect from the Couchbase cluster after you have finished working with it.
++
+[IMPORTANT]
+====
+You must re-run `mvn install` in your `student` directory whenever you make a change to a java file to rebuild the application. 
+====
++
+. Open a terminal window and navigate to your `student` directory.
+. Run the command `mvn install` to pull in all the dependencies and rebuild your application.
+. Run the following command to check that the connection works:
++
+[source, sh]
+----
+mvn exec:java -Dexec.mainClass="ConnectStudent" -Dexec.cleanupDaemonThreads=false
+----
++
+If the connection is successful, the collection name outputs in the console log.
++
+image::student-record-collection-console-output.png[alt="Console showing successful connection to server"]
+
+
+== Troubleshooting
+
+When connecting to the database, you might get errors in your console.
+
+* If you get an authentication error, confirm that the username and password in your `ConnectStudent.java` file match the username and password you used when setting up the Couchbase cluster in your browser.
+* If you get the error `DnsSrvLookupFailedEvent`, which tells you to specify an IP address, go to your `ConnectStudent.java` file and replace `localhost` with the IP address of your local Couchbase Server.
+* For any other errors, run `mvn install` and try the original command again.
+
+
+== Next Steps
+
+After connecting to the database, you can xref:java-tutorial/create-records.adoc[add student and course records to your database].

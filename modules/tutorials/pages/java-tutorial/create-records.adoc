@@ -1,0 +1,163 @@
+= Create Student and Course Records
+:description: Use the SDK to create student and course records.
+:page-topic-type: tutorial
+:page-pagination: full
+:imagesdir: ../../images
+
+[abstract]
+{description}
+
+== Create a Student Record
+
+After connecting to the database, you can create a student record in the form of a JSON document inserted into the `student-record-collection`.
+
+To create a student record:
+
+. In your `java` directory, create a new file called `InsertStudent.java`.
+. Paste the following code block into your `InsertStudent.java` file:
++
+[source, java]
+----
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.Scope;
+import com.couchbase.client.java.json.JsonObject;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+public class InsertStudent {
+
+    public static void main(String[] args) {
+
+        Cluster cluster = Cluster.connect("localhost",
+                "Administrator", "password");
+
+        Bucket bucket = cluster.bucket("student-bucket");
+        bucket.waitUntilReady(Duration.ofSeconds(10));
+        Scope scope = bucket.scope("art-school-scope");
+        Collection student_records = scope.collection("student-record-collection");    
+
+        /*
+            Includes a class of functionality for creating and manipulating data 
+            in JSON format. This `JsonObject` class creates and populates the student 
+            record.
+        */
+        JsonObject hilary = JsonObject.create()
+                .put("name", "Hilary Smith")
+                .put("date-of-birth",
+                        LocalDate.of(1980, 12, 21)
+                                .format(DateTimeFormatter.ISO_DATE));   
+
+
+        /*
+            The `upsert` function inserts or updates documents in a collection.
+            The first parameter is a unique ID for the document, similar to a 
+            primary key used in a relational database system.
+
+            If the `upsert` call finds a document with a matching ID in the collection,
+            it updates the document. If there is no matching ID, it creates a new document.
+        */
+        student_records.upsert("000001", hilary);    
+
+        cluster.disconnect();
+    }
+}
+----
++
+. Open a terminal window and navigate to your `student` directory.
+. Run the command `mvn install` to pull in all the dependencies and rebuild your application.
+. Run the following command to insert the student record into the collection:
++
+[source, sh]
+----
+mvn exec:java -Dexec.mainClass="InsertStudent" -Dexec.cleanupDaemonThreads=false
+----
++
+. Go to your Couchbase cluster in your browser and check the `student-record-collection` for the new student record you just added.
++
+image::new-student-record.png[alt="Student added to the student-record-collection in the cluster"]
+
+
+== Create the Course Records
+
+Creating course records is similar to creating student records.
+To create course records:
+
+. In your `java` directory, create a new file called `InsertCourses.java`.
+. Paste the following code block into your `InsertStudent.java` file:
++
+[source, java]
+----
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.Scope;
+import com.couchbase.client.java.json.JsonObject;
+
+import java.time.Duration;
+
+public class InsertCourses {
+
+    public static void main(String[] args) {
+        Cluster cluster = Cluster.connect("localhost",
+                "Administrator", "password");
+
+        Bucket bucket = cluster.bucket("student-bucket");
+        bucket.waitUntilReady(Duration.ofSeconds(10));
+        Scope scope = bucket.scope("art-school-scope");
+        /*
+            The code is similar to creating a student record, but it writes to
+            a different collection.
+        */
+        Collection course_records = scope.collection("course-record-collection");    
+
+        addCourse(course_records, "ART-HISTORY-000001", "art history", "fine art", 100);
+        addCourse(course_records, "FINE-ART-000002", "fine art", "fine art", 50);
+        addCourse(course_records, "GRAPHIC-DESIGN-000003", "graphic design", "media and communication", 200);
+
+        cluster.disconnect();
+    }
+
+    private static void addCourse(Collection collection, String id, String name,
+                                  String faculty, int creditPoints) {
+
+        JsonObject course = JsonObject.create()
+                .put("course-name", name)
+                .put("faculty", faculty)
+                .put("credit-points", creditPoints);
+
+        collection.upsert(id, course);
+
+    }
+}
+----
++
+. Open a terminal window and navigate to your `student` directory.
+. Run the command `mvn install` to pull in all the dependencies and rebuild your application.
+. Run the following command to insert the student record into the collection:
++
+[source, sh]
+----
+mvn exec:java -Dexec.mainClass="InsertCourses" -Dexec.cleanupDaemonThreads=false
+----
++
+. Go to your Couchbase cluster in your browser and check the `course-record-collection` for the new course records you just added.
++
+image::new-course-records.png[alt="Courses added to the course-record-collection in the cluster"]
+
+
+== Troubleshooting
+
+When connecting to the database and creating a student or course record, you might get errors in your console.
+
+* If you get an authentication error, confirm that the username and password in your `InsertStudent.java` and `InsertCourses.java` files match the username and password you used when setting up the Couchbase cluster in your browser.
+* If you get the error `DnsSrvLookupFailedEvent`, which tells you to specify an IP address, go to your `InsertStudent.java` and `InsertCourses.java` files and replace `localhost` with the IP address of your local Couchbase Server.
+* For any other errors, run `mvn install` and try the original command again.
+
+
+== Next Steps
+
+After creating student and course records, you can xref:java-tutorial/retrieve-records.adoc[retrieve information from your database].
