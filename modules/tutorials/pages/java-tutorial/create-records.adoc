@@ -40,32 +40,26 @@ public class InsertStudent {
         Scope scope = bucket.scope("art-school-scope");
         Collection student_records = scope.collection("student-record-collection");    
 
-        /*
-            Includes a class of functionality for creating and manipulating data 
-            in JSON format. This `JsonObject` class creates and populates the student 
-            record.
-        */
         JsonObject hilary = JsonObject.create()
                 .put("name", "Hilary Smith")
                 .put("date-of-birth",
                         LocalDate.of(1980, 12, 21)
-                                .format(DateTimeFormatter.ISO_DATE));   
+                                .format(DateTimeFormatter.ISO_DATE)); // <1>
 
 
-        /*
-            The `upsert` function inserts or updates documents in a collection.
-            The first parameter is a unique ID for the document, similar to a 
-            primary key used in a relational database system.
-
-            If the `upsert` call finds a document with a matching ID in the collection,
-            it updates the document. If there is no matching ID, it creates a new document.
-        */
-        student_records.upsert("000001", hilary);    
+        student_records.upsert("000001", hilary); // <2>    
 
         cluster.disconnect();
     }
 }
 ----
++
+<1> Includes a class of functionality for creating and manipulating data in JSON format. 
+This `JsonObject` class creates and populates the student record.
+<2> The `upsert` function inserts or updates documents in a collection.
+The first parameter is a unique ID for the document, similar to a primary key used in a relational database system.
+If the `upsert` call finds a document with a matching ID in the collection, it updates the document. 
+If there is no matching ID, it creates a new document.
 +
 . Open a terminal window and navigate to your `student` directory.
 . Run the command `mvn install` to pull in all the dependencies and rebuild your application.
@@ -108,11 +102,8 @@ public class InsertCourses {
         Bucket bucket = cluster.bucket("student-bucket");
         bucket.waitUntilReady(Duration.ofSeconds(10));
         Scope scope = bucket.scope("art-school-scope");
-        /*
-            The code is similar to creating a student record, but it writes to
-            a different collection.
-        */
-        Collection course_records = scope.collection("course-record-collection");    
+
+        Collection course_records = scope.collection("course-record-collection"); // <1>    
 
         addCourse(course_records, "ART-HISTORY-000001", "art history", "fine art", 100);
         addCourse(course_records, "FINE-ART-000002", "fine art", "fine art", 50);
@@ -134,6 +125,8 @@ public class InsertCourses {
     }
 }
 ----
++
+<1> The code is similar to creating a student record, but it writes to a different collection.
 +
 . Open a terminal window and navigate to your `student` directory.
 . Run the command `mvn install` to pull in all the dependencies and rebuild your application.

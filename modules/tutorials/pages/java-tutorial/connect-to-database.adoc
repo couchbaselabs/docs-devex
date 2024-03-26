@@ -40,19 +40,19 @@ public class ConnectStudent {
     public static void main(String[] args) {
 
         Cluster cluster = Cluster.connect("localhost",
-                "Administrator", "password"); //1     
+                "Administrator", "password"); // <1>     
 
-        Bucket bucket = cluster.bucket("student-bucket"); //2    
+        Bucket bucket = cluster.bucket("student-bucket"); // <2>   
 
-        bucket.waitUntilReady(Duration.ofSeconds(10)); //3    
+        bucket.waitUntilReady(Duration.ofSeconds(10)); // <3>    
 
-        Scope scope = bucket.scope("art-school-scope"); //4    
+        Scope scope = bucket.scope("art-school-scope"); // <4>    
 
-        Collection student_records = scope.collection("student-record-collection"); //5    
+        Collection student_records = scope.collection("student-record-collection"); // <5>    
 
-        System.out.println("The name of this collection is " + student_records.name()); //6   
+        System.out.println("The name of this collection is " + student_records.name()); // <6>   
 
-        cluster.disconnect(); //7
+        cluster.disconnect(); // <7>
     }
 }
 ----
@@ -61,9 +61,12 @@ public class ConnectStudent {
 <2> The `cluster.bucket` retrieves the bucket you set up when you xref:tutorial-install-server.adoc[installed the Couchbase server].
 <3> Most of the Couchbase APIs are non-blocking. When you call one of them, your application carries on and continues to perform other actions while the function you called executes. 
 When the function has finished executing, it sends a notification to the caller and the output of the call is processed.
++
 While this usually works, in this code sample the application carries on without waiting for the bucket retrieval to complete after you make the call to `cluster.bucket`.
 This means that you now have to try to retrieve the scope from a bucket object that has not been fully initialized yet.
++
 To fix this, you can use the `waitUntilReady` call. This call forces the application to wait until the bucket object is ready.
++
 <4> The `bucket.scope` retrieves the `art-school-scope` from the bucket.
 <5> The `scope.collection` retrieves the student collection from the scope.
 <6> The following line is a check to make sure the collection is connected and retrieved when you run the application. You can see the output using maven.
