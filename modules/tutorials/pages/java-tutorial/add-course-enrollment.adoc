@@ -1,137 +1,141 @@
-= Adding Course Enrollments
-:description: In this section, you're going to add enrollment details to the student records using the Couchbase SDK
-:page-pagination: prev
-
-include::partial$tutorial-globals.adoc[]
+= Add Course Enrollments
+:description: Add enrollment details to the student records using the Couchbase SDK.
+:page-topic-type: tutorial
+:page-pagination: full
+:page-toclevels: 2
+:imagesdir: ../../images
+:page-aliases: adding-course-enrollments.adoc
 
 [abstract]
 {description}
 
-== Introduction
+To add enrollment details to a student record:
 
-A quick recap: here's the structure of our document store:
-
-[plantuml,student-document-database-design,svg]
-....
-include::partial$diagrams/student-document-database-design.puml[]
-....
-
-At this point, you should have a student records for Hilary Smith and Ashley Jones, along with records for three courses.
-You're now going to write a short program that will add enrollment details to the student records.
-
-You're going to create another program in the same working directory that will bring together all the concepts you've learned so far.
-
-At the end of the exercise, you should have changed Hilary's student record to store the enrollment details in an array:
-
-[#enrollments-structure]
-[source, json]
+. In your `java` directory, create a new file called `AddEnrollments.java`.
+. Paste the following code block into your `AddEnrollments.java` file:
++
+[source, java]
 ----
-{
-  "name": "Hilary Smith",
-  "enrollments": [
-    {
-      "course-id": "GRAPHIC-DESIGN-000003",
-      "date-enrolled": "2021-10-14"
-    },
-    {
-      "course-id": "ART-HISTORY-000001",
-      "date-enrolled": "2021-10-14"
+import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.Scope;
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.QueryScanConsistency;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+public class AddEnrollments {
+
+    public static void main(String[] args) {
+
+        Cluster cluster = Cluster.connect("localhost",
+                "Administrator", "password"); // <1>    
+
+        Bucket bucket = cluster.bucket("student-bucket"); // <2>
+        bucket.waitUntilReady(Duration.ofSeconds(10)); // <3>    
+
+        Scope scope = bucket.scope("art-school-scope");
+        Collection student_records = scope.collection("student-record-collection"); // <4>    
+
+        // Retrieve the records
+        JsonObject hilary = retrieveStudent(cluster,"Hilary Smith"); // <5>    
+        JsonObject graphic_design = retrieveCourse(cluster, "graphic design"); // <5>    
+        JsonObject art_history = retrieveCourse(cluster, "art history"); // <5>    
+
+        String currentDate = LocalDate.now().format(DateTimeFormatter.ISO_DATE); // <6>     
+
+        // Create Hilary's enrollments
+        JsonArray enrollments = JsonArray.create(); // <7>     
+
+        enrollments.add(JsonObject.create()
+                .put("course-id", graphic_design.getString("id"))
+                .put("date-enrolled", currentDate)); // <8>    
+
+        enrollments.add(JsonObject.create()
+                .put("course-id", art_history.getString("id"))
+                .put("date-enrolled", currentDate)); // <8>    
+
+        hilary.put("enrollments", enrollments); // <9>     
+
+        student_records.upsert(hilary.getString("id"), hilary); // <10>    
+
+        cluster.disconnect();
+
     }
-  ],
-  "id": "000001",
-  "date-of-birth": "1980-12-21"
+
+    private static JsonObject retrieveStudent(Cluster cluster, String name) throws CouchbaseException {
+
+        QueryOptions studentQueryOptions = QueryOptions.queryOptions();
+        studentQueryOptions.parameters(JsonObject.create().put("name", name));
+        studentQueryOptions.scanConsistency(QueryScanConsistency.REQUEST_PLUS);
+
+        final QueryResult result = cluster.query("select META().id, src.* " +
+                        "from `student-bucket`.`art-school-scope`.`student-record-collection` src " +
+                        "where src.`name` = $name", studentQueryOptions);
+
+        return result.rowsAsObject().get(0);
+
+    }
+
+    private static JsonObject retrieveCourse(Cluster cluster, String course) throws CouchbaseException {
+
+        QueryOptions courseQueryOptions = QueryOptions.queryOptions();
+        courseQueryOptions.parameters(JsonObject.create().put("courseName", course));
+        courseQueryOptions.scanConsistency(QueryScanConsistency.REQUEST_PLUS);
+
+        final QueryResult result = cluster.query("select META().id, crc.* " +
+                        "from `student-bucket`.`art-school-scope`.`course-record-collection` crc " +
+                        "where crc.`course-name` = $courseName", courseQueryOptions);
+
+        return result.rowsAsObject().get(0);
+
+    }
 }
 ----
-
-So, let's begin with the Java program that will change Hilary's record.
-[source, java]
-----
-include::{java-sample-location}AddEnrollments.java[]
-----
-<1> As you'll remember from our xref:java-tutorial/creating-the-students-collection.adoc#connecting-to-the-database[first example], the application first has to connect to the Couchbase cluster.
-
-<2> Then it picks up the correct `Bucket` from the cluster.
-
-<3> Do you remember why we need this `waitUntilReady` function is needed when connecting to the server?
 +
-{empty}
+NOTE: Because this is a tutorial, you do not need to add an error check to make sure that your collection has returned an item.
+In a live application, though, error checks must be made to prevent errors and keep the application running.
 +
-[%collapsible]
-.Answer
-====
-{why-waitUntilReady}
-====
+<1> Calls `Cluster.connect` to create a channel to the named server and supplies your username and password to authenticate the connection.
+<2> Retrieves the bucket you set up when you xref:tutorial-install-server.adoc[installed the Couchbase server].
+<3> Forces the application to wait until the bucket is ready.
+<4> Retrieves the `art-school-scope` collection from the scope.
+<5> These three methods retrieve Hilary's student record, the `graphic design` course record, and the `art history` course record.
+Each method uses a {sqlpp} call to retrieve a single record from each collection.
+<6> Couchbase does not have a native date type, so the common practice is to store dates as strings.
+<7> Stores the `enrollments` inside the student record as an array.
+`JsonArray.create()` creates an empty list structure.
+<8> Adds two JSON elements to the `enrollments` array: the course that the enrollment relates to, and the date that the student enrolled in the course. 
+To avoid repeating data all over the database, you store a reference to the course instead of the entire course record itself in this field.
+This means that you do not have to search through every single record if the course details change, 
+<9> Adds the `enrollments` array to Hilary's student record.
+<10> Commits the changes to the collection.
+The `upsert` function call takes the key of the record you want to insert or update and the record itself as parameters.
+If the `upsert` call finds a document with a matching ID in the collection, it updates the document. 
+If there is no matching ID, it creates a new document.
 +
-{empty}
-<4> Here again, we pick up the student collection from the `art-school-scope`; you'll need it later to change Hilary's record and write it back to the collection.
-
-<5> There are three method calls here:
+. Open a terminal window and navigate to your `student` directory.
+. Run the command `mvn install` to pull in all the dependencies and rebuild your application.
+. Run the following command to insert the student record into the collection:
 +
---
-. Retrieve Hilary's student record.
-. Retrieve the `graphic design` course record.
-. Retrieve the `art history` course record.
---
-+
-Each method uses a {sqlpp} call to retrieve a single record from its respective collection.
-+
-IMPORTANT: This is just a demonstration, so there is no error checking to ensure that an item from the collection has been returned.
-In a live system, checks would have to be made to prevent possible errors while the program is running.
-+
-{empty}
-<6> Remember that Couchbase doesn't have a native date type, so it's common practice to store the dates as strings.
-
-<7> The `enrollments` inside the student record are stored as an array; since JSON is the native data format for Couchbase, it's not surprising that each SDK has a host of functions for processing data in JSON.
-In this case, the call `JsonArray.create()` will create an empty list structure.
-
-<8> Now JSON elements are added to the `enrollments` array.
-Looking back at the <<enrollments-structure,data structure>> for enrollments, we need store just two items: the course that the enrollment relates to, and the date the student enrolled.
-+
-[source, java]
-----
-enrollments.add(JsonObject.create().put("course-id", graphic_design.getString("id"))
-    .put("date-enrolled", currentDate));
-----
-+
-The `course-id` uses the `id` of the course record retrieved from the database.
-We could, of course, store the whole record in this field.
-Why _wouldn't_ we want to do that?
-+
-{empty}
-+
-[%collapsible]
-.Answer
-====
-This goes back to our relational model, and the idea of normalising the data model so that we don't have repeating data items all over the place.
-Here, you're just storing a reference to the course, not the course record itself.
-So if the course details change (such as the number of credit points assigned to it), then you don't have to search through every single record that includes its own version.
-====
-+
-{empty}
-<9> The array of enrollments is built, so now you add them to Hilary's record.
-+
-[sidebar]
-====
-This is where the document database model shines; there is no need to change a database schema and rebuild the database.
-Just add the data and you're done.
-====
-+
-{empty}
-<10> Finally, the changes need to be committed to the collection.
-For this, use the `upsert` function, which takes the key of the record you wish to insert or update and the record itself as parameters.
-If they key exists in the collection then the record is updated.
-If the key does not exist then it's a fresh document, so the item is inserted.
-
-As always, use maven to run the program.
-
 [source, sh]
 ----
 mvn exec:java -Dexec.mainClass="AddEnrollments" -Dexec.cleanupDaemonThreads=false
 ----
++
+. Go to your Couchbase database in your browser and check the `student-record-collection` for the new information you just added to Hilary's student record.
++
+image::updated-student-record.png[alt="Updated student record with course enrollment"]
 
-And check your results in administrator console.
+If you have issues with your connection, check out the xref:tutorial-troubleshooting[troubleshooting page].
 
-== Great Job!
+== Next Steps
 
-You've reached the end of the beginners' tutorial.
-You can explore the documentation site to learn more about Couchbase.
+Now that you have finished following the Student Record System tutorial, you can explore Couchbase by checking out the xref:server:guides:intro.adoc[developer guides], learning more about the xref:java-sdk:hello-world:overview.adoc[Couchbase Java SDK], and learning more about the xref:server:learn:architecture-overview.adoc[Couchbase Server architecture].

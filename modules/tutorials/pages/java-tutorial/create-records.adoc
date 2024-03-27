@@ -2,7 +2,9 @@
 :description: Use the SDK to create student and course records.
 :page-topic-type: tutorial
 :page-pagination: full
+:page-toclevels: 2
 :imagesdir: ../../images
+:page-aliases: creating-the-students-collection.adoc, creating-the-courses-collection.adoc
 
 [abstract]
 {description}
@@ -40,11 +42,11 @@ public class InsertStudent {
         Scope scope = bucket.scope("art-school-scope");
         Collection student_records = scope.collection("student-record-collection");    
 
-        JsonObject hilary = JsonObject.create()
+        JsonObject hilary = JsonObject.create() // <1>
                 .put("name", "Hilary Smith")
                 .put("date-of-birth",
                         LocalDate.of(1980, 12, 21)
-                                .format(DateTimeFormatter.ISO_DATE)); // <1>
+                                .format(DateTimeFormatter.ISO_DATE));
 
         student_records.upsert("000001", hilary); // <2>    
 
@@ -53,8 +55,7 @@ public class InsertStudent {
 }
 ----
 +
-<1> Includes a class of functionality for creating and manipulating data in JSON format. 
-This `JsonObject` class creates and populates the student record.
+<1> This `JsonObject` class creates and populates the student record.
 <2> The `upsert` function inserts or updates documents in a collection.
 The first parameter is a unique ID for the document, similar to a primary key used in a relational database system.
 If the `upsert` call finds a document with a matching ID in the collection, it updates the document. 
@@ -140,16 +141,9 @@ mvn exec:java -Dexec.mainClass="InsertCourses" -Dexec.cleanupDaemonThreads=false
 +
 image::new-course-records.png[alt="Courses added to the course-record-collection in the database"]
 
-
-== Troubleshooting
-
-When connecting to the database and creating a student or course record, you might get errors in your console.
-
-* If you get an authentication error, confirm that the username and password in your `InsertStudent.java` and `InsertCourses.java` files match the username and password you used when setting up the Couchbase database in your browser.
-* If you get the error `DnsSrvLookupFailedEvent`, which tells you to specify an IP address, go to your `InsertStudent.java` and `InsertCourses.java` files and replace `localhost` with the IP address of your local Couchbase Server.
-* For any other errors, run `mvn install` and try the original command again.
+If you have issues with your connection, check out the xref:tutorial-troubleshooting[troubleshooting page].
 
 
 == Next Steps
 
-After creating student and course records, you can xref:java-tutorial/retrieve-records.adoc[retrieve information from your database].
+After creating student and course records, you can xref:retrieve-records.adoc[retrieve information from your database].
