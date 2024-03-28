@@ -1,6 +1,6 @@
-# docs-devex
+# What is docs-devex?
 
-This repository contains the Devex documentation shared across Server and Capella.
+The docs-devex repository contains the Devex documentation shared across Couchbase Server and Capella. This documentation includes the new Developer Guides for specific services.
 
 Right now, that documentation is the new Developer Guides for specific services. 
 
