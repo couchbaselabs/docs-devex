@@ -13,6 +13,8 @@ This JSON payload sets all the settings for your new Search index.
 
 Your JSON payload must contain the properties described in <<initial,>>, including the <<params,>>.
 
+xref:index-aliases.adoc[Search index aliases] only need to include the properties described in <<initial,>>.
+
 [#initial]
 == Initial Settings 
 
@@ -41,7 +43,7 @@ The type of index you want to create:
 
 * `fulltext-index`: Create a Search index.
 * `fulltext-alias`: Create an alias for a Search index. 
-For more information about Search index aliases, see xref:server:fts:fts-creating-full-text-aliases.adoc[].
+For more information about Search index aliases, see xref:index-aliases.adoc[].
 
 |[[uuid]]uuid |String |No a|
 
@@ -55,9 +57,11 @@ Do not include the `uuid` property when you want to copy an index to a different
 View the UUID for an existing index from the {page-ui-name} by selecting an existing index and clicking btn:[Index Definition].
 The UUID displays in the Index Definition on the Update Index page.
 
-|sourceType |String |Yes |The `sourceType` is always `"gocbcore"`.
+|sourceType |String |Yes |The `sourceType` is always `"gocbcore"` for a Search index.
+For a xref:index-aliases.adoc[Search index alias], it's `"nil"`.
 
-|sourceName |String |Yes |The name of the bucket where you want to create the Search index. 
+|sourceName |String |Yes |The name of the bucket where you want to create the Search index.
+Do not include a `sourceName` for a Search index alias. 
 
 |[[sourceuuid]]sourceUUID |String |No a|
 
@@ -73,16 +77,24 @@ This object contains advanced settings for index behavior.
 
 Do not add content into this object unless instructed by Couchbase Support.
 
-|planParams |Object |Yes |An object that sets the Search index's partitions and replications. 
+|planParams |Object |Yes a|An object that sets the Search index's partitions and replications. 
 For more information, see <<planparams,>>.
 
-|params |Object |Yes |An object that sets the Search index's type identifier, type mappings, and analyzers. 
+Do not include any of the properties in a `planParams` object for a xref:index-aliases.adoc[Search index alias].
+
+|params |Object |Yes a|
+
+An object that sets the Search index's type identifier, type mappings, and analyzers. 
 For more information, see <<params,>>.
+
+For a xref:index-aliases.adoc[Search index alias], this object contains the <<targets,targets object>>.
 
 |====
 
 [#planparams]
 == planParams Object 
+
+NOTE: Do not include any of the properties in a `planParams` object for a xref:index-aliases.adoc[Search index alias].
 
 The `planParams` object sets a Search index's partition and replication settings:
 
@@ -121,6 +133,8 @@ The number of replicas you can create depends on the number of nodes you have av
 
 The `params` object sets a Search index's xref:customize-index.adoc#type-identifiers[type identifier], xref:customize-index.adoc#type-mappings[type mappings], and xref:customize-index.adoc#analyzers[analyzers].
 
+For a xref:index-aliases.adoc[Search index alias], it includes a JSON object for each Search index to include in the alias. 
+
 It contains the following properties:
 
 [cols="1,1,1,2"]
@@ -132,6 +146,19 @@ For more information, see <<doc-config,>>.
 
 |mapping |Object |Yes |An object that sets the analyzers and type mappings for a Search index. 
 For more information, see <<mapping,>>.
+
+|[[targets]]targets |Object |Index Alias Only a| An object that contains JSON objects for each Search index to add to the alias definition. 
+
+The key for each JSON object must be the fully qualified name of each Search index. 
+
+For example: 
+
+----
+"targets": {
+
+    "vector-sample.color.color-index": {}
+}
+----
 
 |====
 
