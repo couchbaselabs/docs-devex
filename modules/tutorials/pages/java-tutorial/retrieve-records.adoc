@@ -13,14 +13,16 @@ You can retrieve your records using the <<#retrieve-with-query-editor,query edit
 [#retrieve-with-query-editor]
 == With the Query Editor
 
+To retrieve the records with the Query Editor, you must first define an index.
+
 === Define an Index
 
 Before you can retrieve your records with the query editor, you must first define an index in your bucket.
-The index helps your database find specific data when you run a query.
+The index helps your cluster find specific data when you run a query.
 
 To define an index:
 
-. In your Couchbase database in your browser, click menu:Query[] to open the query editor.
+. In your Couchbase cluster in your browser, click menu:Query[] to open the query editor.
 . Select *student-bucket* and *art-school-scope* in the *context* drop-down.
 Using these filters means you can narrow down the scope of your queries. 
 You do not need to add the names of your bucket and scope to your queries.
@@ -37,6 +39,8 @@ create primary index course_idx on `course-record-collection`
 . Click btn:[Execute] to create a single index called `course_idx` in your `course-record-collection`.
 
 === Retrieve Your Records
+
+You can use the Query Editor to retrieve all course records at once, or narrow your search down to retrieve records based on specific criteria.
 
 ==== Retrieve All Course Records
 
@@ -152,6 +156,8 @@ select crc.* from `student-bucket`.`art-school-scope`.`course-record-collection`
 
 === Retrieve Your Records
 
+You can use the SDK to retrieve all course records at once, or narrow your search down to retrieve records based on specific criteria.
+
 ==== Retrieve All Course Records
 
 To retrieve all of your course records using the Java SDK:
@@ -161,36 +167,7 @@ To retrieve all of your course records using the Java SDK:
 +
 [source, java]
 ----
-import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.query.QueryResult;
-
-public class ArtSchoolRetriever {
-
-    public static void main(String[] args) {
-        Cluster cluster = Cluster.connect("localhost",
-                "Administrator", "password");
-
-        retrieveCourses(cluster);
-
-        cluster.disconnect();
-    }
-
-    private static void retrieveCourses(Cluster cluster) {
-
-        try {
-            final QueryResult result = cluster.query("select crc.* from `student-bucket`.`art-school-scope`.`course-record-collection` crc");
-
-            for (JsonObject row : result.rowsAsObject()) {
-                System.out.println("Found row: " + row);
-            }
-
-        } catch (CouchbaseException ex) {
-            ex.printStackTrace();
-        }
-    }
-}
+include::..example$ArtSchoolRetrieverAll.java[]
 ----
 +
 . Open a terminal window and navigate to your `student` directory.
@@ -216,45 +193,8 @@ To retrieve only courses with less than 200 `credit-points` using the Java SDK:
 +
 [source, java]
 ----
-import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.query.QueryOptions;
-import com.couchbase.client.java.query.QueryResult;
-
-public class ArtSchoolRetrieverParameters {
-
-    public static void main(String[] args) {
-        Cluster cluster = Cluster.connect("localhost",
-                "Administrator", "password");
-
-        retrieveCourses(cluster);
-
-        cluster.disconnect();
-    }
-
-    private static void retrieveCourses(Cluster cluster) {
-
-        try {
-            final QueryResult result = cluster.query("select crc.* " +
-                            "from `student-bucket`.`art-school-scope`.`course-record-collection` crc " +
-                            "where crc.`credit-points` < $creditPoints", // <1>   
-                    QueryOptions.queryOptions()
-                            .parameters(JsonObject.create().put("creditPoints", 200))); // <2>    
-
-            for (JsonObject row : result.rowsAsObject()) {
-                System.out.println("Found row: " + row);
-            }
-
-        } catch (CouchbaseException ex) {
-            ex.printStackTrace();
-        }
-    }
-}
+include::..example$ArtSchoolRetriever.java[]
 ----
-+
-<1> This {sqlpp} statement takes the parameter `$creditPopints`, which is then substituted by the value in the second parameter when the statement is called.
-<2> The second parameter in the function call, with a value that replaces `$creditPoints`.
 +
 . Open a terminal window and navigate to your `student` directory.
 . Run the command `mvn install` to pull in all the dependencies and rebuild your application.
