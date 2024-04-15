@@ -7,6 +7,8 @@
 [abstract]
 {description}
 
+A documents <<scoring,score>>, based on the parameters in your Search query, determines where it appears in your search results. 
+
 NOTE: You must xref:create-search-indexes.adoc[create a Search index] before you can run a search with the Search Service.
 
 You can run a search against a Search index with: 
@@ -19,6 +21,28 @@ You can run a search against a Search index with:
 include::partial$sdks-fts-links.adoc[]
 
 To run a Search query against multiple Search indexes at once, xref:create-search-index-alias.adoc[].
+
+[#scoring]
+== Scoring for Search Queries 
+
+To determine a document's score in search results, the Search Service uses the https://en.wikipedia.org/wiki/Tf%E2%80%93idf[tf-idf^] algorithm. 
+The Search Service uses `tf-idf` to calculate the hit score for a document, multiplied by any xref:search-request-params.adoc#boost[boost] parameters applied to each query inside the xref:search-request-params.adoc#query-object[query object]: 
+
+----
+hit_score = (query_1_boost * query_1_hit_score) + (query_2_boost * query_2_hit_score)
+----
+
+If one of your Search queries is a xref:vector-search:vector-search.adoc[Vector Search query], the calculation changes to: 
+
+----
+hit_score = (query_1_boost * query_1_hit_score) + (knn_boost * knn_distance)
+----
+
+When running a hybrid search with the <<ui,Web Console>> or <<api,REST API>>, the Search Service displays results as a disjunct (`OR`) between your regular Search and Vector Search queries. 
+
+TIP: When running a hybrid Search query, you should add a `boost` value to your regular Search query to level the `tf-idf` score with the knn distance.
+Otherwise, you might see unexpected search results.
+This is because of the differences in the scoring algorithms between the 2 query types.
 
 [#ui]
 == Run a Search with the Web Console
@@ -46,6 +70,57 @@ For more information about how to configure a Search index and search for geospa
 == Run a Search with a {sqlpp} Query 
 
 Use the xref:tools:query-workbench.adoc[Query tab] to search using natural-language search and {sqlpp} features in the same query. 
+
+When using {sqlpp} with a hybrid xref:vector-search:vector-search.adoc[Vector Search] query, you have more flexibility in how you choose to display your search results. 
+When running a hybrid search with the <<ui,Web Console>> or <<api,REST API>>, the Search Service displays results as a disjunct (`OR`) between your 2 search queries. 
+For example: 
+
+----
+
+{ 
+    "query": 
+    {
+        "match_phrase": "my regular query"
+    } 
+}
+
+OR 
+
+{
+    "knn": [
+        "k": 5,
+        "field": "vector_field",
+        "vector": [0, 0, 128]
+    ]
+}
+----
+
+{sqlpp} allows you to choose whether to return search results as a conjunct (`AND`) or a disjunct (`OR`) between for hybrid search queries.
+
+As a conjunct, the Search Service returns matches that score highly for both the regular Search query and the Vector Search query. 
+The Search Service would exclude matches that only match the Vector Search query.
+For example: 
+
+[source,sqlpp]
+----
+
+SELECT meta().id FROM <key_space>
+WHERE text = "content"
+AND SEARCH(<key_space>, {"query": {"match": "content", "field": "text"}, "knn": {"vector": <vector_embedding>", "field": "vector_field", "k": 5}});
+
+----
+
+As a disjunct, the Search Service returns matches for the regular Search query, followed by matches for the Vector Search query.
+As a result, you could see matches for the Vector Search query that do not contain matches for the regular Search query. 
+For example: 
+
+[source,sqlpp]
+----
+
+SELECT meta().id FROM <key_space>
+WHERE SEARCH (<key_space>, {"query": {"match": "content", "field": "text"}, "knn": {"vector": <vector_embedding>", "field": "vector_field", "k": 5}});
+
+----
 
 For more information about how to use the Search Service from a {sqlpp} query, see xref:n1ql:n1ql-language-reference/searchfun.adoc[].
 
