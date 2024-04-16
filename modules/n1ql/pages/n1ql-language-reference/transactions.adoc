@@ -1,7 +1,7 @@
 = {sqlpp} Support for Couchbase Transactions
 :page-topic-type: concept
 :imagesdir: ../../assets/images
-:description: {sqlpp} offers full support for Couchbase ACID transactions.
+:description: {sqlpp} offers full support for Couchbase ACID transactions based on optimistic concurrency.
 :tabs:
 :page-partial:
 
@@ -60,9 +60,11 @@
 :rollback-transaction: xref:n1ql-language-reference/rollback-transaction.adoc
 
 [abstract]
-{sqlpp} offers full support for Couchbase ACID transactions.
+{description}
 
-Starting with Couchbase Server 7.0, {sqlpp} offers full support for Couchbase ACID transactions based on optimistic concurrency.
+include::ROOT:partial$component-signpost.adoc[]
+
+A transaction is a group of operations that are either committed to the database together, or are all undone from the database if there's a failure.
 Refer to {transactions}[Transactions] for an overview of Couchbase transactions.
 
 include::partial$n1ql-language-reference/transaction-restrictions.adoc[]
@@ -194,6 +196,12 @@ This worked example guides you through a complete Couchbase transaction session 
 The worked example assumes that the supplied `travel-sample` bucket is installed.
 Refer to {install-sample-buckets}[Sample Buckets] for installation details.
 
+.Context
+For this worked example, set the query context to the `tenant_agent_00` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+image::guides:transactions-context.png["The query context drop-down menu, with the tenant_agent_00 scope selected"]
+
 .Index
 For the purposes of this worked example, you must create a primary index in the keyspace you will be using.
 
@@ -263,15 +271,29 @@ The results of running the transaction in the Query Workbench are shown below.
 If you are using the cbq shell, the results are formatted differently, but contain the same information.
 
 .Results
-[source,json]
+[source.no-callouts,json]
 ----
-include::example$transactions/results.jsonc[tags=!ellipsis]
+include::example$transactions/results.jsonc[tags=extract-1]
 ----
+Beginning a transaction returns a unique transaction ID `txid`.
 
-<.> Beginning a transaction returns a transaction ID.
-<.> Before setting the second savepoint, the booking document has user `"0"`, name `"Keon Hoppe"`.
-<.> After setting the second savepoint and performing an update, the booking document has user `"1"`, name `"Rigoberto Bernier"`.
-<.> After rolling back to the second savepoint, the booking document again has user `"0"`, name `"Keon Hoppe"`.
+[source.no-callouts,json]
+----
+include::example$transactions/results.jsonc[tags=extract-2;!ellipsis]
+----
+Before setting the second savepoint, the booking document has user `"0"`, name `"Keon Hoppe"`.
+
+[source.no-callouts,json]
+----
+include::example$transactions/results.jsonc[tags=extract-3]
+----
+After setting the second savepoint and performing an update, the booking document has user `"1"`, name `"Rigoberto Bernier"`.
+
+[source.no-callouts,json]
+----
+include::example$transactions/results.jsonc[tags=extract-4]
+----
+After rolling back to the second savepoint, the booking document again has user `"0"`, name `"Keon Hoppe"`.
 ====
 
 [[ex-2]]
@@ -286,12 +308,12 @@ include::example$transactions/multiple.n1ql[tag=check-3]
 ----
 
 .Results
-[source,json,indent=0]
+[source.no-callouts,json,indent=0]
 ----
 include::example$transactions/results.jsonc[tag=check-3]
 ----
 
-<.> The booking document has been added with the attributes that were present when the transaction was committed.
+The booking document has been added with the attributes that were present when the transaction was committed.
 ====
 
 .Transaction using the Query REST API
