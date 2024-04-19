@@ -26,7 +26,7 @@
 
 // Tools cross-references
 :query-workbench: xref:clusters:query-service/query-workbench.adoc
-:cbq-shell: xref:server:tools:cbq-shell.adoc
+:cbq-shell: xref:n1ql:n1ql-intro/cbq.adoc
 :n1ql-rest-api: xref:n1ql:n1ql-rest-api/index.adoc
 
 // Settings cross-references
@@ -145,15 +145,20 @@ endif::flag-query-settings[]
 
 == Query Tools
 
-ifndef::flag-devex-command-line[]
-To create a Couchbase transaction using {sqlpp}, you can use the {query-workbench}[Query Workbench].
-endif::flag-devex-command-line[]
+To create a Couchbase transaction using {sqlpp}, you can use:
 
-ifdef::flag-devex-command-line[]
-To create a Couchbase transaction using {sqlpp}, you can use any of the tools that you use to run a {sqlpp} query: the {query-workbench}[Query Workbench], the {cbq-shell}[cbq shell], or the {n1ql-rest-api}[Query REST API].
+* The {query-workbench}[Query Workbench]
+ifdef::flag-devex-tools[]
+* The {cbq-shell}[cbq shell]
+endif::flag-devex-tools[]
+ifdef::flag-rest-api[]
+* The {n1ql-rest-api}[Query REST API]
+endif::flag-rest-api[]
+
+ifdef::flag-devex-tools[]
 There are slight differences in the way these tools operate when creating Couchbase transactions.
 These are explained in the sections below.
-endif::flag-devex-command-line[]
+endif::flag-devex-tools[]
 
 Note that some Couchbase SDKs provide APIs to support Couchbase transactions.
 For further details, refer to {transactions}[Transactions] in the Server documentation.
@@ -172,7 +177,7 @@ You can then click btn:[Execute] to execute the transaction.
 * You do not need to specify the `txid` parameter or the `tximplicit` parameter.
 If you need to specify any other parameters for the Couchbase transaction, you can use the Query Options window.
 
-ifdef::flag-devex-command-line[]
+ifdef::flag-devex-tools[]
 === Couchbase Transactions with the cbq shell
 
 * To execute a transaction containing multiple statements, you can create the transaction one statement at a time.
@@ -184,8 +189,9 @@ footnote:[You must be using cbq shell version 2.0 or above to use the automatic 
 In this case, you do not need to specify the `txid` parameter either.
 
 * You can specify parameters for the Couchbase transaction using the `\SET` command.
+endif::flag-devex-tools[]
 
-
+ifdef::flag-devex-rest-api[]
 === Couchbase Transactions with the Query REST API
 
 * To execute a transaction containing multiple statements, you can create the transaction one statement at a time.
@@ -195,7 +201,7 @@ Once you have started the transaction, you must set the `txid` parameter to spec
 In this case, you do not need to specify the `txid` parameter.
 
 * You can specify parameters for the Couchbase transaction as body parameters or query parameters alongside the query statement.
-endif::flag-devex-command-line[]
+endif::flag-devex-rest-api[]
 
 
 == Monitoring
@@ -262,7 +268,7 @@ Query Workbench::
 . Choose btn:[Save] to save the preferences and return to the Query tab.
 --
 
-ifdef::flag-devex-command-line[]
+ifdef::flag-devex-tools[]
 CBQ Shell::
 +
 --
@@ -278,25 +284,25 @@ include::example$transactions/multiple.n1ql[tag=settings]
 No scan consistency is set for individual statements within the transaction; they inherit from the transaction scan consistency.
 <.> Durability level of all the mutations within the transaction.
 --
-endif::flag-devex-command-line[]
+endif::flag-devex-tools[]
 ====
 
 === Transaction
 
 [[ex-1]]
 
-ifndef::flag-devex-command-line[]
+ifndef::flag-devex-tools[]
 .Transaction using the Query Workbench
 ====
 Copy the entire sequence below and paste it into the {query-workbench}[Query Workbench], then click btn:[Run].
-endif::flag-devex-command-line[]
+endif::flag-devex-tools[]
 
-ifdef::flag-devex-command-line[]
+ifdef::flag-devex-tools[]
 .Transaction using the Query Workbench or cbq shell
 ====
 Copy the entire sequence below and paste it into either the {query-workbench}[Query Workbench] or the {cbq-shell}[cbq shell].
 Note that you must be using cbq shell version 2.0 or above.
-endif::flag-devex-command-line[]
+endif::flag-devex-tools[]
 
 .Transaction
 [source,sqlpp]
@@ -306,9 +312,9 @@ include::example$transactions/multiple.n1ql[tags=transaction;!begin-mark;!set-ma
 
 
 The results of running the transaction in the Query Workbench are shown below.
-ifdef::flag-devex-command-line[]
+ifdef::flag-devex-tools[]
 If you are using the cbq shell, the results are formatted differently, but contain the same information.
-endif::flag-devex-command-line[]
+endif::flag-devex-tools[]
 
 .Results
 [source.no-callouts,json]
@@ -356,7 +362,7 @@ include::example$transactions/results.jsonc[tag=check-3]
 The booking document has been added with the attributes that were present when the transaction was committed.
 ====
 
-ifdef::flag-devex-command-line[]
+ifdef::flag-devex-rest-api[]
 .Transaction using the Query REST API
 ====
 For reference, this example shows the equivalent of <<ex-1>> using the Query REST API.
@@ -435,7 +441,7 @@ include::example$transactions/multiple.sh[tag=commit]
 
 <.> After beginning the transaction, each subsequent statement in the transaction must specify the transaction ID that was generated when the transaction began.
 ====
-endif::flag-devex-command-line[]
+endif::flag-devex-rest-api[]
 
 == Related Links
 
