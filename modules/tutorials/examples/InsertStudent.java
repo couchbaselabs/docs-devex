@@ -27,7 +27,10 @@ public class InsertStudent {
                         LocalDate.of(1980, 12, 21)
                                 .format(DateTimeFormatter.ISO_DATE));
 
-        // The `upsert` function inserts or updates documents in a collection. The first parameter is a unique ID for the document, similar to a primary key used in a relational database system. If the `upsert` call finds a document with a matching ID in the collection, it updates the document. If there is no matching ID, it creates a new document.
+        // The `upsert` function inserts or updates documents in a collection. 
+        // The first parameter is a unique ID for the document, similar to a primary key used in a relational database system. 
+        // If the `upsert` call finds a document with a matching ID in the collection, it updates the document. 
+        // If there is no matching ID, it creates a new document.
         student_records.upsert("000001", hilary);  
 
         cluster.disconnect();

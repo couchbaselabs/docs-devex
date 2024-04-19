@@ -19,7 +19,8 @@ public class ArtSchoolRetrieverParameters {
 
         try {
 
-            // This {sqlpp} statement takes the parameter `$creditPopints`, which is then substituted by the value in the second parameter when the statement is called.
+            // This SQL++ statement takes the parameter `$creditPopints`, 
+            // which is then substituted by the value in the second parameter when the statement is called.
             final QueryResult result = cluster.query("select crc.* " +
                             "from `student-bucket`.`art-school-scope`.`course-record-collection` crc " +
                             "where crc.`credit-points` < $creditPoints",   
