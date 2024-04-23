@@ -1,9 +1,12 @@
 = Backfill Support for {sqlpp}
 :description: Configure the temporary working space for the {sqlpp} engine and its embedded GSI client.
 :page-aliases: settings:backfill
+:no-escape-hatch:
 
 [abstract]
 {description}
+
+include::ROOT:partial$component-signpost.adoc[]
 
 == Introduction
 
@@ -17,7 +20,8 @@ The user must have _Cluster Admin_ privileges in order to be able to specify and
 == Configuration
 
 In the Query Workbench > Settings page, click *Advanced Query Settings* to see:
-image:backfill_QueryTempDiskPath_circled.png[]
+
+image::backfill_QueryTempDiskPath_circled.png["Advanced Query Settings, showing Query Temp Disk Path and Quota"]
 
 In the *Query Temp Disk Path* textbox, enter the directory you want to use for your backfill file.
 
@@ -58,7 +62,20 @@ $ curl --GET -u Administrator:password http://localhost:8091/settings/querySetti
 .Results
 [source,json]
 ----
-{"queryTmpSpaceDir":"/opt/couchbase/tmp","queryTmpSpaceSize":5120,"queryCurlWhitelist":{"all_access":false,"allowed_urls":["http://localhost:8091/settings/querySettings",""],"disallowed_urls":[""]}}
+{
+  "queryTmpSpaceDir": "/opt/couchbase/tmp",
+  "queryTmpSpaceSize": 5120,
+  "queryCurlWhitelist": {
+    "all_access": false,
+    "allowed_urls": [
+      "http://localhost:8091/settings/querySettings",
+      ""
+    ],
+    "disallowed_urls": [
+      ""
+    ]
+  }
+}
 ----
 ====
 
@@ -67,13 +84,27 @@ $ curl --GET -u Administrator:password http://localhost:8091/settings/querySetti
 ====
 [source,console]
 ----
-$ curl -X POST -u Administrator:password -d 'queryTmpSpaceDir=/opt/couchbase/tmp2'  http://localhost:8091/settings/querySettings
+$ curl -X POST -u Administrator:password -d 'queryTmpSpaceDir=/opt/couchbase/tmp2' \
+http://localhost:8091/settings/querySettings
 ----
 
 .Results
 [source,json]
 ----
-{"queryTmpSpaceDir":"/opt/couchbase/tmp2","queryTmpSpaceSize":5120,"queryCurlWhitelist":{"all_access":false,"allowed_urls":["http://localhost:8091/settings/querySettings",""],"disallowed_urls":[""]}}
+{
+  "queryTmpSpaceDir": "/opt/couchbase/tmp2",
+  "queryTmpSpaceSize": 5120,
+  "queryCurlWhitelist": {
+    "all_access": false,
+    "allowed_urls": [
+      "http://localhost:8091/settings/querySettings",
+      ""
+    ],
+    "disallowed_urls": [
+      ""
+    ]
+  }
+}
 ----
 ====
 
@@ -82,13 +113,27 @@ $ curl -X POST -u Administrator:password -d 'queryTmpSpaceDir=/opt/couchbase/tmp
 ====
 [source,console]
 ----
-$ curl -X POST -u Administrator:password -d 'queryTmpSpaceDir=/opt/couchbase/tmp' -d 'queryTmpSpaceSize=2048' http://localhost:8091/settings/querySettings
+$ curl -X POST -u Administrator:password -d 'queryTmpSpaceDir=/opt/couchbase/tmp' \
+-d 'queryTmpSpaceSize=2048' http://localhost:8091/settings/querySettings
 ----
 
 .Results
 [source,json]
 ----
-{"queryTmpSpaceDir":"/opt/couchbase/tmp","queryTmpSpaceSize":2048,"queryCurlWhitelist":{"all_access":false,"allowed_urls":["http://localhost:8091/settings/querySettings",""],"disallowed_urls":[""]}}
+{
+  "queryTmpSpaceDir": "/opt/couchbase/tmp",
+  "queryTmpSpaceSize": 2048,
+  "queryCurlWhitelist": {
+    "all_access": false,
+    "allowed_urls": [
+      "http://localhost:8091/settings/querySettings",
+      ""
+    ],
+    "disallowed_urls": [
+      ""
+    ]
+  }
+}
 ----
 
 At the same time, the logs will contain messages for every change coming from both query and GSI, so after executing Example 3's CURL statement:
