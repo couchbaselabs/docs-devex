@@ -1,7 +1,41 @@
 = {sqlpp} Auditing
 :description: {sqlpp}-related activities can be audited, by Couchbase Capella.
 :page-topic-type: reference
-:no-escape-hatch:
+
+// Pass through HTML table styles for this page
+
+ifdef::basebackend-html[]
+++++
+<style type="text/css">
+  /* No maximum width for table cells */
+  .doc table.spread > tbody > tr > *,
+  .doc table.stretch > tbody > tr > * {
+    max-width: none !important;
+  }
+
+  /* Wrap code listings in table cells */
+  td .listingblock .content pre code {
+    white-space: pre-wrap !important;
+  }
+
+  /* Ignore fixed column widths */
+  table:not(.fixed-width) col{
+    width: auto !important;
+  }
+
+  /* Do not hyphenate words in the table */
+  td.tableblock p,
+  p.tableblock{
+    hyphens: manual !important;
+  }
+
+  /* Vertical alignment */
+  td.tableblock{
+    vertical-align: top !important;
+  }
+</style>
+++++
+endif::[]
 
 [abstract]
 {description}
@@ -11,8 +45,7 @@ include::ROOT:partial$component-signpost.adoc[]
 == Understanding {sqlpp} Auditing
 
 This section provides specific information on Couchbase Capella auditing as it relates to {sqlpp}.
-For a general description of configuring auditing with Couchbase Web Console, see
-xref:server:learn:security/authorization-overview.adoc[Authorization].
+For a general description of auditing with Couchbase Capella, see xref:security:auditing.adoc[].
 
 Couchbase Capella provides auditing for {sqlpp}-related activities such as the following:
 
@@ -20,7 +53,9 @@ Couchbase Capella provides auditing for {sqlpp}-related activities such as the f
 * Starting and stopping the Query Service
 * Editing Query Service settings
 * Executing {sqlpp} statements
+ifdef::flag-devex-rest-api[]
 * Non-query API requests
+endif::flag-devex-rest-api[]
 
 {sqlpp}-related activities are logged whether they are executed by a person or by an application running on behalf of a person.
 Auditing occurs at the level of _requests_, rather than of _operations_.
@@ -30,18 +65,20 @@ Auditing causes a reduction in {sqlpp} query-performance.
 This is in the range of 9% to 17% of queries performed per second: the exact reduction depends on query-size, and on the amount of auditing that has been enabled.
 Large queries and minimal auditing cause less performance-reduction.
 
-Auditing can be configured by means of Couchbase Web Console: see the information provided in xref:server:manage:manage-security/manage-auditing.adoc[Manage Auditing].
-To capture {sqlpp}-related events, use the *Query and Index Service* panel.
-Events available to be audited include ones issued through the SDK, the Query workbench, and the Query Shell.
+You can configure auditing by means of the Management REST API: see xref:security:audit-management.adoc[].
+You can audit Query and Index service events that are issued through the Query tab,
+ifdef::flag-devex-tools[]
+the cbq shell,
+endif::flag-devex-tools[]
+and the SDK.
 
 == Audit Log Format
 
 The audit records are written in JSON format to match the format used for Admin Auditing to allow easy integration with downstream auditing tools for audit log analysis.
 The syslog format will allow for integration with third party SIEM tools, such as QRadar.
 
-Required auditing fields for executed statements:
-
-[cols="1,4,4"]
+.Required auditing fields for executed statements
+[cols="1,4a,4a"]
 |===
 | Field | Description | Example
 
@@ -70,28 +107,34 @@ Required auditing fields for executed statements:
 | `TRUE`
 
 | `userAgent`
-| To identify the type of user by a combination of the User-Agent and CB-User-Agent headers in one of the four formats:
+| To identify the type of user by a combination of the User-Agent and CB-User-Agent headers in one of the following formats:
 
-1) CURL request
+. Query tab
 
-2) Query Workbench
+ifdef::flag-devex-rest-api[]
+. CURL request
+endif::flag-devex-rest-api[]
 
-3) CBQ shell
+ifdef::flag-devex-tools[]
+. cbq shell
+endif::flag-devex-tools[]
 
-4) SDK
-| 1) `curl/7.43.0`
+. SDK
+| . `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36 (Couchbase Query Workbench (5.1.0-1434-enterprise))`
 
-2) `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36 (Couchbase Query Workbench (5.1.0-1434-enterprise))`
+ifdef::flag-devex-rest-api[]
+. `curl/7.43.0`
+endif::flag-devex-rest-api[]
 
-3) `Go-http-client/1.1 (CBQ/2.0)`
+ifdef::flag-devex-tools[]
+. `Go-http-client/1.1 (CBQ/2.0)`
+endif::flag-devex-tools[]
 
-4) `+couchbase-java-client/2.5.2 (git: 2.5.2, core: 1.5.2) (Mac OS X/10.11.6 x86_64; Java HotSpot(TM) 64-Bit Server VM 1.8.0_101-b13)+`
+. `+couchbase-java-client/2.5.2 (git: 2.5.2, core: 1.5.2) (Mac OS X/10.11.6 x86_64; Java HotSpot(TM) 64-Bit Server VM 1.8.0_101-b13)+`
 
 | `node`
 | Assigned name (IP address) of the server where the request ran.
-
-`local` for unclustered nodes.
-| `local`
+| <redacted>
 
 | `status`
 | Status of the request, as `success` or `failed` or `stopped`.
@@ -120,8 +163,7 @@ Required auditing fields for executed statements:
 | `A {sqlpp} SELECT statement was executed`
 |===
 
-Optional auditing fields for statements:
-
+.Optional auditing fields for statements
 [cols="2,5,5"]
 |===
 | Field | Description | Example
@@ -136,19 +178,19 @@ Optional auditing fields for statements:
 
 | `clientContextId`
 a|
-Captured from the `client_context_id` parameter of the {sqlpp} query API.
+Captured from the `client_context_id` parameter of the {sqlpp} query.
 
-May be used to distinguish between user-generated queries and UI-generated queries from the Query WorkBench.
+May be used to distinguish between user-generated queries and UI-generated queries from the Query tab.
 
 UI-generated queries have the prefix `INTERNAL-` in this field.
-
-NOTE: The client context ID has no security guarantees.
-The parameter can be set by any user in any request and is not verified in the server, so it should not be relied upon for security purposes.
 |
 |===
 
-Required auditing fields for API requests:
+NOTE: The client context ID has no security guarantees.
+The parameter can be set by any user in any request and is not verified in the server, so it should not be relied upon for security purposes.
 
+ifdef::flag-devex-rest-api[]
+.Required auditing fields for API requests
 [cols="2,5,5"]
 |===
 | Field | Description | Example
@@ -185,24 +227,17 @@ Required auditing fields for API requests:
 | Description of the event type.
 | `An HTTP request was made to the API at /admin/ping.`
 |===
+endif::flag-devex-rest-api[]
 
 == Examples
 
 To reduce disk usage and improve performance, the log files are as compact as possible.
 
-To make the log entry easier-to-read, use a formatting utility such as https://stedolan.github.io/jq/[jq^], or reformat the log entry through the Query Workbench:
-
-. Copy the log entry to the clipboard
-. Open Query Workbench
-. Type `SELECT`
-. Paste the query from the clipboard
-. Click the btn:[Execute] button
-
-When viewed through Query Workbench, the logs are formatted and indented for easier reading.
+To make the log entry easier-to-read, use a formatting utility such as https://stedolan.github.io/jq/[jq^].
 
 .{blank}
 ====
-Execute `SELECT * FROM orders` via a CURL statement.
+Execute `SELECT * FROM orders`.
 
 [source,json]
 ----
@@ -233,7 +268,7 @@ Execute `SELECT * FROM orders` via a CURL statement.
 
 .{blank}
 ====
-Execute `DELETE FROM orders WHERE priority = 6` via a CURL statement.
+Execute `DELETE FROM orders WHERE priority = 6`.
 
 [source,json]
 ----
@@ -262,6 +297,7 @@ Execute `DELETE FROM orders WHERE priority = 6` via a CURL statement.
 ----
 ====
 
+ifdef::flag-devex-rest-api[]
 .{blank}
 ====
 Make an HTTP `GET` method from an `/admin/ping` API request.
@@ -283,6 +319,7 @@ Make an HTTP `GET` method from an `/admin/ping` API request.
 }
 ----
 ====
+endif::flag-devex-rest-api[]
 
 == Audit Rotation
 
@@ -329,137 +366,43 @@ To prevent unauthorized modification of the audit service configuration, the aud
 
 Audit records are immutable since the auditing system prevents changes of audit event records once written.
 
-Once archived, audit data is deleted from Couchbase, and the file space is recovered.
+Once archived, audit data is deleted from Capella, and the file space is recovered.
 
+ifdef::flag-devex-command-line[]
 The xref:server:cli:cbcollect-info-tool.adoc[cbcollect_info] utility does not collect audit logs.
+endif::flag-devex-command-line[]
 
 [#section_nyb_jsh_wcb]
 == Audit Event Types
 
 Below is the list of all events that are captured in the audit logs.
 
-. System clock modifications as captured in the operating system audit log
-. Disabling Auditing
-. Enabling Auditing, with audit settings written
-. Login, both Success and Failure
-. Logout, both Success and Failure
-. Data access operations
-+
-|===
-| a. Query Service | Event ID
-
-| `ALTER INDEX`
-| 28683
-
-| `BUILD INDEX`
-| 28684
-
-| `CREATE INDEX`
-| 28681
-
-| `CREATE PRIMARY INDEX`
-| 28688
-
-| `DELETE`
-| 28678
-
-| `DROP INDEX`
-| 28682
-
-| `EXPLAIN`
-| 28673
-
-| `GRANT`
-| 28685
-
-| `INFER`
-| 28675
-
-| `INSERT`
-| 28676
-
-| `MERGE`
-| 28680
-
-| `PREPARE`
-| 28674
-
-| `REVOKE`
-| 28686
-
-| `SELECT`
-| 28672
-
-| `UNRECOGNIZED`
-| 28687
-
-| `UPDATE`
-| 28679
-
-| `UPSERT`
-| 28677
-|===
-+
-|===
-| b. API Request | Event ID
-
-| `/admin/active_requests`
-| 28692
-
-| `/admin/clusters`
-| 28701
-
-| `/admin/completed_requests`
-| 28702
-
-| `/admin/config`
-| 28698
-
-| `/admin/indexes/active_requests`
-| 28694
-
-| `/admin/indexes/completed_requests`
-| 28702
-
-| `/admin/indexes/prepareds`
-| 28693
-
-| `/admin/ping`
-| 28697
-
-| `/admin/prepareds`
-| 28691
-
-| `/admin/settings`
-| 28700
-
-| `/admin/ssl_cert`
-| 28699
-
-| `/admin/stats`
-| 28689
-
-| `/admin/vitals`
-| 28690
-|===
-
-. Audit-Archive
-. System-Backup
-. Data service
+. System clock modifications, as captured in the operating system audit log
+. Disabling auditing
+. Enabling auditing, with audit settings written
+. Login, both success and failure
+. Logout, both success and failure
+. Data access operations -- see xref:server:audit-event-reference:audit-event-reference.adoc#query-service-event-list-table[Query and Index Service Events] in the Server documentation
+. Audit archive
+. System backup
+. Data service:
  .. Read
  .. Write
  .. DCP-Read
  .. DCP-Write
-. FTS Service
+. Search service:
  .. FTS-Read
 . Analytics audit events
-+
+
+ifdef::flag-devex-rest-api[]
 Items that will not be captured in the audit logs:
 
  ** API calls that are not statements
  ** API requests sent to URLs the query engine does not service
  ** API requests which are handled by the autonomic functionality of the HTTP server
+endif::flag-devex-rest-api[]
 
+ifdef::flag-devex-rest-api[]
 [#section_cmd_lyh_wcb]
 == API Auditing Codes
 
@@ -554,3 +497,4 @@ Field "body": PUT/POST only, JSON representation of cluster or node from request
 
 Do not audit POST requests.
 |===
+endif::flag-devex-rest-api[]
