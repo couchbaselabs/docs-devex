@@ -10,8 +10,7 @@ include::ROOT:partial$component-signpost.adoc[]
 == Understanding {sqlpp} Auditing
 
 This section provides specific information on Couchbase Capella auditing as it relates to {sqlpp}.
-For a general description of configuring auditing with Couchbase Capella, see
-xref:server:learn:security/authorization-overview.adoc[Authorization].
+For a general description of auditing with Couchbase Capella, see xref:security:auditing.adoc[].
 
 Couchbase Capella provides auditing for {sqlpp}-related activities such as the following:
 
@@ -19,7 +18,9 @@ Couchbase Capella provides auditing for {sqlpp}-related activities such as the f
 * Starting and stopping the Query Service
 * Editing Query Service settings
 * Executing {sqlpp} statements
+ifdef::flag-devex-rest-api[]
 * Non-query API requests
+endif::flag-devex-rest-api[]
 
 {sqlpp}-related activities are logged whether they are executed by a person or by an application running on behalf of a person.
 Auditing occurs at the level of _requests_, rather than of _operations_.
@@ -29,9 +30,12 @@ Auditing causes a reduction in {sqlpp} query-performance.
 This is in the range of 9% to 17% of queries performed per second: the exact reduction depends on query-size, and on the amount of auditing that has been enabled.
 Large queries and minimal auditing cause less performance-reduction.
 
-Auditing can be configured by means of Couchbase Web Console: see the information provided in xref:server:manage:manage-security/manage-auditing.adoc[Manage Auditing].
-To capture {sqlpp}-related events, use the *Query and Index Service* panel.
-Events available to be audited include ones issued through the SDK, the Query workbench, and the Query Shell.
+You can configure auditing by means of the Management REST API: see xref:security:audit-management.adoc[].
+You can audit Query and Index service events that are issued through the Query tab,
+ifdef::flag-devex-tools[]
+the cbq shell,
+endif::flag-devex-tools[]
+and the SDK.
 
 == Audit Log Format
 
@@ -68,28 +72,34 @@ The syslog format will allow for integration with third party SIEM tools, such a
 | `TRUE`
 
 | `userAgent`
-| To identify the type of user by a combination of the User-Agent and CB-User-Agent headers in one of the four formats:
+| To identify the type of user by a combination of the User-Agent and CB-User-Agent headers in one of the following formats:
 
+. Query tab
+
+ifdef::flag-devex-rest-api[]
 . CURL request
+endif::flag-devex-rest-api[]
 
-. Query Workbench
-
-. CBQ shell
+ifdef::flag-devex-tools[]
+. cbq shell
+endif::flag-devex-tools[]
 
 . SDK
-| . `curl/7.43.0`
+| . `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36 (Couchbase Query Workbench (5.1.0-1434-enterprise))`
 
-. `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36 (Couchbase Query Workbench (5.1.0-1434-enterprise))`
+ifdef::flag-devex-rest-api[]
+. `curl/7.43.0`
+endif::flag-devex-rest-api[]
 
+ifdef::flag-devex-tools[]
 . `Go-http-client/1.1 (CBQ/2.0)`
+endif::flag-devex-tools[]
 
 . `+couchbase-java-client/2.5.2 (git: 2.5.2, core: 1.5.2) (Mac OS X/10.11.6 x86_64; Java HotSpot(TM) 64-Bit Server VM 1.8.0_101-b13)+`
 
 | `node`
 | Assigned name (IP address) of the server where the request ran.
-
-`local` for unclustered nodes.
-| `local`
+| <redacted>
 
 | `status`
 | Status of the request, as `success` or `failed` or `stopped`.
@@ -135,7 +145,7 @@ The syslog format will allow for integration with third party SIEM tools, such a
 a|
 Captured from the `client_context_id` parameter of the {sqlpp} query.
 
-May be used to distinguish between user-generated queries and UI-generated queries from the Query WorkBench.
+May be used to distinguish between user-generated queries and UI-generated queries from the Query tab.
 
 UI-generated queries have the prefix `INTERNAL-` in this field.
 |
@@ -144,6 +154,7 @@ UI-generated queries have the prefix `INTERNAL-` in this field.
 NOTE: The client context ID has no security guarantees.
 The parameter can be set by any user in any request and is not verified in the server, so it should not be relied upon for security purposes.
 
+ifdef::flag-devex-rest-api[]
 .Required auditing fields for API requests
 [cols="2,5,5"]
 |===
@@ -181,6 +192,7 @@ The parameter can be set by any user in any request and is not verified in the s
 | Description of the event type.
 | `An HTTP request was made to the API at /admin/ping.`
 |===
+endif::flag-devex-rest-api[]
 
 == Examples
 
@@ -190,7 +202,7 @@ To make the log entry easier-to-read, use a formatting utility such as https://s
 
 .{blank}
 ====
-Execute `SELECT * FROM orders` via a CURL statement.
+Execute `SELECT * FROM orders`.
 
 [source,json]
 ----
@@ -221,7 +233,7 @@ Execute `SELECT * FROM orders` via a CURL statement.
 
 .{blank}
 ====
-Execute `DELETE FROM orders WHERE priority = 6` via a CURL statement.
+Execute `DELETE FROM orders WHERE priority = 6`.
 
 [source,json]
 ----
@@ -250,6 +262,7 @@ Execute `DELETE FROM orders WHERE priority = 6` via a CURL statement.
 ----
 ====
 
+ifdef::flag-devex-rest-api[]
 .{blank}
 ====
 Make an HTTP `GET` method from an `/admin/ping` API request.
@@ -271,6 +284,7 @@ Make an HTTP `GET` method from an `/admin/ping` API request.
 }
 ----
 ====
+endif::flag-devex-rest-api[]
 
 == Audit Rotation
 
@@ -317,9 +331,11 @@ To prevent unauthorized modification of the audit service configuration, the aud
 
 Audit records are immutable since the auditing system prevents changes of audit event records once written.
 
-Once archived, audit data is deleted from Couchbase, and the file space is recovered.
+Once archived, audit data is deleted from Capella, and the file space is recovered.
 
+ifdef::flag-devex-command-line[]
 The xref:server:cli:cbcollect-info-tool.adoc[cbcollect_info] utility does not collect audit logs.
+endif::flag-devex-command-line[]
 
 [#section_nyb_jsh_wcb]
 == Audit Event Types
@@ -343,12 +359,15 @@ Below is the list of all events that are captured in the audit logs.
  .. FTS-Read
 . Analytics audit events
 
+ifdef::flag-devex-rest-api[]
 Items that will not be captured in the audit logs:
 
  ** API calls that are not statements
  ** API requests sent to URLs the query engine does not service
  ** API requests which are handled by the autonomic functionality of the HTTP server
+endif::flag-devex-rest-api[]
 
+ifdef::flag-devex-rest-api[]
 [#section_cmd_lyh_wcb]
 == API Auditing Codes
 
@@ -443,3 +462,4 @@ Field "body": PUT/POST only, JSON representation of cluster or node from request
 
 Do not audit POST requests.
 |===
+endif::flag-devex-rest-api[]
