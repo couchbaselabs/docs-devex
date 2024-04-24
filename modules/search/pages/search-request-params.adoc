@@ -22,9 +22,11 @@ A Search request can contain the following properties:
 |====
 |Property |Type |Required? |Description
 
-|[[query]]query |Object |Yes a|
+|[[query]]query |Object |Regular or Hybrid Search Only a|
 
 An object that contains the properties for one of the supported query types.
+
+The `query` object is required if you want to run a regular search, or a hybrid search that includes a xref:vector-search:vector-search.adoc[Vector Search] query. 
 
 For more information about how to configure the `query` object, see <<query-object,>>.
 
@@ -153,8 +155,7 @@ Add the `knn` array with at least one object to run a Vector Search query:
 include::example$run-search-full-request.jsonc[tag=knn]
 ----
 
-NOTE: To run a Vector Search query, you must still include a `query` object with your Search request. 
-To return only results from your Vector Search query, you can set the `query` object to a <<match_none,match_none>> query.
+NOTE: To return only results from your Vector Search query, do not include a `query` object with your Search request.
 To run a hybrid query that uses regular Search Service parameters together with Vector Search to return results, see the <<query-object,Query Object>> section. 
 
 An object in the `knn` array can contain the following properties: 
@@ -1703,8 +1704,10 @@ include::example$query-special.jsonc[tag=match_all]
 | [[match_none]]match_none
 | Object
 a| Use the `match_none` object as the only property in your `query` object to return no documents from the Search index in search results.
+ 
+If you add a <<knn,knn object>> and a `query` object with the `match_none` object to your request, your search returns only matches to the Vector Search query inside the `knn` object.
+When running a xref:vector-search:vector-search.adoc[Vector Search] query without a `query` object, the Search Service automatically adds a `query` object with a `match_none` query object to your request.
 
-If you're using the <<knn,knn object>>, the `match_none` object returns only matches to the Vector Search query inside the `knn` object. 
 a|
 .Return no documents from the Search index
 [source,json]
