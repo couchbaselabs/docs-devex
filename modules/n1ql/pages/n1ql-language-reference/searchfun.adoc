@@ -31,6 +31,7 @@ For information on creating users and assigning roles, see xref:learn:security/a
 === When to Use Search Functions
 
 The search functions are useful when you need to combine a Full Text Search with the power of a {sqlpp} query; for example, combining joins and natural-language search in the same query.
+You can also use the search functions to use document metadata stored in Extended Attributes (XATTRs) inside a {sqlpp} query. 
 
 If you only need to use the capabilities of a Full Text Search without any {sqlpp} features, consider making use of the Search Service directly, through the user interface, the REST API, or an SDK.
 
@@ -51,6 +52,12 @@ If no suitable Search index can be selected, or no Search index exists, the Quer
 The Search Service then creates a temporary index in memory to perform the search.
 This process may be slower than using a suitable Search index.
 --
+
+If there is no suitable Search index, but you want to return XATTRs data from your documents in another part of your {sqlpp} query, you must use the xref:metafun.adoc#meta[META function] to select the XATTRs field you want to return.
+{sqlpp} cannot return XATTRs data without a specific field name. 
+
+If you have a Search index available for your query that includes XATTRs data, and you still want to use that data outside of the SEARCH function, you must use the <<search_meta,SEARCH_META() function>> to select the XATTRs field. 
+You must also include the xref:search:search-request-params.adoc#fields[fields property] with the name of the XATTRs field in your Search request. 
 
 NOTE: From Couchbase Server 7.6 and later, when you use the SEARCH function, you do not need to use the xref:search:default-analyzers-reference.adoc#keyword[keyword analyzer] in your Search index to run a non-analytic query. 
 You also do not need to match the analyzer in a query to the analyzer in the Search index for an analytic query. 
@@ -422,6 +429,62 @@ Using a Search index that contains vectors that describe colors, the query retur
 For more information about Vector Search and the Search Services, see xref:vector-search:vector-search.adoc[].
 ====
 
+.Search with XATTRs data and no suitable Search index 
+====
+
+If there is no suitable Search index, but you want to return XATTRs data from your documents in another part of your {sqlpp} query, you must use the xref:metafun.adoc#meta[META function] to select the XATTRs field you want to return.
+{sqlpp} cannot return XATTRs data without a specific field name in your `SEARCH` function. 
+
+Add `_$xattrs` with a period (.) to the start of the field name you want to return in the `SEARCH` function. 
+
+.Query
+[source,sqlpp]
+----
+SELECT META().xattrs.field
+FROM `travel-sample` T
+WHERE SEARCH(T, "_$xattrs.field:*");
+----
+
+.Results
+----
+[
+  {
+    "field": "field data"
+  }
+]
+----
+====
+
+.Search with XATTRs data and a specific Search index
+====
+
+If you have a Search index available for your query that includes XATTRs data, and you still want to use that data outside of the SEARCH function, you must use the <<search_meta,SEARCH_META() function>> to select the XATTRs field. 
+You must also include the xref:search:search-request-params.adoc#fields[fields property] with the name of the XATTRs field in your Search request.  
+
+Add `_$xattrs` with a period (.) to the start of the field name you want to return in the `SEARCH_META` and `SEARCH` functions. 
+
+.Query
+[source,sqlpp]
+----
+SELECT SMETA().fields.`_$xattrs.field`
+FROM `travel-sample` T
+LET SMETA = SEARCH_META()
+WHERE SEARCH(T,
+  { "query": {"query": "_$xattrs.field:*"}, "fields": ["_$xattrs.field"]},
+  {"index": "travel-sample._default.xattrsTest"});
+----
+
+.Results
+----
+[
+  {
+    "_$xattrs.field": "field data"
+  }
+]
+----
+====
+
+
 [[search_meta,SEARCH_META()]]
 == SEARCH_META([`identifier`])
 
@@ -430,6 +493,8 @@ For more information about Vector Search and the Search Services, see xref:vecto
 This function is intended to be used in a query which contains a <<search>> function.
 It returns the metadata given by the Search engine for each document found by the <<search>> function.
 If there is no <<search>> function in the query, or if a Search index was not used to evaluate the search, the function returns MISSING.
+
+If you want to return XATTRs data from a Search index in a <<search,>> function, you must use the `SEARCH_META()` function to select the XATTRs field you want. 
 
 === Arguments
 
