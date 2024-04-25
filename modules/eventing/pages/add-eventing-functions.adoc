@@ -1,0 +1,144 @@
+= Add Eventing Functions
+:description: Use the Capella UI to add Eventing Functions to the Eventing Service in your database.
+:page-aliases: eventing/manage-functions.adoc
+
+[abstract]
+{description}
+
+
+[#add-function-prerequisites]
+== Prerequisites
+
+Before you add Eventing Functions to your Eventing Service, you must first deploy the Eventing Service. 
+See xref:cloud:clusters:modify-database.adoc#add-service[Add a Service] for more information.
+
+
+[#add-function]
+== Add a New Eventing Function
+
+To add a new Eventing Function:
+
+. In the *Databases* tab, select the database where you want to add a Function.
+. Go to menu:Data Tools[Eventing].
+. Click btn:[Add Function].
+. Configure the <<function-settings,Function settings>>.
+. Click btn:[Next].
+. To add a new binding, click btn:[Add Binding].
+. Configure the <<binding-settings,binding settings>>.
+. Click btn:[Next] to save your binding.
+. In the code editor, customize the provided `OnUpdate` and `OnDelete` JavaScript functions or enter your own JavaScript functions.
+You can also leave the provided code unchanged.
+. Click btn:[Create Function] to create your new Eventing Function in an undeployed state.
+
+
+[#function-settings]
+== Function Settings
+
+[cols="1,2",options="header"]
+
+|===
+
+|Field 
+|Description
+
+|Name
+a|A unique name for your Eventing Function. 
+The Function name must:
+
+* Start with an uppercase character (A-Z), lowercase character (a-z), or number (0-9)
+* Contain only uppercase characters (A-Z), lowercase characters (a-z), numbers (0-9), underscores (_), and hyphens (-)
+
+|Description
+|An optional description that describes the purpose of your Eventing Function.
+
+|Listen to Location
+|A bucket, scope, and collection currently defined on your database and where you want your Eventing Function to monitor document mutations.
+
+|Eventing Storage
+|A bucket, scope, and collection currently defined on your database and where you want to store system data for your Eventing Function. 
+This is the Function's metadata bucket.
+
+You must choose a bucket that's not being used by any other application.
+You can choose to share this bucket across different Eventing Functions.
+You can also choose the same bucket and scope as your *Listen to Location* bucket and scope, but you must choose a different collection.
+
+|Workers
+|The number of worker threads per node to be allocated to the Eventing Function to process events. 
+
+The minimum number of workers is `1` and the maximum is `64`.
+
+The default is `1`.
+
+|Script Timeout
+|The number of seconds to elapse before the script times out and is terminated.
+
+The default is `60`.
+
+|Time Context Max Size
+|The size limit of the context for any Timer created by the Eventing Function.
+
+The default is `1024`.
+
+|{sqlpp} Consistency
+|The default consistency level of {sqlpp} statements in the handler.
+
+|Deployment Feed Boundary
+|The Feed Boundary determines if the Eventing Function's activities need to include documents that already exist.
+When you set the Feed Boundary to `Everything`, the Function is invoked on all mutations available in your database.
+When you set the Feed Boundary to `From Now`, the Function is only invoked on future instances of data mutation after the Function's deployment.
+
+|Language Compatibility
+|The language version of the handler for backward compatibility.
+
+|===
+
+For more information about terminology, see xref:eventing:eventing-terminologies.adoc[Eventing terminology].
+
+
+[#binding-settings]
+== Binding Settings
+
+Your Eventing Function can have no binding, one binding, or multiple bindings.
+A binding is a construct that lets you separate environment-specific variables, such as bucket names, external endpoints, and credentials, from the handler source code. 
+It helps move a handler definition from development to production environments without changing the code. 
+
+Binding names must be valid JavaScript identifiers and cannot conflict with any built-in types.
+
+[cols="1,2",options="header"]
+
+|===
+
+|Bindings
+|Description
+
+|Bucket
+|Bucket bindings allow JavaScript handlers to access Couchbase buckets from the Data Service.
+These buckets are accessible by the bound name as a JavaScript map in the global space of the handler.
+
+To add a Bucket binding, select *Bucket*, enter an alias name, and choose an access level, a bucket, a scope, and a collection.
+
+|URL
+|URL bindings are used by the cURL language construct to access external resources.
+They specify the endpoint, the protocol (HTTP/HTTPS), and the credentials if necessary.
+You can enable cookie support through URL binding when accessing trusted remote nodes.
+
+The target of a URL binding should not be a node that belongs to the Couchbase database.
+
+To add a URL binding, select *URL*, enter an alias name and a URL, choose an authentication type, and select *Allow cookies* and *Validate SSL Certificate*.
+
+|Constant
+|Constant bindings define global variables that you can use inside your Eventing Function.
+You can use the alias name inside your Function to use the set value of your Constant binding.
+
+To add a Constant binding, select *Constant* and enter an alias name and a value.
+Values can be integers, decimal numbers, strings, booleans, or JSON objects.
+
+|===
+
+
+== Next Steps
+
+After you add Eventing Functions, you can:
+
+* xref:eventing/deploy-eventing-functions.adoc[Deploy the Eventing Functions]
+* xref:eventing/manage-eventing-functions.adoc[Manage the Eventing Functions]
