@@ -29,7 +29,12 @@ For more information about where to find the IP address for your node, see xref:
 +
 For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
 +
+[TIP]
+--
 include::partial$download-sample-partial.adoc[]
+
+For the best results, xref:search-create-quick-index.adoc[create child fields in Quick Mode] or xref:search:create-child-field.adoc[in the standard editor] for the `colorvect_l2` and `color` fields. 
+--
 
 * You have installed the Couchbase Go SDK. 
 +
@@ -47,7 +52,12 @@ For more information about where to find the IP address for your node, see xref:
 +
 For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
 +
+[TIP]
+--
 include::partial$download-sample-partial.adoc[]
+
+For the best results, xref:search-create-quick-index.adoc[create child fields in Quick Mode] or xref:search:create-child-field.adoc[in the standard editor] for the `colorvect_l2` and `color` fields. 
+--
 
 * You have installed the Couchbase Java SDK. 
 +
@@ -65,7 +75,12 @@ For more information about where to find the IP address for your node, see xref:
 +
 For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
 +
+[TIP]
+--
 include::partial$download-sample-partial.adoc[]
+
+For the best results, xref:search-create-quick-index.adoc[create child fields in Quick Mode] or xref:search:create-child-field.adoc[in the standard editor] for the `colorvect_l2` and `color` fields. 
+--
 
 * You have installed the Couchbase Python SDK.
 +
@@ -131,11 +146,11 @@ include::example$run-vector-search-simple-color.py[]
 The following code sample requires you to have a paid subscription to the OpenAI API to generate an embedding vector from a sample text string.
 For more information about pricing for the OpenAI API, see https://openai.com/pricing[OpenAI's Pricing page^] for embedding models.
 
-The `rgb_questions.json` and sample data contains ready-made embedding vectors for different questions.
+The `rgb.json` sample data contains ready-made embedding vectors for each color's `description` text.
 For an example of how to use a ready-made vector with Vector Search, see xref:run-vector-search-rest-api.adoc[] or xref:run-vector-search-ui.adoc[].
 ====
 
-Still using the sample dataset inside `rgb.json`, you can use the OpenAI API to generate an embedding from any text string. 
+If you use the sample dataset inside `rgb.json`, you can use the OpenAI API to generate an embedding from any text string. 
 
 The following code generates an embedding vector with the question `What color hides everything like the night?`:
 
@@ -163,18 +178,18 @@ include::example$run-vector-search-generate-embed.py[]
 ----
 ====
 
-
-You can try other questions from `rgb_questions.json`, such as: 
-
-* `"What is the most romantic color?"`
-
-* `"What color makes people fall in love?"`
-
-* `"What is the most depressing color?"`
-
 == Next Steps
 
 You can xref:search:create-child-field.adoc[create a child field] or xref:search:create-quick-index.adoc[use the Quick Index editor] to update your Vector Search index to include the `description` field with your search results.
+
+For example, you could use the following JSON Vector Search index payload to create your Search index.
+It includes two child field mappings, `colorvect_l2` and `embedding_vector_dot` on two different vector fields in the keyspace's documents.
+It also adds 3 normal Search index fields (`brightness`, `color`, and `description`) to add more usable data to the Vector Search index:
+
+[source,json]
+----
+include::example$vector-search-index-payload.jsonc[]
+----
 
 Run the example in <<semantic,>> again to see the `description` paragraphs in your results.
 
