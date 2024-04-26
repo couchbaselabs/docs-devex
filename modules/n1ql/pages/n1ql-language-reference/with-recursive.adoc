@@ -214,9 +214,50 @@ SELECT * FROM rcte;
 
 .Examples using the OPTIONS clause and the CYCLE clause to avoid infinite recursion
 ====
+.Before trying out the examples, create the following dataset:
+[source,sqlpp]
+----
+INSERT INTO products
+  VALUES (uuid(), {
+    "id": 1,
+    "name": "Bicycle",
+    "price": 299.99,
+    "description": "A sturdy and reliable bicycle.",
+    "category": "Sports",
+    "related_items": [2, 4]
+  }),
+  VALUES (uuid(), {
+    "id": 2,
+    "name": "Helmet",
+    "price": 49.99,
+    "description": "A safety helmet for cycling.",
+    "category": "Sports",
+    "related_items": [1, 3]
+  }),
+  VALUES (uuid(), {
+    "id": 3,
+    "name": "Water Bottle",
+    "price": 9.99,
+    "description": "A convenient water bottle for cycling.",
+    "category": "Accessories",
+    "related_items": [2, 4]
+  }),
+  VALUES (uuid(), {
+    "id": 4,
+    "name": "Gloves",
+    "price": 19.99,
+    "description": "Comfortable gloves for cycling.",
+    "category": "Sports",
+    "related_items": [1, 3]
+  })
+RETURNING *;
+----
+
 .Example resulting in infinite recursion
 [source,sqlpp]
 ----
+CREATE INDEX p_idx ON products(id); 
+
 WITH RECURSIVE similar_items AS (
   SELECT p.*, 0 as lvl FROM products p WHERE p.id=1
     UNION
@@ -229,6 +270,8 @@ SELECT * FROM similar_items;
 .Solution using the OPTIONS clause to add a level limit
 [source,sqlpp]
 ----
+CREATE INDEX p_idx ON products(id); 
+
 WITH RECURSIVE similar_items AS (
   SELECT p.*, 0 as lvl FROM products p WHERE p.id=1
     UNION
@@ -242,6 +285,8 @@ SELECT * FROM similar_items;
 .Solution using the CYCLE clause to track which fields are likely to repeat and cause a cycle
 [source,sqlpp]
 ----
+CREATE INDEX p_idx ON products(id); 
+
 WITH RECURSIVE similar_items AS (
   SELECT p.*, 0 as lvl FROM products p WHERE p.id=1
     UNION
