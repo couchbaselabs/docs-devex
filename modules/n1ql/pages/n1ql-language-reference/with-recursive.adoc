@@ -211,8 +211,140 @@ SELECT * FROM rcte;
 ----
 ====
 
+.Examples handling hierarchical or tree-structured data
+====
+Before trying out these examples, you must:
+
+. Create a dataset containing employee information:
++
+[source,sqlpp]
+----
+INSERT INTO employees
+   VALUES ("e1", {
+       "employee_id": 1,
+       "employee_name": "John"
+       }),
+   VALUES ("e2", {
+       "employee_id": 2,
+       "employee_name": "Emily",
+       "manager_id": 1
+       }),
+   VALUES ("e3", {
+       "employee_id": 3,
+       "employee_name": "Mike",
+       "manager_id": 1
+       }),
+   VALUES ("e4", {
+       "employee_id": 4,
+       "employee_name": "Sarah",
+       "manager_id": 2
+       }),
+   VALUES ("e5", {
+       "employee_id": 5,
+       "employee_name": "Alex",
+       "manager_id": 3
+       }),
+   VALUES ("e6", {
+       "employee_id": 6,
+       "employee_name": "Lisa",
+       "manager_id": 2
+       })
+RETURNING *;
+----
++
+. Create a new index:
++
+[source,sqlpp]
+----
+CREATE INDEX e_idx ON employees(manager_id INCLUDE MISSING, employee_id, employee_name);
+----
+
+.Example finding the level of each employee in the organization
+[source,sqlpp]
+----
+WITH recursive emplLevel AS (
+   SELECT e.employee_id, e.employee_name, 0 lvl
+   FROM employees e
+   WHERE manager_id IS MISSING
+       UNION
+   SELECT e1.employee_id, e1.employee_name, e1.manager_id, emplLevel.lvl+1
+   lvl
+   FROM employees e1 JOIN emplLevel
+   ON e1.manager_id = emplLevel.employee_id
+)
+SELECT * FROM emplLevel;
+----
+
+.Example resulting in the reporting hierarchy of the employees in the organization
+[source,sqlpp]
+----
+SELECT e.employee_id, e.employee_name, e.manager_id,
+(
+    WITH RECURSIVE cte AS (
+        SELECT e1.employee_id, e1.employee_name, e1.manager_id
+        FROM employees e1 WHERE e1.manager_id = e.employee_id
+            UNION
+        SELECT e2.employee_id, e2.employee_name, e2.manager_id
+        FROM employees e2, cte
+        WHERE e2.manager_id = cte.employee_id
+    )
+    SELECT cte.* FROM cte
+) as reportsTo
+FROM employees e;
+----
+====
+
 .Examples using the OPTIONS clause and the CYCLE clause to avoid infinite recursion
 ====
+Before trying out these examples, you must:
+
+. Create a dataset containing product information:
++
+[source,sqlpp]
+----
+INSERT INTO products
+  VALUES (uuid(), {
+    "id": 1,
+    "name": "Bicycle",
+    "price": 299.99,
+    "description": "A sturdy and reliable bicycle.",
+    "category": "Sports",
+    "related_items": [2, 4]
+  }),
+  VALUES (uuid(), {
+    "id": 2,
+    "name": "Helmet",
+    "price": 49.99,
+    "description": "A safety helmet for cycling.",
+    "category": "Sports",
+    "related_items": [1, 3]
+  }),
+  VALUES (uuid(), {
+    "id": 3,
+    "name": "Water Bottle",
+    "price": 9.99,
+    "description": "A convenient water bottle for cycling.",
+    "category": "Accessories",
+    "related_items": [2, 4]
+  }),
+  VALUES (uuid(), {
+    "id": 4,
+    "name": "Gloves",
+    "price": 19.99,
+    "description": "Comfortable gloves for cycling.",
+    "category": "Sports",
+    "related_items": [1, 3]
+  })
+RETURNING *;
+----
++
+. Create a new index:
++
+[source,sqlpp]
+----
+CREATE INDEX p_idx ON products(id); 
+----
+
 .Example resulting in infinite recursion
 [source,sqlpp]
 ----
@@ -234,7 +366,7 @@ WITH RECURSIVE similar_items AS (
   SELECT p1.*, similar_items.lvl+1 as lvl FROM products p1,
     similar_items WHERE p1.id IN similar_items.related_items
 )
-OPTIONS {"levels:2"}
+OPTIONS {"levels":2}
 SELECT * FROM similar_items;
 ---- 
 
@@ -256,7 +388,7 @@ SELECT * FROM similar_items;
 ====
 [source,sqlpp]
 ----
-CREATE INDEX srcdestidx ON travel-sample.inventory.route( sourceairport, destinationairport );
+CREATE INDEX srcdestidx ON `travel-sample`.inventory.route( sourceairport, destinationairport );
 
 WITH RECURSIVE recroute AS (
     SELECT sourceairport, destinationairport, 0 as depth,
