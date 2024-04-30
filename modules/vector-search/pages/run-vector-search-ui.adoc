@@ -27,7 +27,7 @@ For more information about how to create a Vector Search index, see xref:create-
 --
 include::partial$download-sample-partial.adoc[]
 
-For the best results, xref:search-create-quick-index.adoc[create child fields in Quick Mode] or xref:search:create-child-field.adoc[in Advanced Mode] for the `colorvect_l2` and `color` fields. 
+For the best results, consider using the sample Vector Search index from xref:create-vector-search-index-ui.adoc#example[Create a Vector Search Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create a Vector Search Index with the REST API and curl/HTTP]. 
 --
 
 * You have logged in to the Couchbase {page-ui-name}. 
@@ -56,6 +56,24 @@ It only returns the `k` number of similar vectors.
 
 The Search Service combines the Vector search results from a `knn` object with the traditional `query` object by using an `OR` function. 
 If the same documents match the `knn` and `query` objects, the Search Service ranks those documents higher in search results. 
+
+The document for the color `navy` should be the first result, followed by a similar color. 
+
+[#hybrid]
+=== Example: Run a Simple Hybrid Search Query 
+
+The following hybrid Search query searches for the top vector similar to the vector `[ 0, 0, 128 ]` in the `colorvect_l2` field. 
+It also runs a xref:search:search-request-params.adoc#numeric-range-queries[Numeric Range Query] on the `brightness` field to only return colors that have a brightness value between `70` and `80`: 
+
+[source,json]
+----
+include::example$run-hybrid-search-payload-ui.jsonc[]
+----
+
+The Search Service combines the Vector search results from a `knn` object with the traditional `query` object by using an `OR` function. 
+If the same documents match the `knn` and `query` objects, the Search Service ranks those documents higher in search results.
+
+The document for the color `navy` should be the first result, followed by colors that are similar and match the `brightness` field query. 
 
 [#large]
 === Example: Running a Semantic Search Query with a Large Embedding Vector
