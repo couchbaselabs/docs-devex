@@ -2,6 +2,7 @@
 :page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
+:page-toclevels: 2
 :description: Use Quick Mode to create a Vector Search index in Couchbase Capella.
 
 [abstract]
@@ -77,13 +78,30 @@ For more information, see xref:search:quick-index-field-options.adoc#quick-field
 For example, you could add the text field that you used to generate your vector embeddings. 
 . Click btn:[Create Index].
 
+[#example]
+=== Example: Creating a Vector Search Index for Vector Search Query Examples 
+
+If you want to use the sample dataset for the examples in xref:run-vector-search-ui.adoc[] and xref:run-vector-search-sdk.adoc[], then you can xref:search:import-search-index.adoc[import] the following Search index definition into {page-ui-name}:
+
+[source,json]
+----
+include::example$sample-vector-search-index-payload.json[]
+----
+
+NOTE: Make sure you imported the sample dataset with the recommended settings. 
+
+This Vector Search index has a type mapping for a `color.rgb` collection and includes the following fields: 
+
+* The *brightness number* field, which is included in search results and supports sorting and faceting.
+* The *color string* and *description string* fields, which are included in search results, support highlighting, phrase matching, and sorting and faceting.
+* The *colorvect_l2 [ number ]* field, which has a Dimension of `3` and uses the *l2_norm* Similarity Metric.
+* The *embedding_vector_dot [ number ]* field, which has a dimension of `1536` and uses the *dot_product* Similarity Metric. 
+
 == Next Steps 
 
-This basic Vector Search index includes the vector embeddings from the child field you specified in your type mapping.
-If you chose to add additional child fields and enabled *Include in search results*, the Search Service can also return data from those fields when you run a Vector Search query. 
+A basic Vector Search index includes the vector embeddings from the child field you specified in your type mapping.
+If you choose to add additional child fields and enable *Include in search results*, the Search Service can also return data from those child fields when you run a Vector Search query. 
 
-For example, if you used the Vector Search sample data, you might want to add child fields for the *colorvect_l2* vector field and the *color* string field.
-Adding the *color* string field lets you return the color names with your Search query.
 For more information about how to add additional child fields to your index, see xref:search:create-quick-index.adoc[] or xref:search:create-child-field.adoc[].
 
 You can customize your Vector Search index like any other Search index to add additional data and improve search results. 
