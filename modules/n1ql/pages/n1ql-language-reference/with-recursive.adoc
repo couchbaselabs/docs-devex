@@ -212,14 +212,16 @@ SELECT * FROM rcte;
 ----
 ====
 
-.Examples handling hierarchical or tree-structured data
+.Handle hierarchical or tree-structured data
 ====
-Before trying out these examples, you must:
+For this example, set the query context to the `tenant_agent_00` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
 
-. Create a dataset containing employee information:
-+
+.Create a dataset containing employee information
 [source,sqlpp]
 ----
+CREATE COLLECTION employees IF NOT EXISTS;
+
 INSERT INTO employees
    VALUES ("e1", {
        "employee_id": 1,
@@ -253,8 +255,7 @@ INSERT INTO employees
 RETURNING *;
 ----
 +
-. Create a new index:
-+
+.Create an index for the employees
 [source,sqlpp]
 ----
 CREATE INDEX e_idx ON employees(manager_id INCLUDE MISSING, employee_id, employee_name);
@@ -276,7 +277,61 @@ WITH recursive emplLevel AS (
 SELECT * FROM emplLevel;
 ----
 
-.Example resulting in the reporting hierarchy of the employees in the organization
+.Results
+[source,json]
+----
+[
+  {
+    "emplLevel": {
+      "employee_id": 1,
+      "employee_name": "John",
+      "lvl": 0
+    }
+  },
+  {
+    "emplLevel": {
+      "employee_id": 2,
+      "employee_name": "Emily",
+      "lvl": 1,
+      "manager_id": 1
+    }
+  },
+  {
+    "emplLevel": {
+      "employee_id": 3,
+      "employee_name": "Mike",
+      "lvl": 1,
+      "manager_id": 1
+    }
+  },
+  {
+    "emplLevel": {
+      "employee_id": 4,
+      "employee_name": "Sarah",
+      "lvl": 2,
+      "manager_id": 2
+    }
+  },
+  {
+    "emplLevel": {
+      "employee_id": 6,
+      "employee_name": "Lisa",
+      "lvl": 2,
+      "manager_id": 2
+    }
+  },
+  {
+    "emplLevel": {
+      "employee_id": 5,
+      "employee_name": "Alex",
+      "lvl": 2,
+      "manager_id": 3
+    }
+  }
+]
+----
+
+.Find the reporting hierarchy of the employees in the organization
 [source,sqlpp]
 ----
 SELECT e.employee_id, e.employee_name, e.manager_id,
@@ -293,16 +348,103 @@ SELECT e.employee_id, e.employee_name, e.manager_id,
 ) as reportsTo
 FROM employees e;
 ----
+
+.Results
+[source,json]
+----
+[
+  {
+    "employee_id": 1,
+    "employee_name": "John",
+    "reportsTo": [
+      {
+        "employee_id": 2,
+        "employee_name": "Emily",
+        "manager_id": 1
+      },
+      {
+        "employee_id": 3,
+        "employee_name": "Mike",
+        "manager_id": 1
+      },
+      {
+        "employee_id": 4,
+        "employee_name": "Sarah",
+        "manager_id": 2
+      },
+      {
+        "employee_id": 6,
+        "employee_name": "Lisa",
+        "manager_id": 2
+      },
+      {
+        "employee_id": 5,
+        "employee_name": "Alex",
+        "manager_id": 3
+      }
+    ]
+  },
+  {
+    "employee_id": 2,
+    "employee_name": "Emily",
+    "manager_id": 1,
+    "reportsTo": [
+      {
+        "employee_id": 4,
+        "employee_name": "Sarah",
+        "manager_id": 2
+      },
+      {
+        "employee_id": 6,
+        "employee_name": "Lisa",
+        "manager_id": 2
+      }
+    ]
+  },
+  {
+    "employee_id": 3,
+    "employee_name": "Mike",
+    "manager_id": 1,
+    "reportsTo": [
+      {
+        "employee_id": 5,
+        "employee_name": "Alex",
+        "manager_id": 3
+      }
+    ]
+  },
+  {
+    "employee_id": 4,
+    "employee_name": "Sarah",
+    "manager_id": 2,
+    "reportsTo": []
+  },
+  {
+    "employee_id": 6,
+    "employee_name": "Lisa",
+    "manager_id": 2,
+    "reportsTo": []
+  },
+  {
+    "employee_id": 5,
+    "employee_name": "Alex",
+    "manager_id": 3,
+    "reportsTo": []
+  }
+]
+----
 ====
 
-.Examples using the OPTIONS clause and the CYCLE clause to avoid infinite recursion
+.Use the OPTIONS clause and the CYCLE clause to avoid infinite recursion
 ====
-Before trying out these examples, you must:
+For this example, set the query context to the `tenant_agent_00` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
 
-. Create a dataset containing product information:
-+
+.Create a dataset containing product information
 [source,sqlpp]
 ----
+CREATE COLLECTION products IF NOT EXISTS;
+
 INSERT INTO products
   VALUES (uuid(), {
     "id": 1,
@@ -339,8 +481,7 @@ INSERT INTO products
 RETURNING *;
 ----
 +
-. Create a new index:
-+
+. Create an index for the products
 [source,sqlpp]
 ----
 CREATE INDEX p_idx ON products(id); 
@@ -369,7 +510,84 @@ WITH RECURSIVE similar_items AS (
 )
 OPTIONS {"levels":2}
 SELECT * FROM similar_items;
----- 
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "similar_items": {
+      "category": "Sports",
+      "description": "A sturdy and reliable bicycle.",
+      "id": 1,
+      "lvl": 0,
+      "name": "Bicycle",
+      "price": 299.99,
+      "related_items": [
+        2,
+        4
+      ]
+    }
+  },
+  {
+    "similar_items": {
+      "category": "Sports",
+      "description": "A safety helmet for cycling.",
+      "id": 2,
+      "lvl": 1,
+      "name": "Helmet",
+      "price": 49.99,
+      "related_items": [
+        1,
+        3
+      ]
+    }
+  },
+  {
+    "similar_items": {
+      "category": "Sports",
+      "description": "Comfortable gloves for cycling.",
+      "id": 4,
+      "lvl": 1,
+      "name": "Gloves",
+      "price": 19.99,
+      "related_items": [
+        1,
+        3
+      ]
+    }
+  },
+  {
+    "similar_items": {
+      "category": "Accessories",
+      "description": "A convenient water bottle for cycling.",
+      "id": 3,
+      "lvl": 2,
+      "name": "Water Bottle",
+      "price": 9.99,
+      "related_items": [
+        2,
+        4
+      ]
+    }
+  },
+  {
+    "similar_items": {
+      "category": "Sports",
+      "description": "A sturdy and reliable bicycle.",
+      "id": 1,
+      "lvl": 2,
+      "name": "Bicycle",
+      "price": 299.99,
+      "related_items": [
+        2,
+        4
+      ]
+    }
+  }
+]
+----
 
 .Solution using the CYCLE clause to track which fields are likely to repeat and cause a cycle
 [source,sqlpp]
