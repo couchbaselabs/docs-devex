@@ -1,150 +1,73 @@
 = Run a Function on Data Change
-:description: The Eventing Service lets you handle data changes in real time.
+:description: Use the Eventing Service to handle data changes that happen when code is executed in response to document mutations or as scheduled by Timers.
 
 [abstract]
 {description}
 
+
 == Eventing Service
 
-The Eventing Service handles data changes that happen when applications interact. 
-These changes in data are known as document mutations, and include operations such as insert, delete, update, and expiration.
+The Eventing Service executes user-defined business logic and responds in real time whenever applications interact and cause your data to change. 
+This change in data is known as a document mutation, and includes operations such as insert, delete, update, and expiration.
 
 You can use the Eventing Service to:
 
 * Monitor specific parameters in a document
-* Set alerts in a document for when a preconfigured threshold is breached
+* Set alerts in a document when a preconfigured threshold is breached
 * Propagate data changes inside a database
 * Enrich documents in real time
-* Cascade delete to avoid orphaned documents
-
-You can also use the Eventing Service to scale your business logic and streamline your business workflows.
-The Eventing Service lets you:
-
-* Integrate with other Couchbase services such as Data, Query, GSI, FTS, and Analytics
-* Handle inconsistencies in business logic across multiple applications
-* Increase customer engagement by managing business logic across different applications in a timely manner
-* Scale your throughput without making changes to your data configuration and infrastructure
-* Create specialized tools to clean, enhance, and transform your data
-* Maximize your return on investment (ROI) by minimizing your total cost of ownership (TCO)
-* Test, debug, and troubleshoot on a single platform instead of on multiple applications
+* Cascade deletes to avoid orphaned documents
 
 
 == Eventing Functions
 
 The Eventing Service can run one or more Eventing Functions in your database to handle data changes according to a real-time Event-Condition-Action model. 
 Eventing Functions are standalone JavaScript fragments that trigger in real time as a response to document mutations.
-When you create, update, or delete documents, or when these documents expire, your Functions handle and process these events.
 
-You can use Eventing Functions to:
+Eventing Functions allow you to:
 
-* Integrate with the Data Service to read, write, and delete documents
-* Integrate with the Query Service to use inline {sqlpp} queries and statements
-* Enable Timers to schedule functions to run in the future
+* Integrate with the Data Service to:
+** Read, write, and delete documents
+** Work with Atomic Counters, CAS, and TTLS
+* Integrate with the Query Service to use inline {sqlpp} queries or statements
+* Enable a Timer to schedule functions to run in the future
 * Interact with external REST endpoints through cURL functionality
 
+You can access Eventing Functions by going to menu:Data Tools[Eventing]. 
+The Eventing Functions table includes the following:
 
-== Eventing Service vs Other Implementations
-
-Unlike Message Queue or Polling-based external systems, the Eventing Service is native to Couchbase Server.
-This means you do not need to use multiple applications to track data mutations.
-
-The following table compares the implementation of the Eventing Service with the Message Queue method.
-
-[cols="50,50"]
-|===
-| Eventing Service | Message Queue
-
-| Native to Couchbase Server. 
-Does not need a new layer to propagate data changes.
-| Needs an additional layer to propagate data changes.
-
-| Eliminates the dual-write problem.
-Multiple application servers can perform simultaneous write operations.
-| Has a dual-write problem.
-Every write operation gets pushed twice, once to the message queue and the second time to the cluster.
-
-| Eliminates the write-failure condition.
-| A write-failure condition can happen at any point.
-
-| Integrates with native debugger support.
-| No easy debug option during troubleshooting.
-
-| Provides a centralized control for aspects such as data auditing and data governance, reducing data leakages.
-| Leads to inefficient data governance and data leakages.
-
-| No additional expenses, so TCO is reduced.
-| Has added license, infrastructure, and deployment expenses, which increases TCO.
+[#eventing-functions,cols="1,2",options="header"]
 |===
 
-The following table compares the implementation of the Eventing Service with the Polling method.
+|Feature
+|Description
 
-[cols="50,50"]
-|===
-| Eventing Service | Polling
+|Function Name
+|The name of the Function.
 
-| Can record and propagate data changes to a database, message queue, end-point, or to another bucket inside the Couchbase cluster.
-| Needs multiple applications to record and propagate data changes.
+|Source Bucket
+|The source bucket of the events or mutations.
 
-| Handles data mutations in real-time.
-| Batch systems are highly inefficient and are not reactive.
+|Source Scope
+|The source scope of the events or mutations.
 
-| Implements as a state-less compute operation and utilizes latest trends in compute (multi-core CPU).
-| Consumes a lot of CPU resources.
+|Source Collection
+|The source collection of the events or mutations.
 
-| No code duplication.
-| Leads to code duplication across multiple infrastructure applications.
+|Log
+|xref:eventing/manage-eventing-functions.adoc#function-logs[View and debug with Function Logs.]
 
-| Provides easy horizontal and vertical scaling options with built-in support.
-| Difficult to scale as you need to scale for applications and transport layer requirements.
-|===
+|View JavaScript
+|xref:eventing/manage-eventing-functions.adoc#edit-javascript[View and edit the Function's JavaScript.]
 
+|Settings
+|xref:eventing/manage-eventing-functions.adoc#edit-settings[View and edit the Function's settings.]
 
-== Eventing Service Use Cases
+|Status
+|The status of the Function. 
+The status can be either in a stable state of *Deployed*, *Undeployed*, or *Paused*, or in a transitory state of *Deploying*, *Undeploying*, or *Pausing*.
 
-You can use the Eventing Service to track data changes in many different domains. For example, you can design a custom workflow to track a user's credit limit, usage currency, and risk propositions when that user makes a credit card transaction.
-You can also create a workflow that automatically maintains a set stock threshold and triggers new stock replacements when that stock runs out.
+|More options (⋮)
+|Used to xref:eventing/deploy-eventing-functions.adoc#deploy-function[deploy], xref:eventing/deploy-eventing-functions.adoc#undeploy-function[undeploy], xref:eventing/manage-eventing-functions.adoc#export-function[export], xref:eventing/manage-eventing-functions.adoc#pause-function[pause], or xref:eventing/manage-eventing-functions.adoc#delete-function[delete] a Function.
 
-The following table provides use cases for the Eventing Service.
-
-[cols="50,50,50,90"]
-|===
-| Domain | Eventing trigger | Condition check | Sample workflow
-
-| Banking and financial services
-| Card transaction
-| Transaction threshold
-| Generates risk alerts and quarantines user when they hit the transaction threshold.
-
-.2+| Inventory and warehousing
-| New sales voucher
-| Stock availability
-| Generates invoice to replenish stock.
-
-| New purchase order
-| Saved wishlist
-| Alerts user about price drops for wishlist items.
-
-.2+| Airline
-| New booking
-| Booking history
-| Enrolls user in frequent flyer programs and notifies them about special promotions.
-
-| Enquiry
-| User profile
-| Alerts user about price drops for airline tickets.
-
-| Healthcare
-| New report
-| Check for vitals
-| Schedules an appointment for the user.
-
-| Sports and gaming
-| New user creation
-| User profile
-| Generates notifications about leaderboard and other statistics.
-
-| Media and entertainment
-| Breaking news
-| Query archives
-| Enriches existing news with archival information.
 |===
