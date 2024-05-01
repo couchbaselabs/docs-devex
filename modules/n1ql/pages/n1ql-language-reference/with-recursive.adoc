@@ -40,6 +40,8 @@ image::n1ql-language-reference/with-recursive-clause.png["Syntax diagram", align
 
 [[recursive-select]]
 === Recursive SELECT
+
+[source,ebnf]
 ----
 include::partial$grammar/dql.ebnf[tag=recursive-select]
 ----
@@ -137,7 +139,7 @@ The following examples follow linear recursion.
 Only one recursive reference is allowed in the FROM clause.
 Self-joins or set-ops are not allowed in the recursive reference.
 
-.Example of simple recursive referencing
+.Simple recursive referencing
 ====
 [source,sqlpp]
 ----
@@ -171,7 +173,7 @@ SELECT cte.r FROM cte;
 ----
 ====
 
-.Example combining recursive and non-recursive CTEs with the WITH clause
+.Combine recursive and non-recursive CTEs with the WITH clause
 ====
 [source,sqlpp]
 ----
@@ -225,26 +227,26 @@ CREATE COLLECTION employees IF NOT EXISTS;
 INSERT INTO employees
    VALUES ("e1", {
        "employee_id": 1,
-       "employee_name": "John"
+       "employee_name": "Carlos"
        }),
    VALUES ("e2", {
        "employee_id": 2,
-       "employee_name": "Emily",
+       "employee_name": "Maya",
        "manager_id": 1
        }),
    VALUES ("e3", {
        "employee_id": 3,
-       "employee_name": "Mike",
+       "employee_name": "Fatima",
        "manager_id": 1
        }),
    VALUES ("e4", {
        "employee_id": 4,
-       "employee_name": "Sarah",
+       "employee_name": "Yijing",
        "manager_id": 2
        }),
    VALUES ("e5", {
        "employee_id": 5,
-       "employee_name": "Alex",
+       "employee_name": "Rahul",
        "manager_id": 3
        }),
    VALUES ("e6", {
@@ -254,7 +256,7 @@ INSERT INTO employees
        })
 RETURNING *;
 ----
-+
+
 .Create an index for the employees
 [source,sqlpp]
 ----
@@ -264,7 +266,7 @@ CREATE INDEX e_idx ON employees(manager_id INCLUDE MISSING, employee_id, employe
 .Find the level of each employee in the organization
 [source,sqlpp]
 ----
-WITH recursive emplLevel AS (
+WITH RECURSIVE emplLevel AS (
    SELECT e.employee_id, e.employee_name, 0 lvl
    FROM employees e
    WHERE manager_id IS MISSING
@@ -284,14 +286,14 @@ SELECT * FROM emplLevel;
   {
     "emplLevel": {
       "employee_id": 1,
-      "employee_name": "John",
+      "employee_name": "Carlos",
       "lvl": 0
     }
   },
   {
     "emplLevel": {
       "employee_id": 2,
-      "employee_name": "Emily",
+      "employee_name": "Maya",
       "lvl": 1,
       "manager_id": 1
     }
@@ -299,7 +301,7 @@ SELECT * FROM emplLevel;
   {
     "emplLevel": {
       "employee_id": 3,
-      "employee_name": "Mike",
+      "employee_name": "Fatima",
       "lvl": 1,
       "manager_id": 1
     }
@@ -307,7 +309,7 @@ SELECT * FROM emplLevel;
   {
     "emplLevel": {
       "employee_id": 4,
-      "employee_name": "Sarah",
+      "employee_name": "Yijing",
       "lvl": 2,
       "manager_id": 2
     }
@@ -323,7 +325,7 @@ SELECT * FROM emplLevel;
   {
     "emplLevel": {
       "employee_id": 5,
-      "employee_name": "Alex",
+      "employee_name": "Rahul",
       "lvl": 2,
       "manager_id": 3
     }
@@ -345,7 +347,7 @@ SELECT e.employee_id, e.employee_name, e.manager_id,
         WHERE e2.manager_id = cte.employee_id
     )
     SELECT cte.* FROM cte
-) as reportsTo
+) as reports
 FROM employees e;
 ----
 
@@ -355,21 +357,21 @@ FROM employees e;
 [
   {
     "employee_id": 1,
-    "employee_name": "John",
-    "reportsTo": [
+    "employee_name": "Carlos",
+    "reports": [
       {
         "employee_id": 2,
-        "employee_name": "Emily",
+        "employee_name": "Maya",
         "manager_id": 1
       },
       {
         "employee_id": 3,
-        "employee_name": "Mike",
+        "employee_name": "Fatima",
         "manager_id": 1
       },
       {
         "employee_id": 4,
-        "employee_name": "Sarah",
+        "employee_name": "Yijing",
         "manager_id": 2
       },
       {
@@ -379,19 +381,19 @@ FROM employees e;
       },
       {
         "employee_id": 5,
-        "employee_name": "Alex",
+        "employee_name": "Rahul",
         "manager_id": 3
       }
     ]
   },
   {
     "employee_id": 2,
-    "employee_name": "Emily",
+    "employee_name": "Maya",
     "manager_id": 1,
-    "reportsTo": [
+    "reports": [
       {
         "employee_id": 4,
-        "employee_name": "Sarah",
+        "employee_name": "Yijing",
         "manager_id": 2
       },
       {
@@ -403,33 +405,33 @@ FROM employees e;
   },
   {
     "employee_id": 3,
-    "employee_name": "Mike",
+    "employee_name": "Fatima",
     "manager_id": 1,
-    "reportsTo": [
+    "reports": [
       {
         "employee_id": 5,
-        "employee_name": "Alex",
+        "employee_name": "Rahul",
         "manager_id": 3
       }
     ]
   },
   {
     "employee_id": 4,
-    "employee_name": "Sarah",
+    "employee_name": "Yijing",
     "manager_id": 2,
-    "reportsTo": []
+    "reports": []
   },
   {
     "employee_id": 6,
     "employee_name": "Lisa",
     "manager_id": 2,
-    "reportsTo": []
+    "reports": []
   },
   {
     "employee_id": 5,
-    "employee_name": "Alex",
+    "employee_name": "Rahul",
     "manager_id": 3,
-    "reportsTo": []
+    "reports": []
   }
 ]
 ----
@@ -480,11 +482,11 @@ INSERT INTO products
   })
 RETURNING *;
 ----
-+
-. Create an index for the products
+
+.Create an index for the products
 [source,sqlpp]
 ----
-CREATE INDEX p_idx ON products(id); 
+CREATE PRIMARY INDEX ON `default`:`travel-sample`.`tenant_agent_00`.`products`
 ----
 
 .Query resulting in infinite recursion
@@ -497,6 +499,17 @@ WITH RECURSIVE similar_items AS (
     similar_items WHERE p1.id IN similar_items.related_items
 )
 SELECT * FROM similar_items;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "code": 5500,
+    "msg": "Request has exceeded memory quota"
+  }
+]
 ----
 
 .Solution using the OPTIONS clause to add a level limit
@@ -560,12 +573,12 @@ SELECT * FROM similar_items;
   },
   {
     "similar_items": {
-      "category": "Accessories",
-      "description": "A convenient water bottle for cycling.",
-      "id": 3,
+      "category": "Sports",
+      "description": "A sturdy and reliable bicycle.",
+      "id": 1,
       "lvl": 2,
-      "name": "Water Bottle",
-      "price": 9.99,
+      "name": "Bicycle",
+      "price": 299.99,
       "related_items": [
         2,
         4
@@ -574,12 +587,12 @@ SELECT * FROM similar_items;
   },
   {
     "similar_items": {
-      "category": "Sports",
-      "description": "A sturdy and reliable bicycle.",
-      "id": 1,
+      "category": "Accessories",
+      "description": "A convenient water bottle for cycling.",
+      "id": 3,
       "lvl": 2,
-      "name": "Bicycle",
-      "price": 299.99,
+      "name": "Water Bottle",
+      "price": 9.99,
       "related_items": [
         2,
         4
@@ -601,4 +614,67 @@ WITH RECURSIVE similar_items AS (
 CYCLE id RESTRICT
 SELECT * FROM similar_items;
 ---- 
+
+.Results
+[source,json]
+----
+[
+  {
+    "similar_items": {
+      "category": "Sports",
+      "description": "A sturdy and reliable bicycle.",
+      "id": 1,
+      "lvl": 0,
+      "name": "Bicycle",
+      "price": 299.99,
+      "related_items": [
+        2,
+        4
+      ]
+    }
+  },
+  {
+    "similar_items": {
+      "category": "Sports",
+      "description": "A safety helmet for cycling.",
+      "id": 2,
+      "lvl": 1,
+      "name": "Helmet",
+      "price": 49.99,
+      "related_items": [
+        1,
+        3
+      ]
+    }
+  },
+  {
+    "similar_items": {
+      "category": "Sports",
+      "description": "Comfortable gloves for cycling.",
+      "id": 4,
+      "lvl": 1,
+      "name": "Gloves",
+      "price": 19.99,
+      "related_items": [
+        1,
+        3
+      ]
+    }
+  },
+  {
+    "similar_items": {
+      "category": "Accessories",
+      "description": "A convenient water bottle for cycling.",
+      "id": 3,
+      "lvl": 2,
+      "name": "Water Bottle",
+      "price": 9.99,
+      "related_items": [
+        2,
+        4
+      ]
+    }
+  }
+]
+----
 ====
