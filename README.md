@@ -1,8 +1,8 @@
-# docs-devex
+# Couchbase Developer Documentation
 
-This repository contains the Devex documentation shared across Server and Capella.
+This repository contains the developer documentation shared across Couchbase Server and Couchbase Capella.
 
-Right now, that documentation is the new Developer Guides for specific services.
+The developer documentation includes introductions, tutorials, developer guides, and reference guides for specific Couchbase services.
 
 This repository is the implementation of the striping strategy that the Documentation team discussed at the 2023 Docs Summit.
 
