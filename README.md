@@ -109,3 +109,9 @@ If you're creating new branches in the docs-devex repository and want to create 
 You should be able to build your documentation using the local copies of your branches. 
 
 When you want to make changes, edit the files in the specific worktree folder for your branch. 
+
+## License
+
+The Couchbase Developer Documentation © 2024 by Couchbase Inc. is licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International.
+
+See the LICENSE file or the [Creative Commons CC BY-NC-SA 4.0 license page](https://creativecommons.org/licenses/by-nc-sa/4.0/) for details.
