@@ -910,7 +910,7 @@ TIP: To add a type identifier as an additional filter to your type mapping, add 
 |====
 
 [#scope-collection]
-=== \{Scope\}.\{collection\} Object and JSON Object Field Objects
+=== \{Scope\}.\{collection\} Objects, JSON Object Field Objects, and XATTRs Objects
 
 The `\{scope\}.\{collection\}` object defines a custom type mapping for a Search index, on a specific scope and collection in the database:
 
@@ -925,7 +925,31 @@ A JSON object field object is a child object of the `\{scope\}.\{collection\}` o
 It defines a mapping for a field that contains a JSON object in your document schema. 
 It can contain additional mappings as <<child-fields,>> under its <<properties,properties>> object. 
 
-Both objects can contain the following properties:
+A JSON object field object must: 
+
+* Be a child object of a `\{scope\}.\{collection\}` object.
+* Have a name that matches a JSON object child field in your documents.
+* Use the same property structure as a `\{scope\}.\{collection\}` object.
+
+If you're adding Extended Attributes (XATTRs) from your document metadata to your Search index, your XATTRs mapping definition must: 
+
+* Be a child object of a `\{scope\}.\{collection\}` object.
+* Have the name `_$xattrs`.
+* Use the same property structure as a `\{scope\}.\{collection\}` object.
+
+For example, the following JSON index definition snippet defines a `\{scope\}.\{collection\}` object for the `inventory.hotel` scope and collection. 
+It adds a dynamic mapping for any XATTRs metadata present on documents in the collection.
+It adds two nested JSON Object Field objects, `reviews` and `ratings`, that contain a single <<child-fields,child field object>> for the `Cleanliness` field:
+
+[source,json]
+----
+include::example$nested-json-object-example.jsonc[]
+----
+
+You can view the JSON document schema for this example by looking at any document in the `hotel` collection from the `travel-sample` dataset.
+For more information, see xref:manage:manage-documents/manage-documents.adoc[].
+
+`\{scope\}.\{collection\}` objects, JSON Object Field objects, and XATTRs objects can contain the following properties:
 
 [cols="1,1,1,2"]
 |====
@@ -933,21 +957,22 @@ Both objects can contain the following properties:
 
 |dynamic |Boolean |Yes a|
 
-To index all fields under the specified scope and collection, set `dynamic` to `true`.
+To index all fields under the specified scope and collection, JSON object, or all fields inside XATTRs, set `dynamic` to `true`.
 
 To only index the fields you specify and enable the `properties` block, set `dynamic` to `false`. 
 
 |enabled |Boolean |Yes a| 
 
-To enable the type mapping and include any documents that match it in the Search index, set `enabled` to `true`. 
+To enable the mapping and include any documents that match it in the Search index, set `enabled` to `true`. 
 
-To remove any documents that match this type mapping from the Search index, set `enabled` to `false`.
+To remove any documents that match this mapping from the Search index, set `enabled` to `false`.
 
 |[[properties]]properties |Object |No a|
 
 The `properties` object is only enabled if `dynamic` is set to `false`. 
 
-Specifies properties for the fields to index in the type mapping. Contains any number of `\{field_name\}` objects. 
+Specifies properties for the fields to index in the mapping. 
+Contains any number of `\{field_name\}` objects. 
 
 For more information, see <<child-fields,>>.
 
