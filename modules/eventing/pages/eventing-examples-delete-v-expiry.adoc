@@ -1,61 +1,64 @@
-= Delete v Expiry
-:description: pass:q[Differentiate between a deletion or an expiration]
-:page-edition: Enterprise Edition
+= Differentiate between Expiration and Deletion
+:description: Differentiate between document deletion and document expiration in Eventing Function logs.
+:page-toclevels: 2
 :tabs:
 
-*Goal*: {description}
+[abstract]
+{description}
 
-*Implementation*: 
+The `OnDelete` handler in an Eventing Function runs whenever a document is deleted or has expired.
+The Function accesses the `expired` field of the handler's second optional argument, and logs whether a document was deleted or expired from a collection.
 
-Create a JavaScript Function that contains an *OnDelete* handler, which runs whenever a document is deleted or expired (or mutated).
-The Eventing Function merely logs whether the document was deleted or was expired from a collection.
-This function accesses the 'expired' field of the second optional argument to the handler.
 
-*Preparations*:
+== Prerequisites
 
-For this example, two (2) buckets *'bulk'* and *'rr100'* are required where the latter is intended to be 100% resident.  
-Create the buckets with a minimum size of 100MB. 
-For information on buckets, see xref:manage:manage-buckets/create-bucket.adoc[Create a Bucket].
-Within the buckets we need two (2) keyspaces *'bulk.data.source'* and *'rr100.eventing.metadata'* 
-(we loosely follow this xref:eventing-buckets-to-collections.adoc#single-tenancy[organization]).
+Before trying out the examples on this page, you must first:
+ 
+* Create two buckets called `bulk` and `rr100` with a minimum size of 100MB.
+* Inside the `bulk` bucket, create two keyspaces called `bulk.data.source` and `bulk.data.target`.
+* Inside the `rr100` bucket, create one keyspace called `rr100.eventing.metadata`.
 
-For the Function Scope or RBAC grouping, we will use the *'bulk.data'*, assuming you have the role of either "Full Admin" or "Eventing Full Admin". For standard or non-privileged users refer to xref:eventing-rbac.adoc[Eventing Role-Based Access Control].
+For more information about creating buckets, scopes, and collections, see xref:data-service:manage-buckets.adoc[].
 
-_If you run a version of Couchbase prior to 7.0 you can just create the buckets *'source'* and *'metadata'* and run this example.  Furthermore if your cluster was subsequently upgraded from say 6.6.2 to 7.0 your data would be moved to *'source._default._default'* and *'metadata._default._default'* and your Eventing Function would be seamlessly upgraded to use the new keyspaces and continue to run correctly._
+NOTE: Do not add, modify, or delete documents in the Eventing storage keyspace `rr100.eventing.metadata` while your Eventing Functions are in a deployed state.
 
-// TODO7X - need to check/fix this (buckets, scopes, collections)
-For complete details on how to set up your keyspaces refer to xref:manage:manage-buckets/create-bucket.adoc[creating buckets] and 
-xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc[creating scopes and collections].  
 
-NOTE: The Eventing Storage keyspace, in this case *'rr100.eventing.metadata'*, is for the sole use of the Eventing system, do not add, modify, or delete documents from it.  In addition do not drop or flush or delete the containing bucket (or delete this collection) while you have any deployed Eventing functions. In a single tenancy deployment this collection can be shared with other Eventing functions.
+== Example: asdsaddasasds
 
-You will need to run _cbc_ (the command-line KV client) or alternatively an SDK python script or Java program to create or update a document in the 'source' bucket, with an expiration time of 600 seconds.
+=== Create a New Document
 
-*Procedure*:
+You can create a test document with an expiration time in one of the following ways:
 
-. The example requires a document to be created in the 'source' collection with a key of *SampleDocument2*, a value of *{'a_key': 'a_value'}*, and most importantly that the document's expiration (or TTL) set to 600 seconds or 10 minutes). 
-+
-There are several methods to make a test document with an expiration set. The easiest is most likely using {sqlpp}.  However you can use _cbc_ or any Couchbase SDK (the command-line KV client is compiled from the C SDK).  For example you can use a Python script or a complied Java program. 
-+
+* Using a {sqlpp} statement in the Query Workbench
+* Using the command line KV client (`cbc`)
+* Using a Python or Java SDK script
+
 [{tabs}] 
 ====
-{sqlpp} UPDATE::
+{sqlpp} statement
 +
 --
-Using the Query Workbench::
+To use a {sqlpp} statement in the Query Workbench:
+
+. Go to menu:Data Tools[Query].
+. For the *Query Context*, select *bulk* as the bucket and *data* as the scope.
+. In the code editor, enter the following query:
+
 [source,sqlpp]
 ----
 UPSERT INTO `bulk`.`data`.`source` (KEY, VALUE) VALUES ("SampleDocument2", {"a_key":"a_value"}, {"expiration":600});
 ----
-Issue the above command in the Query Workbench of the UI.
 
-For information on setting document expiration times via {sqlpp}, refer to xref:n1ql:n1ql-language-reference/insert.adoc#insert-document-with-expiration[Insert a document with expiration]
+For information about setting a document's expiration time with {sqlpp}, see xref:n1ql:n1ql-language-reference/insert.adoc#insert-document-with-expiration[Insert a document with expiration].
 --
 
-The cbc binary, or KV client::
+KV client
 +
 --
-On Linux::
+The KV client method depends on your operating system.
+
+On Linux, run the following command:
+
 [source,console]
 ----
 /opt/couchbase/bin/cbc \
@@ -65,7 +68,9 @@ On Linux::
     -u Administrator -P password \
     --expiry=600 
 ----
-on macOS
+
+On macOS, run the following command:
+
 [source,console]
 ----
 /Applications/Couchbase\ Server.app/Contents/Resources/couchbase-core/bin/cbc \
@@ -74,7 +79,11 @@ on macOS
     -u Administrator -P password \
     --expiry=600
 ----
-on Windows
+
+If you get the error `dyld: Library not loaded` when running `cbc` on macOS, follow the instructions on the Jira ticket https://issues.couchbase.com/browse/MB-37768[MB-37768^].
+
+On Windows, run the following command:
+
 [source,console]
 ----
 "C:\Program Files\Couchbase\Server\bin\cbc" ^
@@ -83,18 +92,21 @@ on Windows
     -u Administrator -P password ^
     --expiry=600
 ----
-Use the command-line KV client, e.g. the _cbc_ binary, and cut-n-paste one of the above commands to create the needed sample document.
 
-We are passing --expiry the number of time in seconds from now at which the item should expire. However if you want an expiry over 30 days you must use the number of seconds since Unix Epoch.
-
-On macOS (or OS-X) if you get a 'dyld: Library not loaded' when running _cbc_ a solution is documented in https://issues.couchbase.com/browse/MB-37768[MB-37768^].
-
-For information on the cbc tool, refer to xref:2.10@c-sdk::webui-cli-access.adoc#using-the-command-line-kv-client[Using the command-line KV client].
+For more information about the `cbc` tool, see xref:reference:command-line-tools.adoc[].
 --
 
-Python SDK script::
+Python SDK script
 +
 --
+Copy and paste the following code sample inside an executable SDK script.
+
+Alternatively, you can:
+
+. Run the command `python3` to start a Python session.
+. Run the code sample without the line `#!/usr/bin/python3` to create the sample document.
+. Enter ^D to close the Python session.
+
 [source,python]
 ----
 #!/usr/bin/python3
@@ -123,15 +135,15 @@ try:
 except:
   print("exception:", sys.exc_info())
 ----
-Make an executable script as above and then it.  Alternatively run the command _python3_ to start a Python session then cut-n-paste the above line (without the `#!/usr/bin/python3` line) to create the needed sample document and then ^D (or ctrl-D) to close the Python session.
 
-For information on the Couchbase Python SDK, refer to xref:python-sdk::hello-world/start-using-sdk.adoc[Start Using the Python SDK].
+For more information about the Couchbase Python SDK, see xref:python-sdk::hello-world/start-using-sdk.adoc[Start Using the Python SDK].
 --
 
-Java SDK program::
+Java SDK script
 + 
 -- 
-A Java 3.0 SDK program example
+Copy and paste the following code sample inside an executable SDK script.
+
 [source,java]
 ----
 // Must use the Collections API
@@ -163,41 +175,29 @@ public class DocExpiryTestCC {
     }
 }
 ----
-Download the proper SDK and then compile and run one of the above Java programs
 
-For information on the Couchbase Java SDK, refer to xref:java-sdk:hello-world:start-using-sdk.adoc[Start Using the Java SDK].
+For information about the Couchbase Java SDK, see xref:java-sdk:hello-world:start-using-sdk.adoc[Start Using the Java SDK].
 --
 ====
 
-. You now have a document in collection 'source' (keyspace `bulk`.`data`.`source`) with an expiration set. 
+You now have a document in the `source` collection with a set expiration date.
+This document is deleted after 600 seconds.
 
-. To verify that your new document was created, access the *Couchbase Web Console* > *Documents* page and click the *Documents* then select the keyspace `bulk`.`data`.`source`.
-The new document gets displayed automatically (as this page will attempt to list the first few items). You will see one (1) document in the `bulk`.`data`.`source` keyspace (this will disappear on the document's expiry of 10 minutes).
-+
-image::del_v_expiry_05_buckets.png[,100%]
+=== Create an Eventing Function
 
-. [Optional Step] Click on the document's id, *SampleDocument2* to view the documents Data and also the documents Metadata information.  Note that the "expiration" field in the Metadata is non-zero (set to a  Unix timestamp in seconds since epoch).
-. From the *Couchbase Web Console* > *Eventing* page, click *ADD FUNCTION*, to add a new Function.
-The *ADD FUNCTION* dialog appears.
-. In the *ADD FUNCTION* dialog, for individual Function elements provide the below information:
- ** For the *Function Scope* drop-down, select *'bulk.data'* as the RBAC grouping.
- ** For the *Listen To Location* drop-down, select *bulk*, *data*, *source* as the keyspace.
- ** For the *Eventing Storage* drop-down, select *rr100*, *eventing*, *metadata* as the keyspace.
- ** Enter *delete_v_expiry* as the name of the Function you are creating in the *Function Name* text-box.
- ** Leave the "Deployment Feed Boundary" as Everything.
- ** [Optional Step] Enter text *Function to show how to determine if a document removal is an expiration or a deletion*, in the *Description* text-box.
- ** For the *Settings* option, use the default values.
- ** Skip the *Bindings* options
- ** After configuring your settings the *ADD FUNCTION* dialog should look like this:
-+
-image::del_v_expiry_01_settings.png[,484,align=left]
-. After providing all the required information in the *ADD FUNCTION* dialog, click *Next: Add Code*.
-The *delete_v_expiry* dialog appears.
-** The *delete_v_expiry* dialog initially contains a placeholder code block.
-You will substitute your actual *delete_v_expiry* code in this block.
-+
-image::del_v_expiry_02_editor_with_default.png[,100%,align=left]
-** Copy the following Function, and paste it in the placeholder code block of *delete_v_expiry* dialog.
+To create a new Eventing Function:
+
+. Go to menu:Data Tools[Eventing].
+. Click btn:[Add Function].
+. In the *Settings* page, enter the following Function settings:
+** *delete_v_expiry* under *Name*.
+** *Determine if a document was removed due to an expiration or a deletion.* under *Description*.
+** The keyspace `bulk.data.source` under *Listen to Location*.
+** The keyspace `rr100.eventing.metadata` under *Eventing Storage*. 
+. Click btn:[Next].
+. In the *Bindings* page, click btn:[Next]. 
+You do not need to create any bindings for this Function.
+. In the code editor, replace the placeholder JavaScript code with the following code sample:
 +
 [source,javascript]
 ----
@@ -210,96 +210,78 @@ function OnDelete(meta, options) {
 }
 ----
 +
-After pasting, the screen appears as displayed below:
-+
-image::del_v_expiry_03_editor_with_code.png[,100%,align=left]
-** Click *Save and Return*.
+. Click btn:[Create function] to create your Eventing Function.
 
-. From the *Eventing* screen, click the *delete_v_expiry* function to select it, then click *Deploy*.
-+
-image::del_v_expiry_03a_deploy.png[,100%]
-** Click *Deploy Function*.
+The `OnDelete` handler creates a log that shows whether a document expired or was deleted.
 
-. The Eventing function is deployed and starts running within a few seconds.  From this point, the defined Function is executed on all existing documents and on subsequent mutations.
+When the document reaches its expiration time, the document is deleted as soon as one of the following happens:
 
-. When its expiration time is reached, an item is deleted as soon as one of the following occurs:
+* You try to access the document
+* The expiry pager runs (every 60 minutes)
+* Compaction runs
 
-* An attempt is made to access the item.
-* The expiry pager is run (default every 60 minutes).
-* Compaction is run. 
+=== Deploy the Eventing Function
 
-. Therefore we first wait the full 10 minute period from the creation of SampleDocument2 and then we will try to access the document to expedite the expiry occurrence.  
+Deploy your Eventing Function:
 
-. Access the *Couchbase Web Console* > *Buckets* page.
-** You may see document count of one or zero depending in the Bucket *bulk* if the expiry pager has run. 
-+
-image::del_v_expiry_04_view_bkt.png[,100%,align=left]
+. Go to menu:Data Tools[Eventing].
+. Click *More Options (⋮)* next to *delete_v_expiry*.
+. Click *Deploy* to deploy your Function.
 
-. Click on the *Documents* in the UI  you will see one (1) document in the `bulk`.`data`.`source` keyspace (this will disappear on the document's expiry of 10 minutes).
-If the expiration on the document SampleDocument2 has occurred there will be no documents found.
-+
-image::del_v_expiry_04b_view_doc.png[,100%,align=left]
+After it's deployed, the Eventing Function executes on all existing documents and any documents you create in the future.
 
-. Access the *Couchbase Web Console* > *Buckets* page for a second time.  
-** You should see the document count is zero for the bucket *source* as we have attempted to access the item and it has been recognized and marked as an expired tombstone.
-+
-image::del_v_expiry_04b_view_bkt.png[,100%,align=left]
+=== Check Document Expiration
 
-. Access the *Couchbase Web Console* > *Eventing* page, click the function name *delete_v_expiry*.
-** You should see the following statistics under the Deployment Statistics:
-+
-image::del_v_expiry_04_expiration.png[,100%,align=left]
+When a document reaches its expiration time, the document is deleted as soon as one of the following happens:
 
-. Click the "Log" link for *delete_v_expiry* to view the activity (the "*Log*" link will appear in the upper right of the Function's controls once the function is deployed).
-** You should see that the document has expired.
-+
-----
-2022-05-10T15:07:46.442-07:00 [INFO] "doc expired:" "SampleDocument2" 
-----
-+
-image::del_v_expiry_05_log_expired.png[,500,align=left]
+* You try to access the document
+* The expiry pager runs (every 60 minutes)
+* Compaction runs
 
-. Now let's create another document and perform a normal delete on it. Access the *Couchbase Web Console* > *Buckets* page and click the *Scopes and Collections* link of the *bulk* bucket.
-** Click *Documents* in the upper right banner for the *data* scope.
-** Select the keyspace *bulk*, *data*, *source*
-** You should see no user records.
-** Click *Add Document* in the upper right banner
-** For the *ID* in the *Create New Document* dialog specify *SampleDocument*
+To check that the Eventing Function is targeting expired documents:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.source` in the *Get documents from* list.
+
+The document *SampleDocument2* is already deleted if its expiration time has been reached.
+
+If the document *SampleDocument2* is still being displayed, go to another page on the Capella UI and thenr return to menu:Data Tools[Documents].
+The collection updates and deletes the document because you tried to access it.
+
+=== Check the Eventing Function Log for Expiration
+
+To check the Eventing Function log:
+
+. Go to menu:Data Tools[Eventing].
+. Click the *Log* icon next to the *delete_v_expiry* Eventing Function.
+You should see the line `"doc expired:" "SampleDocument2"`.
+
+=== Check Document Deletion
+
+To check that the Eventing Function is targeting deleted documents:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.source` in the *Get documents from* list.
+. Click btn:[Create Document].
+. In the *Document ID* field, enter *SampleDocument3*.
+. Leave the placeholder JSON text.
 +
-----
-ID [ SampleDocument3        ]
-----
-+
-** For the document body in the *Create New Document* dialog, the following text is displayed:
-+
+[source,json]
 ----
 {
 "click": "to edit",
 "with JSON": "there are no reserved field names"
 }
 ----
-** just keep the above text
-** Click *Save*.
-
-. Now click the trash can icon to delete the *SampleDocument3* you just created.  Select *Continue* to confirm the deletion.
-
-. Access the *Couchbase Web Console* > *Eventing* page, click the function name *delete_v_expiry*. 
-** You should see following statistics under the Deployment Statistics:
 +
-image::del_v_expiry_06_deletion.png[,100%,align=left]
+. Click btn:[Save] to create the document.
+. Click the *Delete* icon next to *SampleDocument3*.
+. In the *Delete Document* dialog, enter *delete* and click btn:[Delete document].
 
-. Click the "Log" link for *delete_v_expiry* to view the activity (the "*Log*" link will appear in the upper right of the Function's controls once the function is deployed).
-** Here we see the document was deleted.
-+
-----
-2022-05-10T15:10:18.565-07:00 [INFO] "doc deleted:" "SampleDocument3" 
-----
-+
-image::del_v_expiry_06_log_deleted.png[,500,align=left]
+=== Check the Eventing Function Log for Deletion
 
-*Cleanup*:
+To check the Eventing Function log for deletion:
 
-Go to the Eventing portion of the UI and undeploy the Function *delete_v_expiry*, this will remove the 1280 documents for each function from the 'rr100.eventing.metadata' collection (in the Bucket view of the UI). Remember you may only delete the 'rr100.eventing.metadata' keyspace if there are no deployed Eventing Functions.
-
-Now flush the 'bulk' bucket if you plan to run other examples (you may need to Edit the bucket 'bulk' and enable the flush capability).
-
+. Go to menu:Data Tools[Eventing].
+. Click the *Log* icon next to the *delete_v_expiry* Eventing Function.
+You should see the line `"doc deleted:" "SampleDocument3"`.
