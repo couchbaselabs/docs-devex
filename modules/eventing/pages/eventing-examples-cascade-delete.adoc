@@ -1,71 +1,65 @@
-= Cascade Delete
-:description: pass:q[This example illustrates how to leverage the Eventing Service to perform a cascade delete operation.]
-:page-edition: Enterprise Edition
+= Cascade Delete Documents
+:description: Use the Eventing Service to perform cascade delete operations on your documents.
+:page-toclevels: 2
 
-*Goal*: {description}
-When a user is deleted, Couchbase Functions provide a reliable method to delete all the associated documents related to the deleted user.
+[abstract]
+{description}
 
-*Implementation*: Create a JavaScript Function that contains an *OnDelete* handler.
-The handler listens to mutations or data-changes within a specified, *user's* source collection.
-When a user within the source collection gets deleted, the Eventing Function executes a JavaScript code to remove the deleted user.
-When the delete operation is complete, all associated documents of the delete user also get removed.
+When you delete a user from Couchbase Capella, you can use Eventing Functions to delete all documents associated with that deleted user.
 
-This Example uses {sqlpp} unlike the similar scriptlet xref:eventing-handler-cascadeKvDeleteWithDoc.adoc[cascadeKvDeleteWithDoc] which uses just KV or the Data Service.
+The `OnDelete` handler listens to mutations or data changes within a specified user's source collection.
+When you delete a user, the Eventing Function executes its JavaScript code to remove the deleted user and all of their associated data.
 
-*Preparations*:
+Unlike the similar scriptlet xref:eventing-handler-cascadeKvDeleteWithDoc.adoc[cascadeKvDeleteWithDoc], which uses KV or the Data Service, the example on this page uses {sqlpp}.
 
-For this example, two (2) buckets *'bulk'* and *'rr100'* are required where the latter is intended to be 100% resident.  
-Create the buckets with a minimum size of 100MB. 
-For information on buckets, see xref:manage:manage-buckets/create-bucket.adoc[Create a Bucket].
-Within the buckets we need three (3) keyspaces *'bulk.data.users'*, *'bulk.data.transactions'*, and *'rr100.eventing.metadata'* 
-(we loosely follow this xref:eventing-buckets-to-collections.adoc#single-tenancy[organization]).
 
-For the Function Scope or RBAC grouping, we will use the *'bulk.data'*, assuming you have the role of either "Full Admin" or "Eventing Full Admin". For standard or non-privileged users refer to xref:eventing-rbac.adoc[Eventing Role-Based Access Control].
+== Prerequisites
 
-_If you run a version of Couchbase prior to 7.0 you can just create the buckets *'users'*, *'transactions'*, and *'metadata'* and run this example.  Furthermore if your cluster was subsequently upgraded from say 6.6.2 to 7.0 your data would be moved to *'users._default._default'*, *'transactions._default._default'*, and *'metadata._default._default'* and your Eventing Function would be seamlessly upgraded to use the new keyspaces and continue to run correctly._
+Before trying out the example on this page, you must first:
+ 
+* Create two buckets called `bulk` and `rr100` with a minimum size of 100MB.
+* Inside the `bulk` bucket, create two keyspaces called `bulk.data.users` and `bulk.data.transactions`.
+* Inside the `rr100` bucket, create one keyspace called `rr100.eventing.metadata`.
 
-// TODO7X - need to check/fix this (buckets, scopes, collections)
-For complete details on how to set up your keyspaces refer to xref:manage:manage-buckets/create-bucket.adoc[creating buckets] and 
-xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc[creating scopes and collections].  
+For more information about creating buckets, scopes, and collections, see xref:data-service:manage-buckets.adoc[].
 
-NOTE: The Eventing Storage keyspace, in this case *'rr100.eventing.metadata'*, is for the sole use of the Eventing system, do not add, modify, or delete documents from it.  In addition do not drop or flush or delete the containing bucket (or delete this collection) while you have any deployed Eventing functions. In a single tenancy deployment this collection can be shared with other Eventing functions.
+NOTE: Do not add, modify, or delete documents in the Eventing storage keyspace `rr100.eventing.metadata` while your Eventing Functions are in a deployed state.
 
-*Procedure*:
 
-. From the *Couchbase Web Console* > *Eventing* page, click *ADD FUNCTION*, to add a new Function.
-The *ADD FUNCTION* dialog appears.
-. In the *ADD FUNCTION* dialog, for individual Function elements provide the below information:
- ** For the *Function Scope* drop-down, select *'bulk.data'* as the RBAC grouping.
- ** For the *Listen To Location* drop-down, select *bulk*, *data*, *users* as the keyspace.
- ** For the *Eventing Storage* drop-down, select *rr100*, *eventing*, *metadata* as the keyspace.
- ** Enter *delete_orphaned_txns* as the name of the Function you are creating in the *Function Name* text-box.
- ** Leave the "Deployment Feed Boundary" as Everything.
- ** [Optional Step] Enter text *Delete Orphaned Transactions from the `bulk`.`data`.`transactions` collection when user_id is greater than or equal to 100*, in the *Description* text-box.
- ** For the *Settings* option, use the default values.
- ** For the *Bindings* option, add one bindings.
- *** For the binding, select "bucket alias", specify *src_user* as the "alias name" of the collection, 
- select *bulk*, *data*, *users* as the associated keyspace, and select "read only" for the access mode. *Note we will not be using this binding as we have no need of it because we will use {sqlpp}.*
- ** After configuring your settings the *ADD FUNCTION* dialog should look like this:
-+
-image::cascadedel_01_settings.png[,484]
-. After providing all the required information in the *ADD FUNCTION* dialog, click *Next: Add Code*.
-The *delete_orphaned_txns* dialog appears.
-** The *delete_orphaned_txns* dialog initially contains a placeholder code block.
-You will substitute your actual *delete_orphaned_txns code* in this block.
-+
-image::cascadedel_02_editor_with_default.png[,100%]
-** Copy the following Function, and paste it in the placeholder code block of *delete_orphaned_txns* dialog.
+== Example: Cascade Delete Documents
+
+This example walks you through how to create an Eventing Function to cascade delete documents.
+Whenever you delete a user from your `users` collection, the Function automatically deletes all transactions in the `transactions` collection that are associated with the deleted user.
+
+=== Create an Eventing Function
+
+To create a new Eventing Function:
+
+. Go to menu:Data Tools[Eventing].
+. Click btn:[Add Function].
+. In the *Settings* page, enter the following Function settings:
+** *delete_orphaned_txns* under *Name*.
+** *Delete orphaned transactions from the `bulk.data.transactions` collection when the `user_id` is greater than or equal to 100.*.
+** The keyspace `bulk.data.users` under *Listen to Location*.
+** The keyspace `rr100.eventing.metadata` under *Eventing Storage*.
+. Click btn:[Next].
+. In the *Bindings* page, click btn:[Add Binding] and create the following binding:
+** Select *Bucket*.
+** Enter *src_user* as the *Alias Name*.
+** Enter the keyspace `bulk.data.users` under *Bucket*, *Scope*, and *Collection*.
+** Select *Read Only* under *Permission*.
+. Click btn:[Next].
+. In the code editor, replace the placeholder JavaScript code with the following code sample:
 +
 [source,javascript]
 ----
 function OnUpdate(doc, meta) {
-    // debug only shows out mutations, we could delete this entire OnUpdate() function
     log('OnUpdate NOOP id: ' + meta.id + ' document:',doc);
 }
 function OnDelete(meta) {
-    // Ignore all keys not matching "user_#", allows other types in the source collection
+    // Ignores all keys not matching "user_#" and allows other types in the source collection
     if ((meta.id).startsWith("user_") == false) return;
-    // implement a contrived filter, keep all user transactions where the user_id > 100
+    // Implements a contrived filter and keeps all user transactions where the user_id > 100
     var id = meta.id;
     var numeric_id = parseInt(id.substring(5));
     if(!isNaN(numeric_id) && numeric_id >= 100) {
@@ -81,24 +75,29 @@ function OnDelete(meta) {
 }
 ----
 +
-Note, the {sqlpp} keyspace of *bulk.data.transactions* in earlier releases would be simply the bucket *transactions*.
-+
-After pasting, the screen appears as displayed below:
-+
-image::cascadedel_03_editor_with_code.png[,100%]
-** Click *Save and Return*.
+. Click btn:[Create function] to create your Eventing Function.
 
-. The *OnDelete* handler above is triggered for user delete mutation. The handler checks if the *user_id* is greater than or equal to 100 (_this contrived filter never deletes the orphaned transactions from any user with an id of < 100_). When this condition is fulfilled, then an {sqlpp} query is triggered to delete all user related information. The handler also logs if the orphaned transactions were removed or kept to Function specific application log file (refer to the log(...) statements in the above JavaScript).
+The `OnDelete` handler checks if the `user_id` is greater than or equal do 100, and then triggers a {sqlpp} query to delete all user-related information.
 
-. From the *Eventing* screen, click the *delete_orphaned_txns* function to select it, then click *Deploy*.
-+
-image::cascadedel_03a_deploy.png[,100%]
-** Click *Deploy Function*.
+The `OnDelete` handler also checks if the orphaned transactions have been removed and logs the result to the Function log file.
 
-. The Eventing function is deployed and starts running within a few seconds. From this point, the defined Function is executed on all existing documents and on subsequent mutations.
+=== Deploy the Eventing Function
 
-. From the *Couchbase Web Console* > *Query* page we will seed some data :
-** First create some actual users (5 total)
+Deploy your Eventing Function:
+
+. Go to menu:Data Tools[Eventing].
+. Click *More Options (⋮)* next to *delete_orphaned_txns*.
+. Click *Deploy* to deploy your Function.
+
+After it's deployed, the Eventing Function executes on all existing documents and any documents you create in the future.
+
+=== Create Users, Transactions, and Indexes
+
+To create new users and transactions:
+
+. Go to menu:Data Tools[Query].
+. For the *Query Context*, select *bulk* as the bucket and *data* as the scope.
+. In the code editor, enter the following query to create users:
 +
 [source,sqlpp]
 ----
@@ -109,7 +108,9 @@ INSERT INTO `bulk`.`data`.`users` (KEY,VALUE)
     VALUES ( "user_102", { "user_id": 102, "name": "jenny jones",    "age": "47"} ),
     VALUES ( "user_103", { "user_id": 103, "name": "jerry springer", "age": "28"} );  
 ----
-** Next create some transactions (9 total) one or more for each of our users
++
+. Click btn:[Run] to run the query and insert the new users into the `users` collection.
+. In the code editor, replace the previous query with the following query to create transactions:
 +
 [source,sqlpp]
 ----
@@ -122,130 +123,105 @@ INSERT INTO  `bulk`.`data`.`transactions` (KEY,VALUE)
     VALUES ( "txid_1004", { "user_id": 101, "item": "lettuce", "price": 1.30} ),
     VALUES ( "txid_1005", { "user_id": 101, "item": "salad dressing", "price": 4.15} ),
     VALUES ( "txid_1006", { "user_id": 102, "item": "chicken", "price": 4.32} ),
-    VALUES ( "txid_1007", { "user_id": 103, "item": "steak", "price": 6.53} );   
+    VALUES ( "txid_1007", { "user_id": 103, "item": "steak", "price": 6.53} );    
 ----
-** Next create some indices so that we can perform some {sqlpp} queries.
++
+. Click btn:[Run] to run the query and insert the new transactions into the `transactions` collection.
+. In the code editor, replace the previous query with the following query to create indexes:
 +
 [source,sqlpp]
 ----
 CREATE PRIMARY INDEX `def_primary` ON  `bulk`.`data`.`users`;
-CREATE PRIMARY INDEX `transactions` ON  `bulk`.`data`.`transactions`;
+CREATE PRIMARY INDEX `transactions` ON  `bulk`.`data`.`transactions`;  
 ----
-** Before deleting a user to test our Eventing Function we will use the NIQL Query Editor to inspect our data we just made in the collection in `bulk`.`data`.`users` we should have five (5) users.
++
+. Click btn:[Run] to run the query and create a `def_primary` index and a `transactions` index.
+
+Before testing the Eventing Function against your data, you can check if your users and transactions have been created correctly:
+
+. In the query code editor, enter the following query and click btn:[Run] to return the list of users:
 +
 [source,sqlpp]
 ----
 SELECT * FROM  `bulk`.`data`.`users` ORDER BY user_id;
 ----
 +
-After executing the above {sqlpp} statement you should see a table of 'user' data as follows:
-+
-image::cascadedel_04_qryusers.png[,100%]
-** Next use the NIQL Query Editor to inspect our data we just made in the collection in `bulk`.`data`.`users` we should have nine (9) transactions.
+. Replace the previous query with the following query and click btn:[Run] to return the list of transactions:
 +
 [source,sqlpp]
 ----
 SELECT * FROM  `bulk`.`data`.`transactions` ORDER BY user_id;
 ----
 +
-After executing the above {sqlpp} statement you should see a table of 'transaction' data as follows:
-+
-image::cascadedel_05_qrytrans.png[,100%]
-** Now NIQL Query Editor print out our user count and our transaction count (copy-and-paste both statements together, e.g. a compound query).  This verifies that we have five (5) users and nine (9) transactions.
+. Replace the previous query with the following query and click btn:[Run] to count the number of users and transactions in your `data` scope:
 +
 [source,sqlpp]
 ----
 SELECT count(*) FROM `bulk`.`data`.`users`; 
 SELECT count(*) FROM `bulk`.`data`.`transactions`; 
 ----
-+
-image::cascadedel_05a_counts.png[,100%]
 
-. Access the *Couchbase Web Console* > *Documents* page then select the keyspace `bulk`.`data`.`users`
-** You should see five user records.
-+
-image::cascadedel_06_usersdocs.png[,100%]
-** Click on the "trash can" icon to delete the document with the id *user_100*
-** Click "Continue" in the warning dialog to verify you want to delete the document
-** The *user_100* should no longer be listed
-+
-image::cascadedel_07_del_100_usersdocs.png[,100%]
+=== Delete a User
 
-. Access the *Couchbase Web Console* > *Query* and rerun your compound query as above. 
-** You will now have four (4) users and five (5) transactions.
-+
-[source,sqlpp]
-----
-SELECT count(*) FROM `bulk`.`data`.`users`; 
-SELECT count(*) FROM `bulk`.`data`.`transactions`; 
-----
-+
-After executing the above {sqlpp} statement you should see a table showing counts as follows:
-+
-image::cascadedel_08_remainingcounts.png[,100%]
+To delete a user:
 
-. Access the *Couchbase Web Console* > *Eventing* and click the *Log* link of the deployed *delete_orphaned_txns* Eventing function. 
-** This Function Log dialog lists log statements in reverse order (newest items first).
-** The most recent or top line should be similar to the following:
-+
-----
-2022-04-17T12:16:10.692-07:00 [INFO] "OnDelete: removed orphaned transactions for:" "user_100"
-----
-** The next four lines came from the OnUpdate handler of the *delete_orphaned_txns* Eventing function and show when you created your users. If you eliminate the function OnUpdate(doc, meta) {...} handler in your Eventing function you would not get the below messages. 
-+
-----
-2022-04-17T11:58:55.663-07:00 [INFO] "OnUpdate NOOP id: user_103 document:" {"age":"28","name":"jerry springer","user_id":103}
-2022-04-17T11:58:55.663-07:00 [INFO] "OnUpdate NOOP id: user_100 document:" {"age":"30","name":"john doe","user_id":100}
-2022-04-17T11:58:55.663-07:00 [INFO] "OnUpdate NOOP id: user_102 document:" {"age":"47","name":"jenny jones","user_id":102}
-2022-04-17T11:58:55.662-07:00 [INFO] "OnUpdate NOOP id: user_101 document:" {"age":"20","name":"frank smith","user_id":101}
-2022-04-17T11:58:55.662-07:00 [INFO] "OnUpdate NOOP id: user_50 document:" {"age":"77","name":"jeff shoemaker","user_id":50}
-----
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.users` in the *Get documents from* list to return the users you created in the previous step.
+. Click the *Delete* icon next to *user_100*.
+. In the *Delete Document* dialog, enter *delete* and click btn:[Delete document].
 
-. Access the *Couchbase Web Console* > *Query* and run the following {sqlpp} statements
-** Verify counts in both collections `bulk`.`data`.`users` and collection `bulk`.`data`.`transactions`
-+
-[source,sqlpp]
-----
-SELECT count(*) FROM `bulk`.`data`.`users`; 
-SELECT count(*) FROM `bulk`.`data`.`transactions`; 
-----
-** Delete all Users in collection `bulk`.`data`.`users` as follows (because you have no WHERE clause you will get a warning just ignore it and hit *Continue*) :
+The list of users no longer includes *user_100*.
+
+=== Check the Eventing Function Log
+
+To check the Eventing Function log:
+
+. Go to menu:Data Tools[Eventing].
+. Click the *Log* icon next to the *delete_orphaned_txns* Eventing Function.
+You should see the line `"OnDelete: removed orphaned transactions for:" "user_100"`.
+
+=== Delete All Users
+
+To delete all users:
+
+. Go to menu:Data Tools[Query].
+. For the *Query Context*, select *bulk* as the bucket and *data* as the scope.
+. In the code editor, enter the following query to delete all users:
 +
 [source,sqlpp]
 ----
 DELETE FROM `bulk`.`data`.`users`;
 ----
-** Verify counts again both keyspace `bulk`.`data`.`users` and keyspace `bulk`.`data`.`transactions` at this point you should only have one (1) transaction
 +
+. Click btn:[Run] to run the query and delete all users.
+
+To confirm that all users and all data associated with the users have been deleted, enter the following query in the code editor and click btn:[Run]:
 [source,sqlpp]
 ----
 SELECT count(*) FROM `bulk`.`data`.`users`; 
 SELECT count(*) FROM `bulk`.`data`.`transactions`; 
 ----
-** Look at the one (1) remaining transaction it should be related to user_id 50
-+
+This query returns no users and but it returns one transaction.
+
+To find out which user this one transaction is associated with, enter the following query in the code editor and click btn:[Run]:
 [source,sqlpp]
 ----
 SELECT * FROM `bulk`.`data`.`transactions`; 
 ----
-+
-After executing the above {sqlpp} statement you should see only one 'transaction' item follows:
-+
-image::cascadedel_09_kepttrans.png[,100%]
+This query returns information related to the transaction, which is associated with `user_50`.
 
-. Access the *Couchbase Web Console* > *Eventing* and click the *Log* link of the deployed *delete_orphaned_txns* Eventing function. 
-** The most recent four lines should be similar to the statements:
-+
+=== Check the Eventing Function Log
+
+To check the Eventing Function log:
+
+. Go to menu:Data Tools[Eventing].
+. Click the *Log* icon next to the *delete_orphaned_txns* Eventing Function.
+You should see the following lines:
 ----
-2022-04-17T12:27:35.280-07:00 [INFO] "OnDelete: removed orphaned transactions for:" "user_102"
-2022-04-17T12:27:35.276-07:00 [INFO] "OnDelete: removed orphaned transactions for:" "user_101"
-2022-04-17T12:27:35.271-07:00 [INFO] "OnDelete: user_id < 100, kept orphaned transactions for:" "user_50"
-2022-04-17T12:27:35.271-07:00 [INFO] "OnDelete: removed orphaned transactions for:" "user_103"
+2024-05-06T22:35:03.958+00:00 [INFO] "OnDelete: user_id < 100, kept orphaned transactions for:" "user_50" 
+2024-05-06T22:35:03.958+00:00 [INFO] "OnDelete: removed orphaned transactions for:" "user_103" 
+2024-05-06T22:35:03.953+00:00 [INFO] "OnDelete: removed orphaned transactions for:" "user_102" 
+2024-05-06T22:35:03.953+00:00 [INFO] "OnDelete: removed orphaned transactions for:" "user_101" 
 ----
-** Note, the transaction(s) associated with user_id *"user_50"* were kept as per our business logic.
-
-*Cleanup*:
-
-Go to the Eventing portion of the UI and undeploy the Function *delete_orphaned_txns*, this will remove the 1024 documents for the function from the 'rr100.eventing.metadata' collection (in the Bucket view of the UI). Remember you may only delete the 'rr100.eventing.metadata' keyspace if there are no deployed Eventing Functions.
-
-Now flush the 'bulk' bucket if you plan to run other examples (you may need to Edit the bucket 'bulk' and enable the flush capability).
+The log shows that all transactions from `user_103`, `user_102`, and `user_101` have been removed because of the Eventing Function business logic, which deletes orphaned transactions from users with IDs greater than or equal to 100.
+One transaction from `user_50` has been kept due to the user ID being less than 100.
