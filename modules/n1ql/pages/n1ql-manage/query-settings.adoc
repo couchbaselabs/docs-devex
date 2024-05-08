@@ -1,0 +1,362 @@
+= Configure Queries
+:description: You can configure the Query service using request-level query parameters.
+:tabs:
+
+// External cross-references
+:rest-cluster-query-settings: xref:rest-api:rest-cluster-query-settings.adoc
+:general-settings-query-settings: xref:manage:manage-settings/general-settings.adoc#query-settings
+:couchbase-cli-setting-query: xref:cli:cbcli/couchbase-cli-setting-query.adoc
+:n1ql-rest-api-admin: xref:n1ql:n1ql-rest-api/admin.adoc
+:n1ql-rest-api-index: xref:n1ql:n1ql-rest-api/index.adoc
+:cbq-shell: xref:n1ql:n1ql-intro/cbq.adoc
+:rest-intro: xref:rest-api:rest-intro.adoc
+:query-settings: xref:clusters:query-service/query-workbench.adoc#query-settings
+
+// Pass through HTML table styles for this page
+
+ifdef::basebackend-html[]
+++++
+<style type="text/css">
+  /* No maximum width for table cells */
+  .doc table.spread > tbody > tr > *,
+  .doc table.stretch > tbody > tr > * {
+    max-width: none !important;
+  }
+
+  /* Wrap code listings in table cells */
+  td .listingblock .content pre code {
+    white-space: pre-wrap !important;
+  }
+
+  /* Ignore fixed column widths */
+  table:not(.fixed-width) col{
+    width: auto !important;
+  }
+
+  /* Do not hyphenate words in the table */
+  td.tableblock p,
+  p.tableblock{
+    hyphens: manual !important;
+  }
+
+  /* Vertical alignment */
+  td.tableblock{
+    vertical-align: top !important;
+  }
+</style>
+++++
+endif::[]
+
+[abstract]
+{description}
+
+include::ROOT:partial$component-signpost.adoc[]
+
+// TODO: Removed all service-level settings for now.
+// Add them back in as they become available, through the Management API or other methods.
+
+[#section_nnj_sjk_k1b]
+== Request-Level Parameters
+
+To set a request-level parameter, do one of the following:
+
+* Use the {query-settings}[Query Options] window in the Query tab.
+ifdef::flag-devex-tools[]
+* Use the {cbq-shell}[cbq] shell at the command line.
+endif::flag-devex-tools[]
+ifdef::flag-devex-rest-api[]
+* Make a REST API call to the {n1ql-rest-api-index}[] (`/query/service` endpoint).
+endif::flag-devex-rest-api[]
+* Use an SDK client program.
+
+Generally, use
+ifdef::flag-devex-tools[]
+the `cbq` shell or
+endif::flag-devex-tools[]
+the Query tab as a sandbox to test queries in your Capella database.
+Use
+ifdef::flag-devex-rest-api[]
+a REST API call or
+endif::flag-devex-rest-api[]
+an SDK client program for your production queries.
+
+[tabs]
+====
+Capella UI::
++
+--
+To set request-level preferences in the Query tab:
+
+. Go to menu:Data Tools[Query] and click btn:[Query Options] to display the Query Options window.
+
+. Specify the preferences -- if a preference is not explicitly listed, click btn:[+] next to *Named Parameters* and add its name and value.
+
+. Click btn:[Save].
+
+image::clusters:query-workbench-settings.png["The Query Options window.",334,284]
+
+For more examples, see the xref:guides:transactions.adoc#settings[Couchbase Transactions] guide.
+--
+
+ifdef::flag-devex-tools[]
+Command Line::
++
+--
+To set request-level parameters in `cbq`, use the `\SET` command.
+The parameter name must be prefixed by a hyphen.
+
+'''
+
+The following example sets the request-level timeout, pretty-print, and max parallelism parameters, and runs a query:
+
+[source,sqlpp]
+----
+\SET -timeout "30m";
+\SET -pretty true;
+\SET -max_parallelism 3;
+SELECT * FROM "world" AS hello;
+----
+
+For more examples, see xref:cli:cbq-tool.adoc#cbq-parameter-manipulation[Parameter Manipulation] in the cbq documentation.
+--
+endif::flag-devex-tools[]
+
+ifdef::flag-devex-rest-api[]
+REST API::
++
+--
+To set request-level parameters with the REST API, specify the parameters in the request body or the query URI.
+
+'''
+
+The following example sets the request-level timeout, pretty-print, and max parallelism parameters, and runs a query:
+
+[source,sh]
+----
+curl http://localhost:8093/query/service -u Administrator:password \
+  -d 'statement=SELECT * FROM "world" AS hello;
+    & timeout=30m
+    & pretty=true
+    & max_parallelism=3'
+----
+
+For more examples, see the xref:n1ql:n1ql-rest-api/examplesrest.adoc[Query Service REST API examples].
+--
+endif::flag-devex-rest-api[]
+====
+
+The table below contains details of all request-level parameters, along with examples.
+
+.Request-Level Parameters
+include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[tag=settings]
+
+[discrete,#transactional-scan-consistency]
+===== Transactional Scan Consistency
+
+If the request contains a `BEGIN TRANSACTION` statement, or a DML statement with the <<tximplicit,tximplicit>> parameter set to `true`, then the <<scan_consistency,scan_consistency>> parameter sets the [def]__transactional scan consistency__.
+If you specify a transactional scan consistency of `request_plus`, `statement_plus`, or `at_plus`, or if you specify no transactional scan consistency, the transactional scan consistency is set to `request_plus`; otherwise, the transactional scan consistency is set as specified.
+
+.Transactional scan consistency
+[%header, cols="2"]
+|===
+| Scan consistency at start of transaction
+| Transactional scan consistency
+
+| Not set
+| `request_plus`
+
+| `not_bounded`
+| `not_bounded`
+
+| `request_plus` +
+  `statement_plus` +
+  `at_plus`
+| `request_plus`
+|===
+
+Any DML statements within the transaction that have no scan consistency set will inherit from the transactional scan consistency.
+Individual DML statements within the transaction may override the transactional scan consistency.
+If you specify a scan consistency of `not_bounded` for a statement within the transaction, the scan consistency for the statement is set as specified.
+When you specify a scan consistency of `request_plus`, `statement_plus`, or `at_plus` for a statement within the transaction, the scan consistency for the statement is set to `request_plus`.
+
+However, `request_plus` consistency is not supported for statements using a full-text index.
+If any statement within the transaction uses a full-text index, by means of the SEARCH function or the Flex Index feature, the scan consistency is set to `not_bounded` for the duration of the full-text search.
+
+.Overriding the transactional scan consistency
+[%header, cols="2"]
+|===
+| Scan consistency for statement within transaction
+| Inherited scan consistency
+
+| Not set
+| Transactional scan consistency +
+ (`not_bounded` for full-text search)
+
+| `not_bounded`
+| `not_bounded`
+
+| `request_plus` +
+  `statement_plus` +
+  `at_plus`
+| `request_plus` +
+ (`not_bounded` for full-text search)
+|===
+
+[#section_srh_tlm_n1b]
+== Named Parameters and Positional Parameters
+
+You can add placeholder parameters to a statement, so that you can safely supply variable values when you run the statement.
+A placeholder parameter may be a named parameter or a positional parameter.
+
+* To add a named parameter to a query, enter a dollar sign `$` or an at sign `@` followed by the parameter name.
+
+* To add a positional parameter to a query, enter a dollar sign `$` or an at sign `@` followed by the number of the parameter, or enter a question mark `?`.
+
+To run a query containing placeholder parameters, you must supply values for the parameters.
+
+* You can use an <<identifier,additional>> request-level parameter to supply the value for a named parameter.
+The name of this property is a dollar sign `$` or an at sign `@` followed by the parameter name.
+
+* The <<args,args>> request-level parameter enables you to supply a list of values for positional parameters.
+
+You can supply the values for placeholder parameters using any of the methods used to specify <<section_nnj_sjk_k1b,request-level parameters>>.
+
+****
+[.status]#Couchbase Server 7.6#
+
+The at sign `@` syntax is only supported in databases running Couchbase Server 7.6.0 or later.
+The dollar sign `$` syntax is supported in all versions of Couchbase Server.
+****
+
+=== Examples
+
+include::ROOT:partial$query-context.adoc[tag=section]
+
+.Named Parameters
+====
+The following query uses named parameter placeholders.
+ifdef::flag-devex-tools[]
+The parameter values are supplied using the cbq shell.
+endif::flag-devex-tools[]
+ifndef::flag-devex-tools[]
+The parameter values are supplied using the Query Options window.
+endif::flag-devex-tools[]
+
+ifdef::flag-devex-tools[]
+[source,sqlpp]
+----
+include::example$settings/param-names.n1ql[tags=**]
+----
+endif::flag-devex-tools[]
+
+ifndef::flag-devex-tools[]
+[caption=]
+.Named Parameters
+[cols="1s,2,1s,2"]
+|===
+| name
+| `$country`
+| value
+| `"France"`
+
+| name
+| `$altitude`
+| value
+| `500`
+|===
+
+[source,sqlpp]
+----
+include::example$settings/param-names.n1ql[tags=statement]
+----
+endif::flag-devex-tools[]
+
+The named parameters and named parameter placeholders in this example use a mixture of `@` and `$` symbol prefixes.
+In databases running Couchbase Server 7.6.0 and later, you can use either of these symbols as preferred.
+In previous versions of Couchbase Server, you must use the `$` symbol prefix.
+====
+
+.Numbered Positional Parameters
+====
+The following query uses numbered positional parameter placeholders.
+ifdef::flag-devex-tools[]
+The parameter values are supplied using the cbq shell.
+endif::flag-devex-tools[]
+ifndef::flag-devex-tools[]
+The parameter values are supplied using the Query Options window.
+endif::flag-devex-tools[]
+
+ifdef::flag-devex-tools[]
+[source,sqlpp]
+----
+include::example$settings/param-numbers.n1ql[tag=**]
+----
+endif::flag-devex-tools[]
+
+ifndef::flag-devex-tools[]
+[caption=]
+.Positional Parameters
+[cols="1s,5"]
+|===
+| $1 | `"France"`
+| $2 | `500`
+|===
+
+[source,sqlpp]
+----
+include::example$settings/param-numbers.n1ql[tags=statement]
+----
+endif::flag-devex-tools[]
+
+In this case, the first positional parameter value is used for the placeholder numbered `$1`, the second positional parameter value is used for the placeholder numbered `@2`, and so on.
+
+The numbered positional parameter placeholders in this example use a mixture of `@` and `$` symbol prefixes.
+In databases running Couchbase Server 7.6.0 and later, you can use either of these symbols as preferred.
+In previous versions of Couchbase Server, you must use the `$` symbol prefix.
+====
+
+.Unnumbered Positional Parameters
+====
+The following query uses unnumbered positional parameter placeholders.
+ifdef::flag-devex-tools[]
+The parameter values are supplied using the cbq shell.
+endif::flag-devex-tools[]
+ifndef::flag-devex-tools[]
+The parameter values are supplied using the Query Options window.
+endif::flag-devex-tools[]
+
+ifdef::flag-devex-tools[]
+[source.no-callouts,sqlpp]
+----
+include::example$settings/param-positions.n1ql[tag=**]
+----
+endif::flag-devex-tools[]
+
+ifndef::flag-devex-tools[]
+[caption=]
+.Positional Parameters
+[cols="1s,5"]
+|===
+| $1 | `"France"`
+| $2 | `500`
+|===
+
+[source,sqlpp]
+----
+include::example$settings/param-positions.n1ql[tags=statement]
+----
+endif::flag-devex-tools[]
+
+In this case, the first positional parameter value is used for the first `?` placeholder, the second positional parameter value is used for the second `?` placeholder, and so on.
+====
+
+For more details and examples, including examples using SDKs, see the xref:guides:prep-statements.adoc[] guide.
+
+ifdef::flag-devex-rest-api[]
+== Related Links
+
+* For more details about the {sqlpp} REST API, refer to {n1ql-rest-api-index}[].
+* For more details about the Admin REST API, refer to {n1ql-rest-api-admin}[].
+* For more details about the Query Settings API, refer to {rest-cluster-query-settings}[].
+* For more details about API content and settings, refer to {rest-intro}[].
+endif::flag-devex-rest-api[]
