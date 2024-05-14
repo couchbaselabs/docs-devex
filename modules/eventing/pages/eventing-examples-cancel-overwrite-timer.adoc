@@ -1,71 +1,54 @@
 = Cancel or Overwrite a Timer
-:description: pass:q[Demonstrate the functionality for canceling or overwriting an Eventing Timer.]
-:page-edition: Enterprise Edition
+:description: W
+:page-toclevels: 2
+:tabs:
 
-*Goal*: {description}
+[abstract]
+{description}
 
-*Implementation*: Create a JavaScript function that contains an *OnUpdate* handler and a Timer callback function. The handler listens for mutations or data-changes within a specified source collection. When any document within the this collection is created or modified, the Eventing Function executes a user-defined routine. In this example, we rely on a control document which if mutated controls whether a Timer will be created, canceled, or overwritten.
+The `OnUpdate` JavaScript handler listens to mutations or data changes within a specified source collection.
+When you create or modify data in the source collection, the Eventing Function executes its JavaScript code.
 
-** *Test 1*: The control document is created or mutated in such a way a Timer is created and fires approximately 60 seconds in the future at which point a document is written to another collection. The original control document, in the source collection is not changed.
+The Timer callback function relies on a control document which, if mutated, controls whether a Timer is created, cancelled, or overwritten.
 
-** *Test 2*: The control document is mutated in such a way that any existing Timer with the reference of the control document's id (meta.id) is canceled. This has no effect if the Timer created has already fired and executed.
+This page contains the following:
 
-** *Test 3*: The control document is mutated in such a way that any existing Timer with the reference of the control document's id (meta.id) is overwritten. This is equivalent to canceling a timer that already exists, and then creating a new Timer that will fire approximately 60 seconds in the future from the time of being overwritten.
+* An example where a control document is created or mutated, which creates a Timer.
+This Timer fires every 60 seconds and writes a document to another collection.
+The original document in the source collection does not change.
+* An example where a control document is mutated, which cancels any existing Timer with a reference that matches the control document's `meta.id`.
+* An example where a control document is mutated, which overwrites any existing Timer with a reference that matches the control document's `meta.id`.
+This is similar to cancelling a Timer that already exists, and then creating a new Timer that fires 60 seconds after it has been overwritten.
 
-*Preparations*:
 
-For this example, two (2) buckets *'bulk'* and *'rr100'* are required where the latter is intended to be 100% resident.  
-Create the buckets with a minimum size of 100MB. 
-For information on buckets, see xref:manage:manage-buckets/create-bucket.adoc[Create a Bucket].
-Within the buckets we need three (3) keyspaces *'bulk.data.source'*, *'bulk.data.target'*, and *'rr100.eventing.metadata'* 
-(we loosely follow this xref:eventing-buckets-to-collections.adoc#single-tenancy[organization]).
+== Prerequisites
 
-For the Function Scope or RBAC grouping, we will use the *'bulk.data'*, assuming you have the role of either "Full Admin" or "Eventing Full Admin". For standard or non-privileged users refer to xref:eventing-rbac.adoc[Eventing Role-Based Access Control].
+Before trying out the examples on this page, you must first:
+ 
+* Create two buckets called `bulk` and `rr100` with a minimum size of 100MB.
+* Inside the `bulk` bucket, create two keyspaces called `bulk.data.source` and `bulk.data.target`.
+* Inside the `rr100` bucket, create one keyspace called `rr100.eventing.metadata`.
 
-_If you run a version of Couchbase prior to 7.0 you can just create the buckets *'source'*, *'target'*, and *'metadata'* and run this example.  Furthermore if your cluster was subsequently upgraded from say 6.6.2 to 7.0 your data would be moved to *'source._default._default'*, *'target._default._default'*, and *'metadata._default._default'* and your Eventing Function would be seamlessly upgraded to use the new keyspaces and continue to run correctly._
+For more information about creating buckets, scopes, and collections, see xref:data-service:manage-buckets.adoc[].
 
-// TODO7X - need to check/fix this (buckets, scopes, collections)
-For complete details on how to set up your keyspaces refer to xref:manage:manage-buckets/create-bucket.adoc[creating buckets] and 
-xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc[creating scopes and collections].  
+NOTE: Do not add, modify, or delete documents in the Eventing storage keyspace `rr100.eventing.metadata` while your Eventing Functions are in a deployed state.
 
-NOTE: The Eventing Storage keyspace, in this case *'rr100.eventing.metadata'*, is for the sole use of the Eventing system, do not add, modify, or delete documents from it.  In addition do not drop or flush or delete the containing bucket (or delete this collection) while you have any deployed Eventing functions. In a single tenancy deployment this collection can be shared with other Eventing functions.
 
-*Setup*:
+== Setup
 
-. Access the *Couchbase Web Console* > *Buckets* page.
-** You should see the following once you have created your buckets:
+Before following the examples on this page, you must set up a control document and an Eventing Function.
+
+=== Create the Control Document
+
+To create the control document:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.source` in the *Get documents from* list.
+. Click btn:[Create Document].
+. In the *Document ID* field, enter *type_of_interest::1*.
+. Replace the JSON text with the following:
 +
-image::cancel_overwrite_timer_01_buckets.png[,100%]
-
-. [Optional Step] Verify we have our empty collections:
-** Click the *Scopes & Collections* link of the *bulk* bucket (on the right).
-** Click the *data* scope name to expand the section (on the left).
-** You should see no user records.
-+
-image::cancel_overwrite_timer_01_data_in_scope.png[,100%]
-+
-. Click the *Documents* link of the *source* collection (on the right).
-** Again you should see no user records.
-+
-image::cancel_overwrite_timer_01_documents.png[,800]
-+
-** Click *Add Document* in the upper right banner
-** For the *ID* in the *Create New Document* dialog specify *type_of_interest::1*
-+
-----
-ID [ type_of_interest::1 ]         ]
-----
-+
-** For the document body in the *Create New Document* dialog, the following text is displayed:
-+
-----
-{
-"click": "to edit",
-"with JSON": "there are no reserved field names"
-}
-----
-** replace the above text with the following JSON document via a cut-n-paste
-+
+[source,json]
 ----
 {
   "type": "type_of_interest",
@@ -77,66 +60,58 @@ ID [ type_of_interest::1 ]         ]
 }
 ----
 +
-image::cancel_overwrite_timer_01_docdata.png[,484]
-+
-** Click *Save*.
+. Click btn:[Save] to create the document.
 
-. From the *Couchbase Web Console* > *Eventing* page, click *ADD FUNCTION*, to add a new Function.
-The *ADD FUNCTION* dialog appears.
-. In the *ADD FUNCTION* dialog, for individual Function elements provide the below information:
- ** For the *Function Scope* drop-down, select *'bulk.data'* as the RBAC grouping.
- ** For the *Listen To Location* drop-down, select *bulk*, *data*, *source* as the keyspace.
- ** For the *Eventing Storage* drop-down, select *rr100*, *eventing*, *metadata* as the keyspace.
- ** Enter *cancel_overwrite_timer* as the name of the Function you are creating in the *Function Name* text-box.
- ** Leave the "Deployment Feed Boundary" as Everything.
- ** [Optional Step] Enter text *Explore creating, canceling, and overwriting timers*, in the *Description* text-box.
- ** For the *Settings* option, use the default values.
- ** For the *Bindings* option, add just one binding.
- *** For the first binding, select "bucket alias", specify *tgt_col* as the "alias name" of the collection, 
- select *bulk*, *data*, *target* as the associated keyspace, and select "read and write" for the access mode.
- ** After configuring your settings the *ADD FUNCTION* dialog should look like this:
-+
-image::cancel_overwrite_timer_01_settings.png[,484]
+=== Create an Eventing Function
 
+To create a new Eventing Function:
 
-. After providing all the required information in the *ADD FUNCTION* dialog, click *Next: Add Code*.
-The *cancel_overwrite_timer* dialog appears.
-** The *cancel_overwrite_timer* dialog initially contains a placeholder code block.
-You will substitute your actual *cancel_overwrite_timer* code in this block.
-+
-image::cancel_overwrite_timer_02_editor_with_default.png[,100%]
-** Copy the following Function, and paste it in the placeholder code block of *cancel_overwrite_timer* dialog.
+. Go to menu:Data Tools[Eventing].
+. Click btn:[Add Function].
+. In the *Settings* page, enter the following Function settings:
+** *cancel_overwrite_timer* under *Name*.
+** *Create, cancel, and overwrite Timers.* under *Description*.
+** The keyspace `bulk.data.source` under *Listen to Location*.
+** The keyspace `rr100.eventing.metadata` under *Eventing Storage*.
+. Click btn:[Next].
+. In the *Bindings* page, click btn:[Add Binding] and create the following binding:
+** Select *Bucket*.
+** Enter *tgt_col* as the *Alias Name*.
+** Enter the keyspace `bulk.data.target` under *Bucket*, *Scope*, and *Collection*.
+** Select *Read and Write* under *Permission*.
+. Click btn:[Next].
+. In the code editor, replace the placeholder JavaScript code with the following code sample:
 +
 [source,javascript]
 ----
 function DocTimerCallback(context) {
    log('From DocTimerCallback: timer fired', context);
 
-   // Create a new document as per our received context in another collection
-   tgt_col[context.docId] = context; // upsert the context as our new doc
+   // Creates a new document in another collection
+   tgt_col[context.docId] = context; // upserts the context as our new document
 }
 
 function OnUpdate(doc,meta) {
-   // You would typically filter to mutations of interest 
+   // Filters mutations of interest 
    if (doc.type != 'type_of_interest') return;
    
-   // You would typically look at some key conditions to decide what to do
+   // Looks at key conditions to decide what to do
    if (doc.needed_condition === true && doc.cancel_timer === false) {
        if (doc.overwrite_timer === true) {
          log('From OnUpdate: overwriting timer with same reference', meta.id);
        } else {
          log('From OnUpdate: creating timer', meta.id);  
        }
-       // Create a timestamp 60 seconds from now
-       var oneMinuteFromNow = new Date(); // Get current time & add 60 sec. to it.
+       // Creates a timestamp 60 seconds from now
+       var oneMinuteFromNow = new Date(); // Gets current time & add 60 seconds to it
        oneMinuteFromNow.setSeconds(oneMinuteFromNow.getSeconds() + 60);
    
-       // Create a document to use as out for our context
+       // Creates a document to use as the context
        var context = {docId : meta.id, random_text : "arbitrary text", "tmr_time_to_fire": oneMinuteFromNow};
        createTimer(DocTimerCallback, oneMinuteFromNow, meta.id, context);
     }
     if (doc.cancel_timer === true && doc.overwrite_timer === false) {
-       // Cancel an existing timer (if it is active) by reference meta.id
+       // Cancels an existing timer (if it is active) by reference meta.id
        if (cancelTimer(DocTimerCallback, meta.id)) {
            log('From OnUpdate: cancel request, timer was canceled',meta.id);
        } else {
@@ -149,46 +124,43 @@ function OnUpdate(doc,meta) {
 }
 ----
 +
-After pasting, the screen appears as displayed below:
+. Click btn:[Create function] to create your Eventing Function.
+
+When a change happens to the data inside the source collection, the `OnUpdate` handler targets the control document by ignoring all documents that do not have a `doc.type` of `type_of_interest`.
+It then uses the fields `needed_condition`, `cancel_timer`, and `overwrite_timer` to determine which action to take:
+
+* If `needed_condition` is true but both `cancel_timer` and `overwrite_timer` are false, the Eventing Function creates a Timer that fires 60 seconds into the future.
+* If both `needed_condition` and `cancel_timer` are true, the Eventing Function cancels the existing Timer.
+* If both `needed_condition` and `overwrite_timer` are true, the Eventing Function overwrites the existing Timer with a new Timer that fires 60 seconds into the future.
+* If both `cancel_timer` and `overwrite_timer` are true, the Eventing Function throws an error and nothing happens.
+
+When a Timer created by the Eventing Function fires, the callback `DocTimerCallback` executes and writes a new document in the target collection with the same key as the document in the source collection.
+
+=== Deploy the Eventing Function
+
+Deploy your Eventing Function:
+
+. Go to menu:Data Tools[Eventing].
+. Click *More Options (⋮)* next to *cancel_overwrite_timer*.
+. Click *Deploy* to deploy your Function.
+
+After it's deployed, the Eventing Function executes on all existing documents and any documents you create in the future.
+
+
+== Example: Create a Timer and Allow the Timer to Fire
+
+This example walks you through how to create a Timer and have the Timer fire.
+
+=== Edit the Control Document
+
+To edit the control document:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.source` in the *Get documents from* list.
+. Click the control document *type_of_interest::1* to open the *Edit Document* dialog.
+. Change `needed_condition` to `true`:
 +
-image::cancel_overwrite_timer_03_editor_with_code.png[,100%]
-** Click *Save and Return*.
-
-. The *OnUpdate* routine specifies that when a change occurs to data within the source collection, actions will be processed according to the field within the document.  First we ignore all documents that do not have a doc.type of "type_of_interest" this is the control document.  Next we use the field as "needed_condition", "cancel_timer", and "overwrite_timer" to determine which action we take.  
-
-* If "needed_condition" is true and both "cancel_timer", and "overwrite_timer" are false we will create a Timer that will fire approximately 60 seconds in the future.
-* If "needed_condition" is true and "cancel_timer" is true we will cancel the existing Timer.
-* If "needed_condition" is true and "overwrite_timer" is true we will overwrite the existing Timer with a new one (assuming that our Timer is still active) which will fire approximately 60 seconds in the future.
-* If both "cancel_timer" and "overwrite_timer" are true it is considered an error and no action is taken.
-* In the event a Timer created by this Function fires the callback *DocTimerCallback* executes and will write a new document with the same KEY (as the "source" collection) into the "target" collection.
-
-. From the *Eventing* screen, click the *cancel_overwrite_timer* function to select it, then click *Deploy*.
-+
-image::cancel_overwrite_timer_03a_deploy.png[,100%]
-+
-** In the *Confirm Deploy Function* Click *Deploy Function*.
-
-. The Eventing function is deployed and starts running within a few seconds. From this point, the defined Function is executed on all existing documents and will also more importantly it will also run on subsequent mutations.
-
-
-== Test 1: Create a Timer and allow the Timer to Fire
-
-. Access the *Couchbase Web Console* > *Documents* page then select the keyspace `bulk`.`data`.`source`
-** Edit the control document type_of_interest::1 -- it should look like:
-+
-----
-{
-  "type": "type_of_interest",
-  "id": 1,
-  "needed_condition": false,
-  "cancel_timer": false,
-  "overwrite_timer": false,
-  "a_number": 1
-}
-----
-+
-Change "needed_condition" to true to create a mutation, then click *Save*.  This will create a mutation and then the Function will generate a Timer.  The control document is now:
-+
+[source,json]
 ----
 {
   "type": "type_of_interest",
@@ -199,32 +171,31 @@ Change "needed_condition" to true to create a mutation, then click *Save*.  This
   "a_number": 1
 }
 ----
++
+. Click btn:[Save] to create a mutation.
 
-. Access the *Couchbase Web Console* > *Eventing* page and click on the Function *cancel_overwrite_timer* then click the "Log" link for Deployed Function *cancel_overwrite_timer* to view the activity.  
-** Here we see from the Application log that we created a timer.
-+
-----
-2022-05-10T16:06:54.226-07:00 [INFO] "From OnUpdate: creating timer" "type_of_interest::1 " 
-----
-+
-image::cancel_overwrite_timer_04_log_active1.png[,100%,align=left]
+The document mutation causes the Eventing Function to create a Timer.
 
-. Close the Function Log dialog, then wait about 80 seconds and click the "Log" link for the Deployed Function *cancel_overwrite_timer* to view the activity again.  
-** Here we see the timer fired and executed the callback *DocTimerCallback* near our scheduled time.
-+
-----
-2022-05-10T16:08:01.804-07:00 [INFO] "From DocTimerCallback: timer fired" {"docId":"type_of_interest::1 ","random_text":"arbitrary text","tmr_time_to_fire":"2022-05-10T23:07:54.226Z"} 
-----
-+
-image::cancel_overwrite_timer_04_log_fired1.png[,800,align=left]
+=== Check the Eventing Function Log
 
-. Now, to check the results of the callback, access the *Couchbase Web Console* > *Documents* page then select the keyspace `bulk`.`data`.`target`
-** You should see one newly created document in the collection "target".
+To check the Eventing Function log:
+
+. Go to menu:Data Tools[Eventing].
+. Click the *Log* icon next to the *cancel_overwrite_timer* Eventing Function.
+You should see the line `"From OnUpdate: creating timer" "type_of_interest::1"` in the debug log.
+. Wait a few minutes and click the *Log* icon again.
+The Timer should have fired and executed the `DocTimerCallback` callback, and you should see the line `"From DocTimerCallback: timer fired" {"docId":"type_of_interest::1 ","random_text":"arbitrary text","tmr_time_to_fire":"2022-05-10T23:07:54.226Z"}` in the debug log.
+
+=== Check the Results in the Target Collection
+
+To check that a new document has been created in the target collection:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.target` in the *Get documents from* list.
+. Click *type_of_interest::1* to open the *Edit Document* dialog.
+The JSON document includes data written by the Timer's callback.
 +
-image::cancel_overwrite_timer_04_look_target.png[,100%]
-+
-** Edit the new document type_of_interest::1 and you will see the data written by the Timer's callback:
-+
+[source,json]
 ----
 {
   "docId": "type_of_interest::1",
@@ -232,50 +203,25 @@ image::cancel_overwrite_timer_04_look_target.png[,100%]
   "tmr_time_to_fire": "2022-05-10T23:07:54.226Z"
 }
 ----
-** Click *Cancel* to close the editor.
+. Close the *Edit Document* dialog.
+. Click the *Delete* icon next to *type_of_interest::1*.
+. In the *Delete Document* dialog, enter *delete* and click btn:[Delete document].
 
-. Click the trash can icon to delete the document, then click *Continue* to confirm the deletion.
 
+== Example: Create a Timer and Cancel the Timer
 
-== Test 2: Create a Timer then Cancel the Timer:
+This example walks you through how to create a Timer and cancel the Timer.
 
-. Access the *Couchbase Web Console* > *Documents* page then select the keyspace `bulk`.`data`.`source`
-** Edit the control document *type_of_interest::1* -- it should look like this:
+=== Edit the Control Document
+
+To edit the control document:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.source` in the *Get documents from* list.
+. Click the control document *type_of_interest::1* to open the *Edit Document* dialog.
+. Change `a_number` to `2`:
 +
-----
-{
-  "type": "type_of_interest",
-  "id": 1,
-  "needed_condition": true,
-  "cancel_timer": false,
-  "overwrite_timer": false,
-  "a_number": 1
-}
-----
-+
-Change "a_number" to 2 to create a mutation, then click *Save*.  The control document is now:
-+
-----
-{
-  "type": "type_of_interest",
-  "id": 1,
-  "needed_condition": true,
-  "cancel_timer": false,
-  "overwrite_timer": false,
-  "a_number": 2
-}
-----
-
-. Access the *Couchbase Web Console* > *Eventing* page and if necessary select the Function *cancel_overwrite_timer*, then click the "Log" link for Deployed Function to view the activity.
-** Here we see from the Application log that we once again created a timer.
-+
-----
-2022-05-10T16:10:14.326-07:00 [INFO] "From OnUpdate: creating timer" "type_of_interest::1 " 
-----
-
-. Access the *Couchbase Web Console* > *Documents* page then select the keyspace `bulk`.`data`.`source`
-** Edit the control document *type_of_interest::1* -- it should look like this:
-+
+[source,json]
 ----
 {
   "type": "type_of_interest",
@@ -287,31 +233,28 @@ Change "a_number" to 2 to create a mutation, then click *Save*.  The control doc
 }
 ----
 +
-Change "cancel_timer" to true to create a mutation, then click *Save*.  The control document is now:
-+
-----
-{
-  "type": "type_of_interest",
-  "id": 1,
-  "needed_condition": true,
-  "cancel_timer": true,
-  "overwrite_timer": false,
-  "a_number": 2
-}
-----
+. Click btn:[Save] to create a mutation.
 
-. Access the *Couchbase Web Console* > *Eventing* page and if necessary select the Function *cancel_overwrite_timer*, then click the "Log" link for Deployed Function to view the activity. 
-** Here we see from the Application log the timer was canceled and will never fire.
-+
-----
-2022-05-10T16:11:21.429-07:00 [INFO] "From OnUpdate: cancel request, timer was canceled" "type_of_interest::1 " 
-----
+The document mutation causes the Eventing Function to create a Timer.
 
-== Test 3: Create a Timer then Overwrite the Timer
+=== Check the Eventing Function Log
 
-. Access the *Couchbase Web Console* > *Documents* page then select the keyspace `bulk`.`data`.`source`
-** Edit the control document *type_of_interest::1* -- it should look like this:
+To check the Eventing Function log:
+
+. Go to menu:Data Tools[Eventing].
+. Click the *Log* icon next to the *cancel_overwrite_timer* Eventing Function.
+You should see the line `"From OnUpdate: creating timer" "type_of_interest::1"` in the debug log.
+
+=== Edit the Control Document Again
+
+To edit the control document:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.source` in the *Get documents from* list.
+. Click the control document *type_of_interest::1* to open the *Edit Document* dialog.
+. Change `cancel_timer` to `true`:
 +
+[source,json]
 ----
 {
   "type": "type_of_interest",
@@ -323,8 +266,33 @@ Change "cancel_timer" to true to create a mutation, then click *Save*.  The cont
 }
 ----
 +
-Change "cancel_timer" to false to create a mutation, then click *Save*.  This will create a mutation and then the Function will generate a Timer.  The control document is now:
+. Click btn:[Save] to create a mutation.
+
+=== Check the Eventing Function Log Again
+
+To check the Eventing Function log:
+
+. Go to menu:Data Tools[Eventing].
+. Click the *Log* icon next to the *cancel_overwrite_timer* Eventing Function.
+You should see the line `"From OnUpdate: cancel request, timer was canceled" "type_of_interest::1"` in the debug log.
+
+The Timer has been cancelled and did not fire.
+
+
+== Example: Create a Timer and Overwrite the Timer
+
+This example walks you through how to create a Timer and overwrite the Timer.
+
+=== Edit the Control Document
+
+To edit the control document:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.source` in the *Get documents from* list.
+. Click the control document *type_of_interest::1* to open the *Edit Document* dialog.
+. Change `cancel_timer` to `false`:
 +
+[source,json]
 ----
 {
   "type": "type_of_interest",
@@ -335,61 +303,62 @@ Change "cancel_timer" to false to create a mutation, then click *Save*.  This wi
   "a_number": 2
 }
 ----
-
-. Access the *Couchbase Web Console* > *Eventing* page and if necessary select the Function *cancel_overwrite_timer*, then click the "Log" link for Deployed Function to view the activity.
-** Here we see from the Application log that we created a timer.
 +
-----
-2022-05-10T16:12:07.126-07:00 [INFO] "From OnUpdate: creating timer" "type_of_interest::1 " 
-----
+. Click btn:[Save] to create a mutation.
 
-. Access the *Couchbase Web Console* > *Documents* page then select the keyspace `bulk`.`data`.`source`
-** Edit the control document *type_of_interest::1* -- it should look like this:
+The document mutation causes the Eventing Function to create a Timer.
+
+=== Check the Eventing Function Log
+
+To check the Eventing Function log:
+
+. Go to menu:Data Tools[Eventing].
+. Click the *Log* icon next to the *cancel_overwrite_timer* Eventing Function.
+You should see the line `"From OnUpdate: creating timer" "type_of_interest::1"` in the debug log.
+
+=== Edit the Control Document Again
+
+To edit the control document:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.source` in the *Get documents from* list.
+. Click the control document *type_of_interest::1* to open the *Edit Document* dialog.
+. Change `overwrite_timer` to `true`:
 +
+[source,json]
 ----
 {
   "type": "type_of_interest",
   "id": 1,
   "needed_condition": true,
-  "cancel_timer": false,
-  "overwrite_timer": false,
-  "a_number": 2
-}
-----
-+
-Change "overwrite_timer" to true to create a mutation, then click *Save*.  The control document is now:
-+
-----
-{
-  "type": "type_of_interest",
-  "id": 1,
-  "needed_condition": true,
-  "cancel_timer": false,
+  "cancel_timer": true,
   "overwrite_timer": true,
   "a_number": 2
 }
 ----
-
-. Access the *Couchbase Web Console* > *Eventing* page and if necessary select the Function *cancel_overwrite_timer*, then click the "Log" link for Deployed Function to view the activity. 
-** Here we see from the Application log the timer was overwritten and will fire at a later time.
 +
-----
-2022-05-10T16:12:57.125-07:00 [INFO] "From OnUpdate: overwriting timer with same reference" "type_of_interest::1 " 
-----
+. Click btn:[Save] to create a mutation.
 
-. [Optional] mutate the document several times by changing "a_number" -- this will overwrite the timer multiple times.
+=== Check the Eventing Function Log Again
 
-. Wait about 80 seconds and click the "Log" link for Deployed Function *cancel_overwrite_timer* to view the activity.  
-** Here we see the timer fired and executed the callback *DocTimerCallback* near our scheduled time.
+To check the Eventing Function log:
+
+. Go to menu:Data Tools[Eventing].
+. Click the *Log* icon next to the *cancel_overwrite_timer* Eventing Function.
+You should see the line `"From OnUpdate: overwriting timer with same reference" "type_of_interest::1"` in the debug log.
+. Wait a few minutes and click the *Log* icon again.
+The Timer should have fired and executed the `"From DocTimerCallback: timer fired" {"docId":"type_of_interest::1","random_text":"arbitrary text","tmr_time_to_fire":"2022-05-10T23:13:57.125Z"} ` in the debug log.
+
+=== Check the Results in the Target Collection
+
+To check that a new document has been created in the target collection:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.target` in the *Get documents from* list.
+. Click *type_of_interest::1* to open the *Edit Document* dialog.
+The JSON document includes data written by the Timer's callback.
 +
-----
-2022-05-10T16:14:05.811-07:00 [INFO] "From DocTimerCallback: timer fired" {"docId":"type_of_interest::1 ","random_text":"arbitrary text","tmr_time_to_fire":"2022-05-10T23:13:57.125Z"} 
-----
-
-. Now, to check the results of the callback, access the *Couchbase Web Console* > *Documents* page then select the keyspace `bulk`.`data`.`target`
-
-** Edit the new document *type_of_interest::1* and you will see the data written by the Timer's callback:
-+
+[source,json]
 ----
 {
   "docId": "type_of_interest::1 ",
@@ -397,12 +366,6 @@ Change "overwrite_timer" to true to create a mutation, then click *Save*.  The c
   "tmr_time_to_fire": "2022-05-10T23:13:57.125Z"
 }
 ----
-** Click *Cancel* to close the editor.
-
-. Click the trash can icon to delete the document, then click *Continue* to confirm the deletion.
-
-*Cleanup*:
-
-Go to the Eventing portion of the UI and undeploy the Function *cancel_overwrite_timer*, this will remove the 1280 documents (2048 prior to 7.0.0) for the function from the 'rr100.eventing.metadata' collection (in the Bucket view of the UI). Remember you may only delete the 'rr100.eventing.metadata' keyspace if there are no deployed Eventing Functions.
-
-Now flush the 'bulk' bucket if you plan to run other examples (you may need to Edit the bucket 'bulk' and enable the flush capability).
+. Close the *Edit Document* dialog.
+. Click the *Delete* icon next to *type_of_interest::1*.
+. In the *Delete Document* dialog, enter *delete* and click btn:[Delete document].
