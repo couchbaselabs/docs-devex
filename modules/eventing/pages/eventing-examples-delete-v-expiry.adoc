@@ -1,0 +1,289 @@
+= Differentiate between Expiration and Deletion
+:description: Differentiate between document deletion and document expiration in Eventing Function logs.
+:page-toclevels: 2
+:tabs:
+
+[abstract]
+{description}
+
+The `OnDelete` handler in an Eventing Function runs whenever a document is deleted or has expired.
+The Function accesses the `expired` field of the handler's second optional argument, and logs whether a document was deleted or expired from a collection.
+
+
+== Prerequisites
+
+Before trying out the examples on this page, you must first:
+ 
+* Create two buckets called `bulk` and `rr100` with a minimum size of 100MB.
+* Inside the `bulk` bucket, create two keyspaces called `bulk.data.source` and `bulk.data.target`.
+* Inside the `rr100` bucket, create one keyspace called `rr100.eventing.metadata`.
+
+For more information about creating buckets, scopes, and collections, see xref:data-service:manage-buckets.adoc[].
+
+NOTE: Do not add, modify, or delete documents in the Eventing storage keyspace `rr100.eventing.metadata` while your Eventing Functions are in a deployed state.
+
+
+== Example: Differentiate between Expiration and Deletion
+
+This example walks you through how to differentiate between expiration and deletion in Eventing Function logs.
+
+=== Create a New Document
+
+You can create a test document with an expiration time in one of the following ways:
+
+* Using a {sqlpp} statement in the Query Workbench
+* Using the command line KV client (`cbc`)
+* Using a Python or Java SDK script
+
+[{tabs}] 
+====
+{sqlpp} statement
++
+--
+To use a {sqlpp} statement in the Query Workbench:
+
+. Go to menu:Data Tools[Query].
+. For the *Query Context*, select *bulk* as the bucket and *data* as the scope.
+. In the code editor, enter the following query:
+
+[source,sqlpp]
+----
+UPSERT INTO `bulk`.`data`.`source` (KEY, VALUE) VALUES ("SampleDocument2", {"a_key":"a_value"}, {"expiration":600});
+----
+
+For information about setting a document's expiration time with {sqlpp}, see xref:n1ql:n1ql-language-reference/insert.adoc#insert-document-with-expiration[Insert a document with expiration].
+--
+
+KV client
++
+--
+The KV client method depends on your operating system.
+
+On Linux, run the following command:
+
+[source,console]
+----
+/opt/couchbase/bin/cbc \
+    create SampleDocument2 -V '{"a_key": "a_value"}' \
+    -U couchbase://localhost/source \
+    --scope=data --collection=source \
+    -u Administrator -P password \
+    --expiry=600 
+----
+
+On macOS, run the following command:
+
+[source,console]
+----
+/Applications/Couchbase\ Server.app/Contents/Resources/couchbase-core/bin/cbc \
+    create SampleDocument2 -V '{"a_key": "a_value"}' -U couchbase://localhost/source \
+    --scope=data --collection=source \
+    -u Administrator -P password \
+    --expiry=600
+----
+
+If you get the error `dyld: Library not loaded` when running `cbc` on macOS, follow the instructions on the Jira ticket https://issues.couchbase.com/browse/MB-37768[MB-37768^].
+
+On Windows, run the following command:
+
+[source,console]
+----
+"C:\Program Files\Couchbase\Server\bin\cbc" ^
+    create SampleDocument2 -V "{'a_key': 'a_value'}" -U couchbase://localhost/source ^
+    --scope=data --collection=source ^
+    -u Administrator -P password ^
+    --expiry=600
+----
+
+For more information about the `cbc` tool, see xref:reference:command-line-tools.adoc[].
+--
+
+Python SDK script
++
+--
+Copy and paste the following code sample inside an executable SDK script.
+
+Alternatively, you can:
+
+. Run the command `python3` to start a Python session.
+. Run the code sample without the line `#!/usr/bin/python3` to create the sample document.
+. Enter ^D to close the Python session.
+
+[source,python]
+----
+#!/usr/bin/python3
+import sys
+import couchbase.collection
+import couchbase.subdocument as SD
+from couchbase.cluster import Cluster, ClusterOptions
+from couchbase_core.cluster import PasswordAuthenticator
+from couchbase.durability import ServerDurability, Durability
+from datetime import timedelta
+
+pa = PasswordAuthenticator('Administrator', 'password')
+cluster = Cluster('couchbase://127.0.0.1', ClusterOptions(pa))
+bucket = cluster.bucket('bulk')
+collection = bucket.scope('data').collection('source')
+
+try:
+  document = dict( a_key="a_value" )
+  result = collection.upsert(
+    'SampleDocument2',
+    document,
+    expiry=timedelta(minutes=10)
+  )
+  print("UPSERT SUCCESS")
+  print("cas result:", result.cas)
+except:
+  print("exception:", sys.exc_info())
+----
+
+For more information about the Couchbase Python SDK, see xref:python-sdk::hello-world/start-using-sdk.adoc[Start Using the Python SDK].
+--
+
+Java SDK script
++ 
+-- 
+Copy and paste the following code sample inside an executable SDK script.
+
+[source,java]
+----
+// Must use the Collections API
+package com.jonstrabala;
+import java.time.Duration;
+import com.couchbase.client.java.*;
+import com.couchbase.client.java.json.JsonObject;
+import static com.couchbase.client.java.kv.UpsertOptions.upsertOptions;
+public class DocExpiryTestCC {
+    public static void main(String... args) throws Exception {
+    	// Note, if not on the server you need to change "localhost" to your DNS name or IP
+    	Cluster cluster = Cluster.connect("localhost", "Administrator", "password");
+    	Bucket bucket = cluster.bucket("bulk");
+    	// Collection collection = bucket.defaultCollection();
+    	Collection collection = bucket.scope("data").collection("source");
+    	String docID = "SampleDocument2";
+    	Duration dura = Duration.ofMinutes(10);
+    	try {
+    		collection.upsert(
+    			docID, JsonObject.create().put("a_key", "a_value"), 
+    			upsertOptions().expiry(dura) );
+    		System.out.println("docID: " + docID + " expires in " + dura.getSeconds());
+    	} catch (Exception e) {
+    		System.out.println("upsert error for docID: " + docID + " " + e);
+    	}
+        bucket = null;
+        collection = null;
+    	cluster.disconnect(Duration.ofSeconds(2000));
+    }
+}
+----
+
+For information about the Couchbase Java SDK, see xref:java-sdk:hello-world:start-using-sdk.adoc[Start Using the Java SDK].
+--
+====
+
+You now have a document in the `source` collection with a set expiration date.
+This document is deleted after 600 seconds.
+
+=== Create an Eventing Function
+
+To create a new Eventing Function:
+
+. Go to menu:Data Tools[Eventing].
+. Click btn:[Add Function].
+. In the *Settings* page, enter the following Function settings:
+** *delete_v_expiry* under *Name*.
+** *Determine if a document was removed due to an expiration or a deletion.* under *Description*.
+** The keyspace `bulk.data.source` under *Listen to Location*.
+** The keyspace `rr100.eventing.metadata` under *Eventing Storage*. 
+. Click btn:[Next].
+. In the *Bindings* page, click btn:[Next]. 
+You do not need to create any bindings for this Function.
+. In the code editor, replace the placeholder JavaScript code with the following code sample:
++
+[source,javascript]
+----
+function OnDelete(meta, options) {
+    if (options.expired) {
+        log("doc expired:",meta.id);
+    } else {
+        log("doc deleted:",meta.id);
+    }
+}
+----
++
+. Click btn:[Create function] to create your Eventing Function.
+
+The `OnDelete` handler creates a log that shows whether a document expired or was deleted.
+
+When the document reaches its expiration time, the document is deleted as soon as one of the following happens:
+
+* You try to access the document
+* The expiry pager runs (every 60 minutes)
+* Compaction runs
+
+=== Deploy the Eventing Function
+
+Deploy your Eventing Function:
+
+. Go to menu:Data Tools[Eventing].
+. Click *More Options (⋮)* next to *delete_v_expiry*.
+. Click *Deploy* to deploy your Function.
+
+After it's deployed, the Eventing Function executes on all existing documents and any documents you create in the future.
+
+=== Check Document Expiration
+
+When a document reaches its expiration time, the document is deleted as soon as one of the following happens:
+
+* You try to access the document
+* The expiry pager runs (every 60 minutes)
+* Compaction runs
+
+To check that the Eventing Function is targeting expired documents:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.source` in the *Get documents from* list.
+
+The document *SampleDocument2* is already deleted if its expiration time has been reached.
+
+If the document *SampleDocument2* is still being displayed, go to another page on the Capella UI and thenr return to menu:Data Tools[Documents].
+The collection updates and deletes the document because you tried to access it.
+
+=== Check the Eventing Function Log for Expiration
+
+To check the Eventing Function log:
+
+. Go to menu:Data Tools[Eventing].
+. Click the *Log* icon next to the *delete_v_expiry* Eventing Function.
+You should see the line `"doc expired:" "SampleDocument2"`.
+
+=== Check Document Deletion
+
+To check that the Eventing Function is targeting deleted documents:
+
+. Go to menu:Data Tools[Documents].
+. Select the keyspace `bulk.data.source` in the *Get documents from* list.
+. Click btn:[Create Document].
+. In the *Document ID* field, enter *SampleDocument3*.
+. Leave the placeholder JSON text.
++
+[source,json]
+----
+{
+"click": "to edit",
+"with JSON": "there are no reserved field names"
+}
+----
++
+. Click btn:[Save] to create the document.
+. Click the *Delete* icon next to *SampleDocument3*.
+. In the *Delete Document* dialog, enter *delete* and click btn:[Delete document].
+
+=== Check the Eventing Function Log for Deletion
+
+To check the Eventing Function log for deletion:
+
+. Go to menu:Data Tools[Eventing].
+. Click the *Log* icon next to the *delete_v_expiry* Eventing Function.
+You should see the line `"doc deleted:" "SampleDocument3"`.
