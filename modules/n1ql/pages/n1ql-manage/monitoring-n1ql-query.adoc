@@ -81,72 +81,83 @@ Similarly, users must have SELECT permission on the target of an index to be abl
  ** `system:datastores`
  ** `system:namespaces`
 
-== Query Monitoring Settings
+[#query-monitoring-settings]
+== Query Profiling
 
-The monitoring settings can be set for each query engine (using the REST API) or for each query statement (using the cbq command line tool).
-Both settings are actually set via REST endpoints: using the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] (`/admin/settings` endpoint) and the xref:n1ql:n1ql-rest-api/index.adoc[Query REST API] (`/query/service` endpoint).
+Query profiling enables you to obtain more detailed monitoring information and finer execution timings for any query.
+You can set query profiling to the following levels:
 
-The cbq shell and Query Workbench use the Query REST API to set monitoring at the request level.
-The Query Workbench automatically enables the profiling and timings.
-It can be disabled using the [.ui]*Preferences* option.
-For more information refer to the xref:tools:query-workbench.adoc[Query Workbench] section.
+* `off` -- query profiling is disabled.
+* `phases` -- query profiling is enabled, including information about the phases of query execution.
+* `timings` -- query profiling is enabled, including information about the phases of query execution, and detailed timing information.
 
-Use the following query parameters to enable, disable, and control the monitoring capabilities, and the level of monitoring and profiling details for each query or globally at a query engine level:
+You can set query profiling in the following ways:
 
-* profile
-* controls
+* At the <<enable-settings-for-a-query-engine,node level>>, so that it is enabled for all queries on that node.
+* At the <<enable-settings-per-session-or-per-query,request level>>, for individual queries.
 
-For more details and examples, see xref:n1ql:n1ql-manage/query-settings.adoc[].
+For more information about Query settings and parameters, see xref:n1ql:n1ql-manage/query-settings.adoc[].
 
-=== Enable Settings for a Query Engine
+[#enable-settings-for-a-query-engine]
+=== Enable Query Profiling for a Query Node
 
-You can enable profile settings for each query engine.
-These examples use local host IP address and default port numbers.
-You need to provide correct credentials, IP address, and port details of your setup.
+To activate query profiling at the node level, specify the `profile` setting using the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] (`/admin/settings` endpoint).
 
-. Get the current query settings:
-+
-[source,sh]
-----
-include::n1ql:example$settings/save-node-level-settings.sh[tag=curl]
-----
-+
-[source,sh]
-----
-cat  ./query_settings.json
-----
-+
-[source,json]
-----
-include::n1ql:example$settings/node-level-settings.jsonc[]
-----
+.See the current node-level query settings
+====
+The following request gets the current node-level query settings.
 
-. Set current query settings profile:
- .. To set the query settings saved in a file [.path]_./query_settings.json_, enter the following query:
-+
-[source,sh]
-----
-curl http://localhost:8093/admin/settings -u user:pword \
-  -X POST \
-  -d@./query_settings.json
-----
-
- .. To explicitly specify the settings, enter the following query:
-+
-[source,sh]
-----
-curl http://localhost:8093/admin/settings -u user:pword \
-  -H 'Content-Type: application/json' \
-  -d '{"profile": "phases"}'
-----
-
-. Verify the settings are changed as specified:
-+
+.Request
 [source,sh]
 ----
 include::n1ql:example$settings/node-level-settings.sh[tag=curl]
 ----
-+
+
+.Results
+[source,json]
+----
+include::n1ql:example$settings/node-level-settings.jsonc[]
+----
+====
+
+.Save node-level query settings to a file
+====
+The following request saves the current node-level query settings to the file `query_settings.json`.
+
+.Request
+[source,sh]
+----
+include::n1ql:example$settings/save-node-level-settings.sh[tag=curl]
+----
+====
+
+.Set node-level query settings from a file
+====
+Assuming that you have edited the file `query_settings.json` to specify the query settings you want, the following request 
+sets the node-level query settings according to the file.
+
+.Request
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -X POST \
+  -d@./query_settings.json
+----
+====
+
+.Set node-level query settings explicitly
+====
+The following request explicitly sets query profiling at the node level.
+
+.Request
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"profile": "phases"}'
+----
+
+.Results
 [source,json]
 ----
 {
@@ -160,78 +171,91 @@ include::n1ql:example$settings/node-level-settings.sh[tag=curl]
   "use-cbo": true
 }
 ----
+====
 
-=== Enable Settings per Session or per Query
+[#enable-settings-per-session-or-per-query]
+=== Enable Query Profiling for a Request
 
-You can enable monitoring and profiling settings for each query statement.
-To set query settings using the cbq shell, use the `\SET` command:
+To activate profiling at the request level, do one of the following:
 
-[source,sqlpp]
-----
-\set -profile "timings";
-\set;
-----
+* Specify the `profile` setting using the xref:n1ql:n1ql-rest-api/index.adoc[Query REST API] (`/query/service` endpoint).
+* Specify the `profile` setting using the xref:n1ql:n1ql-intro/cbq.adoc[cbq] command line tool.
 
-[source,none]
-----
- Query Parameters :
- Parameter name : profile
- Value : ["timings"]
- ...
-----
+[tabs]
+====
+REST API::
++
+--
+To set query settings using the REST API, specify the parameters in the request body.
 
-To set query settings using the REST API, specify the parameters in the request body:
+'''
+
+The following statement sets the profiling to phases:
 
 [source,sh]
 ----
-curl http://localhost:8093/query/service -u user:pword \
-  -d 'profile=timings&statement=SELECT * FROM "world" AS hello'
+curl $BASE_URL/query/service -u $USER:$PASSWORD \
+  -d 'profile=phases&statement=SELECT * FROM `travel-sample`.inventory.airline LIMIT 1'
 ----
 
-[#monitor-profile-details]
-== Monitoring and Profiling Details
-
-Couchbase Server provides detailed query monitoring and profiling information.
-The profiling and finer query execution timing details can be obtained for any query.
-
-When a query executes a user-defined function, profiling information is available for the {sqlpp} queries within the user-defined function as well.
-
-[[profile]]
-=== Attribute Profile in Query Response
-
-When profiling is enabled, a query response includes the profile attribute.
-The attribute details are as follows:
-
-[NOTE]
-====
-This value will be dynamic, depending on the documents processed by various phases up to this moment in time.
-
-A new query on `system:active_requests` will return different values.
-====
-
-include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[tags=profile]
-
-These statistics (`kernTime`, `servTime`, and `execTime`) can be very helpful in troubleshooting query performance issues, such as:
-
-* A high `servTime` for a low number of items processed is an indication that the indexer or KV store is stressed.
-* A high `kernTime` means there is a downstream issue in the query plan or the query server having many requests to process (so the scheduled waiting time will be more for CPU time).
-
-.Phases Profile
-====
-The cbq engine must be started with authorization, for example:
+The following statement sets the profiling to timings:
 
 [source,sh]
 ----
-./cbq -engine=http://localhost:8091/ -u Administrator -p pword
+curl $BASE_URL/query/service -u $USER:$PASSWORD \
+  -d 'profile=timings&statement=SELECT * FROM `travel-sample`.inventory.airline LIMIT 1'
 ----
+--
 
-Using the cbq shell, show the statistics collected when the `profile` is set to `phases`:
+{sqlpp}::
++
+--
+To set query settings using the cbq shell, use the `\SET` command.
+
+'''
+
+The following statement sets the profiling to phases:
 
 [source,sqlpp]
 ----
 \set -profile "phases";
 SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
 ----
+
+The following statement sets the profiling to timings:
+
+[source,sqlpp]
+----
+\set -profile "timings";
+SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
+----
+--
+====
+
+The Query Workbench automatically enables Query profiling, with detailed timing information.
+To disable or enable Query profiling with the Query Workbench, specify the *Collect query timings* option using the xref:tools:query-workbench.adoc#query-preferences[Query Preferences].
+
+[#monitor-profile-details]
+== Query Profiling Details
+
+You can access the profiling information in the following ways:
+
+* In the <<profile,query responses>>.
+* In the <<plan,system catalogs>>.
+
+When a query executes a user-defined function, profiling information is available for the {sqlpp} queries within the user-defined function as well.
+
+[[profile]]
+=== Profiling Details in Query Response
+
+When profiling is enabled:
+
+* If you are using the cbq shell or the Query REST API, query profiling information is returned with the query results.
+* However, if you are using the Query workbench, query profiling information is not returned with the query results.
+
+.Phases Profile
+====
+If you are using the cbq shell or the Query REST API, the following statistics are returned when `profile` is set to `phases`:
 
 [source,json]
 ----
@@ -289,13 +313,7 @@ SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
 
 .Timings Profile
 ====
-Using the cbq shell, show the statistics collected when `profile` is set to `timings`:
-
-[source,sqlpp]
-----
-\set -profile "timings";
-SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
-----
+If you are using the cbq shell or the Query REST API, the following statistics are returned when `profile` is set to `timings`:
 
 [source,json]
 ----
@@ -453,26 +471,40 @@ SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
 ----
 ====
 
+The `profile` object contains the following attributes:
+
+include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[tags=profile]
+
+The `kernTime`, `servTime`, and `execTime` statistics can be very helpful in troubleshooting query performance issues
+For example:
+
+* A high `servTime` for a low number of items processed is an indication that the indexer or KV store is stressed.
+* A high `kernTime` means there is a downstream issue in the query plan or the query server having many requests to process, so the scheduled waiting time will be more for CPU time.
+
 [[plan]]
-=== Attribute Meta in System Keyspaces
+=== Profiling Details in System Catalogs
 
-The `meta().plan` virtual attribute captures the whole query plan, and monitoring stats of various phases and involved query operators.
-The `meta().plan` must be explicitly called in the SELECT query projection list.
-
-The `meta().plan` attribute is enabled only for individual requests that are running (`active_requests`) or completed (`completed_requests`) when the profile is set to timings (`profile ="timings"`) for each individual request.
-If at the engine level, the profile is set to off and individual requests have been run with `profile ="timings"`, then the system keyspaces will return the plan only for those requests.
-
-Since there may be a combination of profile settings for all of the requests reported by the system keyspaces, not all requests returned will have a `meta().plan` attachment.
-
-NOTE: For the `system:prepareds` requests, the `meta().plan` is available at all times since the `PREPARE` statement is not dependant on the profile setting.
-
-This attribute is enabled for the following system keyspaces:
+The following system catalogs support the `meta().plan` virtual attribute, which captures the whole query plan, including query profiling information.
 
 * <<sys-active-req,system:active_requests>>
 * <<sys-prepared,system:prepareds>>
 * <<sys-completed-req,system:completed_requests>>
 
+With the `system:active_requests` and `system:completed_requests` catalogs, not all statements have a `meta().plan` attribute.
+The `meta().plan` attribute is only available for statements that run when the profile is set to `timings`.
+
+With the `system:prepareds` catalog, the `meta().plan` attribute is available for all statements.
+
+You must explicitly specify `meta().plan` in the projection list for the SELECT query.
 For a detailed example, see <<example-2>>.
+
+The `meta().plan` attribute contains similar properties to the `profile` object included with the query results when profiling is active.
+
+[NOTE]
+====
+For active requests, `phaseTimes` and `phaseCounts` are dynamic, depending on the documents processed by various phases up to this moment in time.
+A new query on `system:active_requests` will return different values.
+====
 
 [#vitals]
 == Monitor System Vitals
