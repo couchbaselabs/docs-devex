@@ -91,431 +91,6 @@ In the REST API examples:
 * `$USER` is the user name.
 * `$PASSWORD` is the password.
 
-[#query-monitoring-settings]
-== Query Profiling
-
-Query profiling enables you to obtain more detailed monitoring information and finer execution timings for any query.
-You can set query profiling to the following levels:
-
-* `off` -- query profiling is disabled.
-* `phases` -- query profiling is enabled, including information about the phases of query execution.
-* `timings` -- query profiling is enabled, including information about the phases of query execution, and detailed timing information.
-
-You can set query profiling in the following ways:
-
-* At the <<enable-settings-for-a-query-engine,node level>>, so that it is enabled for all queries on that node.
-* At the <<enable-settings-per-session-or-per-query,request level>>, for individual queries.
-
-For more information about Query settings and parameters, see xref:n1ql:n1ql-manage/query-settings.adoc[].
-
-[#enable-settings-for-a-query-engine]
-=== Enable Query Profiling for a Query Node
-
-To activate query profiling at the node level, specify the `profile` setting using the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] (`/admin/settings` endpoint).
-
-.See the current node-level query settings
-====
-The following request gets the current node-level query settings.
-
-.Request
-[source,sh]
-----
-include::n1ql:example$settings/node-level-settings.sh[tag=curl]
-----
-
-.Results
-[source,json]
-----
-include::n1ql:example$settings/node-level-settings.jsonc[]
-----
-====
-
-.Save node-level query settings to a file
-====
-The following request saves the current node-level query settings to the file `query_settings.json`.
-
-.Request
-[source,sh]
-----
-include::n1ql:example$settings/save-node-level-settings.sh[tag=curl]
-----
-====
-
-.Set node-level query settings from a file
-====
-Assuming that you have edited the file `query_settings.json` to specify the query settings you want, the following request 
-sets the node-level query settings according to the file.
-
-.Request
-[source,sh]
-----
-curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
-  -X POST \
-  -d@./query_settings.json
-----
-====
-
-.Set node-level query settings explicitly
-====
-The following request explicitly sets query profiling at the node level.
-
-.Request
-[source,sh]
-----
-curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
-  -H 'Content-Type: application/json' \
-  -d '{"profile": "phases"}'
-----
-
-.Results
-[source,json]
-----
-{
-  // ...
-  "profile":"phases",
-  "request-size-cap": 67108864,
-  "scan-cap": 512,
-  "servicers": 4,
-  "timeout": 0,
-  "txtimeout": "0s",
-  "use-cbo": true
-}
-----
-====
-
-[#enable-settings-per-session-or-per-query]
-=== Enable Query Profiling for a Request
-
-To activate profiling at the request level, do one of the following:
-
-* Specify the `profile` setting using the xref:n1ql:n1ql-rest-api/index.adoc[Query REST API] (`/query/service` endpoint).
-* Specify the `profile` setting using the xref:n1ql:n1ql-intro/cbq.adoc[cbq] command line tool.
-
-[tabs]
-====
-REST API::
-+
---
-To set query settings using the REST API, specify the parameters in the request body.
-
-'''
-
-The following statement sets the profiling to phases:
-
-[source,sh]
-----
-curl $BASE_URL/query/service -u $USER:$PASSWORD \
-  -d 'profile=phases&statement=SELECT * FROM `travel-sample`.inventory.airline LIMIT 1'
-----
-
-The following statement sets the profiling to timings:
-
-[source,sh]
-----
-curl $BASE_URL/query/service -u $USER:$PASSWORD \
-  -d 'profile=timings&statement=SELECT * FROM `travel-sample`.inventory.airline LIMIT 1'
-----
---
-
-{sqlpp}::
-+
---
-To set query settings using the cbq shell, use the `\SET` command.
-
-'''
-
-The following statement sets the profiling to phases:
-
-[source,sqlpp]
-----
-\set -profile "phases";
-SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
-----
-
-The following statement sets the profiling to timings:
-
-[source,sqlpp]
-----
-\set -profile "timings";
-SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
-----
---
-====
-
-The Query Workbench automatically enables Query profiling, with detailed timing information.
-To disable or enable Query profiling with the Query Workbench, specify the *Collect query timings* option using the xref:tools:query-workbench.adoc#query-preferences[Query Preferences].
-
-[#monitor-profile-details]
-== Query Profiling Details
-
-You can access the profiling information in the following ways:
-
-* In the <<profile,query responses>>.
-* In the <<plan,system catalogs>>.
-
-When a query executes a user-defined function, profiling information is available for the {sqlpp} queries within the user-defined function as well.
-
-[[profile]]
-=== Profiling Details in Query Response
-
-When profiling is enabled:
-
-* If you are using the cbq shell or the Query REST API, query profiling information is returned with the query results.
-* However, if you are using the Query workbench, query profiling information is not returned with the query results.
-
-.Phases Profile
-====
-If you are using the cbq shell or the Query REST API, the following statistics are returned when `profile` is set to `phases`:
-
-[source,json]
-----
-{
-  "requestID": "06d6c1c2-1a8a-4989-a856-7314f9eddee5",
-  "signature": {
-    "*": "*"
-  },
-  "results": [
-    {
-      "airline": {
-        "callsign": "MILE-AIR",
-        "country": "United States",
-        "iata": "Q5",
-        "icao": "MLA",
-        "id": 10,
-        "name": "40-Mile Air",
-        "type": "airline"
-      }
-    }
-  ],
-  "status": "success",
-  "metrics": {
-    "elapsedTime": "12.77927ms",
-    "executionTime": "12.570648ms",
-    "resultCount": 1,
-    "resultSize": 254,
-    "serviceLoad": 12
-  },
-  "profile": {
-    "phaseTimes": {
-      "authorize": "19.629µs",
-      "fetch": "401.997µs",
-      "instantiate": "147.686µs",
-      "parse": "4.545234ms",
-      "plan": "409.364µs",
-      "primaryScan": "6.103775ms",
-      "run": "6.699056ms"
-    },
-    "phaseCounts": {
-      "fetch": 1,
-      "primaryScan": 1
-    },
-    "phaseOperators": {
-      "authorize": 1,
-      "fetch": 1,
-      "primaryScan": 1
-    },
-    "requestTime": "2021-04-30T18:37:56.394Z",
-    "servicingHost": "127.0.0.1:8091"
-  }
-}
-----
-====
-
-.Timings Profile
-====
-If you are using the cbq shell or the Query REST API, the following statistics are returned when `profile` is set to `timings`:
-
-[source,json]
-----
-{
-  "requestID": "268a1240-6864-43a2-af13-ccb8d1e50abf",
-  "signature": {
-    "*": "*"
-  },
-  "results": [
-    {
-      "airline": {
-        "callsign": "MILE-AIR",
-        "country": "United States",
-        "iata": "Q5",
-        "icao": "MLA",
-        "id": 10,
-        "name": "40-Mile Air",
-        "type": "airline"
-      }
-    }
-  ],
-  "status": "success",
-  "metrics": {
-    "elapsedTime": "2.915245ms",
-    "executionTime": "2.755355ms",
-    "resultCount": 1,
-    "resultSize": 254,
-    "serviceLoad": 12
-  },
-  "profile": {
-    "phaseTimes": {
-      "authorize": "18.096µs",
-      "fetch": "388.122µs",
-      "instantiate": "31.702µs",
-      "parse": "646.157µs",
-      "plan": "120.427µs",
-      "primaryScan": "1.402918ms",
-      "run": "1.936852ms"
-    },
-    "phaseCounts": {
-      "fetch": 1,
-      "primaryScan": 1
-    },
-    "phaseOperators": {
-      "authorize": 1,
-      "fetch": 1,
-      "primaryScan": 1
-    },
-    "requestTime": "2021-04-30T18:40:13.239Z",
-    "servicingHost": "127.0.0.1:8091",
-    "executionTimings": {
-      "#operator": "Authorize",
-      "#stats": {
-        "#phaseSwitches": 4,
-        "execTime": "1.084µs",
-        "servTime": "17.012µs"
-      },
-      "privileges": {
-        "List": [
-          {
-            "Target": "default:travel-sample.inventory.airline",
-            "Priv": 7,
-            "Props": 0
-          }
-        ]
-      },
-      "~child": {
-        "#operator": "Sequence",
-        "#stats": {
-          "#phaseSwitches": 1,
-          "execTime": "2.474µs"
-        },
-        "~children": [
-          {
-            "#operator": "PrimaryScan3",
-            "#stats": {
-              "#itemsOut": 1,
-              "#phaseSwitches": 7,
-              "execTime": "18.584µs",
-              "kernTime": "8.869µs",
-              "servTime": "1.384334ms"
-            },
-            "bucket": "travel-sample",
-            "index": "def_inventory_airline_primary",
-            "index_projection": {
-              "primary_key": true
-            },
-            "keyspace": "airline",
-            "limit": "1",
-            "namespace": "default",
-            "scope": "inventory",
-            "using": "gsi"
-          },
-          {
-            "#operator": "Fetch",
-            "#stats": {
-              "#itemsIn": 1,
-              "#itemsOut": 1,
-              "#phaseSwitches": 10,
-              "execTime": "25.64µs",
-              "kernTime": "1.427752ms",
-              "servTime": "362.482µs"
-            },
-            "bucket": "travel-sample",
-            "keyspace": "airline",
-            "namespace": "default",
-            "scope": "inventory"
-          },
-          {
-            "#operator": "InitialProject",
-            "#stats": {
-              "#itemsIn": 1,
-              "#itemsOut": 1,
-              "#phaseSwitches": 9,
-              "execTime": "6.006µs",
-              "kernTime": "1.825917ms"
-            },
-            "result_terms": [
-              {
-                "expr": "self",
-                "star": true
-              }
-            ]
-          },
-          {
-            "#operator": "Limit",
-            "#stats": {
-              "#itemsIn": 1,
-              "#itemsOut": 1,
-              "#phaseSwitches": 4,
-              "execTime": "2.409µs",
-              "kernTime": "2.094µs"
-            },
-            "expr": "1"
-          },
-          {
-            "#operator": "Stream",
-            "#stats": {
-              "#itemsIn": 1,
-              "#itemsOut": 1,
-              "#phaseSwitches": 6,
-              "execTime": "46.964µs",
-              "kernTime": "1.844828ms"
-            }
-          }
-        ]
-      },
-      "~versions": [
-        "7.0.0-N1QL",
-        "7.0.0-4960-enterprise"
-      ]
-    }
-  }
-}
-----
-====
-
-The `profile` object contains the following attributes:
-
-include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[tags=profile]
-
-The `kernTime`, `servTime`, and `execTime` statistics can be very helpful in troubleshooting query performance issues
-For example:
-
-* A high `servTime` for a low number of items processed is an indication that the indexer or KV store is stressed.
-* A high `kernTime` means there is a downstream issue in the query plan or the query server having many requests to process, so the scheduled waiting time will be more for CPU time.
-
-[[plan]]
-=== Profiling Details in System Catalogs
-
-The following system catalogs support the `meta().plan` virtual attribute, which captures the whole query plan, including query profiling information.
-
-* <<sys-active-req,system:active_requests>>
-* <<sys-prepared,system:prepareds>>
-* <<sys-completed-req,system:completed_requests>>
-
-With the `system:active_requests` and `system:completed_requests` catalogs, not all statements have a `meta().plan` attribute.
-The `meta().plan` attribute is only available for statements that run when the profile is set to `timings`.
-
-With the `system:prepareds` catalog, the `meta().plan` attribute is available for all statements.
-
-You must explicitly specify `meta().plan` in the projection list for the SELECT query.
-For a detailed example, see <<example-2>>.
-
-The `meta().plan` attribute contains similar properties to the `profile` object included with the query results when profiling is active.
-
-[NOTE]
-====
-For active requests, `phaseTimes` and `phaseCounts` are dynamic, depending on the documents processed by various phases up to this moment in time.
-A new query on `system:active_requests` will return different values.
-====
-
 [#vitals]
 == Monitor System Vitals
 
@@ -1714,6 +1289,431 @@ curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
   -H 'Content-Type: application/json' \
   -d '{"completed-limit":1000}'
 ----
+
+[#query-monitoring-settings]
+== Query Profiling
+
+Query profiling enables you to obtain more detailed monitoring information and finer execution timings for any query.
+You can set query profiling to the following levels:
+
+* `off` -- query profiling is disabled.
+* `phases` -- query profiling is enabled, including information about the phases of query execution.
+* `timings` -- query profiling is enabled, including information about the phases of query execution, and detailed timing information.
+
+You can set query profiling in the following ways:
+
+* At the <<enable-settings-for-a-query-engine,node level>>, so that it is enabled for all queries on that node.
+* At the <<enable-settings-per-session-or-per-query,request level>>, for individual queries.
+
+For more information about Query settings and parameters, see xref:n1ql:n1ql-manage/query-settings.adoc[].
+
+[#enable-settings-for-a-query-engine]
+=== Enable Query Profiling for a Query Node
+
+To activate query profiling at the node level, specify the `profile` setting using the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] (`/admin/settings` endpoint).
+
+.See the current node-level query settings
+====
+The following request gets the current node-level query settings.
+
+.Request
+[source,sh]
+----
+include::n1ql:example$settings/node-level-settings.sh[tag=curl]
+----
+
+.Results
+[source,json]
+----
+include::n1ql:example$settings/node-level-settings.jsonc[]
+----
+====
+
+.Save node-level query settings to a file
+====
+The following request saves the current node-level query settings to the file `query_settings.json`.
+
+.Request
+[source,sh]
+----
+include::n1ql:example$settings/save-node-level-settings.sh[tag=curl]
+----
+====
+
+.Set node-level query settings from a file
+====
+Assuming that you have edited the file `query_settings.json` to specify the query settings you want, the following request 
+sets the node-level query settings according to the file.
+
+.Request
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -X POST \
+  -d@./query_settings.json
+----
+====
+
+.Set node-level query settings explicitly
+====
+The following request explicitly sets query profiling at the node level.
+
+.Request
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"profile": "phases"}'
+----
+
+.Results
+[source,json]
+----
+{
+  // ...
+  "profile":"phases",
+  "request-size-cap": 67108864,
+  "scan-cap": 512,
+  "servicers": 4,
+  "timeout": 0,
+  "txtimeout": "0s",
+  "use-cbo": true
+}
+----
+====
+
+[#enable-settings-per-session-or-per-query]
+=== Enable Query Profiling for a Request
+
+To activate profiling at the request level, do one of the following:
+
+* Specify the `profile` setting using the xref:n1ql:n1ql-rest-api/index.adoc[Query REST API] (`/query/service` endpoint).
+* Specify the `profile` setting using the xref:n1ql:n1ql-intro/cbq.adoc[cbq] command line tool.
+
+[tabs]
+====
+REST API::
++
+--
+To set query settings using the REST API, specify the parameters in the request body.
+
+'''
+
+The following statement sets the profiling to phases:
+
+[source,sh]
+----
+curl $BASE_URL/query/service -u $USER:$PASSWORD \
+  -d 'profile=phases&statement=SELECT * FROM `travel-sample`.inventory.airline LIMIT 1'
+----
+
+The following statement sets the profiling to timings:
+
+[source,sh]
+----
+curl $BASE_URL/query/service -u $USER:$PASSWORD \
+  -d 'profile=timings&statement=SELECT * FROM `travel-sample`.inventory.airline LIMIT 1'
+----
+--
+
+{sqlpp}::
++
+--
+To set query settings using the cbq shell, use the `\SET` command.
+
+'''
+
+The following statement sets the profiling to phases:
+
+[source,sqlpp]
+----
+\set -profile "phases";
+SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
+----
+
+The following statement sets the profiling to timings:
+
+[source,sqlpp]
+----
+\set -profile "timings";
+SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
+----
+--
+====
+
+The Query Workbench automatically enables Query profiling, with detailed timing information.
+To disable or enable Query profiling with the Query Workbench, specify the *Collect query timings* option using the xref:tools:query-workbench.adoc#query-preferences[Query Preferences].
+
+[#monitor-profile-details]
+== Query Profiling Details
+
+You can access the profiling information in the following ways:
+
+* In the <<profile,query responses>>.
+* In the <<plan,system catalogs>>.
+
+When a query executes a user-defined function, profiling information is available for the {sqlpp} queries within the user-defined function as well.
+
+[[profile]]
+=== Profiling Details in Query Response
+
+When profiling is enabled:
+
+* If you are using the cbq shell or the Query REST API, query profiling information is returned with the query results.
+* However, if you are using the Query workbench, query profiling information is not returned with the query results.
+
+.Phases Profile
+====
+If you are using the cbq shell or the Query REST API, the following statistics are returned when `profile` is set to `phases`:
+
+[source,json]
+----
+{
+  "requestID": "06d6c1c2-1a8a-4989-a856-7314f9eddee5",
+  "signature": {
+    "*": "*"
+  },
+  "results": [
+    {
+      "airline": {
+        "callsign": "MILE-AIR",
+        "country": "United States",
+        "iata": "Q5",
+        "icao": "MLA",
+        "id": 10,
+        "name": "40-Mile Air",
+        "type": "airline"
+      }
+    }
+  ],
+  "status": "success",
+  "metrics": {
+    "elapsedTime": "12.77927ms",
+    "executionTime": "12.570648ms",
+    "resultCount": 1,
+    "resultSize": 254,
+    "serviceLoad": 12
+  },
+  "profile": {
+    "phaseTimes": {
+      "authorize": "19.629µs",
+      "fetch": "401.997µs",
+      "instantiate": "147.686µs",
+      "parse": "4.545234ms",
+      "plan": "409.364µs",
+      "primaryScan": "6.103775ms",
+      "run": "6.699056ms"
+    },
+    "phaseCounts": {
+      "fetch": 1,
+      "primaryScan": 1
+    },
+    "phaseOperators": {
+      "authorize": 1,
+      "fetch": 1,
+      "primaryScan": 1
+    },
+    "requestTime": "2021-04-30T18:37:56.394Z",
+    "servicingHost": "127.0.0.1:8091"
+  }
+}
+----
+====
+
+.Timings Profile
+====
+If you are using the cbq shell or the Query REST API, the following statistics are returned when `profile` is set to `timings`:
+
+[source,json]
+----
+{
+  "requestID": "268a1240-6864-43a2-af13-ccb8d1e50abf",
+  "signature": {
+    "*": "*"
+  },
+  "results": [
+    {
+      "airline": {
+        "callsign": "MILE-AIR",
+        "country": "United States",
+        "iata": "Q5",
+        "icao": "MLA",
+        "id": 10,
+        "name": "40-Mile Air",
+        "type": "airline"
+      }
+    }
+  ],
+  "status": "success",
+  "metrics": {
+    "elapsedTime": "2.915245ms",
+    "executionTime": "2.755355ms",
+    "resultCount": 1,
+    "resultSize": 254,
+    "serviceLoad": 12
+  },
+  "profile": {
+    "phaseTimes": {
+      "authorize": "18.096µs",
+      "fetch": "388.122µs",
+      "instantiate": "31.702µs",
+      "parse": "646.157µs",
+      "plan": "120.427µs",
+      "primaryScan": "1.402918ms",
+      "run": "1.936852ms"
+    },
+    "phaseCounts": {
+      "fetch": 1,
+      "primaryScan": 1
+    },
+    "phaseOperators": {
+      "authorize": 1,
+      "fetch": 1,
+      "primaryScan": 1
+    },
+    "requestTime": "2021-04-30T18:40:13.239Z",
+    "servicingHost": "127.0.0.1:8091",
+    "executionTimings": {
+      "#operator": "Authorize",
+      "#stats": {
+        "#phaseSwitches": 4,
+        "execTime": "1.084µs",
+        "servTime": "17.012µs"
+      },
+      "privileges": {
+        "List": [
+          {
+            "Target": "default:travel-sample.inventory.airline",
+            "Priv": 7,
+            "Props": 0
+          }
+        ]
+      },
+      "~child": {
+        "#operator": "Sequence",
+        "#stats": {
+          "#phaseSwitches": 1,
+          "execTime": "2.474µs"
+        },
+        "~children": [
+          {
+            "#operator": "PrimaryScan3",
+            "#stats": {
+              "#itemsOut": 1,
+              "#phaseSwitches": 7,
+              "execTime": "18.584µs",
+              "kernTime": "8.869µs",
+              "servTime": "1.384334ms"
+            },
+            "bucket": "travel-sample",
+            "index": "def_inventory_airline_primary",
+            "index_projection": {
+              "primary_key": true
+            },
+            "keyspace": "airline",
+            "limit": "1",
+            "namespace": "default",
+            "scope": "inventory",
+            "using": "gsi"
+          },
+          {
+            "#operator": "Fetch",
+            "#stats": {
+              "#itemsIn": 1,
+              "#itemsOut": 1,
+              "#phaseSwitches": 10,
+              "execTime": "25.64µs",
+              "kernTime": "1.427752ms",
+              "servTime": "362.482µs"
+            },
+            "bucket": "travel-sample",
+            "keyspace": "airline",
+            "namespace": "default",
+            "scope": "inventory"
+          },
+          {
+            "#operator": "InitialProject",
+            "#stats": {
+              "#itemsIn": 1,
+              "#itemsOut": 1,
+              "#phaseSwitches": 9,
+              "execTime": "6.006µs",
+              "kernTime": "1.825917ms"
+            },
+            "result_terms": [
+              {
+                "expr": "self",
+                "star": true
+              }
+            ]
+          },
+          {
+            "#operator": "Limit",
+            "#stats": {
+              "#itemsIn": 1,
+              "#itemsOut": 1,
+              "#phaseSwitches": 4,
+              "execTime": "2.409µs",
+              "kernTime": "2.094µs"
+            },
+            "expr": "1"
+          },
+          {
+            "#operator": "Stream",
+            "#stats": {
+              "#itemsIn": 1,
+              "#itemsOut": 1,
+              "#phaseSwitches": 6,
+              "execTime": "46.964µs",
+              "kernTime": "1.844828ms"
+            }
+          }
+        ]
+      },
+      "~versions": [
+        "7.0.0-N1QL",
+        "7.0.0-4960-enterprise"
+      ]
+    }
+  }
+}
+----
+====
+
+The `profile` object contains the following attributes:
+
+include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[tags=profile]
+
+The `kernTime`, `servTime`, and `execTime` statistics can be very helpful in troubleshooting query performance issues
+For example:
+
+* A high `servTime` for a low number of items processed is an indication that the indexer or KV store is stressed.
+* A high `kernTime` means there is a downstream issue in the query plan or the query server having many requests to process, so the scheduled waiting time will be more for CPU time.
+
+[[plan]]
+=== Profiling Details in System Catalogs
+
+The following system catalogs support the `meta().plan` virtual attribute, which captures the whole query plan, including query profiling information.
+
+* <<sys-active-req,system:active_requests>>
+* <<sys-prepared,system:prepareds>>
+* <<sys-completed-req,system:completed_requests>>
+
+With the `system:active_requests` and `system:completed_requests` catalogs, not all statements have a `meta().plan` attribute.
+The `meta().plan` attribute is only available for statements that run when the profile is set to `timings`.
+
+With the `system:prepareds` catalog, the `meta().plan` attribute is available for all statements.
+
+You must explicitly specify `meta().plan` in the projection list for the SELECT query.
+For a detailed example, see <<example-2>>.
+
+The `meta().plan` attribute contains similar properties to the `profile` object included with the query results when profiling is active.
+
+[NOTE]
+====
+For active requests, `phaseTimes` and `phaseCounts` are dynamic, depending on the documents processed by various phases up to this moment in time.
+A new query on `system:active_requests` will return different values.
+====
 
 [#sys_my-user-info]
 == Monitor Your User Info
