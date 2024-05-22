@@ -1271,27 +1271,151 @@ For example:
 [[plan]]
 === Profiling Details in System Catalogs
 
-The following system catalogs support the `meta().plan` virtual attribute, which captures the whole query plan, including query profiling information.
+The <<sys-active-req,system:active_requests>> and <<sys-completed-req,system:completed_requests>> system catalogs always return profiling information regarding query phases: that is, phase times, phase counts, and phase operators.
 
-* <<sys-active-req,system:active_requests>>
-* <<sys-prepared,system:prepareds>>
-* <<sys-completed-req,system:completed_requests>>
+The <<sys-active-req,system:active_requests>>, <<sys-completed-req,system:completed_requests>>, and <<sys-prepared,system:prepareds>> system catalogs also support the `meta().plan` virtual attribute.
+This captures the whole query plan, and includes profiling information regarding execution timings.
 
-With the `system:active_requests` and `system:completed_requests` catalogs, not all statements have a `meta().plan` attribute.
-The `meta().plan` attribute is only available for statements that run when the profile is set to `timings`.
+To get execution timing information from these system catalogs, you must explicitly specify `meta().plan` in the projection list for the SELECT query.
 
-With the `system:prepareds` catalog, the `meta().plan` attribute is available for all statements.
+Within these system catalogs, not all statements have a `meta().plan` attribute.
 
-You must explicitly specify `meta().plan` in the projection list for the SELECT query.
-For a detailed example, see <<example-2>>.
+* With <<sys-active-req,system:active_requests>> and <<sys-completed-req,system:completed_requests>>, the `meta().plan` attribute is only available for statements that you run when profile is set to `timings`.
 
-The `meta().plan` attribute contains similar properties to the `profile` object included with the query results when profiling is active.
+* With <<sys-prepared,system:prepareds>>, the `meta().plan` attribute is available for all statements.
 
 [NOTE]
 ====
-For active requests, `phaseTimes` and `phaseCounts` are dynamic, depending on the documents processed by various phases up to this moment in time.
-A new query on `system:active_requests` will return different values.
+When request profiling is set to `timings`, profiling information is likely to use 100KB+ per entry in the `system:completed_requests` keyspace.
+
+* Due to the added overhead of running both profiling and logging, we recommend turning on both of them only when needed.
+Running only one of them continuously has no noticeable affect on performance.
+* Profiling does not carry any extra cost beyond memory for completed requests, so it's fine to run it continuously.
 ====
+
+
+[[example-2]]
+.Plan Details
+====
+Getting the plan for a statement that was run when profile was set to `timings` returns results similar to the following.
+
+[source,json]
+----
+[
+  {
+  // ...
+    "plan": {
+      "#operator": "Authorize",
+      "#stats": {
+        "#phaseSwitches": 4,
+        "execTime": "1.725µs",
+        "servTime": "21.312µs"
+      },
+      "privileges": {
+        "List": [
+          {
+            "Priv": 7,
+            "Props": 0,
+            "Target": "default:travel-sample.inventory.route"
+          }
+        ]
+      },
+      "~child": {
+        "#operator": "Sequence",
+        "#stats": {
+          "#phaseSwitches": 2,
+          "execTime": "1.499µs"
+        },
+        "~children": [
+          {
+            "#operator": "PrimaryScan3",
+            "#stats": {
+              "#heartbeatYields": 6,
+              "#itemsOut": 24024,
+              "#phaseSwitches": 96099,
+              "execTime": "84.366121ms",
+              "kernTime": "3.021901421s",
+              "servTime": "69.320752ms"
+            },
+            "bucket": "travel-sample",
+            "index": "def_inventory_route_primary",
+            "index_projection": {
+              "primary_key": true
+            },
+            "keyspace": "route",
+            "namespace": "default",
+            "scope": "inventory",
+            "using": "gsi"
+          },
+          {
+            "#operator": "Fetch",
+            "#stats": {
+              "#heartbeatYields": 7258,
+              "#itemsIn": 24024,
+              "#itemsOut": 24024,
+              "#phaseSwitches": 99104,
+              "execTime": "70.34694ms",
+              "kernTime": "142.630196ms",
+              "servTime": "3.021959695s"
+            },
+            "bucket": "travel-sample",
+            "keyspace": "route",
+            "namespace": "default",
+            "scope": "inventory"
+          },
+          {
+            "#operator": "InitialProject",
+            "#stats": {
+              "#itemsIn": 24024,
+              "#itemsOut": 24024,
+              "#phaseSwitches": 96100,
+              "execTime": "15.331951ms",
+              "kernTime": "3.219612458s"
+            },
+            "result_terms": [
+              {
+                "expr": "self",
+                "star": true
+              }
+            ]
+          },
+          {
+            "#operator": "Order",
+            "#stats": {
+              "#itemsIn": 24024,
+              "#itemsOut": 24024,
+              "#phaseSwitches": 72078,
+              "execTime": "147.889352ms",
+              "kernTime": "3.229055752s"
+            },
+            "sort_terms": [
+              {
+                "expr": "(`route`.`sourceairport`)"
+              }
+            ]
+          },
+          {
+            "#operator": "Stream",
+            "#stats": {
+              "#itemsIn": 24024,
+              "#itemsOut": 24024,
+              "#phaseSwitches": 24025,
+              "execTime": "11.851634134s"
+            }
+          }
+        ]
+      },
+      "~versions": [
+        "7.0.0-N1QL",
+        "7.0.0-4960-enterprise"
+      ]
+    }
+  }
+]
+----
+====
+
+The `plan` attribute contains similar properties to the `executionTimings` object included with the query results when profiling is active.
 
 [#sys_my-user-info]
 == Monitor Your User Info
