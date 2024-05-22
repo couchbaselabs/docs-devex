@@ -315,9 +315,6 @@ A new query on `system:active_requests` may return different values.
 The `system:prepareds` catalog provides data about the known prepared statements and their state in a query node's prepared statement cache.
 For each prepared statement, this catalog provides information such as name, statement, query plan, last use time, number of uses, and so on.
 
-For field names and meanings, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_statements[Statements].
-The `system:prepareds` catalog returns all the properties that the {sqlpp} Admin REST API would return for a specific prepared statement.
-
 A prepared statement is created and stored relative to the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
 You can create multiple prepared statements with the same name, each stored relative to a different query context.
 This enables you to run multiple instances of the same application against different datasets.
@@ -327,13 +324,15 @@ When there are multiple prepared statements with the same name in different quer
 [[sys-prepared-get]]
 === Get Prepared Statements
 
-To get a list of all known prepared statements, you can use the Admin REST API or a {sqlpp} query:
+To get a list of all known prepared statements, you can use the Admin REST API or a {sqlpp} query.
 
 [tabs]
 ====
 REST API::
 +
 --
+To get a list of all known prepared statements with the Admin REST API:
+
 [source,sh]
 ----
 curl -u $USER:$PASSWORD $BASE_URL/admin/prepareds
@@ -343,19 +342,24 @@ curl -u $USER:$PASSWORD $BASE_URL/admin/prepareds
 {sqlpp}::
 +
 --
+To get a list of all known prepared statements with a {sqlpp} query:
+
 [source,sqlpp]
 ----
 SELECT * FROM system:prepareds;
 ----
+--
 ====
 
-To get information about a specific prepared statement [.var]`example1`, you can use the Admin REST API or a {sqlpp} query:
+To get information about a specific prepared statement, you can use the Admin REST API or a {sqlpp} query.
 
 [tabs]
 ====
 REST API::
 +
 --
+To get information about a specific prepared statement [.var]`example1` with the Admin REST API:
+
 [source,sh]
 ----
 curl -u $USER:$PASSWORD $BASE_URL/admin/prepareds/example1
@@ -365,6 +369,8 @@ curl -u $USER:$PASSWORD $BASE_URL/admin/prepareds/example1
 {sqlpp}::
 +
 --
+To get information about a specific prepared statement [.var]`example1` with a {sqlpp} query:
+
 [source,sqlpp]
 ----
 SELECT * FROM system:prepareds WHERE name = "example1";
@@ -372,16 +378,35 @@ SELECT * FROM system:prepareds WHERE name = "example1";
 --
 ====
 
+To get the query plan for prepared statements, include `meta().plan` in a {sqlpp} query.
+See <<query-monitoring-settings>>.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To view prepared statements with {sqlpp}, including the query plan:
+
+[source,sqlpp]
+----
+SELECT *, meta().plan FROM system:prepareds;
+----
+--
+====
+
 [[sys-prepared-delete]]
 === Delete Prepared Statements
 
-To delete a specific prepared statement [.var]`p1`, you can use the Admin REST API or a {sqlpp} query:
+To delete a specific prepared statement, you can use the Admin REST API or a {sqlpp} query.
 
 [tabs]
 ====
 REST API::
 +
 --
+To delete a prepared statement [.var]`p1` with the Admin REST API:
+
 [source,sh]
 ----
 curl -u $USER:$PASSWORD -X DELETE $BASE_URL/admin/prepareds/p1
@@ -391,6 +416,8 @@ curl -u $USER:$PASSWORD -X DELETE $BASE_URL/admin/prepareds/p1
 {sqlpp}::
 +
 --
+To delete a prepared statement [.var]`p1` with a {sqlpp} query:
+
 [source,sqlpp]
 ----
 DELETE FROM system:prepareds WHERE name = "p1";
@@ -398,238 +425,52 @@ DELETE FROM system:prepareds WHERE name = "p1";
 --
 ====
 
-To delete all the known prepared statements, you must use a {sqlpp} query:
+To delete all the known prepared statements, you must use a {sqlpp} query.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To delete all known prepared statements:
 
 [source,sqlpp]
 ----
 DELETE FROM system:prepareds;
 ----
+--
+====
 
 [[sys-prepared-examples]]
-=== Examples
+=== Prepared Statement Details
 
-.Get Prepared
+To try the examples in this section, first create a couple of prepared statements.
+
+.Create a prepared statement with default query context
 ====
-.Prepared statement with default query context -- using cbq
+include::ROOT:partial$query-context.adoc[tag=unset]
+
+.Query
 [source,sqlpp]
 ----
-\UNSET -query_context;
 PREPARE p1 AS SELECT * FROM `travel-sample`.inventory.airline WHERE iata = "U2";
 ----
+====
 
-[source,json]
-----
-{
-  "requestID": "64069886-eb17-4fa6-8cc8-e60ebe93d97c",
-  "signature": "json",
-  "results": [
-    {
-      "encoded_plan": "H4sIAAAAAAAA/wEAAP//AAAAAAAAAAA=",
-      "featureControls": 76,
-      "indexApiVersion": 4,
-      "indexScanKeyspaces": {
-        "default:travel-sample.inventory.airline": false
-      },
-      "name": "[127.0.0.1:8091]p1",
-      "namespace": "default",
-      "operator": {
-        "#operator": "Authorize",
-        "privileges": {
-          "List": [
-            {
-              "Priv": 7,
-              "Props": 0,
-              "Target": "default:travel-sample.inventory.airline"
-            }
-          ]
-        },
-        "~child": {
-          "#operator": "Sequence",
-          "~children": [
-            {
-              "#operator": "Sequence",
-              "~children": [
-                {
-                  "#operator": "PrimaryScan3",
-                  "bucket": "travel-sample",
-                  "index": "def_inventory_airline_primary",
-                  "index_projection": {
-                    "primary_key": true
-                  },
-                  "keyspace": "airline",
-                  "namespace": "default",
-                  "scope": "inventory",
-                  "using": "gsi"
-                },
-                {
-                  "#operator": "Fetch",
-                  "bucket": "travel-sample",
-                  "keyspace": "airline",
-                  "namespace": "default",
-                  "scope": "inventory"
-                },
-                {
-                  "#operator": "Parallel",
-                  "~child": {
-                    "#operator": "Sequence",
-                    "~children": [
-                      {
-                        "#operator": "Filter",
-                        "condition": "((`airline`.`iata`) = \"U2\")"
-                      },
-                      {
-                        "#operator": "InitialProject",
-                        "result_terms": [
-                          {
-                            "expr": "self",
-                            "star": true
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "#operator": "Stream"
-            }
-          ]
-        }
-      },
-      "queryContext": "",
-      "reqType": "SELECT",
-      "signature": {
-        "*": "*"
-      },
-      "text": "PREPARE p1 AS SELECT * FROM `travel-sample`.inventory.airline WHERE iata = \"U2\";",
-      "useCBO": true
-    }
-  ],
-  "status": "success",
-  "metrics": {
-    "elapsedTime": "105.814848ms",
-    "executionTime": "105.648798ms",
-    "resultCount": 1,
-    "resultSize": 3301,
-    "serviceLoad": 12
-  }
-}
-----
+.Create a prepared statement with specified query context
+====
+include::ROOT:partial$query-context.adoc[tag=example]
 
-.Prepared statement with specified query context -- using cbq
+.Query
 [source,sqlpp]
 ----
-\SET -query_context travel-sample.inventory;
 PREPARE p1 AS SELECT * FROM airline WHERE iata = "U2";
 ----
+====
 
-[source,json]
-----
-{
-  "requestID": "1c90603e-5e42-42b4-9362-4fc96bf895ac",
-  "signature": "json",
-  "results": [
-    {
-      "encoded_plan": "H4sIAAAAAAAA/wEAAP//AAAAAAAAAAA=",
-      "featureControls": 76,
-      "indexApiVersion": 4,
-      "indexScanKeyspaces": {
-        "default:travel-sample.inventory.airline": false
-      },
-      "name": "[127.0.0.1:8091]p1",
-      "namespace": "default",
-      "operator": {
-        "#operator": "Authorize",
-        "privileges": {
-          "List": [
-            {
-              "Priv": 7,
-              "Props": 0,
-              "Target": "default:travel-sample.inventory.airline"
-            }
-          ]
-        },
-        "~child": {
-          "#operator": "Sequence",
-          "~children": [
-            {
-              "#operator": "Sequence",
-              "~children": [
-                {
-                  "#operator": "PrimaryScan3",
-                  "bucket": "travel-sample",
-                  "index": "def_inventory_airline_primary",
-                  "index_projection": {
-                    "primary_key": true
-                  },
-                  "keyspace": "airline",
-                  "namespace": "default",
-                  "scope": "inventory",
-                  "using": "gsi"
-                },
-                {
-                  "#operator": "Fetch",
-                  "bucket": "travel-sample",
-                  "keyspace": "airline",
-                  "namespace": "default",
-                  "scope": "inventory"
-                },
-                {
-                  "#operator": "Parallel",
-                  "~child": {
-                    "#operator": "Sequence",
-                    "~children": [
-                      {
-                        "#operator": "Filter",
-                        "condition": "((`airline`.`iata`) = \"U2\")"
-                      },
-                      {
-                        "#operator": "InitialProject",
-                        "result_terms": [
-                          {
-                            "expr": "self",
-                            "star": true
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "#operator": "Stream"
-            }
-          ]
-        }
-      },
-      "queryContext": "travel-sample.inventory",
-      "reqType": "SELECT",
-      "signature": {
-        "*": "*"
-      },
-      "text": "PREPARE p1 AS SELECT * FROM airline WHERE iata = \"U2\";",
-      "useCBO": true
-    }
-  ],
-  "status": "success",
-  "metrics": {
-    "elapsedTime": "17.476424ms",
-    "executionTime": "17.187836ms",
-    "resultCount": 1,
-    "resultSize": 3298,
-    "serviceLoad": 12
-  }
-}
-----
+Getting prepared statements, as described in <<sys-prepared-get>>, returns results similar to the following.
 
-.List prepared statements
-[source,sqlpp]
-----
-SELECT *, meta().plan FROM system:prepareds;
-----
-
+====
 [source,json]
 ----
 {
@@ -640,9 +481,6 @@ SELECT *, meta().plan FROM system:prepareds;
   },
   "results": [
     {
-      "plan": {
-        // ...
-      },
       "prepareds": {
         "encoded_plan": "H4sIAAAAAAAA/6RTUW/TPBT9K9H5XrbJ30QBMcmIhzJ1AjG0qh3wwKbEJLedmWt71061UIXfjpxkndYhENpbYt97z7nn+GxAtnQVVbk3ykICAgtSsWY6djayMwHy6JWAthXdjr3+TBy0s5Avh7N5qewHaoJXJQXIDSpaqNpEGVmtyfwf1MobOtR2TTY6bg6VZqMtQS6UCdQKWLUiSPgR+u9uFOTdIAg4T6yi4zT+v/sfjOt45Vj/IAh41mttaNmTONUhQn7d4FzxkuL9tL/SEpiyXkMepQ/nA+Sz9rIV+FleaVPtMpjTTU22TG19AZPtcP+5aMp6pbhJcr6AwLe6vO54P+CLQfR+n3zLPh/Y576fcleXe3bfqYydYxsMt/k1NZCR66T+9eAdJO4l+L0NoXQ+nWxhIVAHbZeQWAaNVjxc6YRiefWnXZ6EvYs2VayMIYMneXWiTSSGQOlspXvhsLdXDPyKw0KrqIr97E12gU/PL7D/iMh7q6NWZtpLDwGmUJuYR+JV6ADp1qfCQGaRVouKBzsu28s2vbYd4pFJrZDuBFJOtyE8Go0EbmriJqWVbmOfYKab86aTaz45nRyfJxC9tF2skyoHkDhAKzC0TGeT6Xg2yfwoG8+zvic7yE5mZx+z4oFpxePEZF/eTWaTLMmyFeV19zLo+O3ZsNivAAAA//+q+jhuaAQAAA==",
         "featuresControl": 76,
@@ -658,9 +496,6 @@ SELECT *, meta().plan FROM system:prepareds;
       }
     },
     {
-      "plan": {
-        // ...
-      },
       "prepareds": {
         "encoded_plan": "H4sIAAAAAAAA/6STT28TMRDFv8rqcWkrExFAVDLiEKpUIIoaJQUOtNqY3Ulq6tju2Bt1iZbPjry7TWmKQKg3/xnPvPk9zwZkC1dSmXujLCQgsCAVK6YjZyM7EyAPXwloW9LNyOvPxEE7C/myP5sVyn6gOnhVUIDcoKSFqkyUkdWazNOgVt7QQNs12ei4HijNRluCXCgTqBGwakWQ8EN06zYV5G0iCDhPrKLjlP7J3QajKl461j8IAp71WhtadiJOdIiQXzc4U7ykeJftn7IEJqzXkIdp4XyAfNZcNAI/i0ttyl0FM7quyBbpWRfAZNu6/x00Yb1SXCecLyDwrSquWt339KKH3vWTb9Xnvfrcd1lu43LP7jsVsXVsg/42v6IaMnKV6F/13kHiDsGfbQiF8+lkWxYCVdB2CYll0GjE/ZaOKRaXf+vlUbV3q00UK2PI4FFeHWsTiSFQOFvqDhz29ua9vvlgrlVU8/3sTXaOT8/Psf9AyHuro1Zm0qGHAFOoTMwj8Sq0BenGp8BAZpFai4p7Oy6aiyb9th3hkUmtkO4E0pxuh/BwOBS4rojrNK108wDy4HevmK7P6pbibHwyPjpLtfXSttOeYB1A4gCNQJ9pMh1PRtNx5ofZaJZ1b7KD7Hh6+jHreWRf3o2n4ywx2RJ53X4LOnp72nf1KwAA////9+bsZQQAAA==",
         "featuresControl": 76,
@@ -687,11 +522,13 @@ SELECT *, meta().plan FROM system:prepareds;
 }
 ----
 
-Note that the names of the prepared statements are identical, but they are associated with different query contexts.
+In this example, the names of the prepared statements are identical, but they are associated with different query contexts.
 
 <.> The name of the prepared statement for the default query context
 <.> The name of the prepared statement showing the associated query context
 ====
+
+For field names and meanings, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_statements[Statements].
 
 [#sys-completed-req]
 == Monitor and Manage Completed Requests
