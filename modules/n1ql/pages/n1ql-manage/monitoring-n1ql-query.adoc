@@ -171,11 +171,10 @@ For field names and meanings, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_vital
 
 The `system:active_requests` catalog lists all currently executing active requests or queries.
 
-For field names and meanings, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_requests[Requests].
-The profile related attributes are described in the section <<profile,Attribute profile in Query Response.>>
-
 [[sys-active-get]]
 === Get Active Requests
+
+To view active requests, you can use the Admin REST API or a {sqlpp} query.
 
 [tabs]
 ====
@@ -190,6 +189,23 @@ curl -u $USER:$PASSWORD $BASE_URL/admin/active_requests
 ----
 --
 
+{sqlpp}::
++
+--
+To view active requests with {sqlpp}:
+
+[source,sqlpp]
+----
+SELECT * FROM system:active_requests;
+----
+--
+====
+
+To get the query plan for active requests, include `meta().plan` in a {sqlpp} query.
+See <<query-monitoring-settings>>.
+
+[tabs]
+====
 {sqlpp}::
 +
 --
@@ -233,181 +249,64 @@ DELETE FROM system:active_requests WHERE requestId = "uuid";
 ====
 
 [[sys-active-examples]]
-=== Examples
+=== Active Request Details
 
-.Get Active
+Getting active requests, as described in <<sys-active-get>>, returns results similar to the following.
+
 ====
-[source,sqlpp]
-----
-SELECT *, meta().plan FROM system:active_requests;
-----
-
 [source,json]
 ----
 [
   {
     "active_requests": {
-      "clientContextID": "81984707-a9cd-4b78-9110-d130eb580d7f",
-      "elapsedTime": "65.543946ms",
-      "executionTime": "65.507111ms",
+      "clientContextID": "832adfa0-e9e6-464e-b5e6-b7ec7549d511",
+      "cpuTime": "111.877µs",
+      "elapsedTime": "77.631814ms",
+      "executionTime": "77.517185ms",
+      "n1qlFeatCtrl": 76,
       "node": "127.0.0.1:8091",
-      "phaseCounts": {
-        "primaryScan": 1
-      },
       "phaseOperators": {
         "authorize": 1,
         "fetch": 1,
-        "primaryScan": 1
+        "primaryScan": 1,
+        "project": 1,
+        "stream": 1
       },
       "phaseTimes": {
-        "authorize": "2.361862ms",
-        "fetch": "7.222µs",
-        "instantiate": "13.233µs",
-        "parse": "660.048µs",
-        "plan": "52.877µs",
-        "primaryScan": "41.125271ms"
+        "authorize": "4.998µs",
+        "fetch": "69.519µs",
+        "instantiate": "16.28µs",
+        "parse": "597.435µs",
+        "plan": "24.141851ms",
+        "plan.index.metadata": "24.005473ms",
+        "plan.keyspace.metadata": "2.022µs",
+        "primaryScan": "23.496033ms",
+        "project": "824ns",
+        "stream": "2.242µs"
       },
-      "remoteAddr": "127.0.0.1:57065",
-      "requestId": "27e73286-c6cc-4c26-8977-ef8d68e91c8f",
-      "requestTime": "2019-05-06 09:08:42.431161361 -0700 PDT m=+6976.301141271",
+      "queryContext": "default:travel-sample.inventory",
+      "remoteAddr": "127.0.0.1:37506",
+      "requestId": "05cc1895-9986-4819-b4d3-8a4311e8f319",
+      "requestTime": "2024-05-21T13:29:16.864Z",
       "scanConsistency": "unbounded",
       "state": "running",
-      "statement": "SELECT *, meta().plan FROM system:active_requests;",
-      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:66.0) Gecko/20100101 Firefox/66.0 (Couchbase Query Workbench (6.5.0-2859-enterprise))",
-      "users": "Administrator"
-    },
-    "plan": { // <1>
-      "#operator": "Sequence",
-      "#stats": {
-        "#phaseSwitches": 1,
-        "execTime": "1.661µs"
-      },
-      "~children": [
-        {
-          "#operator": "Authorize",
-          "#stats": {
-            "#phaseSwitches": 3,
-            "execTime": "4.844µs",
-            "servTime": "2.357018ms"
-          },
-          // ...
-        }
-      ]
-    },
-    "plan": {
-      "#operator": "Sequence",
-      "#stats": {
-        "#phaseSwitches": 1,
-        "execTime": "1.661µs"
-      },
-      "~children": [
-        {
-          "#operator": "Authorize",
-          "#stats": {
-            "#phaseSwitches": 3,
-            "execTime": "4.844µs",
-            "servTime": "2.357018ms"
-          },
-          "privileges": {
-            "List": [
-              {
-                "Priv": 4,
-                "Target": "#system:active_requests"
-              }
-            ]
-          },
-          "~child": {
-            "#operator": "Sequence",
-            "#stats": {
-              "#phaseSwitches": 1,
-              "execTime": "2.71µs"
-            },
-            "~children": [
-              {
-                "#operator": "PrimaryScan",
-                "#stats": {
-                  "#itemsOut": 1,
-                  "#phaseSwitches": 7,
-                  "execTime": "22.314µs",
-                  "kernTime": "2.13µs",
-                  "servTime": "41.102957ms"
-                },
-                "index": "#primary",
-                "keyspace": "active_requests",
-                "namespace": "#system",
-                "using": "system"
-              },
-              {
-                "#operator": "Fetch",
-                "#stats": {
-                  "#itemsIn": 1,
-                  "#phaseSwitches": 5,
-                  "execTime": "7.222µs",
-                  "kernTime": "41.130913ms",
-                  "servTime": "22.888285ms",
-                  "state": "services"
-                },
-                "keyspace": "active_requests",
-                "namespace": "#system"
-              },
-              {
-                "#operator": "Sequence",
-                "#stats": {
-                  "#phaseSwitches": 1,
-                  "execTime": "1.544µs"
-                },
-                "~children": [
-                  {
-                    "#operator": "InitialProject",
-                    "#stats": {
-                      "#phaseSwitches": 1,
-                      "execTime": "980ns",
-                      "kernTime": "64.066618ms",
-                      "state": "kernel"
-                    },
-                    "result_terms": [
-                      {
-                        "expr": "self",
-                        "star": true
-                      },
-                      {
-                        "expr": "(meta(`active_requests`).`plan`)"
-                      }
-                    ]
-                  },
-                  {
-                    "#operator": "FinalProject",
-                    "#stats": {
-                      "#phaseSwitches": 1,
-                      "execTime": "827ns"
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "#operator": "Stream",
-          "#stats": {
-            "#phaseSwitches": 1,
-            "execTime": "1.29µs",
-            "kernTime": "66.511806ms",
-            "state": "kernel"
-          }
-        }
-      ],
-      "~versions": [
-        "2.0.0-N1QL",
-        "6.5.0-2859-enterprise"
-      ]
+      "statement": "SELECT * FROM system:active_requests;",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0",
+      "users": "builtin:Administrator"
     }
   }
 ]
 ----
+====
 
-<1> The *plan* section contains a tree of operators that combine to execute the {sqlpp} query.
-The root operator is a Sequence, which itself has a collection of child operators like Authorize, PrimaryScan, Fetch, and possibly even more Sequences.
+For field names and meanings, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_requests[Requests].
+
+[NOTE]
+====
+For active requests, `phaseTimes` and `phaseCounts` are dynamic, depending on the documents processed by various phases up to this moment in time.
+A new query on `system:active_requests` may return different values.
 ====
 
 [#sys-prepared]
