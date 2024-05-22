@@ -537,29 +537,12 @@ By default, the `system:completed_requests` catalog maintains a list of the most
 (You can also log completed requests that meet other conditions that you define.)
 
 For each completed request, this catalog maintains information such as requestId, statement text, prepared name (if prepared statement), request time, service time, and so on.
-This information provides a general insight into the health and performance of the query engine and the cluster.
-
-For field names and meanings, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_requests[Requests].
-Most field names and meanings match exactly those of `system:active_requests`.
-
-Note that the `completed` state means that the request was started and completed by the Query service, but it does not mean that it was necessarily successful.
-The request could have been successful, or completed with errors.
-
-To find requests that completed successfully, search for completed requests whose `state` is `completed` and whose `errorCount` field has the value `0`.
-
-[NOTE]
-====
-Request profiling affects the `system:completed_requests` keyspace in the following ways:
-
-* When the feature is turned on, completed requests are stored with their execution plan.
-* Profiling information is likely to use 100KB+ per entry.
-* Due to the added overhead of running both profiling and logging, we recommend turning on both of them only when needed.
-Running only one of them continuously has no noticeable affect on performance.
-* Profiling does not carry any extra cost beyond memory for completed requests, so it's fine to run it continuously.
-====
+This information provides a general insight into the health and performance of the query node and the cluster.
 
 [[sys-completed-get]]
 === Get Completed Requests
+
+To get a list of all logged completed requests, you can use the Admin REST API or a {sqlpp} query.
 
 [tabs]
 ====
@@ -577,14 +560,26 @@ curl -u $USER:$PASSWORD $BASE_URL/admin/completed_requests
 {sqlpp}::
 +
 --
-To get a list of all logged completed requests using {sqlpp}, including the query plan:
+To get a list of all logged completed requests using {sqlpp}:
 
 [source,sqlpp]
 ----
-SELECT *, meta().plan FROM system:completed_requests;
+SELECT * FROM system:completed_requests;
 ----
+--
+====
 
-To get a list of all logged completed requests using {sqlpp}, including only successful requests:
+Note that the `completed` state means that the request was started and completed by the Query service, but it does not mean that it was necessarily successful.
+The request could have been successful, or completed with errors.
+
+To find requests that completed successfully, search for completed requests whose `state` is `completed` and whose `errorCount` field has the value `0`.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To get a list of all logged completed requests, including only successful requests:
 
 [source,sqlpp]
 ----
@@ -594,8 +589,27 @@ WHERE state = "completed" AND errorCount = 0;
 --
 ====
 
+To get the query plan for completed requests, include `meta().plan` in a {sqlpp} query.
+See <<query-monitoring-settings>>.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To view completed requests with {sqlpp}, including the query plan:
+
+[source,sqlpp]
+----
+SELECT *, meta().plan FROM system:completed_requests;
+----
+--
+====
+
 [[sys-completed-delete]]
 === Purge the Completed Requests
+
+To purge a specific completed request, you can use the Admin REST API or a {sqlpp} query.
 
 [tabs]
 ====
@@ -619,8 +633,17 @@ To purge a completed request [.var]`uuid` with {sqlpp}:
 ----
 DELETE FROM system:completed_requests WHERE requestId = "uuid";
 ----
+--
+====
 
-To purge the completed requests for a given time period, use:
+To delete purge completed requests for a given time period, you must use a {sqlpp} query.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To purge the completed requests for a given time period:
 
 [source,sqlpp]
 ----
@@ -630,275 +653,89 @@ DELETE FROM system:completed_requests WHERE requestTime LIKE "2015-09-09%";
 ====
 
 [[sys-completed-examples]]
-=== Examples
+=== Completed Request Details
 
-[[example-2]]
-.Completed Request
+To try the examples in this section, first run a query which takes at least 1000ms (the default value of the `completed-threshold` query setting) to get registered in the `system:completed_requests` keyspace.
+
+.Run a long query
 ====
-First, using the cbq shell, we set `profile = "timings"` and run a long query which takes at least 1000ms (the default value of the `completed-threshold` query setting) to get registered in the `system:completed_requests` keyspace:
+include::ROOT:partial$query-context.adoc[tag=example]
 
-.Query 1
+.Query
 [source,sqlpp]
 ----
-\set -profile "timings";
-SELECT * FROM `travel-sample`.inventory.route ORDER BY sourceairport;
+SELECT * FROM route ORDER BY sourceairport LIMIT 5;
 ----
+====
 
-Now, using the cbq shell, we change the profile setting to "phases" and rerun another long query:
+Getting completed requests, as described in <<sys-completed-get>>, returns results similar to the following.
 
-.Query 2
-[source,sqlpp]
-----
-\set -profile "phases";
-SELECT * FROM `travel-sample`.inventory.route ORDER BY destinationairport;
-----
-
-Run a query `system:completed_requests` keyspace with `meta().plan`.
-
-.Query 3
-[source,sqlpp]
-----
-SELECT meta().plan, * from system:completed_requests;
-----
-
-.Result
+====
 [source,json]
 ----
-{
-  "requestID": "4a36e1dc-cea0-4ba2-a428-258511d50582",
-  "signature": {
-    "*": "*",
-    "plan": "json"
-  },
-  "results": [
-    // ...
-    { // <1>
-      "completed_requests": {
-        "elapsedTime": "15.641879295s",
-        "errorCount": 0,
-        "node": "127.0.0.1:8091",
-        "phaseCounts": {
-          "fetch": 24024,
-          "primaryScan": 24024,
-          "sort": 24024
-        },
-        "phaseOperators": {
-          "authorize": 1,
-          "fetch": 1,
-          "primaryScan": 1,
-          "sort": 1
-        },
-        "phaseTimes": {
-          "authorize": "51.305µs",
-          "fetch": "3.27276723s",
-          "instantiate": "60.662µs",
-          "parse": "66.701943ms",
-          "plan": "15.12951ms",
-          "primaryScan": "171.439769ms",
-          "run": "15.548781894s",
-          "sort": "153.767638ms"
-        },
-        "remoteAddr": "172.17.0.1:56962",
-        "requestId": "08445bae-66ef-4ccd-8b2d-ea899b453a1b",
-        "requestTime": "2021-04-30T21:14:57.576Z",
-        "resultCount": 24024,
-        "resultSize": 81821919,
-        "scanConsistency": "unbounded",
-        "serviceTime": "15.630714144s",
-        "state": "completed",
-        "statement": "SELECT * FROM `travel-sample`.inventory.route ORDER BY destinationairport;",
-        "useCBO": true,
-        "userAgent": "Go-http-client/1.1 (CBQ/2.0)",
-        "users": "Administrator"
-      }
-    },
-    // ...
-    { // <2>
-      "completed_requests": {
-        "elapsedTime": "15.321128463s",
-        "errorCount": 0,
-        "node": "127.0.0.1:8091",
-        "phaseCounts": {
-          "fetch": 24024,
-          "primaryScan": 24024,
-          "sort": 24024
-        },
-        "phaseOperators": {
-          "authorize": 1,
-          "fetch": 1,
-          "primaryScan": 1,
-          "sort": 1
-        },
-        "phaseTimes": {
-          "authorize": "23.037µs",
-          "fetch": "3.092306635s",
-          "instantiate": "7.313569ms",
-          "parse": "579.368µs",
-          "plan": "2.449143ms",
-          "primaryScan": "153.686873ms",
-          "run": "15.29433203s",
-          "sort": "147.889352ms"
-        },
-        "remoteAddr": "172.17.0.1:56900",
-        "requestId": "5eefc9e5-bdaa-4824-bcd7-47977eb1f08a",
-        "requestTime": "2021-04-30T21:13:58.707Z",
-        "resultCount": 24024,
-        "resultSize": 81821919,
-        "scanConsistency": "unbounded",
-        "serviceTime": "15.30510306s",
-        "state": "completed",
-        "statement": "SELECT * FROM `travel-sample`.inventory.route ORDER BY sourceairport;",
-        "useCBO": true,
-        "userAgent": "Go-http-client/1.1 (CBQ/2.0)",
-        "users": "Administrator"
+[
+  // ...
+  {
+    "completed_requests": {
+      "clientContextID": "a19a61ab-cd9e-46c9-be71-92623ff85741",
+      "cpuTime": "912.408423ms",
+      "elapsedTime": "3.762926948s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "node": "127.0.0.1:8091",
+      "phaseCounts": {
+        "fetch": 24023,
+        "primaryScan": 24023,
+        "primaryScan.GSI": 24023,
+        "sort": 24028
       },
-      "plan": {
-        "#operator": "Authorize",
-        "#stats": {
-          "#phaseSwitches": 4,
-          "execTime": "1.725µs",
-          "servTime": "21.312µs"
-        },
-        "privileges": {
-          "List": [
-            {
-              "Priv": 7,
-              "Props": 0,
-              "Target": "default:travel-sample.inventory.route"
-            }
-          ]
-        },
-        "~child": {
-          "#operator": "Sequence",
-          "#stats": {
-            "#phaseSwitches": 2,
-            "execTime": "1.499µs"
-          },
-          "~children": [
-            {
-              "#operator": "PrimaryScan3",
-              "#stats": {
-                "#heartbeatYields": 6,
-                "#itemsOut": 24024,
-                "#phaseSwitches": 96099,
-                "execTime": "84.366121ms",
-                "kernTime": "3.021901421s",
-                "servTime": "69.320752ms"
-              },
-              "bucket": "travel-sample",
-              "index": "def_inventory_route_primary",
-              "index_projection": {
-                "primary_key": true
-              },
-              "keyspace": "route",
-              "namespace": "default",
-              "scope": "inventory",
-              "using": "gsi"
-            },
-            {
-              "#operator": "Fetch",
-              "#stats": {
-                "#heartbeatYields": 7258,
-                "#itemsIn": 24024,
-                "#itemsOut": 24024,
-                "#phaseSwitches": 99104,
-                "execTime": "70.34694ms",
-                "kernTime": "142.630196ms",
-                "servTime": "3.021959695s"
-              },
-              "bucket": "travel-sample",
-              "keyspace": "route",
-              "namespace": "default",
-              "scope": "inventory"
-            },
-            {
-              "#operator": "InitialProject",
-              "#stats": {
-                "#itemsIn": 24024,
-                "#itemsOut": 24024,
-                "#phaseSwitches": 96100,
-                "execTime": "15.331951ms",
-                "kernTime": "3.219612458s"
-              },
-              "result_terms": [
-                {
-                  "expr": "self",
-                  "star": true
-                }
-              ]
-            },
-            {
-              "#operator": "Order",
-              "#stats": {
-                "#itemsIn": 24024,
-                "#itemsOut": 24024,
-                "#phaseSwitches": 72078,
-                "execTime": "147.889352ms",
-                "kernTime": "3.229055752s"
-              },
-              "sort_terms": [
-                {
-                  "expr": "(`route`.`sourceairport`)"
-                }
-              ]
-            },
-            {
-              "#operator": "Stream",
-              "#stats": {
-                "#itemsIn": 24024,
-                "#itemsOut": 24024,
-                "#phaseSwitches": 24025,
-                "execTime": "11.851634134s"
-              }
-            }
-          ]
-        },
-        "~versions": [
-          "7.0.0-N1QL",
-          "7.0.0-4960-enterprise"
-        ]
-      }
+      "phaseOperators": {
+        "authorize": 1,
+        "fetch": 1,
+        "primaryScan": 1,
+        "primaryScan.GSI": 1,
+        "project": 1,
+        "sort": 2,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "15.111µs",
+        "fetch": "3.641125449s",
+        "instantiate": "332.963µs",
+        "parse": "1.04015ms",
+        "plan": "602.878µs",
+        "plan.index.metadata": "25.849µs",
+        "plan.keyspace.metadata": "11.586µs",
+        "primaryScan": "101.118572ms",
+        "primaryScan.GSI": "101.118572ms",
+        "project": "33.273783ms",
+        "run": "3.760767643s",
+        "sort": "666.364325ms",
+        "stream": "1.617688ms"
+      },
+      "queryContext": "default:travel-sample.inventory",
+      "remoteAddr": "127.0.0.1:37684",
+      "requestId": "e170bf67-d364-4ed7-9698-784bbb779d18",
+      "requestTime": "2024-05-21T14:31:46.882Z",
+      "resultCount": 5,
+      "resultSize": 17714,
+      "scanConsistency": "unbounded",
+      "serviceTime": "3.762768429s",
+      "state": "completed",
+      "statement": "SELECT * FROM route ORDER BY sourceairport LIMIT 5;",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0",
+      "users": "builtin:Administrator",
+      "~qualifier": "threshold"
     }
-  ],
-  "status": "success",
-  "metrics": {
-    "elapsedTime": "172.831251ms",
-    "executionTime": "172.586836ms",
-    "resultCount": 40,
-    "resultSize": 65181,
-    "serviceLoad": 12
-  },
-  "profile": { // <3>
-    "phaseTimes": {
-      "authorize": "19.912µs",
-      "fetch": "123.022426ms",
-      "instantiate": "29.424µs",
-      "parse": "6.414711ms",
-      "plan": "3.19076ms",
-      "primaryScan": "55.521683ms",
-      "run": "158.514001ms"
-    },
-    "phaseCounts": {
-      "fetch": 40,
-      "primaryScan": 40
-    },
-    "phaseOperators": {
-      "authorize": 1,
-      "fetch": 1,
-      "primaryScan": 1
-    },
-    "requestTime": "2021-04-30T21:15:18.104Z",
-    "servicingHost": "127.0.0.1:8091"
   }
-}
+]
 ----
-
-This example shows:
-
-<1> The profile attribute with all phases-related statistics for Query 2.
-<2> The `meta().plan` with all detailed statistics collected for Query 1.
-<3> The profile attribute with all phases-related statistics for this query itself, which is querying the `system:completed_requests` keyspace.
 ====
+
+For field names and meanings, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_requests[Requests].
 
 [[sys-completed-config]]
 == Configure the Completed Requests
