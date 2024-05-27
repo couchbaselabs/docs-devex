@@ -1,52 +1,114 @@
-= Installing the Couchbase Java SDK
-:description: In this tutorial, you're going to create a skeleton application for interacting with the student database you created previously.
+= Set Up and Connect the Couchbase Java SDK
+:description: Set up the Couchbase Java SDK to connect and interact with your student cluster.
+:page-topic-type: tutorial
 :page-pagination: full
-
-include::partial$tutorial-globals.adoc[]
+:page-toclevels: 2
 
 [abstract]
 {description}
 
 == Prerequisites
 
-Java is a fairly popular programming language these days, so we're going to use it to build our student/course application.
-To keep things as light as possible (this is a tutorial, after all), we're not going to worry about building a web front end or REST service, just a few methods to read/write our documents to the database.
+Before continuing this tutorial, you must first:
 
-You will need a few things installed on your machine before you begin:
+* xref:install-couchbase-server.adoc[Run Couchbase Server]
+* xref:buckets-scopes-and-collections.adoc[Implement the data model]
+* Install the Java Software Development Kit (version 8, 11, 17, or 21)
+* Install Apache Maven (version 3+)
 
-* The Java Software Development Kit (version {minimum-jdk-version})
-* Apache Maven (version {minimum-maven-version})
+For more information about the Java SDK installation, see the xref:java-sdk:project-docs/sdk-full-installation.adoc[full installation page].
 
-TIP: https://sdkman.io/[SDKMan^] is the easiest way to install and manage JDKs and Maven on your host machine.
+[TIP]
+====
+The easiest way to install and manage Java SDKs and Maven on your machine is through https://sdkman.io/install[SDKMan^].
 
-== Set up
+After following the instructions to install SDKMan, open a terminal window and run the commands `sdk install java` and `sdk install maven` to install the latest versions of Java and Maven. 
+====
 
-Create the following directory structure on your machine:
 
-include::partial$student-mvn-directory-structure.adoc[tags="basic"]
+== Set Up the Java SDK
 
-Create a new file in the directory called `pom.xml` in the `student` directory.
-The pom file should be populated as follows:
+To set up the Java SDK:
 
-.pom.xml
+. Create the following directory structure on your computer:
++
+....
+📂 ~ (your home directory)
+  📂 student
+    📂 src
+      📂 main
+        📂 java
+....
++
+. In the `student` directory, create a new file called `pom.xml`.
++
+....
+📂 ~ (your home directory)
+  📂 student
+  📃 pom.xml ⬅ here!
+  📂 src
+    📂 main
+      📂 java
+....
++
+. Paste the following code block into your `pom.xml` file:
++
 [source, xml]
 ----
-include::{java-sample-location}pom.xml[]
+include::example$pom.xml[]
 ----
++
+. Open a terminal window and navigate to your `student` directory.
+. Run the command `mvn install` to pull in all the dependencies and finish your SDK setup.
 
-<1> The `dependencies` section lists all the libraries required to build the application.
-In our case, we only need the Couchbase client SDK (version 3.2.1, in this case).
+You can now connect your Java SDK to your cluster.
 
-include::partial$student-mvn-directory-structure.adoc[tags="location-of-pom.xml"]
 
-You can test the setup is correct by opening a terminal window and changing to the `student` directory.
-Run the build script to pull in all the dependencies.
+[#connect-to-the-cluster]
+== Connect the SDK to Your Cluster
 
+To connect to the cluster:
+
+. In your `java` directory, create a new file called `ConnectStudent.java`.
++
+....
+📂 ~ (your home directory)
+  📂 student
+    📃 pom.xml
+    📂 src
+      📂 main
+        📂 java
+          📃 ConnectStudent.java ⬅ here!
+....
++
+. Paste the following code block into your `ConnectStudent.java` file:
++
+[source, java]
+----
+include::example$ConnectStudent.java[]
+----
++
+[IMPORTANT]
+====
+You must re-run `mvn install` in your `student` directory whenever you make a change to a java file to rebuild your application. 
+====
++
+. Open a terminal window and navigate to your `student` directory.
+. Run the command `mvn install` to pull in all the dependencies and rebuild your application.
+. Run the following command to check that the connection works:
++
 [source, sh]
 ----
-mvn install
+mvn exec:java -Dexec.mainClass="ConnectStudent" -Dexec.cleanupDaemonThreads=false
 ----
++
+If the connection is successful, the collection name outputs in the console log.
++
+image::student-record-collection-console-output.png[alt="Console showing successful connection to server"]
 
-== Next steps
+If you come across errors in your console, see the xref:java-tutorial/tutorial-troubleshooting.adoc[troubleshooting page].
 
-You're now ready to write your xref:java-tutorial/creating-the-students-collection.adoc[first Couchbase application].
+
+== Next Steps
+
+After setting up and connecting the Java SDK, you can xref:java-tutorial/create-records.adoc[add student and course records to your cluster].
