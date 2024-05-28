@@ -1,6 +1,6 @@
 = Manage and Monitor Queries
-:description: Monitoring and profiling {sqlpp} queries, query service engines, and corresponding system resources is very important for smoother operational performance and efficiency of the system.
-:page-aliases: monitoring:monitoring-n1ql-query, manage:monitor/monitoring-n1ql-query
+:example-caption!:
+:description: Monitoring and profiling {sqlpp} queries, query service nodes, and corresponding system resources is very important for smoother operational performance and efficiency of the system.
 
 [abstract]
 {description}
@@ -13,18 +13,22 @@ When running on a cluster with multiple query nodes, stats about all queries on 
 
 For example, this can help identify:
 
-* The top 10 slow or fast queries running on a particular query engine or the cluster.
+* The top 10 slow or fast queries running on a particular query node or the cluster.
 * Resource usage statistics of the query service, or resources used for a particular query.
 * Details about the active, completed, and prepared queries.
 * Find long running queries that are running for more than 2 minutes.
 
 These system keyspaces are like virtual keyspaces that are transient in nature, and are not persisted to disk or permanent storage.
 Hence, the information in the keyspaces pertains to the current instantiation of the query service.
+
+////
+TODO: Reinstate this for monitoring and managing when other content is moved to the System Information page
 You can access the keyspaces using any of the following:
 
 * {sqlpp} language (from the cbq shell or Query Workbench)
 * REST API
 * Monitoring SDK
+////
 
 NOTE: All the power of the {sqlpp} query language can be applied on the keyspaces to obtain various insights.
 
@@ -33,48 +37,47 @@ The following diagnostics are provided:
 [cols="1,3"]
 |===
 | System Catalogs
-a|
-* xref:n1ql:n1ql-intro/sysinfo.adoc#querying-datastores[system:datastores]
-* xref:n1ql:n1ql-intro/sysinfo.adoc#querying-namespaces[system:namespaces]
-* xref:n1ql:n1ql-intro/sysinfo.adoc#querying-buckets[system:buckets]
-* xref:n1ql:n1ql-intro/sysinfo.adoc#querying-scopes[system:scopes]
-* xref:n1ql:n1ql-intro/sysinfo.adoc#querying-keyspaces[system:keyspaces]
-* xref:n1ql:n1ql-intro/sysinfo.adoc#querying-indexes[system:indexes]
-* xref:n1ql:n1ql-intro/sysinfo.adoc#querying-dual[system:dual]
+a| [%hardbreaks]
+xref:n1ql:n1ql-intro/sysinfo.adoc#querying-datastores[system:datastores]
+xref:n1ql:n1ql-intro/sysinfo.adoc#querying-namespaces[system:namespaces]
+xref:n1ql:n1ql-intro/sysinfo.adoc#querying-buckets[system:buckets]
+xref:n1ql:n1ql-intro/sysinfo.adoc#querying-scopes[system:scopes]
+xref:n1ql:n1ql-intro/sysinfo.adoc#querying-keyspaces[system:keyspaces]
+xref:n1ql:n1ql-intro/sysinfo.adoc#querying-indexes[system:indexes]
+xref:n1ql:n1ql-intro/sysinfo.adoc#querying-dual[system:dual]
 
 | Monitoring Catalogs
-a|
-* <<sys-prepared,system:prepareds>>
-* <<sys-completed-req,system:completed_requests>>
-* <<sys-active-req,system:active_requests>>
-* <<sys-dictionary,system:dictionary>>
-* <<sys-dictionary-cache,system:dictionary_cache>>
-* <<sys-functions,system:functions>>
-* <<sys-functions-cache,system:functions_cache>>
-* <<sys-tasks-cache,system:tasks_cache>>
-* <<sys-transactions,system:transactions>>
+a| [%hardbreaks]
+<<vitals,system:vitals>>
+<<sys-active-req,system:active_requests>>
+<<sys-prepared,system:prepareds>>
+<<sys-completed-req,system:completed_requests>>
 
 | Security Catalogs
-a|
-* <<sys_my-user-info,system:my_user_info>>
-* <<sys-user-info,system:user_info>>
-* <<sys-nodes,system:nodes>>
-* <<sys-app-roles,system:applicable_roles>>
+a| [%hardbreaks]
+<<sys_my-user-info,system:my_user_info>>
+<<sys-user-info,system:user_info>>
+<<sys-nodes,system:nodes>>
+<<sys-app-roles,system:applicable_roles>>
 
 | Other
-a|
-* <<vitals>>
-
-NOTE: These are only available using REST APIs.
-
+a| [%hardbreaks]
+<<sys-dictionary,system:dictionary>>
+<<sys-dictionary-cache,system:dictionary_cache>>
+<<sys-functions,system:functions>>
+<<sys-functions-cache,system:functions_cache>>
+<<sys-tasks-cache,system:tasks_cache>>
+<<sys-transactions,system:transactions>>
+<<sys-sequences,system:sequences>>
+<<sys-all-sequences,system:all-sequences>>
 |===
 
 == Authentication and Client Privileges
 
 Client applications must be authenticated with sufficient privileges to access system keyspaces.
 
-* Users must have the *Query System Catalog* role to access restricted system keyspaces.
-For more details about user roles, see xref:learn:security/authorization-overview.adoc[Authorization].
+* Users must have permission to access restricted system keyspaces.
+For more details about database credentials, see xref:clusters:manage-database-users.adoc[].
 
 * In addition, users must have permission to access a bucket, scope, or collection to be able to view that item in the system catalog.
 Similarly, users must have SELECT permission on the target of an index to be able to view that index in the system catalog.
@@ -84,72 +87,926 @@ Similarly, users must have SELECT permission on the target of an index to be abl
  ** `system:datastores`
  ** `system:namespaces`
 
-== Query Monitoring Settings
+ifdef::flag-devex-rest-api[]
+== Examples on this Page
 
-The monitoring settings can be set for each query engine (using the REST API) or for each query statement (using the cbq command line tool).
-Both settings are actually set via REST endpoints: using the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] (`/admin/settings` endpoint) and the xref:n1ql:n1ql-rest-api/index.adoc[Query REST API] (`/query/service` endpoint).
+In the REST API examples:
 
-The cbq shell and Query Workbench use the Query REST API to set monitoring at the request level.
-The Query Workbench automatically enables the profiling and timings.
-It can be disabled using the [.ui]*Preferences* option.
-For more information refer to the xref:tools:query-workbench.adoc[Query Workbench] section.
+* `$BASE_URL` is the protocol, host name or IP address, and port -- for example, `+http://localhost:8093+`.
+* `$USER` is the user name.
+* `$PASSWORD` is the password.
+endif::flag-devex-rest-api[]
 
-Use the following query parameters to enable, disable, and control the monitoring capabilities, and the level of monitoring and profiling details for each query or globally at a query engine level:
+[#vitals]
+== Monitor System Vitals
 
-* profile
-* controls
+The `system:vitals` catalog provides data about the running state and health of the query node, such as number of logical cores, active threads, queued threads, CPU utilization, memory usage, network utilization, garbage collection percentage, and so on.
+This information can be very useful to assess the current workload and performance characteristics of a query node.
 
-For more details and examples, see xref:n1ql:n1ql-manage/query-settings.adoc[].
+[#sys-vitals-get]
+=== Get System Vitals
 
-=== Enable Settings for a Query Engine
+To view system vitals, use
+ifdef::flag-devex-rest-api[]
+the Admin REST API or
+endif::flag-devex-rest-api[]
+a {sqlpp} query.
 
-You can enable profile settings for each query engine.
-These examples use local host IP address and default port numbers.
-You need to provide correct credentials, IP address, and port details of your setup.
-
-. Get the current query settings:
+[tabs]
+====
+ifdef::flag-devex-rest-api[]
+REST API::
 +
+--
+To view system vitals with the Admin REST API:
+
 [source,sh]
 ----
-include::n1ql:example$settings/save-node-level-settings.sh[tag=curl]
+curl -u $USER:$PASSWORD $BASE_URL/admin/vitals
 ----
+--
+endif::flag-devex-rest-api[]
+
+{sqlpp}::
 +
-[source,sh]
+--
+To view system vitals with {sqlpp}:
+
+[source,sqlpp]
 ----
-cat  ./query_settings.json
+SELECT * FROM system:vitals;
 ----
-+
+--
+====
+
+[[sys-vital-examples]]
+=== System Vitals Details
+
+Getting system vitals, as described in <<sys-vitals-get>>, returns results similar to the following.
+
+====
 [source,json]
 ----
-include::n1ql:example$settings/node-level-settings.jsonc[]
+{
+  "uptime": "7h39m32.668577197s",
+  "local.time": "2021-04-30 18:42:39.517208807 +0000 UTC m=+27573.945319668",
+  "version": "7.0.0-N1QL",
+  "total.threads": 191,
+  "cores": 2,
+  "gc.num": 669810600,
+  "gc.pause.time": "57.586373ms",
+  "gc.pause.percent": 0,
+  "memory.usage": 247985184,
+  "memory.total": 11132383704,
+  "memory.system": 495554808,
+  "cpu.user.percent": 0,
+  "cpu.sys.percent": 0,
+  "request.completed.count": 140,
+  "request.active.count": 0,
+  "request.per.sec.1min": 0.0018,
+  "request.per.sec.5min": 0.0055,
+  "request.per.sec.15min": 0.0033,
+  "request_time.mean": "536.348163ms",
+  "request_time.median": "54.065567ms",
+  "request_time.80percentile": "981.869933ms",
+  "request_time.95percentile": "2.543128455s",
+  "request_time.99percentile": "4.627922799s",
+  "request.prepared.percent": 0
+}
 ----
+====
 
-. Set current query settings profile:
- .. To set the query settings saved in a file [.path]_./query_settings.json_, enter the following query:
+This catalog contains the following attributes:
+
+include::n1ql:partial$n1ql-rest-api/admin/definitions.adoc[tags=vitals]
+
+[#sys-active-req]
+== Monitor and Manage Active Requests
+
+The `system:active_requests` catalog lists all currently executing active requests or queries.
+
+[[sys-active-get]]
+=== Get Active Requests
+
+To view active requests, use
+ifdef::flag-devex-rest-api[]
+the Admin REST API or
+endif::flag-devex-rest-api[]
+a {sqlpp} query.
+
+[tabs]
+====
+ifdef::flag-devex-rest-api[]
+REST API::
 +
+--
+To view active requests with the Admin REST API:
+
 [source,sh]
 ----
-curl http://localhost:8093/admin/settings -u user:pword \
-  -X POST \
-  -d@./query_settings.json
+curl -u $USER:$PASSWORD $BASE_URL/admin/active_requests
 ----
+--
+endif::flag-devex-rest-api[]
 
- .. To explicitly specify the settings, enter the following query:
+{sqlpp}::
 +
+--
+To view active requests with {sqlpp}:
+
+[source,sqlpp]
+----
+SELECT * FROM system:active_requests;
+----
+--
+====
+
+To get the query plan for active requests, include `meta().plan` in a {sqlpp} query.
+See <<query-monitoring-settings>>.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To view active requests with {sqlpp}, including the query plan:
+
+[source,sqlpp]
+----
+SELECT *, meta().plan FROM system:active_requests;
+----
+--
+====
+
+[[sys-active-delete]]
+=== Terminate an Active Request
+
+The DELETE command can be used to terminate an active request, for instance, a non-responding or a long-running query.
+
+[tabs]
+====
+ifdef::flag-devex-rest-api[]
+REST API::
++
+--
+To terminate an active request [.var]`uuid` with the Admin REST API:
+
 [source,sh]
 ----
-curl http://localhost:8093/admin/settings -u user:pword \
+curl -u $USER:$PASSWORD -X DELETE $BASE_URL/admin/active_requests/uuid
+----
+--
+endif::flag-devex-rest-api[]
+
+{sqlpp}::
++
+--
+To terminate an active request [.var]`uuid` with {sqlpp}:
+
+[source,sqlpp]
+----
+DELETE FROM system:active_requests WHERE requestId = "uuid";
+----
+--
+====
+
+[[sys-active-examples]]
+=== Active Request Details
+
+Getting active requests, as described in <<sys-active-get>>, returns results similar to the following.
+
+====
+[source,json]
+----
+[
+  {
+    "active_requests": {
+      "clientContextID": "832adfa0-e9e6-464e-b5e6-b7ec7549d511",
+      "cpuTime": "111.877µs",
+      "elapsedTime": "77.631814ms",
+      "executionTime": "77.517185ms",
+      "n1qlFeatCtrl": 76,
+      "node": "127.0.0.1:8091",
+      "phaseOperators": {
+        "authorize": 1,
+        "fetch": 1,
+        "primaryScan": 1,
+        "project": 1,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "4.998µs",
+        "fetch": "69.519µs",
+        "instantiate": "16.28µs",
+        "parse": "597.435µs",
+        "plan": "24.141851ms",
+        "plan.index.metadata": "24.005473ms",
+        "plan.keyspace.metadata": "2.022µs",
+        "primaryScan": "23.496033ms",
+        "project": "824ns",
+        "stream": "2.242µs"
+      },
+      "queryContext": "default:travel-sample.inventory",
+      "remoteAddr": "127.0.0.1:37506",
+      "requestId": "05cc1895-9986-4819-b4d3-8a4311e8f319",
+      "requestTime": "2024-05-21T13:29:16.864Z",
+      "scanConsistency": "unbounded",
+      "state": "running",
+      "statement": "SELECT * FROM system:active_requests;",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0",
+      "users": "builtin:Administrator"
+    }
+  }
+]
+----
+====
+
+This catalog contains the following attributes:
+
+include::n1ql:partial$n1ql-rest-api/admin/definitions.adoc[tags=requests]
+
+For query plan field names and meanings, see <<monitor-profile-details>>.
+
+[#sys-prepared]
+== Monitor and Manage Prepared Statements
+
+The `system:prepareds` catalog provides data about the known prepared statements and their state in a query node's prepared statement cache.
+For each prepared statement, this catalog provides information such as name, statement, query plan, last use time, number of uses, and so on.
+
+A prepared statement is created and stored relative to the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
+You can create multiple prepared statements with the same name, each stored relative to a different query context.
+This enables you to run multiple instances of the same application against different datasets.
+
+When there are multiple prepared statements with the same name in different query contexts, the name of the prepared statement in the `system:prepareds` catalog includes the associated query context in brackets.
+
+[[sys-prepared-get]]
+=== Get Prepared Statements
+
+To get a list of all known prepared statements, use
+ifdef::flag-devex-rest-api[]
+the Admin REST API or
+endif::flag-devex-rest-api[]
+a {sqlpp} query.
+
+[tabs]
+====
+ifdef::flag-devex-rest-api[]
+REST API::
++
+--
+To get a list of all known prepared statements with the Admin REST API:
+
+[source,sh]
+----
+curl -u $USER:$PASSWORD $BASE_URL/admin/prepareds
+----
+--
+endif::flag-devex-rest-api[]
+
+{sqlpp}::
++
+--
+To get a list of all known prepared statements with a {sqlpp} query:
+
+[source,sqlpp]
+----
+SELECT * FROM system:prepareds;
+----
+--
+====
+
+To get information about a specific prepared statement, use
+ifdef::flag-devex-rest-api[]
+the Admin REST API or
+endif::flag-devex-rest-api[]
+a {sqlpp} query.
+
+[tabs]
+====
+ifdef::flag-devex-rest-api[]
+REST API::
++
+--
+To get information about a specific prepared statement [.var]`example1` with the Admin REST API:
+
+[source,sh]
+----
+curl -u $USER:$PASSWORD $BASE_URL/admin/prepareds/example1
+----
+--
+endif::flag-devex-rest-api[]
+
+{sqlpp}::
++
+--
+To get information about a specific prepared statement [.var]`example1` with a {sqlpp} query:
+
+[source,sqlpp]
+----
+SELECT * FROM system:prepareds WHERE name = "example1";
+----
+--
+====
+
+To get the query plan for prepared statements, include `meta().plan` in a {sqlpp} query.
+See <<query-monitoring-settings>>.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To view prepared statements with {sqlpp}, including the query plan:
+
+[source,sqlpp]
+----
+SELECT *, meta().plan FROM system:prepareds;
+----
+--
+====
+
+[[sys-prepared-delete]]
+=== Delete Prepared Statements
+
+To delete a specific prepared statement, use
+ifdef::flag-devex-rest-api[]
+the Admin REST API or
+endif::flag-devex-rest-api[]
+a {sqlpp} query.
+
+[tabs]
+====
+ifdef::flag-devex-rest-api[]
+REST API::
++
+--
+To delete a prepared statement [.var]`p1` with the Admin REST API:
+
+[source,sh]
+----
+curl -u $USER:$PASSWORD -X DELETE $BASE_URL/admin/prepareds/p1
+----
+--
+endif::flag-devex-rest-api[]
+
+{sqlpp}::
++
+--
+To delete a prepared statement [.var]`p1` with a {sqlpp} query:
+
+[source,sqlpp]
+----
+DELETE FROM system:prepareds WHERE name = "p1";
+----
+--
+====
+
+To delete all the known prepared statements, use a {sqlpp} query.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To delete all known prepared statements:
+
+[source,sqlpp]
+----
+DELETE FROM system:prepareds;
+----
+--
+====
+
+[[sys-prepared-examples]]
+=== Prepared Statement Details
+
+To try the examples in this section, first create a couple of prepared statements.
+
+.Create a prepared statement with default query context
+====
+include::ROOT:partial$query-context.adoc[tag=unset]
+
+.Query
+[source,sqlpp]
+----
+PREPARE p1 AS SELECT * FROM `travel-sample`.inventory.airline WHERE iata = "U2";
+----
+====
+
+.Create a prepared statement with specified query context
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+.Query
+[source,sqlpp]
+----
+PREPARE p1 AS SELECT * FROM airline WHERE iata = "U2";
+----
+====
+
+Getting prepared statements, as described in <<sys-prepared-get>>, returns results similar to the following.
+
+====
+[source,json]
+----
+{
+  "requestID": "d976e59a-d74e-4350-b0df-fa137099d594",
+  "signature": {
+    "*": "*",
+    "plan": "json"
+  },
+  "results": [
+    {
+      "prepareds": {
+        "encoded_plan": "H4sIAAAAAAAA/6RTUW/TPBT9K9H5XrbJ30QBMcmIhzJ1AjG0qh3wwKbEJLedmWt71061UIXfjpxkndYhENpbYt97z7nn+GxAtnQVVbk3ykICAgtSsWY6djayMwHy6JWAthXdjr3+TBy0s5Avh7N5qewHaoJXJQXIDSpaqNpEGVmtyfwf1MobOtR2TTY6bg6VZqMtQS6UCdQKWLUiSPgR+u9uFOTdIAg4T6yi4zT+v/sfjOt45Vj/IAh41mttaNmTONUhQn7d4FzxkuL9tL/SEpiyXkMepQ/nA+Sz9rIV+FleaVPtMpjTTU22TG19AZPtcP+5aMp6pbhJcr6AwLe6vO54P+CLQfR+n3zLPh/Y576fcleXe3bfqYydYxsMt/k1NZCR66T+9eAdJO4l+L0NoXQ+nWxhIVAHbZeQWAaNVjxc6YRiefWnXZ6EvYs2VayMIYMneXWiTSSGQOlspXvhsLdXDPyKw0KrqIr97E12gU/PL7D/iMh7q6NWZtpLDwGmUJuYR+JV6ADp1qfCQGaRVouKBzsu28s2vbYd4pFJrZDuBFJOtyE8Go0EbmriJqWVbmOfYKab86aTaz45nRyfJxC9tF2skyoHkDhAKzC0TGeT6Xg2yfwoG8+zvic7yE5mZx+z4oFpxePEZF/eTWaTLMmyFeV19zLo+O3ZsNivAAAA//+q+jhuaAQAAA==",
+        "featuresControl": 76,
+        "indexApiVersion": 4,
+        "indexScanKeyspaces": {
+          "default:travel-sample.inventory.airline": false
+        },
+        "name": "p1", // <1>
+        "namespace": "default",
+        "node": "127.0.0.1:8091",
+        "statement": "PREPARE p1 AS SELECT * FROM `travel-sample`.inventory.airline WHERE iata = \"U2\";",
+        "uses": 0
+      }
+    },
+    {
+      "prepareds": {
+        "encoded_plan": "H4sIAAAAAAAA/6STT28TMRDFv8rqcWkrExFAVDLiEKpUIIoaJQUOtNqY3Ulq6tju2Bt1iZbPjry7TWmKQKg3/xnPvPk9zwZkC1dSmXujLCQgsCAVK6YjZyM7EyAPXwloW9LNyOvPxEE7C/myP5sVyn6gOnhVUIDcoKSFqkyUkdWazNOgVt7QQNs12ei4HijNRluCXCgTqBGwakWQ8EN06zYV5G0iCDhPrKLjlP7J3QajKl461j8IAp71WhtadiJOdIiQXzc4U7ykeJftn7IEJqzXkIdp4XyAfNZcNAI/i0ttyl0FM7quyBbpWRfAZNu6/x00Yb1SXCecLyDwrSquWt339KKH3vWTb9Xnvfrcd1lu43LP7jsVsXVsg/42v6IaMnKV6F/13kHiDsGfbQiF8+lkWxYCVdB2CYll0GjE/ZaOKRaXf+vlUbV3q00UK2PI4FFeHWsTiSFQOFvqDhz29ua9vvlgrlVU8/3sTXaOT8/Psf9AyHuro1Zm0qGHAFOoTMwj8Sq0BenGp8BAZpFai4p7Oy6aiyb9th3hkUmtkO4E0pxuh/BwOBS4rojrNK108wDy4HevmK7P6pbibHwyPjpLtfXSttOeYB1A4gCNQJ9pMh1PRtNx5ofZaJZ1b7KD7Hh6+jHreWRf3o2n4ywx2RJ53X4LOnp72nf1KwAA////9+bsZQQAAA==",
+        "featuresControl": 76,
+        "indexApiVersion": 4,
+        "indexScanKeyspaces": {
+          "default:travel-sample.inventory.airline": false
+        },
+        "name": "p1(travel-sample.inventory)", // <2>
+        "namespace": "default",
+        "node": "127.0.0.1:8091",
+        "statement": "PREPARE p1 AS SELECT * FROM airline WHERE iata = \"U2\";",
+        "uses": 0
+      }
+    }
+  ],
+  "status": "success",
+  "metrics": {
+    "elapsedTime": "25.323496ms",
+    "executionTime": "25.173646ms",
+    "resultCount": 2,
+    "resultSize": 7891,
+    "serviceLoad": 12
+  }
+}
+----
+
+In this example, the names of the prepared statements are identical, but they are associated with different query contexts.
+
+<.> The name of the prepared statement for the default query context
+<.> The name of the prepared statement showing the associated query context
+====
+
+This catalog contains the following attributes:
+
+include::n1ql:partial$n1ql-rest-api/admin/definitions.adoc[tags=statements]
+
+For query plan field names and meanings, see <<monitor-profile-details>>.
+
+[#sys-completed-req]
+== Monitor and Manage Completed Requests
+
+By default, the `system:completed_requests` catalog maintains a list of the most recent completed requests that have run longer than a predefined threshold of time.
+(You can also log completed requests that meet other conditions that you define.)
+
+For each completed request, this catalog maintains information such as requestId, statement text, prepared name (if prepared statement), request time, service time, and so on.
+This information provides a general insight into the health and performance of the query node and the cluster.
+
+[[sys-completed-get]]
+=== Get Completed Requests
+
+To get a list of all logged completed requests, use
+ifdef::flag-devex-rest-api[]
+the Admin REST API or
+endif::flag-devex-rest-api[]
+a {sqlpp} query.
+
+[tabs]
+====
+ifdef::flag-devex-rest-api[]
+REST API::
++
+--
+To get a list of all logged completed requests using the Admin REST API:
+
+[source,sh]
+----
+curl -u $USER:$PASSWORD $BASE_URL/admin/completed_requests
+----
+--
+endif::flag-devex-rest-api[]
+
+{sqlpp}::
++
+--
+To get a list of all logged completed requests using {sqlpp}:
+
+[source,sqlpp]
+----
+SELECT * FROM system:completed_requests;
+----
+--
+====
+
+Note that the `completed` state means that the request was started and completed by the Query service, but it does not mean that it was necessarily successful.
+The request could have been successful, or completed with errors.
+
+To find requests that completed successfully, search for completed requests whose `state` is `completed` and whose `errorCount` field has the value `0`.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To get a list of all logged completed requests, including only successful requests:
+
+[source,sqlpp]
+----
+SELECT * FROM system:completed_requests
+WHERE state = "completed" AND errorCount = 0;
+----
+--
+====
+
+To get the query plan for completed requests, include `meta().plan` in a {sqlpp} query.
+See <<query-monitoring-settings>>.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To view completed requests with {sqlpp}, including the query plan:
+
+[source,sqlpp]
+----
+SELECT *, meta().plan FROM system:completed_requests;
+----
+--
+====
+
+[[sys-completed-delete]]
+=== Purge the Completed Requests
+
+To purge a specific completed request, use
+ifdef::flag-devex-rest-api[]
+the Admin REST API or
+endif::flag-devex-rest-api[]
+a {sqlpp} query.
+
+[tabs]
+====
+ifdef::flag-devex-rest-api[]
+REST API::
++
+--
+To purge a completed request [.var]`uuid` with the Admin REST API:
+
+[source,sh]
+----
+curl -u $USER:$PASSWORD -X DELETE $BASE_URL/admin/completed_requests/uuid
+----
+--
+endif::flag-devex-rest-api[]
+
+{sqlpp}::
++
+--
+To purge a completed request [.var]`uuid` with {sqlpp}:
+
+[source,sqlpp]
+----
+DELETE FROM system:completed_requests WHERE requestId = "uuid";
+----
+--
+====
+
+To purge completed requests for a given time period, use a {sqlpp} query.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To purge the completed requests for a given time period:
+
+[source,sqlpp]
+----
+DELETE FROM system:completed_requests WHERE requestTime LIKE "2015-09-09%";
+----
+--
+====
+
+[[sys-completed-examples]]
+=== Completed Request Details
+
+To try the examples in this section, first run a query which takes at least 1000ms (the default value of the `completed-threshold` query setting) to get registered in the `system:completed_requests` keyspace.
+
+.Run a long query
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+.Query
+[source,sqlpp]
+----
+SELECT * FROM route ORDER BY sourceairport LIMIT 5;
+----
+====
+
+Getting completed requests, as described in <<sys-completed-get>>, returns results similar to the following.
+
+====
+[source,json]
+----
+[
+  // ...
+  {
+    "completed_requests": {
+      "clientContextID": "a19a61ab-cd9e-46c9-be71-92623ff85741",
+      "cpuTime": "912.408423ms",
+      "elapsedTime": "3.762926948s",
+      "errorCount": 0,
+      "errors": [],
+      "n1qlFeatCtrl": 76,
+      "node": "127.0.0.1:8091",
+      "phaseCounts": {
+        "fetch": 24023,
+        "primaryScan": 24023,
+        "primaryScan.GSI": 24023,
+        "sort": 24028
+      },
+      "phaseOperators": {
+        "authorize": 1,
+        "fetch": 1,
+        "primaryScan": 1,
+        "primaryScan.GSI": 1,
+        "project": 1,
+        "sort": 2,
+        "stream": 1
+      },
+      "phaseTimes": {
+        "authorize": "15.111µs",
+        "fetch": "3.641125449s",
+        "instantiate": "332.963µs",
+        "parse": "1.04015ms",
+        "plan": "602.878µs",
+        "plan.index.metadata": "25.849µs",
+        "plan.keyspace.metadata": "11.586µs",
+        "primaryScan": "101.118572ms",
+        "primaryScan.GSI": "101.118572ms",
+        "project": "33.273783ms",
+        "run": "3.760767643s",
+        "sort": "666.364325ms",
+        "stream": "1.617688ms"
+      },
+      "queryContext": "default:travel-sample.inventory",
+      "remoteAddr": "127.0.0.1:37684",
+      "requestId": "e170bf67-d364-4ed7-9698-784bbb779d18",
+      "requestTime": "2024-05-21T14:31:46.882Z",
+      "resultCount": 5,
+      "resultSize": 17714,
+      "scanConsistency": "unbounded",
+      "serviceTime": "3.762768429s",
+      "state": "completed",
+      "statement": "SELECT * FROM route ORDER BY sourceairport LIMIT 5;",
+      "statementType": "SELECT",
+      "useCBO": true,
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0",
+      "users": "builtin:Administrator",
+      "~qualifier": "threshold"
+    }
+  }
+]
+----
+====
+
+For field names and meanings, see <<sys-active-examples>>.
+
+For query plan field names and meanings, see <<monitor-profile-details>>.
+
+ifdef::flag-devex-rest-api[]
+[[sys-completed-config]]
+== Configure the Completed Requests
+
+You can configure the `system:completed_requests` keyspace by specifying parameters through the Admin API `/admin/settings` endpoint.
+
+You can specify the conditions for completed request logging using the `completed` field.
+This field takes a JSON object containing the names and values of logging qualifiers.
+Completed requests that meet the defined qualifiers are logged.
+
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
   -H 'Content-Type: application/json' \
-  -d '{"profile": "phases"}'
+  -d '{"completed": {"user": "marco", "error": 12003}}'
 ----
 
-. Verify the settings are changed as specified:
-+
+=== Logging Qualifiers
+
+You can specify the following logging qualifiers.
+A completed request is logged if _any_ of the qualifiers are met (logical OR).
+
+[horizontal]
+`threshold`:: The execution time threshold in milliseconds.
+`aborted`:: Whether to log requests that generate a panic.
+`error`:: Log requests returning this error number.
+`client`:: Log requests from this IP address.
+`user`:: Log requests with this user name.
+`context`:: Log requests with this client context ID.
+
+For full details, see xref:n1ql:n1ql-rest-api/admin.adoc#_logging_parameters[Logging parameters].
+
+The basic syntax adds a qualifier to the logging parameters, i.e. any existing qualifiers are not removed.
+You can change the value of a logging qualifier by specifying the same qualifier again with a new value.
+
+To add a new instance of an existing qualifier, use a plus sign (`+`) before the qualifier name, e.g. `+user`.
+To remove a qualifier, use a minus sign (`-`) before the qualifier name, e.g. `-user`.
+
+For example, the following request will add user `simon` to those tracked, and remove error `12003`.
+
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"completed": {"+user": "simon", "-error": 12003}}'
+----
+
+Similarly, you could remove all logging by execution time with the following request, as long as the value matches the existing threshold.
+
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"completed": {"-threshold": 1000}}'
+----
+
+=== Tagged Sets
+
+You can also specify qualifiers that have to be met as a group for the completed request to be logged (logical AND).
+
+To do this, specify the `tag` field along with a set of qualifiers, like so:
+
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"completed": {"user": "marco", "error": 12003, "tag": "both_user_and_error"}}'
+----
+
+In this case, the request will be logged when both user and error match.
+
+The tag name can be any string that is meaningful and unique.
+Requests that match a tagged set of conditions are logged with a field `~tag`, which is set to the name of the tag.
+
+To add a qualifier to a tagged set, specify the tag name again along with the new qualifier:
+
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"completed": {"client": "172.1.2.3", "tag": "both_user_and_error"}}'
+----
+
+You cannot add a new instance of an existing qualifier to a tagged set using a plus sign (`+`) before the qualifier name.
+For example, you cannot add a `user` qualifier to a tagged set that already contains a `user` qualifier.
+If you need to track two users with the same error, create two tagged sets, one per user.
+
+You can remove a qualifier from a tagged set using a minus sign (`-`) before the qualifier name, e.g. `-user`.
+When you remove the last qualifier from a tagged set, the tagged set is removed.
+
+[NOTE]
+--
+You can specify multiple tagged sets.
+In this case, completed requests are logged if they match all of the qualifiers in any of the tagged sets.
+
+You can also specify a mixture of tagged sets and individual qualifiers.
+In this case, completed requests are logged if they match any of the individual qualifiers, or all of the qualifiers in any of the tagged sets.
+--
+
+=== Completed Threshold
+
+The [.param]`completed-threshold` field provides another way of specifying the `threshold` qualifier within the `completed` field.
+
+This field sets the minimum request duration after which requests are added to the `system:completed_requests` catalog.
+The default value is 1000ms.
+Specify [.in]`0` to log all requests and [.in]`-1` to not log any requests to the keyspace.
+
+To specify a different value, use:
+
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"completed-threshold":0}'
+----
+
+=== Completed Limit
+
+The [.param]`completed-limit` field sets the number of most recent requests to be tracked in the `system:completed_requests` catalog.
+The default value is 4000.
+Specify [.in]`0` to not track any requests and [.in]`-1` to set no limit.
+
+To specify a different value, use:
+
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"completed-limit":1000}'
+----
+endif::flag-devex-rest-api[]
+
+[#query-monitoring-settings]
+== Query Profiling
+
+Query profiling enables you to obtain more detailed monitoring information and finer execution timings for any query.
+You can set query profiling to the following levels:
+
+ifdef::flag-devex-tools[]
+* `off` -- query profiling is disabled.
+endif::flag-devex-tools[]
+* `phases` -- query profiling is enabled, including information about the phases of query execution.
+* `timings` -- query profiling is enabled, including information about the phases of query execution, and detailed timing information.
+
+You can set query profiling:
+
+ifdef::flag-devex-rest-api[]
+* At the <<enable-settings-for-a-query-engine,node level>>, so that it is enabled for all queries on that node.
+endif::flag-devex-rest-api[]
+* At the <<enable-settings-per-session-or-per-query,request level>>, for individual queries.
+
+For more information about Query settings and parameters, see xref:n1ql:n1ql-manage/query-settings.adoc[].
+
+ifdef::flag-devex-rest-api[]
+[#enable-settings-for-a-query-engine]
+=== Enable Query Profiling for a Query Node
+
+To activate query profiling at the node level, specify the `profile` setting using the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] (`/admin/settings` endpoint).
+
+.See the current node-level query settings
+====
+The following request gets the current node-level query settings.
+
+.Request
 [source,sh]
 ----
 include::n1ql:example$settings/node-level-settings.sh[tag=curl]
 ----
-+
+
+.Results
+[source,json]
+----
+include::n1ql:example$settings/node-level-settings.jsonc[]
+----
+====
+
+.Save node-level query settings to a file
+====
+The following request saves the current node-level query settings to the file `query_settings.json`.
+
+.Request
+[source,sh]
+----
+include::n1ql:example$settings/save-node-level-settings.sh[tag=curl]
+----
+====
+
+.Set node-level query settings from a file
+====
+Assuming that you have edited the file `query_settings.json` to specify the query settings you want, the following request 
+sets the node-level query settings according to the file.
+
+.Request
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -X POST \
+  -d@./query_settings.json
+----
+====
+
+.Set node-level query settings explicitly
+====
+The following request explicitly sets query profiling at the node level.
+
+.Request
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"profile": "phases"}'
+----
+
+.Results
 [source,json]
 ----
 {
@@ -163,202 +1020,109 @@ include::n1ql:example$settings/node-level-settings.sh[tag=curl]
   "use-cbo": true
 }
 ----
+====
+endif::flag-devex-rest-api[]
 
-=== Enable Settings per Session or per Query
+[#enable-settings-per-session-or-per-query]
+=== Enable Query Profiling for a Request
 
-You can enable monitoring and profiling settings for each query statement.
-To set query settings using the cbq shell, use the `\SET` command:
+ifdef::flag-devex-tools[]
+To activate profiling at the request level, you can:
 
-[source,sqlpp]
-----
-\set -profile "timings";
-\set;
-----
+ifdef::flag-devex-rest-api[]
+* Specify the `profile` setting using the xref:n1ql:n1ql-rest-api/index.adoc[Query REST API] (`/query/service` endpoint).
+endif::flag-devex-rest-api[]
+* Specify the `profile` setting using the xref:n1ql:n1ql-intro/cbq.adoc[cbq] command line tool.
 
-[source,none]
-----
- Query Parameters :
- Parameter name : profile
- Value : ["timings"]
- ...
-----
+[tabs]
+====
+ifdef::flag-devex-rest-api[]
+REST API::
++
+--
+To set query settings using the REST API, specify the parameters in the request body.
 
-To set query settings using the REST API, specify the parameters in the request body:
+'''
+
+The following statement sets the profiling to phases:
 
 [source,sh]
 ----
-curl http://localhost:8093/query/service -u user:pword \
-  -d 'profile=timings&statement=SELECT * FROM "world" AS hello'
+curl $BASE_URL/query/service -u $USER:$PASSWORD \
+  -d 'profile=phases&statement=SELECT * FROM `travel-sample`.inventory.airline LIMIT 1'
 ----
 
-[#monitor-profile-details]
-== Monitoring and Profiling Details
-
-Couchbase Server provides detailed query monitoring and profiling information.
-The profiling and finer query execution timing details can be obtained for any query.
-
-When a query executes a user-defined function, profiling information is available for the {sqlpp} queries within the user-defined function as well.
-
-[[profile]]
-=== Attribute Profile in Query Response
-
-When profiling is enabled, a query response includes the profile attribute.
-The attribute details are as follows:
-
-.Attribute Details
-[cols="14,8"]
-|===
-| Attribute | Example
-
-a|
-`phaseTimes` -- Cumulative execution times for various phases involved in the query execution, such as authorize, indexscan, fetch, parse, plan, run, etc.
-
-[NOTE]
-====
-This value will be dynamic, depending on the documents processed by various phases up to this moment in time.
-
-A new query on `system:active_requests` will return different values.
-====
-a|
-[source,json]
-----
-"phaseTimes": {
-  "authorize": "823.631µs",
-  "fetch": "656.873µs",
-  "indexScan": "29.146543ms",
-  "instantiate": "236.221µs",
-  "parse": "826.382µs",
-  "plan": "11.831101ms",
-  "run": "16.892181ms"
-}
-----
-
-a|
-`phaseCounts` -- Count of documents processed at selective phases involved in the query execution, such as authorize, indexscan, fetch, parse, plan, run, etc.
-
-[NOTE]
-====
-This value will be dynamic, depending on the documents processed by various phases up to this moment in time.
-
-A new query on `system:active_requests` will return different values.
-====
-a|
-[source,json]
-----
-"phaseCounts": {
-  "fetch": 16,
-  "indexScan": 187
-}
-----
-
-a|
-`phaseOperators` -- Indicates the number of each kind of query operators involved in different phases of the query processing.
-For instance, this example, one non covering index path was taken, which involves 1 indexScan and 1 fetch operator.
-
-A join would have probably involved 2 fetches (1 per keyspace)
-
-A union select would have twice as many operator counts (1 per each branch of the union).
-
-This is in essence the count of all the operators in the `executionTimings` field.
-a|
-[source,json]
-----
-"phaseOperators": {
-  "authorize": 1,
-  "fetch": 1,
-  "indexScan": 2
-}
-----
-
-a|
-`executionTimings` -- The execution details such as kernel and service execution times, number of documents processed at each query operator in each phase, and number of phase switches, for various phases involved in the query execution.
-
-The following statistics are collected for each operator:
-
-`#operator`::
-Name of the operator.
-
-`#stats`::
-These values will be dynamic, depending on the documents processed by various phases up to this moment in time.
-+
-A new query on `system:active_requests` will return different values.
-
-`#itemsIn`;;
-Number of input documents to the operator.
-
-`#itemsOut`;;
-Number of output documents after the operator processing.
-
-`#phaseSwitches`;;
-Number of switches between executing, waiting for services, or waiting for the `goroutine` scheduler.
-
-`execTime`;;
-Time spent executing the operator code inside {sqlpp} query engine.
-
-`kernTime`;;
-Time spent waiting to be scheduled for CPU time.
-
-`servTime`;;
-Time spent waiting for another service, such as index or data.
-+
-* For index scan, it is time spent waiting for GSI/indexer.
-* For fetch, it is time spent waiting on the KV store.
-
-a|
-[source,json]
-----
-"executionTimings": {
-  // …
-  [{
-    "#operator": "Fetch",
-    "#stats": {
-      "#itemsIn": 187,
-      "#itemsOut": 16,
-      "#phaseSwitches": 413,
-      "execTime": "128.434µs",
-      "kernTime": "15.027879ms",
-      "servTime": "1.590934ms",
-      "state": "services"
-    },
-    "keyspace": "travel-sample",
-    "namespace": "default"
-  },
-  {
-    "#operator": "IntersectScan",
-    "#stats": {
-    "#itemsIn": 187,
-    "#itemsOut": 187,
-    "#phaseSwitches": 749,
-    "execTime": "449.944µs",
-    "kernTime": "14.625524ms"
-    }
-  // …
-  ]}
-----
-
-|===
-
-These statistics (`kernTime`, `servTime`, and `execTime`) can be very helpful in troubleshooting query performance issues, such as:
-
-* A high `servTime` for a low number of items processed is an indication that the indexer or KV store is stressed.
-* A high `kernTime` means there is a downstream issue in the query plan or the query server having many requests to process (so the scheduled waiting time will be more for CPU time).
-
-.Phases Profile
-====
-The cbq engine must be started with authorization, for example:
+The following statement sets the profiling to timings:
 
 [source,sh]
 ----
-./cbq -engine=http://localhost:8091/ -u Administrator -p pword
+curl $BASE_URL/query/service -u $USER:$PASSWORD \
+  -d 'profile=timings&statement=SELECT * FROM `travel-sample`.inventory.airline LIMIT 1'
 ----
+--
+endif::flag-devex-rest-api[]
 
-Using the cbq shell, show the statistics collected when the `profile` is set to `phases`:
+{sqlpp}::
++
+--
+To set query settings using the cbq shell, use the `\SET` command.
+
+'''
+
+The following statement sets the profiling to phases:
 
 [source,sqlpp]
 ----
 \set -profile "phases";
 SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
 ----
+
+The following statement sets the profiling to timings:
+
+[source,sqlpp]
+----
+\set -profile "timings";
+SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
+----
+--
+====
+endif::flag-devex-tools[]
+
+The Query tab automatically enables Query profiling, with detailed timing information.
+To disable or enable Query profiling with the Query tab, specify the *Collect query timings* option using the xref:clusters:query-service/query-workbench.adoc#query-settings[Query Settings].
+
+[#monitor-profile-details]
+== Query Profiling Details
+
+You can access the profiling information:
+
+ifdef::flag-devex-tools[]
+* In the <<profile,query responses>>.
+endif::flag-devex-tools[]
+* In the <<plan,system catalogs>>.
+
+When a query executes a user-defined function, profiling information is available for the {sqlpp} queries within the user-defined function as well.
+
+ifdef::flag-devex-tools[]
+[[profile]]
+=== Profiling Details in Query Responses
+
+When profiling is enabled:
+
+* If you are using
+ifdef::flag-devex-rest-api[]
+the Query REST API or
+endif::flag-devex-rest-api[]
+the cbq shell, query profiling information is returned with the query results.
+* If you are using the Query workbench, query profiling information is not returned with the query results.
+
+.Phases Profile
+====
+If you are using
+ifdef::flag-devex-rest-api[]
+the Query REST API or
+endif::flag-devex-rest-api[]
+the cbq shell, the following statistics are returned when `profile` is set to `phases`:
 
 [source,json]
 ----
@@ -416,13 +1180,11 @@ SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
 
 .Timings Profile
 ====
-Using the cbq shell, show the statistics collected when `profile` is set to `timings`:
-
-[source,sqlpp]
-----
-\set -profile "timings";
-SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
-----
+If you are using
+ifdef::flag-devex-rest-api[]
+the Query REST API or
+endif::flag-devex-rest-api[]
+the cbq shell, the following statistics are returned when `profile` is set to `timings`:
 
 [source,json]
 ----
@@ -580,1167 +1342,165 @@ SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
 ----
 ====
 
+The `profile` object contains the following attributes:
+
+include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[tags=profile]
+endif::flag-devex-tools[]
+
 [[plan]]
-=== Attribute Meta in System Keyspaces
+=== Profiling Details in System Catalogs
 
-The `meta().plan` virtual attribute captures the whole query plan, and monitoring stats of various phases and involved query operators.
-The `meta().plan` must be explicitly called in the SELECT query projection list.
+The <<sys-active-req,system:active_requests>> and <<sys-completed-req,system:completed_requests>> system catalogs always return profiling information regarding query phases: that is, phase times, phase counts, and phase operators.
 
-The `meta().plan` attribute is enabled only for individual requests that are running (`active_requests`) or completed (`completed_requests`) when the profile is set to timings (`profile ="timings"`) for each individual request.
-If at the engine level, the profile is set to off and individual requests have been run with `profile ="timings"`, then the system keyspaces will return the plan only for those requests.
+The <<sys-active-req,system:active_requests>>, <<sys-completed-req,system:completed_requests>>, and <<sys-prepared,system:prepareds>> system catalogs also support the `meta().plan` virtual attribute.
+This captures the whole query plan, and includes profiling information regarding execution timings.
 
-Since there may be a combination of profile settings for all of the requests reported by the system keyspaces, not all requests returned will have a `meta().plan` attachment.
+To get execution timing information from these system catalogs, you must explicitly specify `meta().plan` in the projection list for the SELECT query.
 
-NOTE: For the `system:prepareds` requests, the `meta().plan` is available at all times since the `PREPARE` statement is not dependant on the profile setting.
+Within these system catalogs, not all statements have a `meta().plan` attribute.
 
-This attribute is enabled for the following system keyspaces:
+* With <<sys-active-req,system:active_requests>> and <<sys-completed-req,system:completed_requests>>, the `meta().plan` attribute is only available for statements that you run when profile is set to `timings`.
 
-* <<sys-active-req,system:active_requests>>
-* <<sys-prepared,system:prepareds>>
-* <<sys-completed-req,system:completed_requests>>
+* With <<sys-prepared,system:prepareds>>, the `meta().plan` attribute is available for all statements.
 
-For a detailed example, see <<example-2>>.
-
-== Monitor Query Clusters
-
-Couchbase Server allows you to monitor many aspects of an active cluster: cluster-aware operations, diagnostics, and more system keyspaces features that cover multiple nodes.
-Functionalities include:
-
-* Ability to access active / completed / prepared requests across all Query nodes from {sqlpp}.
-* Ability to list nodes by type and with status from {sqlpp}.
-* Ability to list system keyspaces from `system:keyspaces`.
-* Extra fields in `system:active_requests` and `system:completed_requests`.
-* Counters to keep track of specific requests, such as cancelled requests.
-* Killing request for CREATE INDEX.
-
-=== System Keyspaces
-
-* The `system:keyspaces` keyspace can be augmented to list system keyspaces with a static map.
-The small disadvantage of this is that it has to be maintained as new system keyspaces are added.
-* The `system:active_requests` and `system:completed_requests` keyspaces can report scan consistency.
-* The `system:prepareds` keyspace can list min and max execution and service times, as well as average times.
-
-=== cbq-engine-cbauth
-
-`cbq-engine-cbauth` is an internal user that the query service uses to allow Query Workbench clients to query across multiple query nodes.
-
-Since Query Workbench can connect to the same node only when cbq-engine is running, Query Workbench cannot do any query-clustered operations.
-
-To get around this block, once the Query Workbench clients connect to a query node, this internal user (cbq-engine-cbauth) will be used to do any further inter-node user verification.
-
-[#vitals]
-== System Vitals
-
-The [.cmd]`Vitals` API provides data about the running state and health of the query engine, such as number of logical cores, active threads, queued threads, CPU utilization, memory usage, network utilization, garbage collection percentage, and so on.
-This information can be very useful to assess the current workload and performance characteristics of a query engine, and hence load-balance the requests being sent to various query engines.
-
-For field names and meanings, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_vitals[Vitals].
-
-=== Get System Vitals
-
-[source,sh]
-----
-curl -u Administrator:pword http://localhost:8093/admin/vitals
-----
-
-[source,json]
-----
-{
-  "uptime": "7h39m32.668577197s",
-  "local.time": "2021-04-30 18:42:39.517208807 +0000 UTC m=+27573.945319668",
-  "version": "7.0.0-N1QL",
-  "total.threads": 191,
-  "cores": 2,
-  "gc.num": 669810600,
-  "gc.pause.time": "57.586373ms",
-  "gc.pause.percent": 0,
-  "memory.usage": 247985184,
-  "memory.total": 11132383704,
-  "memory.system": 495554808,
-  "cpu.user.percent": 0,
-  "cpu.sys.percent": 0,
-  "request.completed.count": 140,
-  "request.active.count": 0,
-  "request.per.sec.1min": 0.0018,
-  "request.per.sec.5min": 0.0055,
-  "request.per.sec.15min": 0.0033,
-  "request_time.mean": "536.348163ms",
-  "request_time.median": "54.065567ms",
-  "request_time.80percentile": "981.869933ms",
-  "request_time.95percentile": "2.543128455s",
-  "request_time.99percentile": "4.627922799s",
-  "request.prepared.percent": 0
-}
-----
-
-[#sys-active-req]
-== Monitor and Manage Active Requests
-
-The `system:active_requests` catalog lists all currently executing active requests or queries.
-
-For field names and meanings, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_requests[Requests].
-The profile related attributes are described in the section <<profile,Attribute profile in Query Response.>>
-
-[[sys-active-get]]
-=== Get Active Requests
-
-To view active requests with Admin REST API:
-
-[source,sh]
-----
-curl -u Administrator:pword http://localhost:8093/admin/active_requests
-----
-
-To view active requests with {sqlpp}, including the query plan:
-
-[source,sqlpp]
-----
-SELECT *, meta().plan FROM system:active_requests;
-----
-
-[[sys-active-delete]]
-=== Terminate an Active Request
-
-The DELETE command can be used to terminate an active request, for instance, a non-responding or a long-running query.
-
-To terminate an active request [.var]`uuid` with the Admin REST API:
-
-[source,sh]
-----
-curl -u Administrator:pword -X DELETE http://localhost:8093/admin/active_requests/uuid
-----
-
-To terminate an active request [.var]`uuid` with {sqlpp}:
-
-[source,sqlpp]
-----
-DELETE FROM system:active_requests WHERE requestId = "uuid";
-----
-
-[[sys-active-examples]]
-=== Examples
-
-.Get Active
+[NOTE]
 ====
-[source,sqlpp]
-----
-SELECT *, meta().plan FROM system:active_requests;
-----
+When request profiling is set to `timings`, profiling information is likely to use 100KB+ per entry in the `system:completed_requests` keyspace.
+
+* Due to the added overhead of running both profiling and xref:clusters:monitoring/monitoring.adoc#activity-logs[logging], turn on both of them only when needed.
+Running only one of them continuously has no noticeable affect on performance.
+* Profiling does not carry any extra cost beyond memory for completed requests, so it's fine to run it continuously.
+====
+
+[[example-2]]
+.Plan Details
+====
+Getting the plan for a statement that you ran when the profile was set to `timings` returns results similar to the following.
 
 [source,json]
 ----
 [
   {
-    "active_requests": {
-      "clientContextID": "81984707-a9cd-4b78-9110-d130eb580d7f",
-      "elapsedTime": "65.543946ms",
-      "executionTime": "65.507111ms",
-      "node": "127.0.0.1:8091",
-      "phaseCounts": {
-        "primaryScan": 1
-      },
-      "phaseOperators": {
-        "authorize": 1,
-        "fetch": 1,
-        "primaryScan": 1
-      },
-      "phaseTimes": {
-        "authorize": "2.361862ms",
-        "fetch": "7.222µs",
-        "instantiate": "13.233µs",
-        "parse": "660.048µs",
-        "plan": "52.877µs",
-        "primaryScan": "41.125271ms"
-      },
-      "remoteAddr": "127.0.0.1:57065",
-      "requestId": "27e73286-c6cc-4c26-8977-ef8d68e91c8f",
-      "requestTime": "2019-05-06 09:08:42.431161361 -0700 PDT m=+6976.301141271",
-      "scanConsistency": "unbounded",
-      "state": "running",
-      "statement": "SELECT *, meta().plan FROM system:active_requests;",
-      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:66.0) Gecko/20100101 Firefox/66.0 (Couchbase Query Workbench (6.5.0-2859-enterprise))",
-      "users": "Administrator"
-    },
-    "plan": { // <1>
-      "#operator": "Sequence",
-      "#stats": {
-        "#phaseSwitches": 1,
-        "execTime": "1.661µs"
-      },
-      "~children": [
-        {
-          "#operator": "Authorize",
-          "#stats": {
-            "#phaseSwitches": 3,
-            "execTime": "4.844µs",
-            "servTime": "2.357018ms"
-          },
-          // ...
-        }
-      ]
-    },
+  // ...
     "plan": {
-      "#operator": "Sequence",
+      "#operator": "Authorize",
       "#stats": {
-        "#phaseSwitches": 1,
-        "execTime": "1.661µs"
+        "#phaseSwitches": 4,
+        "execTime": "1.725µs",
+        "servTime": "21.312µs"
       },
-      "~children": [
-        {
-          "#operator": "Authorize",
-          "#stats": {
-            "#phaseSwitches": 3,
-            "execTime": "4.844µs",
-            "servTime": "2.357018ms"
-          },
-          "privileges": {
-            "List": [
-              {
-                "Priv": 4,
-                "Target": "#system:active_requests"
-              }
-            ]
-          },
-          "~child": {
-            "#operator": "Sequence",
-            "#stats": {
-              "#phaseSwitches": 1,
-              "execTime": "2.71µs"
-            },
-            "~children": [
-              {
-                "#operator": "PrimaryScan",
-                "#stats": {
-                  "#itemsOut": 1,
-                  "#phaseSwitches": 7,
-                  "execTime": "22.314µs",
-                  "kernTime": "2.13µs",
-                  "servTime": "41.102957ms"
-                },
-                "index": "#primary",
-                "keyspace": "active_requests",
-                "namespace": "#system",
-                "using": "system"
-              },
-              {
-                "#operator": "Fetch",
-                "#stats": {
-                  "#itemsIn": 1,
-                  "#phaseSwitches": 5,
-                  "execTime": "7.222µs",
-                  "kernTime": "41.130913ms",
-                  "servTime": "22.888285ms",
-                  "state": "services"
-                },
-                "keyspace": "active_requests",
-                "namespace": "#system"
-              },
-              {
-                "#operator": "Sequence",
-                "#stats": {
-                  "#phaseSwitches": 1,
-                  "execTime": "1.544µs"
-                },
-                "~children": [
-                  {
-                    "#operator": "InitialProject",
-                    "#stats": {
-                      "#phaseSwitches": 1,
-                      "execTime": "980ns",
-                      "kernTime": "64.066618ms",
-                      "state": "kernel"
-                    },
-                    "result_terms": [
-                      {
-                        "expr": "self",
-                        "star": true
-                      },
-                      {
-                        "expr": "(meta(`active_requests`).`plan`)"
-                      }
-                    ]
-                  },
-                  {
-                    "#operator": "FinalProject",
-                    "#stats": {
-                      "#phaseSwitches": 1,
-                      "execTime": "827ns"
-                    }
-                  }
-                ]
-              }
-            ]
+      "privileges": {
+        "List": [
+          {
+            "Priv": 7,
+            "Props": 0,
+            "Target": "default:travel-sample.inventory.route"
           }
+        ]
+      },
+      "~child": {
+        "#operator": "Sequence",
+        "#stats": {
+          "#phaseSwitches": 2,
+          "execTime": "1.499µs"
         },
-        {
-          "#operator": "Stream",
-          "#stats": {
-            "#phaseSwitches": 1,
-            "execTime": "1.29µs",
-            "kernTime": "66.511806ms",
-            "state": "kernel"
+        "~children": [
+          {
+            "#operator": "PrimaryScan3",
+            "#stats": {
+              "#heartbeatYields": 6,
+              "#itemsOut": 24024,
+              "#phaseSwitches": 96099,
+              "execTime": "84.366121ms",
+              "kernTime": "3.021901421s",
+              "servTime": "69.320752ms"
+            },
+            "bucket": "travel-sample",
+            "index": "def_inventory_route_primary",
+            "index_projection": {
+              "primary_key": true
+            },
+            "keyspace": "route",
+            "namespace": "default",
+            "scope": "inventory",
+            "using": "gsi"
+          },
+          {
+            "#operator": "Fetch",
+            "#stats": {
+              "#heartbeatYields": 7258,
+              "#itemsIn": 24024,
+              "#itemsOut": 24024,
+              "#phaseSwitches": 99104,
+              "execTime": "70.34694ms",
+              "kernTime": "142.630196ms",
+              "servTime": "3.021959695s"
+            },
+            "bucket": "travel-sample",
+            "keyspace": "route",
+            "namespace": "default",
+            "scope": "inventory"
+          },
+          {
+            "#operator": "InitialProject",
+            "#stats": {
+              "#itemsIn": 24024,
+              "#itemsOut": 24024,
+              "#phaseSwitches": 96100,
+              "execTime": "15.331951ms",
+              "kernTime": "3.219612458s"
+            },
+            "result_terms": [
+              {
+                "expr": "self",
+                "star": true
+              }
+            ]
+          },
+          {
+            "#operator": "Order",
+            "#stats": {
+              "#itemsIn": 24024,
+              "#itemsOut": 24024,
+              "#phaseSwitches": 72078,
+              "execTime": "147.889352ms",
+              "kernTime": "3.229055752s"
+            },
+            "sort_terms": [
+              {
+                "expr": "(`route`.`sourceairport`)"
+              }
+            ]
+          },
+          {
+            "#operator": "Stream",
+            "#stats": {
+              "#itemsIn": 24024,
+              "#itemsOut": 24024,
+              "#phaseSwitches": 24025,
+              "execTime": "11.851634134s"
+            }
           }
-        }
-      ],
+        ]
+      },
       "~versions": [
-        "2.0.0-N1QL",
-        "6.5.0-2859-enterprise"
+        "7.0.0-N1QL",
+        "7.0.0-4960-enterprise"
       ]
     }
   }
 ]
 ----
-
-<1> The *plan* section contains a tree of operators that combine to execute the {sqlpp} query.
-The root operator is a Sequence, which itself has a collection of child operators like Authorize, PrimaryScan, Fetch, and possibly even more Sequences.
 ====
 
-[#sys-prepared]
-== Monitor and Manage Prepared Statements
-
-The `system:prepareds` catalog provides data about the known prepared statements and their state in a query engine's prepared statement cache.
-For each prepared statement, this catalog provides information such as name, statement, query plan, last use time, number of uses, and so on.
-
-For field names and meanings, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_statements[Statements].
-The `system:prepareds` catalog returns all the properties that the {sqlpp} Admin REST API would return for a specific prepared statement.
-In addition, the `system:prepareds` catalog also returns the following properties.
-
-[options="header", cols=".^3a,.^11a,.^4a"]
-|===
-|Name|Description|Schema
-|**node** +
-__required__
-|The node on which the prepared statement is stored.
-|string
-
-|**namespace** +
-__required__
-|The namespace in which the prepared statement is stored.
-Currently, only the `default` namespace is available.
-|string
-|===
-
-A prepared statement is created and stored relative to the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
-You can create multiple prepared statements with the same name, each stored relative to a different query context.
-This enables you to run multiple instances of the same application against different datasets.
-
-When there are multiple prepared statements with the same name in different query contexts, the name of the prepared statement in the `system:prepareds` catalog includes the associated query context in brackets.
-
-[[sys-prepared-get]]
-=== Get Prepared Statements
-
-To get a list of all known prepared statements, you can use the Admin REST API or a {sqlpp} query:
-
-[source,sh]
-----
-curl -u Administrator:pword http://localhost:8093/admin/prepareds
-----
-
-[source,sqlpp]
-----
-SELECT * FROM system:prepareds;
-----
-
-To get information about a specific prepared statement [.var]`example1`, you can use the Admin REST API or a {sqlpp} query:
-
-[source,sh]
-----
-curl -u Administrator:pword http://localhost:8093/admin/prepareds/example1
-----
-
-[source,sqlpp]
-----
-SELECT * FROM system:prepareds WHERE name = "example1";
-----
-
-[[sys-prepared-delete]]
-=== Delete Prepared Statements
-
-To delete a specific prepared statement [.var]`p1`, you can use the Admin REST API or a {sqlpp} query:
-
-[source,sh]
-----
-curl -u Administrator:pword -X DELETE http://localhost:8093/admin/prepareds/p1
-----
-
-[source,sqlpp]
-----
-DELETE FROM system:prepareds WHERE name = "p1";
-----
-
-To delete all the known prepared statements, you must use a {sqlpp} query:
-
-[source,sqlpp]
-----
-DELETE FROM system:prepareds;
-----
-
-[[sys-prepared-examples]]
-=== Examples
-
-.Get Prepared
-====
-.Prepared statement with default query context -- using cbq
-[source,sqlpp]
-----
-\UNSET -query_context;
-PREPARE p1 AS SELECT * FROM `travel-sample`.inventory.airline WHERE iata = "U2";
-----
-
-[source,json]
-----
-{
-  "requestID": "64069886-eb17-4fa6-8cc8-e60ebe93d97c",
-  "signature": "json",
-  "results": [
-    {
-      "encoded_plan": "H4sIAAAAAAAA/wEAAP//AAAAAAAAAAA=",
-      "featureControls": 76,
-      "indexApiVersion": 4,
-      "indexScanKeyspaces": {
-        "default:travel-sample.inventory.airline": false
-      },
-      "name": "[127.0.0.1:8091]p1",
-      "namespace": "default",
-      "operator": {
-        "#operator": "Authorize",
-        "privileges": {
-          "List": [
-            {
-              "Priv": 7,
-              "Props": 0,
-              "Target": "default:travel-sample.inventory.airline"
-            }
-          ]
-        },
-        "~child": {
-          "#operator": "Sequence",
-          "~children": [
-            {
-              "#operator": "Sequence",
-              "~children": [
-                {
-                  "#operator": "PrimaryScan3",
-                  "bucket": "travel-sample",
-                  "index": "def_inventory_airline_primary",
-                  "index_projection": {
-                    "primary_key": true
-                  },
-                  "keyspace": "airline",
-                  "namespace": "default",
-                  "scope": "inventory",
-                  "using": "gsi"
-                },
-                {
-                  "#operator": "Fetch",
-                  "bucket": "travel-sample",
-                  "keyspace": "airline",
-                  "namespace": "default",
-                  "scope": "inventory"
-                },
-                {
-                  "#operator": "Parallel",
-                  "~child": {
-                    "#operator": "Sequence",
-                    "~children": [
-                      {
-                        "#operator": "Filter",
-                        "condition": "((`airline`.`iata`) = \"U2\")"
-                      },
-                      {
-                        "#operator": "InitialProject",
-                        "result_terms": [
-                          {
-                            "expr": "self",
-                            "star": true
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "#operator": "Stream"
-            }
-          ]
-        }
-      },
-      "queryContext": "",
-      "reqType": "SELECT",
-      "signature": {
-        "*": "*"
-      },
-      "text": "PREPARE p1 AS SELECT * FROM `travel-sample`.inventory.airline WHERE iata = \"U2\";",
-      "useCBO": true
-    }
-  ],
-  "status": "success",
-  "metrics": {
-    "elapsedTime": "105.814848ms",
-    "executionTime": "105.648798ms",
-    "resultCount": 1,
-    "resultSize": 3301,
-    "serviceLoad": 12
-  }
-}
-----
-
-.Prepared statement with specified query context -- using cbq
-[source,sqlpp]
-----
-\SET -query_context travel-sample.inventory;
-PREPARE p1 AS SELECT * FROM airline WHERE iata = "U2";
-----
-
-[source,json]
-----
-{
-  "requestID": "1c90603e-5e42-42b4-9362-4fc96bf895ac",
-  "signature": "json",
-  "results": [
-    {
-      "encoded_plan": "H4sIAAAAAAAA/wEAAP//AAAAAAAAAAA=",
-      "featureControls": 76,
-      "indexApiVersion": 4,
-      "indexScanKeyspaces": {
-        "default:travel-sample.inventory.airline": false
-      },
-      "name": "[127.0.0.1:8091]p1",
-      "namespace": "default",
-      "operator": {
-        "#operator": "Authorize",
-        "privileges": {
-          "List": [
-            {
-              "Priv": 7,
-              "Props": 0,
-              "Target": "default:travel-sample.inventory.airline"
-            }
-          ]
-        },
-        "~child": {
-          "#operator": "Sequence",
-          "~children": [
-            {
-              "#operator": "Sequence",
-              "~children": [
-                {
-                  "#operator": "PrimaryScan3",
-                  "bucket": "travel-sample",
-                  "index": "def_inventory_airline_primary",
-                  "index_projection": {
-                    "primary_key": true
-                  },
-                  "keyspace": "airline",
-                  "namespace": "default",
-                  "scope": "inventory",
-                  "using": "gsi"
-                },
-                {
-                  "#operator": "Fetch",
-                  "bucket": "travel-sample",
-                  "keyspace": "airline",
-                  "namespace": "default",
-                  "scope": "inventory"
-                },
-                {
-                  "#operator": "Parallel",
-                  "~child": {
-                    "#operator": "Sequence",
-                    "~children": [
-                      {
-                        "#operator": "Filter",
-                        "condition": "((`airline`.`iata`) = \"U2\")"
-                      },
-                      {
-                        "#operator": "InitialProject",
-                        "result_terms": [
-                          {
-                            "expr": "self",
-                            "star": true
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "#operator": "Stream"
-            }
-          ]
-        }
-      },
-      "queryContext": "travel-sample.inventory",
-      "reqType": "SELECT",
-      "signature": {
-        "*": "*"
-      },
-      "text": "PREPARE p1 AS SELECT * FROM airline WHERE iata = \"U2\";",
-      "useCBO": true
-    }
-  ],
-  "status": "success",
-  "metrics": {
-    "elapsedTime": "17.476424ms",
-    "executionTime": "17.187836ms",
-    "resultCount": 1,
-    "resultSize": 3298,
-    "serviceLoad": 12
-  }
-}
-----
-
-.List prepared statements
-[source,sqlpp]
-----
-SELECT *, meta().plan FROM system:prepareds;
-----
-
-[source,json]
-----
-{
-  "requestID": "d976e59a-d74e-4350-b0df-fa137099d594",
-  "signature": {
-    "*": "*",
-    "plan": "json"
-  },
-  "results": [
-    {
-      "plan": {
-        // ...
-      },
-      "prepareds": {
-        "encoded_plan": "H4sIAAAAAAAA/6RTUW/TPBT9K9H5XrbJ30QBMcmIhzJ1AjG0qh3wwKbEJLedmWt71061UIXfjpxkndYhENpbYt97z7nn+GxAtnQVVbk3ykICAgtSsWY6djayMwHy6JWAthXdjr3+TBy0s5Avh7N5qewHaoJXJQXIDSpaqNpEGVmtyfwf1MobOtR2TTY6bg6VZqMtQS6UCdQKWLUiSPgR+u9uFOTdIAg4T6yi4zT+v/sfjOt45Vj/IAh41mttaNmTONUhQn7d4FzxkuL9tL/SEpiyXkMepQ/nA+Sz9rIV+FleaVPtMpjTTU22TG19AZPtcP+5aMp6pbhJcr6AwLe6vO54P+CLQfR+n3zLPh/Y576fcleXe3bfqYydYxsMt/k1NZCR66T+9eAdJO4l+L0NoXQ+nWxhIVAHbZeQWAaNVjxc6YRiefWnXZ6EvYs2VayMIYMneXWiTSSGQOlspXvhsLdXDPyKw0KrqIr97E12gU/PL7D/iMh7q6NWZtpLDwGmUJuYR+JV6ADp1qfCQGaRVouKBzsu28s2vbYd4pFJrZDuBFJOtyE8Go0EbmriJqWVbmOfYKab86aTaz45nRyfJxC9tF2skyoHkDhAKzC0TGeT6Xg2yfwoG8+zvic7yE5mZx+z4oFpxePEZF/eTWaTLMmyFeV19zLo+O3ZsNivAAAA//+q+jhuaAQAAA==",
-        "featuresControl": 76,
-        "indexApiVersion": 4,
-        "indexScanKeyspaces": {
-          "default:travel-sample.inventory.airline": false
-        },
-        "name": "p1", // <1>
-        "namespace": "default",
-        "node": "127.0.0.1:8091",
-        "statement": "PREPARE p1 AS SELECT * FROM `travel-sample`.inventory.airline WHERE iata = \"U2\";",
-        "uses": 0
-      }
-    },
-    {
-      "plan": {
-        // ...
-      },
-      "prepareds": {
-        "encoded_plan": "H4sIAAAAAAAA/6STT28TMRDFv8rqcWkrExFAVDLiEKpUIIoaJQUOtNqY3Ulq6tju2Bt1iZbPjry7TWmKQKg3/xnPvPk9zwZkC1dSmXujLCQgsCAVK6YjZyM7EyAPXwloW9LNyOvPxEE7C/myP5sVyn6gOnhVUIDcoKSFqkyUkdWazNOgVt7QQNs12ei4HijNRluCXCgTqBGwakWQ8EN06zYV5G0iCDhPrKLjlP7J3QajKl461j8IAp71WhtadiJOdIiQXzc4U7ykeJftn7IEJqzXkIdp4XyAfNZcNAI/i0ttyl0FM7quyBbpWRfAZNu6/x00Yb1SXCecLyDwrSquWt339KKH3vWTb9Xnvfrcd1lu43LP7jsVsXVsg/42v6IaMnKV6F/13kHiDsGfbQiF8+lkWxYCVdB2CYll0GjE/ZaOKRaXf+vlUbV3q00UK2PI4FFeHWsTiSFQOFvqDhz29ua9vvlgrlVU8/3sTXaOT8/Psf9AyHuro1Zm0qGHAFOoTMwj8Sq0BenGp8BAZpFai4p7Oy6aiyb9th3hkUmtkO4E0pxuh/BwOBS4rojrNK108wDy4HevmK7P6pbibHwyPjpLtfXSttOeYB1A4gCNQJ9pMh1PRtNx5ofZaJZ1b7KD7Hh6+jHreWRf3o2n4ywx2RJ53X4LOnp72nf1KwAA////9+bsZQQAAA==",
-        "featuresControl": 76,
-        "indexApiVersion": 4,
-        "indexScanKeyspaces": {
-          "default:travel-sample.inventory.airline": false
-        },
-        "name": "p1(travel-sample.inventory)", // <2>
-        "namespace": "default",
-        "node": "127.0.0.1:8091",
-        "statement": "PREPARE p1 AS SELECT * FROM airline WHERE iata = \"U2\";",
-        "uses": 0
-      }
-    }
-  ],
-  "status": "success",
-  "metrics": {
-    "elapsedTime": "25.323496ms",
-    "executionTime": "25.173646ms",
-    "resultCount": 2,
-    "resultSize": 7891,
-    "serviceLoad": 12
-  }
-}
-----
-
-Note that the names of the prepared statements are identical, but they are associated with different query contexts.
-
-<.> The name of the prepared statement for the default query context
-<.> The name of the prepared statement showing the associated query context
-====
-
-[#sys-completed-req]
-== Monitor and Manage Completed Requests
-
-By default, the `system:completed_requests` catalog maintains a list of the most recent completed requests that have run longer than a predefined threshold of time.
-(You can also log completed requests that meet other conditions that you define.)
-
-For each completed request, this catalog maintains information such as requestId, statement text, prepared name (if prepared statement), request time, service time, and so on.
-This information provides a general insight into the health and performance of the query engine and the cluster.
-
-For field names and meanings, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_requests[Requests].
-Most field names and meanings match exactly those of `system:active_requests`.
-
-Note that the `completed` state means that the request was started and completed by the Query service, but it does not mean that it was necessarily successful.
-The request could have been successful, or completed with errors.
-
-To find requests that completed successfully, search for completed requests whose `state` is `completed` and whose `errorCount` field has the value `0`.
-
-[NOTE]
-====
-Request profiling affects the `system:completed_requests` keyspace in the following ways:
-
-* When the feature is turned on, completed requests are stored with their execution plan.
-* Profiling information is likely to use 100KB+ per entry.
-* Due to the added overhead of running both profiling and logging, we recommend turning on both of them only when needed.
-Running only one of them continuously has no noticeable affect on performance.
-* Profiling does not carry any extra cost beyond memory for completed requests, so it's fine to run it continuously.
-====
-
-[[sys-completed-get]]
-=== Get Completed Requests
-
-To get a list of all logged completed requests using the Admin REST API:
-
-[source,sh]
-----
-curl -u Administrator:pword http://localhost:8093/admin/completed_requests
-----
-
-To get a list of all logged completed requests using {sqlpp}, including the query plan:
-
-[source,sqlpp]
-----
-SELECT *, meta().plan FROM system:completed_requests;
-----
-
-To get a list of all logged completed requests using {sqlpp}, including only successful requests:
-
-[source,sqlpp]
-----
-SELECT * FROM system:completed_requests
-WHERE state = "completed" AND errorCount = 0;
-----
-
-[[sys-completed-delete]]
-=== Purge the Completed Requests
-
-To purge a completed request [.var]`uuid` with the Admin REST API:
-
-[source,sh]
-----
-curl -u Administrator:pword -X DELETE http://localhost:8093/admin/completed_requests/uuid
-----
-
-To purge a completed request [.var]`uuid` with {sqlpp}:
-
-[source,sqlpp]
-----
-DELETE FROM system:completed_requests WHERE requestId = "uuid";
-----
-
-To purge the completed requests for a given time period, use:
-
-[source,sqlpp]
-----
-DELETE FROM system:completed_requests WHERE requestTime LIKE "2015-09-09%";
-----
-
-[[sys-completed-config]]
-=== Configure the Completed Requests
-
-You can configure the `system:completed_requests` keyspace by specifying parameters through the Admin API settings endpoint.
-
-In Couchbase Server 6.5 and later, you can specify the conditions for completed request logging using the `completed` field.
-
-This field takes a JSON object containing the names and values of logging qualifiers.
-Completed requests that meet the defined qualifiers are logged.
-
-[source,sh]
-----
-curl http://localhost:8093/admin/settings -u Administrator:password \
-  -H 'Content-Type: application/json' \
-  -d '{"completed": {"user": "marco", "error": 12003}}'
-----
-
-==== Logging Qualifiers
-
-You can specify the following logging qualifiers.
-A completed request is logged if _any_ of the qualifiers are met (logical OR).
-
-[horizontal]
-`threshold`:: The execution time threshold in milliseconds.
-`aborted`:: Whether to log requests that generate a panic.
-`error`:: Log requests returning this error number.
-`client`:: Log requests from this IP address.
-`user`:: Log requests with this user name.
-`context`:: Log requests with this client context ID.
-
-For full details, refer to xref:n1ql:n1ql-rest-api/admin.adoc#_logging_parameters[Logging parameters].
-
-The basic syntax adds a qualifier to the logging parameters, i.e. any existing qualifiers are not removed.
-You can change the value of a logging qualifier by specifying the same qualifier again with a new value.
-
-To add a new instance of an existing qualifier, use a plus sign (`+`) before the qualifier name, e.g. `+user`.
-To remove a qualifier, use a minus sign (`-`) before the qualifier name, e.g. `-user`.
-
-For example, the following request will add user `simon` to those tracked, and remove error `12003`.
-
-[source,sh]
-----
-curl http://localhost:8093/admin/settings -u Administrator:password \
-  -H 'Content-Type: application/json' \
-  -d '{"completed": {"+user": "simon", "-error": 12003}}'
-----
-
-Similarly, you could remove all logging by execution time with the following request, as long as the value matches the existing threshold.
-
-[source,sh]
-----
-curl http://localhost:8093/admin/settings -u Administrator:password \
-  -H 'Content-Type: application/json' \
-  -d '{"completed": {"-threshold": 1000}}'
-----
-
-==== Tagged Sets
-
-You can also specify qualifiers that have to be met as a group for the completed request to be logged (logical AND).
-
-To do this, specify the `tag` field along with a set of qualifiers, like so:
-
-[source,sh]
-----
-curl http://localhost:8093/admin/settings -u Administrator:password \
-  -H 'Content-Type: application/json' \
-  -d '{"completed": {"user": "marco", "error": 12003, "tag": "both_user_and_error"}}'
-----
-
-In this case, the request will be logged when both user and error match.
-
-The tag name can be any string that is meaningful and unique.
-Requests that match a tagged set of conditions are logged with a field `~tag`, which is set to the name of the tag.
-
-To add a qualifier to a tagged set, specify the tag name again along with the new qualifier:
-
-[source,sh]
-----
-curl http://localhost:8093/admin/settings -u Administrator:password \
-  -H 'Content-Type: application/json' \
-  -d '{"completed": {"client": "172.1.2.3", "tag": "both_user_and_error"}}'
-----
-
-You cannot add a new instance of an existing qualifier to a tagged set using a plus sign (`+`) before the qualifier name.
-For example, you cannot add a `user` qualifier to a tagged set that already contains a `user` qualifier.
-If you need to track two users with the same error, create two tagged sets, one per user.
-
-You can remove a qualifier from a tagged set using a minus sign (`-`) before the qualifier name, e.g. `-user`.
-When you remove the last qualifier from a tagged set, the tagged set is removed.
-
-[NOTE]
---
-You can specify multiple tagged sets.
-In this case, completed requests are logged if they match all of the qualifiers in any of the tagged sets.
-
-You can also specify a mixture of tagged sets and individual qualifiers.
-In this case, completed requests are logged if they match any of the individual qualifiers, or all of the qualifiers in any of the tagged sets.
---
-
-==== Completed Threshold
-
-The [.param]`completed-threshold` field provides another way of specifying the `threshold` qualifier within the `completed` field.
-
-This field sets the minimum request duration after which requests are added to the `system:completed_requests` catalog.
-The default value is 1000ms.
-Specify [.in]`0` to log all requests and [.in]`-1` to not log any requests to the keyspace.
-
-To specify a different value, use:
-
-[source,sh]
-----
-curl http://localhost:port/admin/settings -u user:pword \
-  -H 'Content-Type: application/json' \
-  -d '{"completed-threshold":0}'
-----
-
-==== Completed Limit
-
-The [.param]`completed-limit` field sets the number of most recent requests to be tracked in the `system:completed_requests` catalog.
-The default value is 4000.
-Specify [.in]`0` to not track any requests and [.in]`-1` to set no limit.
-
-To specify a different value, use:
-
-[source,sh]
-----
-curl http://localhost:port/admin/settings -u user:pword \
-  -H 'Content-Type: application/json' \
-  -d '{"completed-limit":1000}'
-----
-
-[[sys-completed-examples]]
-=== Examples
-
-[[example-2]]
-.Completed Request
-====
-First, using the cbq shell, we set `profile = "timings"` and run a long query which takes at least 1000ms (the default value of the `completed-threshold` query setting) to get registered in the `system:completed_requests` keyspace:
-
-.Query 1
-[source,sqlpp]
-----
-\set -profile "timings";
-SELECT * FROM `travel-sample`.inventory.route ORDER BY sourceairport;
-----
-
-Now, using the cbq shell, we change the profile setting to "phases" and rerun another long query:
-
-.Query 2
-[source,sqlpp]
-----
-\set -profile "phases";
-SELECT * FROM `travel-sample`.inventory.route ORDER BY destinationairport;
-----
-
-Run a query `system:completed_requests` keyspace with `meta().plan`.
-
-.Query 3
-[source,sqlpp]
-----
-SELECT meta().plan, * from system:completed_requests;
-----
-
-.Result
-[source,json]
-----
-{
-  "requestID": "4a36e1dc-cea0-4ba2-a428-258511d50582",
-  "signature": {
-    "*": "*",
-    "plan": "json"
-  },
-  "results": [
-    // ...
-    { // <1>
-      "completed_requests": {
-        "elapsedTime": "15.641879295s",
-        "errorCount": 0,
-        "node": "127.0.0.1:8091",
-        "phaseCounts": {
-          "fetch": 24024,
-          "primaryScan": 24024,
-          "sort": 24024
-        },
-        "phaseOperators": {
-          "authorize": 1,
-          "fetch": 1,
-          "primaryScan": 1,
-          "sort": 1
-        },
-        "phaseTimes": {
-          "authorize": "51.305µs",
-          "fetch": "3.27276723s",
-          "instantiate": "60.662µs",
-          "parse": "66.701943ms",
-          "plan": "15.12951ms",
-          "primaryScan": "171.439769ms",
-          "run": "15.548781894s",
-          "sort": "153.767638ms"
-        },
-        "remoteAddr": "172.17.0.1:56962",
-        "requestId": "08445bae-66ef-4ccd-8b2d-ea899b453a1b",
-        "requestTime": "2021-04-30T21:14:57.576Z",
-        "resultCount": 24024,
-        "resultSize": 81821919,
-        "scanConsistency": "unbounded",
-        "serviceTime": "15.630714144s",
-        "state": "completed",
-        "statement": "SELECT * FROM `travel-sample`.inventory.route ORDER BY destinationairport;",
-        "useCBO": true,
-        "userAgent": "Go-http-client/1.1 (CBQ/2.0)",
-        "users": "Administrator"
-      }
-    },
-    // ...
-    { // <2>
-      "completed_requests": {
-        "elapsedTime": "15.321128463s",
-        "errorCount": 0,
-        "node": "127.0.0.1:8091",
-        "phaseCounts": {
-          "fetch": 24024,
-          "primaryScan": 24024,
-          "sort": 24024
-        },
-        "phaseOperators": {
-          "authorize": 1,
-          "fetch": 1,
-          "primaryScan": 1,
-          "sort": 1
-        },
-        "phaseTimes": {
-          "authorize": "23.037µs",
-          "fetch": "3.092306635s",
-          "instantiate": "7.313569ms",
-          "parse": "579.368µs",
-          "plan": "2.449143ms",
-          "primaryScan": "153.686873ms",
-          "run": "15.29433203s",
-          "sort": "147.889352ms"
-        },
-        "remoteAddr": "172.17.0.1:56900",
-        "requestId": "5eefc9e5-bdaa-4824-bcd7-47977eb1f08a",
-        "requestTime": "2021-04-30T21:13:58.707Z",
-        "resultCount": 24024,
-        "resultSize": 81821919,
-        "scanConsistency": "unbounded",
-        "serviceTime": "15.30510306s",
-        "state": "completed",
-        "statement": "SELECT * FROM `travel-sample`.inventory.route ORDER BY sourceairport;",
-        "useCBO": true,
-        "userAgent": "Go-http-client/1.1 (CBQ/2.0)",
-        "users": "Administrator"
-      },
-      "plan": {
-        "#operator": "Authorize",
-        "#stats": {
-          "#phaseSwitches": 4,
-          "execTime": "1.725µs",
-          "servTime": "21.312µs"
-        },
-        "privileges": {
-          "List": [
-            {
-              "Priv": 7,
-              "Props": 0,
-              "Target": "default:travel-sample.inventory.route"
-            }
-          ]
-        },
-        "~child": {
-          "#operator": "Sequence",
-          "#stats": {
-            "#phaseSwitches": 2,
-            "execTime": "1.499µs"
-          },
-          "~children": [
-            {
-              "#operator": "PrimaryScan3",
-              "#stats": {
-                "#heartbeatYields": 6,
-                "#itemsOut": 24024,
-                "#phaseSwitches": 96099,
-                "execTime": "84.366121ms",
-                "kernTime": "3.021901421s",
-                "servTime": "69.320752ms"
-              },
-              "bucket": "travel-sample",
-              "index": "def_inventory_route_primary",
-              "index_projection": {
-                "primary_key": true
-              },
-              "keyspace": "route",
-              "namespace": "default",
-              "scope": "inventory",
-              "using": "gsi"
-            },
-            {
-              "#operator": "Fetch",
-              "#stats": {
-                "#heartbeatYields": 7258,
-                "#itemsIn": 24024,
-                "#itemsOut": 24024,
-                "#phaseSwitches": 99104,
-                "execTime": "70.34694ms",
-                "kernTime": "142.630196ms",
-                "servTime": "3.021959695s"
-              },
-              "bucket": "travel-sample",
-              "keyspace": "route",
-              "namespace": "default",
-              "scope": "inventory"
-            },
-            {
-              "#operator": "InitialProject",
-              "#stats": {
-                "#itemsIn": 24024,
-                "#itemsOut": 24024,
-                "#phaseSwitches": 96100,
-                "execTime": "15.331951ms",
-                "kernTime": "3.219612458s"
-              },
-              "result_terms": [
-                {
-                  "expr": "self",
-                  "star": true
-                }
-              ]
-            },
-            {
-              "#operator": "Order",
-              "#stats": {
-                "#itemsIn": 24024,
-                "#itemsOut": 24024,
-                "#phaseSwitches": 72078,
-                "execTime": "147.889352ms",
-                "kernTime": "3.229055752s"
-              },
-              "sort_terms": [
-                {
-                  "expr": "(`route`.`sourceairport`)"
-                }
-              ]
-            },
-            {
-              "#operator": "Stream",
-              "#stats": {
-                "#itemsIn": 24024,
-                "#itemsOut": 24024,
-                "#phaseSwitches": 24025,
-                "execTime": "11.851634134s"
-              }
-            }
-          ]
-        },
-        "~versions": [
-          "7.0.0-N1QL",
-          "7.0.0-4960-enterprise"
-        ]
-      }
-    }
-  ],
-  "status": "success",
-  "metrics": {
-    "elapsedTime": "172.831251ms",
-    "executionTime": "172.586836ms",
-    "resultCount": 40,
-    "resultSize": 65181,
-    "serviceLoad": 12
-  },
-  "profile": { // <3>
-    "phaseTimes": {
-      "authorize": "19.912µs",
-      "fetch": "123.022426ms",
-      "instantiate": "29.424µs",
-      "parse": "6.414711ms",
-      "plan": "3.19076ms",
-      "primaryScan": "55.521683ms",
-      "run": "158.514001ms"
-    },
-    "phaseCounts": {
-      "fetch": 40,
-      "primaryScan": 40
-    },
-    "phaseOperators": {
-      "authorize": 1,
-      "fetch": 1,
-      "primaryScan": 1
-    },
-    "requestTime": "2021-04-30T21:15:18.104Z",
-    "servicingHost": "127.0.0.1:8091"
-  }
-}
-----
-
-This example shows:
-
-<1> The profile attribute with all phases-related statistics for Query 2.
-<2> The `meta().plan` with all detailed statistics collected for Query 1.
-<3> The profile attribute with all phases-related statistics for this query itself, which is querying the `system:completed_requests` keyspace.
-====
+ifdef::flag-devex-tools[]
+For field names and meanings, see <<_execution_timings,Execution Timings>>.
+endif::flag-devex-tools[]
+ifndef::flag-devex-tools[]
+The query plan contains the following attributes:
+
+include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[lines=699..749]
+endif::flag-devex-tools[]
 
 [#sys_my-user-info]
 == Monitor Your User Info
@@ -2106,7 +1866,7 @@ __required__
 |Integer
 |===
 
-For further details, refer to xref:n1ql:n1ql-language-reference/updatestatistics.adoc[UPDATE STATISTICS].
+For further details, see xref:n1ql:n1ql-language-reference/updatestatistics.adoc[].
 
 [#sys-dictionary-cache]
 == Monitor Cached Statistics
@@ -2168,7 +1928,7 @@ This will result in a list similar to:
 This catalog contains an array of dictionary caches, one for each keyspace for which optimizer statistics are available.
 Each dictionary cache gives the same information as the <<sys-dictionary,system:dictionary>> catalog.
 
-For further details, refer to xref:n1ql:n1ql-language-reference/updatestatistics.adoc[UPDATE STATISTICS].
+For further details, see xref:n1ql:n1ql-language-reference/updatestatistics.adoc[].
 
 [#sys-functions]
 == Monitor Functions
@@ -2737,6 +2497,196 @@ __required__
 |===
 
 Refer to xref:n1ql:n1ql-language-reference/transactions.adoc[{sqlpp} Support for Couchbase Transactions] for more information.
+
+[#sys-sequences]
+== Monitor Sequences
+
+The `system:sequences` catalog maintains a list of loaded sequences on any node: that is, sequences that have been accessed since the last restart.
+To see the list of loaded sequences, use:
+
+[source,sqlpp]
+----
+SELECT * FROM system:sequences;
+----
+
+This will result in a list similar to:
+
+[source,json]
+----
+[
+  {
+    "sequences": {
+      "bucket": "travel-sample",
+      "cache": 50,
+      "cycle": false,
+      "increment": 1,
+      "max": 9223372036854776000,
+      "min": -9223372036854776000,
+      "name": "seq1",
+      "namespace": "default",
+      "namespace_id": "default",
+      "path": "`default`:`travel-sample`.`inventory`.`seq1`",
+      "scope_id": "inventory",
+      "value": {
+        "73428daec3c68d8632ae66b09b70f14d": null,
+        "~next_block": 0
+      }
+    }
+  },
+// ...
+]
+----
+
+This catalog contains the following attributes:
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**bucket** +
+__required__
+|The bucket containing the sequence.
+|string
+
+|**cache** +
+__required__
+|The sequence's cache size.
+|integer
+
+|**cycle** +
+__required__
+|Whether the sequence is set to cycle.
+|boolean
+
+|**increment** +
+__required__
+|The sequence step value.
+|integer
+
+|**min** +
+__required__
+|The minimum value permitted for the sequence.
+|integer
+
+|**max** +
+__required__
+|The maximum value permitted for the sequence.
+|integer
+
+|**name** +
+__required__
+|The name of the sequence.
+|string
+
+|**namespace** +
+__required__
+|Namespace to which the sequence belongs.
+|string
+
+|**namespace_id** +
+__required__
+|ID of the namespace to which the sequence belongs.
+|string
+
+|**path** +
+__required__
+|The fully qualified sequence name.
+|string
+
+|**scope_id** +
+__required__
+|ID of the scope to which the sequence belongs.
+|string
+
+|**value** +
+__required__
+|The current value of the sequence on each Query node.
+| <<value,Values>> object
+|===
+
+[[value]]
+**Values**
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**<UUID>** +
+__required__
+|The name of this property is the UUID of a Query node.
+
+The value of this property is the current value of the sequence on that node.
+|Integer
+
+|**~next_block** +
+__optional__
+|The starting vale of the next block of values that can be reserved for the sequence.
+|Integer
+|===
+
+For further details, see xref:n1ql:n1ql-language-reference/createsequence.adoc[].
+
+[#sys-all-sequences]
+== Monitor All Sequences
+
+The `system:all_sequences` catalog maintains a list of all defined sequences.
+To see the list of all defined sequences, use:
+
+[source,sqlpp]
+----
+SELECT * FROM system:all_sequences;
+----
+
+This will result in a list similar to:
+
+[source,json]
+----
+[
+  {
+    "sequences": {
+      "bucket": "travel-sample",
+      "cache": 50,
+      "cycle": false,
+      "increment": -1,
+      "max": 9223372036854776000,
+      "min": 0,
+      "name": "seq4",
+      "namespace": "default",
+      "namespace_id": "default",
+      "path": "`default`:`travel-sample`.`inventory`.`seq4`",
+      "scope_id": "inventory",
+      "value": {
+        "73428daec3c68d8632ae66b09b70f14d": 10,
+        "~next_block": -40
+      }
+    }
+  },
+  {
+    "sequences": {
+      "bucket": "travel-sample",
+      "cache": 50,
+      "cycle": true,
+      "increment": 5,
+      "max": 1000,
+      "min": 0,
+      "name": "seq3",
+      "namespace": "default",
+      "namespace_id": "default",
+      "path": "`default`:`travel-sample`.`inventory`.`seq3`",
+      "scope_id": "inventory",
+      "value": {
+        "73428daec3c68d8632ae66b09b70f14d": 5,
+        "~next_block": 255
+      }
+    }
+  },
+// ...
+]
+----
+
+This catalog gives the same information as the <<sys-sequences,system:sequences>> catalog.
+
+For further details, see xref:n1ql:n1ql-language-reference/createsequence.adoc[].
 
 == Related Links
 

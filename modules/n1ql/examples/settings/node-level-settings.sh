@@ -1,5 +1,5 @@
 #!/bin/sh
 
 # tag::curl[]
-curl http://localhost:8093/admin/settings -u user:pword
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD
 # end::curl[]
