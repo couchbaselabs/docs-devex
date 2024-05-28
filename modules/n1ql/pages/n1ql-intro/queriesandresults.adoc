@@ -72,18 +72,62 @@ SELECT name, brewery_id from `beer-sample` WHERE brewery_id IS NOT MISSING LIMIT
 }
 ----
 
-[#keyspace-reference]
-== Keyspace References
+[#logical-hierarchy]
+== Logical Hierarchy
 
 Couchbase stores data within a xref:learn:data/scopes-and-collections.adoc[logical hierarchy] of buckets, scopes, and collections.
 This enables separation between documents of different types.
+
+Datastores::
+
+Datastores are similar to sites.
+A datastore is a database deployment, for example, a server cluster, cloud service, or mobile installation.
+It is analogous to a relation database instance.
+
+Namespaces::
+
+Namespaces are similar to pools.
+A namespace is a unit of authorization, resource allocation, and tenancy.
+It is analogous to a relational database or schema.
+Currently, only the `default` and `system` namespaces are available.
+
+Buckets::
+
+A bucket is the fundamental space for storing data in Couchbase Server.
+Each bucket contains at least one scope by default, and you can create more scopes as required.
+It is analogous to a relational database table space or file group.
+
+Scopes::
+
+A scope is a set of one or more collections.
+Each scope contains at least one collection by default, and you can create more collections as required.
+It is analogous to a group of relational database tables.
+
+Collections::
+
+A collection is a set of documents that may vary in structure.
+It is a unit of authorization and resource allocation.
+It is analogous to a relational database table.
+
+Keyspaces::
+
+Keyspaces map to collections in Couchbase Server.
+You must refer to a keyspace using a <<keyspace-reference,keyspace reference>>.
++
+The term keyspace is also used to refer to any of the catalogs in the xref:n1ql:n1ql-intro/sysinfo.adoc[system] namespace.
+
+[#keyspace-reference]
+== Keyspace References
+
 For most queries, you must provide one or more keyspace references to specify the data sources for the query.
 
 A keyspace reference may be:
 
-* A _full_ keyspace reference: a path comprising the bucket, the scope, and the collection which contains the documents you want.
+* A [dfn]#full keyspace reference#: a path comprising the optional namespace, the bucket, the scope, and the collection which contains the documents you want.
+For example, `default:{backtick}travel-sample{backtick}.inventory.airline`.
 
-* A _partial_ keyspace reference, comprising the collection name only.
+* A [dfn]#partial keyspace reference#, comprising the collection name only.
+For example, `airline`.
 
 When a query contains partial keyspace references, you must set the <<query-context,query context>> to specify a bucket and scope before running a query.
 Partial keyspace references are resolved using the bucket and scope supplied by the query context.
@@ -94,7 +138,7 @@ In this case, the <<query-context,query context>> must not be set.
 [#query-context]
 == Query Context
 
-The [def]_query context_ specifies the the namespace, bucket, and scope used to resolve partial keyspace references.
+The [dfn]#query context# specifies the the namespace, bucket, and scope used to resolve partial keyspace references.
 
 When the query context is set, you can refer to a collection using just the collection name, without having to enter the keyspace path.
 When the query context is not set, it defaults to the `default` namespace, with no bucket, scope, or collection.
@@ -111,10 +155,10 @@ This can be used to support the separation of tenant data in a multi-tenancy env
 --
 
 [#paths]
-== Paths
+== Sub-Document Paths
 
 One of the main differences between JSON and flat rows is that JSON supports a nested structure, allowing documents to contain other documents, also known as sub-documents.
-{sqlpp} provides [.term]_paths_ to support nested data.
+{sqlpp} provides [dfn]#sub-document paths# to support nested data.
 Paths use dot notation syntax to identify the logical location of an attribute within a document.
 For example, to get the street from a customer order, use the path `orders.billTo.street`.
 This path refers to the value for `street` in the `billTo` object.
@@ -151,13 +195,13 @@ To set query parameter values when you run the query, use the cbq query shell, t
 For more information and examples, refer to xref:n1ql:n1ql-manage/query-settings.adoc#section_srh_tlm_n1b[Named Parameters and Positional Parameters].
 
 [#prepare-stmts]
-== Query Optimization Using Prepared Statements
+== Prepared Statements
 
 When a {sqlpp} query is sent to the server, the server inspects the query and parses it, planning which indexes to use, if any.
-Once this is done, it generates a _query plan_.
+Once this is done, it generates a [dfn]#query plan#.
 The computation for the plan adds some additional processing time and overhead for the query.
 
-You can _prepare_ a frequently-used query so that its plan is generated only once.
+You can [dfn]#prepare# a frequently-used query so that its plan is generated only once.
 Subsequent queries using the same query string will use the pre-generated plan instead, saving on the overhead and processing of the plan each time.
 
 NOTE: Parameterized queries are considered the same query for caching and planning purposes, even if the supplied parameters are different.
@@ -172,10 +216,10 @@ This allows specific data (for example, specific fields) to be retrieved quickly
 
 The Index service enables you to create two types of index: primary indexes and global secondary indexes.
 
-* You can define a _primary index_ on a keyspace.
+* You can define a [dfn]#primary index# on a keyspace.
 Primary indexes are based on the unique key of every item in a specified collection. A primary index is intended to be used for simple queries, which have no filters or predicates.
 
-* You can also create a _secondary index_ on specific fields in a keyspace.
+* You can also create a [dfn]#secondary index# on specific fields in a keyspace.
 Secondary indexes, often referred to as Global Secondary Indexes or GSIs, constitute the principal means of indexing documents to be accessed by the Query service.
 +
 For example, creating a secondary index on the `name` and `email` fields in the `users` keyspace would allow you to query the keyspace regarding a document's `name` or `email` properties.
