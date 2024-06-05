@@ -3,7 +3,6 @@
 :page-pagination: full
 :page-topic-type: guide
 :page-toclevels: 2
-:tabs:
 :github: Click the icon:github[] View button to see this code in context.
 
 include::partial$example-attributes.adoc[]
@@ -15,9 +14,9 @@ include::ROOT:partial$component-signpost.adoc[]
 
 == Introduction
 
-Retrieving documents by ID is the fastest and simplest way to read xref:server:learn:data/data.adoc[data] in Couchbase.
-The xref:server:learn:services-and-indexes/services/data-service.adoc[Key-Value (KV) or Data Service] allows you to retrieve a full document when you need to fetch all of the data stored. 
-However, in instances where this can be costly and unnecessary, Couchbase also provides access to specific _paths_ within a document.
+Retrieving documents by ID is the fastest and simplest way to read xref:server:learn:data/data.adoc[data] in Couchbase Capella.
+The xref:clusters:data-service/data-service.adoc[Key-Value (KV) or Data Service] allows you to retrieve a full document when you need to fetch all of the data stored.
+However, in instances where this can be costly and unnecessary, Couchbase also provides access to specific [.term]#paths# within a document.
 
 include::partial$clients.adoc[tag=refs]
 
@@ -25,15 +24,17 @@ include::partial$data-warning.adoc[]
 
 == Reading a Document
 
-To read a single document in Couchbase, perform a get operation.
+To read a single document, perform a get operation.
 
-[{tabs}]
+[tabs]
 ====
-ifdef::flag-devex-command-line[]
-cbc::
+Couchbase Shell::
 +
 --
-Use the `cbc cat` command to retrieve a document by ID and output its data.
+Use the `doc get` command to retrieve a document by ID and output its data.
+
+An object is returned, which includes the `id`, `content`, and other metadata.
+The document itself is wrapped in the `content` field.
 
 '''
 
@@ -41,46 +42,23 @@ Use the `cbc cat` command to retrieve a document by ID and output its data.
 
 [source,sh]
 ----
-include::example$kv/kv-cbc.sh[tag=cbc-kv-get]
+include::example$kv/kv-cbsh.nu[tag=cbsh-kv-get]
 ----
 
 .Result
 [source,console]
 ----
-hotel-123            CAS=0x16ba896b78930000, Flags=0x0, Size=567, Datatype=0x01(JSON)
-
-{
-  "id": 123,
-  "name": "Medway Youth Hostel",
-  "address": "Capstone Road, ME7 3JE",
-  "url": "http://www.yha.org.uk",
-  "geo": {
-    "lat": 51.35785,
-    "lon": 0.55818,
-    "accuracy": "RANGE_INTERPOLATED"
-  },
-  "country": "United Kingdom",
-  "city": "Medway",
-  "state": null,
-  "reviews": [
-    {
-      "content": "This was our 2nd trip here and we enjoyed it more than last year.",
-      "author": "Ozella Sipes",
-      "date": "2021-11-17T17:35:05.351Z"
-    }
-  ],
-  "vacancy": true,
-  "description": "40 bed summer hostel about 3 miles from Gillingham."
-}
+╭───┬───────────┬────────────────────┬─────────────────────┬───────┬─────────╮
+│ # │    id     │      content       │         cas         │ error │ cluster │
+├───┼───────────┼────────────────────┼─────────────────────┼───────┼─────────┤
+│ 0 │ hotel-123 │ {record 11 fields} │ 1717190781443309568 │       │ capella │
+╰───┴───────────┴────────────────────┴─────────────────────┴───────┴─────────╯
 ----
 
-The output has been prettified for readability.
+NOTE: If the document cannot be found, Couchbase Shell returns a `Key not found` error.
 
-NOTE: If the document cannot be found, [.cmd]`cbc` will return a `LCB_ERR_DOCUMENT_NOT_FOUND` error. 
-
-{cbc-api-url}
+For further details, refer to {cbsh-api-url}/#_reading[Reading^] in the Couchbase Shell documentation.
 --
-endif::flag-devex-command-line[]
 
 pass:[.NET]::
 +
@@ -98,7 +76,7 @@ A `GetResult` object is returned, which includes the `content`, `cas` value, and
 include::dotnet-sdk:hello-world:example$KvHelloWorldScoped.csx[tag=kv-get,indent=0]
 ----
 
-NOTE: If the document doesn't exist, the SDK will return a `DocumentNotFoundException` error. 
+NOTE: If the document doesn't exist, the SDK returns a `DocumentNotFoundException` error.
 
 {github}
 
@@ -121,7 +99,7 @@ A `GetResult` object is returned, which includes the `content`, `cas` value, and
 include::java-sdk:hello-world:example$KvHelloWorldScoped.java[tag=kv-get,indent=0]
 ----
 
-NOTE: If the document doesn't exist, the SDK will return a `DocumentNotFoundException` error. 
+NOTE: If the document doesn't exist, the SDK returns a `DocumentNotFoundException` error.
 
 {github}
 
@@ -144,7 +122,7 @@ A `GetResult` promise is returned, which includes the `content`, `cas` value, an
 include::nodejs-sdk:hello-world:example$kv-hello-world-scoped.js[tag=kv-get,indent=0]
 ----
 
-NOTE: If the document doesn't exist, the SDK will return a `DocumentNotFoundError` error. 
+NOTE: If the document doesn't exist, the SDK returns a `DocumentNotFoundError` error.
 
 {github}
 
@@ -167,7 +145,7 @@ A `GetResult` object is returned, which includes the `content`, `cas` value, and
 include::python-sdk:devguide:example$python/kv_hello_world_scoped.py[tag=kv-get,indent=0]
 ----
 
-NOTE: If the document doesn't exist, the SDK will return a `DocumentNotFoundException` error.
+NOTE: If the document doesn't exist, the SDK returns a `DocumentNotFoundException` error.
 
 {github}
 
@@ -177,60 +155,65 @@ For further details, refer to {python-api-url}#collection-object[Collection^].
 
 === Reading with Options
 
-To specify further parameters, such as expiry, add options to the get operation.
+To specify further parameters, add options to the get operation.
 
-[{tabs}]
+[tabs]
 ====
-ifdef::flag-devex-command-line[]
-cbc::
+Couchbase Shell::
 +
 --
-Use the `cbc cat` command to retrieve a document by ID and pass options as required.
+Use the `doc get` command to retrieve a document by ID and pass options as required.
 
 '''
 
-The example below uses an `--expiry` option for the `cat` command which adds an expiry of 60 seconds to the `hotel-123` document.
+The example below pipes the `hotel-123` document and its metadata through the `to json` filter to transform the output to JSON.
 
 [source,sh]
 ----
-include::example$kv/kv-cbc.sh[tag=cbc-kv-get-with-opts]
+include::example$kv/kv-cbsh.nu[tag=cbsh-kv-get-with-opts]
 ----
 
 .Result
-[source,console]
+[source,json]
 ----
-hotel-123            CAS=0x16bcec98e00c0000, Flags=0x0, Size=567, Datatype=0x01(JSON)
-
-{
-  "id": 123,
-  "name": "Medway Youth Hostel",
-  "address": "Capstone Road, ME7 3JE",
-  "url": "http://www.yha.org.uk",
-  "geo": {
-    "lat": 51.35785,
-    "lon": 0.55818,
-    "accuracy": "RANGE_INTERPOLATED"
-  },
-  "country": "United Kingdom",
-  "city": "Medway",
-  "state": null,
-  "reviews": [
+[
+  {
+    "id": "hotel-123",
+    "content":
     {
-      "content": "This was our 2nd trip here and we enjoyed it more than last year.",
-      "author": "Ozella Sipes",
-      "date": "2021-11-17T17:35:05.351Z"
-    }
-  ],
-  "vacancy": true,
-  "description": "40 bed summer hostel about 3 miles from Gillingham."
-}
+      "address": "Capstone Road, ME7 3JE",
+      "city": "Medway",
+      "country": "United Kingdom",
+      "description": "40 bed summer hostel about 3 miles from Gillingham.",
+      "geo":
+      {
+        "accuracy": "RANGE_INTERPOLATED",
+        "lat": 51.35785,
+        "lon": 0.55818
+      },
+      "id": 123,
+      "name": "Medway Youth Hostel",
+      "reviews":
+      [
+        {
+          "author": "Ozella Sipes",
+          "content": "This was our 2nd trip here and we enjoyed it more than last year.",
+          "date": "2021-11-17T17:35:05.351Z"
+        }
+      ],
+      "state": null,
+      "url": "http://www.yha.org.uk",
+      "vacancy": true
+    },
+    "cas": 1717190781443309568,
+    "error": "",
+    "cluster": "capella"
+  }
+]
 ----
 
-The output has been prettified for readability.
-
-{cbc-api-url}
+For further details, refer to {cbsh-api-url}/#_reading[Reading^] in the Couchbase Shell documentation.
 --
-endif::flag-devex-command-line[]
 
 pass:[.NET]::
 +
@@ -256,7 +239,7 @@ For further details, refer to {dotnet-api-url}/Couchbase.KeyValue.CollectionExte
 Java::
 +
 --
-Pass any required options to the `get()` method when retrieving a document. 
+Pass any required options to the `get()` method when retrieving a document.
 
 A `GetResult` object is returned, which may include extra metadata, depending on the options passed.
 
@@ -277,7 +260,7 @@ For further details, refer to {java-api-url}/Collection.html[Collection^].
 Node.js::
 +
 --
-Pass any required options to the `get()` method when retrieving a document. 
+Pass any required options to the `get()` method when retrieving a document.
 
 A `GetResult` object is returned, which may include extra metadata, depending on the options passed.
 
@@ -298,7 +281,7 @@ For further details, refer to {nodejs-api-url}/Collection.html[Collection^].
 Python::
 +
 --
-Pass any required options to the `get()` method when retrieving a document. 
+Pass any required options to the `get()` method when retrieving a document.
 
 A `GetResult` object is returned, which may include extra metadata, depending on the options passed.
 
@@ -320,25 +303,8 @@ For further details, refer to {python-api-url}#collection-object[Collection^].
 
 == Reading a Sub-Document
 
-JSON documents can contain a lot of nested data -- which might not necessarily need to be accessed all at once. 
-Reading full documents to access a field or two is not ideal and could cause performance issues in your application. 
-Instead, a better practice would be to access specific paths, or _sub-documents_, to perform more efficient read operations.
-
-To fetch a specific field inside a document, you can perform a sub-document get operation.
-
-[{tabs}]
-====
-ifdef::flag-devex-command-line[]
-cbc-subdoc::
-+
---
-. Connect to the `cbc-subdoc` interactive shell.
-
-. Use the `get` command to access specific fields in a JSON document with the `--path` argument. 
-
-'''
-
-The example below fetches the `geo` data from the `airport_1254` document.
+JSON documents can contain a lot of nested data -- which might not necessarily need to be accessed all at once.
+For example, the document `airport_1254` contains a sub-document called `geo`.
 
 .airport_1254
 [source,json]
@@ -346,7 +312,7 @@ The example below fetches the `geo` data from the `airport_1254` document.
 {
   "id": 1254,
 //  ...
-  "geo": { 
+  "geo": {
     "lat": 50.962097,
     "lon": 1.954764,
     "alt": 12
@@ -354,25 +320,42 @@ The example below fetches the `geo` data from the `airport_1254` document.
 }
 ----
 
-[source,console]
+Reading full documents to access a field or two is not ideal and could cause performance issues in your application.
+Instead, a better practice would be to access specific paths, or [.term]#sub-documents#, to perform more efficient read operations.
+To fetch a specific field inside a document, you can perform a sub-document get operation.
+
+[tabs]
+====
+Couchbase Shell::
++
+--
+. Use the `doc get` command to retrieve a document by ID.
+
+. Pipe the document through the `get` filter and specify the path to the field containing the sub-document.
+
+'''
+
+{kv-subdoc-get-example}
+
+[source,sh]
 ----
-cbc-subdoc -u Administrator -P password -U couchbase://localhost/travel-sample
-subdoc> get airport_1254 --path geo
+include::example$kv/kv-subdoc.nu[tag=cbsh-subdoc-get]
 ----
 
 .Result
 [source,console]
 ----
-airport_1254         CAS=0x16b815068df80000
-0. Size=43, RC=LCB_SUCCESS (0)
-{"lat":50.962097,"lon":1.954764,"alt":12.0}
+╭───┬────────────────────┬─────────┬────────╮
+│ # │      accuracy      │   lat   │  lon   │
+├───┼────────────────────┼─────────┼────────┤
+│ 0 │ RANGE_INTERPOLATED │ 51.3578 │ 0.5582 │
+╰───┴────────────────────┴─────────┴────────╯
 ----
 
-NOTE: If the path cannot be found, `cbc-subdoc` will return a `LCB_ERR_SUBDOC_PATH_NOT_FOUND` error. 
+NOTE: If the field containing the sub-document cannot be found, the `get` command returns a `Cannot find column` error.
 
-{cbc-subdoc-api-url}
+For further details, refer to {nushell-api-url}/get.html[get for filters^] in the Nushell documentation.
 --
-endif::flag-devex-command-line[]
 
 pass:[.NET]::
 +
@@ -415,7 +398,7 @@ A `LookupInResult` object is returned, containing the result and metadata releva
 include::java-sdk:hello-world:example$KvHelloWorldScoped.java[tag=kv-get-subdoc,indent=0]
 ----
 
-NOTE: If the document path can't be found, the SDK will return a `PathNotFoundException` error.
+NOTE: If the document path can't be found, the SDK returns a `PathNotFoundException` error.
 
 {github}
 
@@ -463,7 +446,7 @@ A `LookupInResult` object is returned containing the result and metadata relevan
 include::python-sdk:devguide:example$python/kv_hello_world_scoped.py[tag=kv-get-subdoc,indent=0]
 ----
 
-NOTE: If the document path can't be found, the SDK will return a `PathNotFoundException` error.
+NOTE: If the document path can't be found, the SDK returns a `PathNotFoundException` error.
 
 {github}
 
