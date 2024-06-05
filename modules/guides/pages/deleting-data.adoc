@@ -1,8 +1,7 @@
 = Delete Documents
 :description: How to delete documents with a command line tool or an SDK.
-:page-pagination: full 
+:page-pagination: full
 :page-topic-type: guide
-:tabs:
 :github: Click the icon:github[] View button to see this code in context.
 
 include::partial$example-attributes.adoc[]
@@ -22,37 +21,39 @@ include::partial$data-warning.adoc[]
 
 == Deleting a Document
 
-To delete a specific field within a document, perform a _Sub-Document_ remove operation.
+To delete a document, perform a remove operation.
 
-[{tabs}]
+[tabs]
 ====
-ifdef::flag-devex-command-line[]
-cbc::
+CB Shell::
 +
 --
-Use the `cbc rm` command to delete a document from the database.
+Use the `doc remove` command to delete a document from the database.
 
 '''
 
-The example below deletes document `airport_1254` from the database.
+{kv-delete-example}
 
 [source,sh]
 ----
-include::example$kv/kv-cbc.sh[tag=cbc-kv-delete]
+include::example$kv/kv-cbsh.nu[tag=cbsh-kv-delete]
 ----
 
 .Result
 [source,console]
 ----
-airport_1254          Deleted
+╭───┬───────────┬─────────┬────────┬──────────┬─────────╮
+│ # │ processed │ success │ failed │ failures │ cluster │
+├───┼───────────┼─────────┼────────┼──────────┼─────────┤
+│ 0 │         1 │       1 │      0 │          │ capella │
+╰───┴───────────┴─────────┴────────┴──────────┴─────────╯
 ----
 
-{cbc-api-url}
+For further details, refer to {cbsh-api-url}/#_removing[Removing^] in the Couchbase Shell documentation.
 --
-endif::flag-devex-command-line[]
 
 pass:[.NET]::
-+ 
++
 --
 Use the `RemoveAsync()` method to delete a document from the database.
 
@@ -94,7 +95,7 @@ For further details, refer to {java-api-url}/Collection.html[Collection^].
 --
 
 Node.js::
-+ 
++
 --
 Use the `remove()` function to delete a document from the database.
 
@@ -138,42 +139,42 @@ For further details, refer to {python-api-url}#collection-object[Collection^].
 
 == Deleting a Sub-Document
 
-To delete a specific field within a document you can perform a _Sub-Document_ remove operation.
+To delete a specific field within a document you can perform a sub-document remove operation.
 
-[{tabs}]
+[tabs]
 ====
-ifdef::flag-devex-command-line[]
-cbc-subdoc::
+CB Shell::
 +
 --
-. Connect to the `cbc-subdoc` interactive shell.
+. Use the `doc get` command to retrieve a document by ID.
 
-. Use the `remove` command to delete a field from a document.
+. Pipe the document through the `reject` filter to remove the field containing the sub-document.
 
-. Pass the field to remove with the `--path` argument.
+. Pipe the output, which includes the document ID and the updated content, through the `doc replace` command to update the document.
 
 '''
 
 {kv-subdoc-delete-example}
 
-[source,console]
+[source,sh]
 ----
-cbc-subdoc -u Administrator -P password -U couchbase://localhost/travel-sample
-subdoc> remove hotel-123 --path url
+include::example$kv/kv-subdoc.nu[tag=cbsh-subdoc-reject]
 ----
 
 .Result
 [source,console]
 ----
-hotel-123          CAS=0x16be2f11c6040000
-0. Size=0, RC=LCB_SUCCESS (0)
+╭───┬───────────┬─────────┬────────┬──────────┬─────────╮
+│ # │ processed │ success │ failed │ failures │ cluster │
+├───┼───────────┼─────────┼────────┼──────────┼─────────┤
+│ 0 │         1 │       1 │      0 │          │ capella │
+╰───┴───────────┴─────────┴────────┴──────────┴─────────╯
 ----
 
-NOTE: If the path cannot be found, `cbc-subdoc` will return a `LCB_ERR_SUBDOC_PATH_NOT_FOUND` error.
+NOTE: If the field containing the sub-document cannot be found, the `reject` command returns a `Cannot find column` error.
 
-{cbc-subdoc-api-url}
+For further details, refer to {nushell-api-url}/reject.html[reject for filters^] in the Nushell documentation.
 --
-endif::flag-devex-command-line[]
 
 pass:[.NET]::
 +
