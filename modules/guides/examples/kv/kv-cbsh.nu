@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env nu
 
 # tag::cbsh-kv-insert[]
 cb-env bucket travel-sample
