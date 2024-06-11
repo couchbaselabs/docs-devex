@@ -4,6 +4,7 @@
 cb-env bucket travel-sample
 cb-env scope inventory
 cb-env collection hotel
+
 doc insert hotel-123 {
   "id": 123,
   "name": "Medway Youth Hostel",
@@ -33,6 +34,7 @@ doc insert hotel-123 {
 cb-env bucket travel-sample
 cb-env scope inventory
 cb-env collection hotel
+
 doc insert --expiry 60 hotel-456 {
   "id": 456,
   "title": "Ardèche",
@@ -51,6 +53,7 @@ doc insert --expiry 60 hotel-456 {
 cb-env bucket travel-sample
 cb-env scope inventory
 cb-env collection hotel
+
 doc get hotel-123
 # end::cbsh-kv-get[]
 
@@ -58,6 +61,7 @@ doc get hotel-123
 cb-env bucket travel-sample
 cb-env scope inventory
 cb-env collection hotel
+
 doc get hotel-123 | to json
 # end::cbsh-kv-get-with-opts[]
 
@@ -65,6 +69,7 @@ doc get hotel-123 | to json
 cb-env bucket travel-sample
 cb-env scope inventory
 cb-env collection hotel
+
 doc upsert hotel-123 {
   "id": 123,
   "name": "Medway Youth Hostel",
@@ -82,6 +87,7 @@ doc upsert hotel-123 {
 cb-env bucket travel-sample
 cb-env scope inventory
 cb-env collection hotel
+
 doc replace hotel-123 {
   "id": 123,
   "name": "Medway Youth Hostel",
@@ -116,6 +122,7 @@ doc replace hotel-123 {
 cb-env bucket travel-sample
 cb-env scope inventory
 cb-env collection hotel
+
 doc remove hotel-123
 # end::cbsh-kv-delete[]
 
@@ -123,6 +130,7 @@ doc remove hotel-123
 cb-env bucket travel-sample
 cb-env scope tenant_agent_00
 cb-env collection users
+
 [
   {id: "user_111", email: "tom_the_cat@example.com"},
   {id: "user_222", email: "jerry_mouse@example.com"},
@@ -134,6 +142,7 @@ cb-env collection users
 cb-env bucket travel-sample
 cb-env scope tenant_agent_00
 cb-env collection users
+
 ['0' '1'] | wrap id | doc get
 # end::cbsh-bulk-get[]
 
@@ -141,6 +150,7 @@ cb-env collection users
 cb-env bucket travel-sample
 cb-env scope tenant_agent_00
 cb-env collection users
+
 [
   {id: "user_111", email: "tom@example.com"},
   {id: "user_222", email: "jerry@example.com"},
@@ -152,5 +162,6 @@ cb-env collection users
 cb-env bucket travel-sample
 cb-env scope tenant_agent_00
 cb-env collection users
+
 [user_111 user_222 user_333] | wrap id | doc remove
 # end::cbsh-bulk-delete[]

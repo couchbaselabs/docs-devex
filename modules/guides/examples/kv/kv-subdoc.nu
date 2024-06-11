@@ -4,6 +4,7 @@
 cb-env bucket travel-sample
 cb-env scope inventory
 cb-env collection hotel
+
 doc get hotel-123 | get content.geo
 # end::cbsh-subdoc-get[]
 
@@ -11,6 +12,7 @@ doc get hotel-123 | get content.geo
 cb-env bucket travel-sample
 cb-env scope inventory
 cb-env collection hotel
+
 doc get hotel-123 | upsert content.pets_ok true | doc replace
 # end::cbsh-subdoc-upsert[]
 
@@ -18,5 +20,6 @@ doc get hotel-123 | upsert content.pets_ok true | doc replace
 cb-env bucket travel-sample
 cb-env scope inventory
 cb-env collection hotel
+
 doc get hotel-123 | reject content.url | doc replace
 # end::cbsh-subdoc-reject[]
