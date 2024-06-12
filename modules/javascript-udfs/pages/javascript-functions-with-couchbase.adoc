@@ -1,6 +1,7 @@
-= JavaScript Functions with Couchbase
-:description: Writing Couchbase extension functions in the JavaScript Language.
+= JavaScript Functions for Query Reference
+:description: This reference guide describes how to write extension functions for {sqlpp} for Query using the JavaScript language.
 :page-edition: Enterprise Edition
+:page-topic-type: reference
 :page-toclevels: 2
 
 [abstract]
@@ -15,13 +16,13 @@ If you want to learn how to create JavaScript function libraries using the admin
 
 == Added Constructs
 
-JavaScript functions in Couchbase support most of the language constructs available in https://en.wikipedia.org/wiki/ECMAScript[ECMAScript], though there are a number of restrictions related to the Couchbase environment.
+JavaScript functions in {sqlpp} for Query support most of the language constructs available in https://en.wikipedia.org/wiki/ECMAScript[ECMAScript], though there are a number of restrictions related to the Couchbase environment.
 There are also additions that have been made to the language for working specifically with Couchbase.
 
 === {sqlpp} Embedded Statements
 
 Top level {sqlpp} keywords, such as SELECT, UPDATE, INSERT and DELETE, are available as inline keywords in functions.
-Operations that return values such as SELECT are accessible through a returned iterable handle. 
+Operations that return values such as SELECT are accessible through a returned iterable handle.
 {sqlpp} Query results, via a SELECT, are streamed in batches to the iterable handle as the iteration progresses through the result set.
 
 [source, javascript]
@@ -36,9 +37,11 @@ include::partial$libraries-and-scopes.adoc[leveloffset=+2]
 
 == Unsupported Features
 
+The following features are unsupported.
+
 === Browser Extensions
 
-Because JavaScript UDF functions do not execute in the context of a browser, the extensions that browsers add to the core language, such as window methods, DOM events etc. are not available.
+Because JavaScript functions in {sqlpp} for Query do not execute in the context of a browser, the extensions that browsers add to the core language, such as window methods, DOM events etc. are not available.
 
 === Global State
 All variables  must be local to the function; global state is not permitted.
@@ -55,11 +58,87 @@ Arrow functions local to individual JavaScript functions are supported.
 
 Logging using the `console.log(..)` function is not supported.
 
-In the rest of this section, you're going to look at the concepts behind JavaScript User-Defined Functions:
+== Restricted Features
+
+[.status]#Couchbase Server 7.6.2#
+
+The following features are restricted in Couchbase Server 7.6.2 and later.
+
+=== Code Injection
+
+JavaScript constructs that may allow for code injection or speculative execution attacks have been removed:
+
+* The `eval` symbol has been removed.
+* The `Function` construct has been removed.
+
+The following example does not compile as it uses the `eval` symbol.
+
+====
+[source,javascript]
+----
+function evaluate() {
+    var q = select jscode from <bucket> where meta().id = <docid>;
+    let iter = q[Symbol.iterator]();
+    let code = iter.next();
+    let result = eval(code);
+}
+----
+====
+
+The following example does not compile as it uses the `Function` construct.
+
+====
+[source,javascript]
+----
+function dynamicfunction() {
+var q = select jscode from <bucket> where meta().id = <docid>;
+    let iter = q[Symbol.iterator]();
+    let code = iter.next();
+  return new Function("inject", code);
+}
+
+function evaluate() {
+    dynamicfunction();
+}
+----
+====
+
+=== Date Granularity
+
+The granularity of the `Date` object has been reduced to 1 second.
+This is to prevent a potential attacker from easily measuring the difference between a CPU cache miss and cache hit, hence taking advantage of side-channel attacks.
+
+The following example executes a {sqlpp} query to insert a document with a field containing the current timestamp.
+The timestamp is returned to the last second, rather than the most recent millisecond.
+
+====
+[source,javascript]
+----
+function addOrder() {
+    let curr = Date.now();
+    N1QL('INSERT INTO orders VALUES (uuid(),{"time":'+ curr +'})')
+}
+----
+====
+
+The following example simulates sleep by blocking execution by the number of milliseconds passed as a function parameter.
+Since the `Date.Now()` function does not return the current time with millisecond granularity, the function may not work as expected.
+
+====
+[source,javascript]
+----
+function sleep(milliseconds) {
+  let init = Date.now();
+  let curr = null;
+  do {
+     curr = Date.now();
+   } while (curr - init < milliseconds);
+}
+----
+====
+
+== See Also
 
 * xref:calling-javascript-from-n1ql.adoc[]
 * xref:calling-n1ql-from-javascript.adoc[]
 * xref:handling-errors-javascript-udf.adoc[]
-
-
-
