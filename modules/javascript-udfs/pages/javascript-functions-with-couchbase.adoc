@@ -3,6 +3,7 @@
 :page-edition: Enterprise Edition
 :page-topic-type: reference
 :page-toclevels: 2
+:keywords: library namespacing
 
 [abstract]
 {description}
@@ -28,29 +29,37 @@ Top level {sqlpp} keywords, such as SELECT, UPDATE, INSERT and DELETE, are avail
 Operations that return values such as SELECT are accessible through a returned iterable handle.
 {sqlpp} Query results, via a SELECT, are streamed in batches to the iterable handle as the iteration progresses through the result set.
 
+.JavaScript code with embedded {sqlpp} statements
+====
 [source, javascript]
 ----
 include::example$select-airline-inline.js[]
 ----
+
 <1> The {sqlpp} is written directly into the JavaScript code without having to be used as part of a function call.
 You can even provide parameters that can be used in the {sqlpp} statement.
 <2> A standard JavaScript iterator is used to access the values returned from the {sqlpp} statement.
+====
 
 == Unsupported Features
 
-The following features are unsupported.
+The following features are not supported in JavaScript functions for Query.
 
 === Browser Extensions
 
-Because JavaScript functions in {sqlpp} for Query do not execute in the context of a browser, the extensions that browsers add to the core language, such as window methods, DOM events etc. are not available.
+Because JavaScript functions in {sqlpp} for Query do not execute in the context of a browser, the extensions that browsers add to the core language, such as window methods, DOM events, and so on, are not available.
 
 === Global State
-All variables  must be local to the function; global state is not permitted.
 
+All variables must be local to the function; global state is not permitted.
+
+.JavaScript code with global variable
+====
 [source, javascript]
 ----
 include::example$illegal-global-variable.js[]
 ----
+====
 
 Along with global state, global https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions[arrow functions] are not supported.
 Arrow functions local to individual JavaScript functions are supported.
@@ -63,7 +72,7 @@ Logging using the `console.log(..)` function is not supported.
 
 [.status]#Couchbase Server 7.6.2#
 
-The following features are restricted in Couchbase Server 7.6.2 and later.
+The following features are restricted in JavaScript functions for Query in Couchbase Server 7.6.2 and later.
 
 === Code Injection
 
@@ -72,9 +81,10 @@ JavaScript constructs that may allow for code injection or speculative execution
 * The `eval` symbol has been removed.
 * The `Function` construct has been removed.
 
+.JavaScript code with the `eval` symbol
+====
 The following example does not compile as it uses the `eval` symbol.
 
-====
 [source,javascript]
 ----
 function evaluate() {
@@ -86,9 +96,10 @@ function evaluate() {
 ----
 ====
 
+.JavaScript code with the `Function` construct
+====
 The following example does not compile as it uses the `Function` construct.
 
-====
 [source,javascript]
 ----
 function dynamicfunction() {
@@ -109,10 +120,11 @@ function evaluate() {
 The granularity of the `Date` object has been reduced to 1 second.
 This is to prevent a potential attacker from easily measuring the difference between a CPU cache miss and cache hit, hence taking advantage of side-channel attacks.
 
+.JavaScript code with timestamp
+====
 The following example executes a {sqlpp} query to insert a document with a field containing the current timestamp.
 The timestamp is returned to the last second, rather than the most recent millisecond.
 
-====
 [source,javascript]
 ----
 function addOrder() {
@@ -122,10 +134,11 @@ function addOrder() {
 ----
 ====
 
+.JavaScript code with date comparison
+====
 The following example simulates sleep by blocking execution by the number of milliseconds passed as a function parameter.
 Since the `Date.Now()` function does not return the current time with millisecond granularity, the function may not work as expected.
 
-====
 [source,javascript]
 ----
 function sleep(milliseconds) {
