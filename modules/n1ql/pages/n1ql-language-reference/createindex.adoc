@@ -313,22 +313,26 @@ Use the WITH clause to specify additional options.
 
 [horizontal#index-with-args]
 expr::
-An object with the following properties:
+An object with the following properties.
 
-nodes;;
-[Optional] An array of strings, each of which represents a node name.
-+
+[options="header", cols="1a,4a,1a"]
+|===
+|Name|Description|Schema
+
+|**nodes** +
+__optional__
+| An array of strings, each of which represents a node name.
+
 include::partial$n1ql-language-reference/file-based-index-rebalance-note.adoc[]
-+
-****
+
+'''
 [.edition]#{community}#
 
 In Couchbase Server Community Edition, a single global secondary index can be placed on a single node that runs the indexing service.
 The `nodes` property allows you to specify the node that the index is placed on.
 (((default index placement)))If `nodes` is not specified, one of the nodes running the indexing service is randomly picked for the index.
-****
-+
-****
+
+'''
 [.edition]#{enterprise}#
 
 In Couchbase Server Enterprise Edition, you can specify multiple nodes to distribute replicas of an index across nodes running the indexing service: for example, `WITH {"nodes": ["node1:8091", "node2:8091", "node3:8091"]}`.
@@ -338,37 +342,43 @@ If specifying both [.var]`nodes` and [.var]`num_replica`, the number of nodes in
 
 (((default index placement)))If [.var]`nodes` is not specified, then the system chooses nodes on which to place the new index and any replicas, in order to achieve the best resource utilization across nodes running the indexing service.
 This is done by taking into account the current resource usage statistics of index nodes.
-****
-+
-IMPORTANT: A node name passed to the `nodes` property must include the cluster administration port, by default 8091.
-For example `WITH {"nodes": ["192.0.2.0:8091"]}` instead of `WITH {"nodes": ["192.0.2.0"]}`.
 
-defer_build;;
-[Optional] Boolean.
+'''
+A node name passed to the `nodes` property must include the cluster administration port, by default 8091.
 
-true:::
-When set to `true`, the `CREATE INDEX` operation queues the task for building the index but immediately pauses the building of the index of type GSI.
+**Example:** `["192.0.2.0:8091"]`
+|String array
+
+|**defer_build** +
+__optional__
+| Whether the index should be created in deferred build mode.
+
+When set to `true`, the `CREATE INDEX` operation queues the task for building the GSI index but immediately pauses the building of the index.
 Index building requires an expensive scan operation.
 Deferring building of the index with multiple indexes can optimize the expensive scan operation.
-Admins can defer building multiple indexes and, using the `BUILD INDEX` statement, multiple indexes to be built efficiently with one efficient scan of bucket data.
+Admins can defer building multiple indexes and, using the `BUILD INDEX` statement, build multiple indexes efficiently with one efficient scan of bucket data.
 
-false:::
-When set to `false`, the `CREATE INDEX` operation queues the task for building the index and immediately kicks off the building of the index of type GSI.
+When set to `false`, the `CREATE INDEX` operation queues the task for building the GSI index and immediately kicks off the building of the index.
 
-num_replica;;
-+
-****
-[.edition]#{enterprise}#
+**Default:** `false`
+|Boolean
+
+|**num_replica** +
+__optional__
+| [.edition]#{enterprise}#
 
 This property is only available in Couchbase Server Enterprise Edition.
 
-[Optional] Integer that specifies the number of {index-replication}[replicas] of the index to create.
+The number of {index-replication}[replicas] of the index to create.
 
 The indexer will automatically distribute these replicas amongst index nodes in the cluster for load-balancing and high availability purposes.
 The indexer will attempt to distribute the replicas based on the server groups in use in the cluster where possible.
 
 If the value of this property is not less than the number of index nodes in the cluster, then the index creation will fail.
-****
+
+**Default:** `1`
+|Integer
+|===
 
 == Usage
 
