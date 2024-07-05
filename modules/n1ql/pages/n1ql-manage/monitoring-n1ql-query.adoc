@@ -56,10 +56,10 @@ Hence, the information in the keyspaces pertains to the current instantiation of
 
 You can access the Query management and monitoring system keyspaces using any of the following:
 
-* {sqlpp} from 
-ifdef::flag-devex-tools[the cbq shell or]
-the Query Workbench
+* {sqlpp} from the cbq shell or the Query Workbench
+ifdef::flag-devex-rest-api[]
 * The Query Admin REST API
+endif::flag-devex-rest-api[]
 * A monitoring SDK
 
 Using {sqlpp} enables you to obtain further insights from the keyspaces.
@@ -913,9 +913,7 @@ endif::flag-devex-rest-api[]
 Query profiling enables you to obtain more detailed monitoring information and finer execution timings for any query.
 You can set query profiling to the following levels:
 
-ifdef::flag-devex-tools[]
 * `off` -- query profiling is disabled.
-endif::flag-devex-tools[]
 * `phases` -- query profiling is enabled, including information about the phases of query execution.
 * `timings` -- query profiling is enabled, including information about the phases of query execution, and detailed timing information.
 
@@ -1008,7 +1006,6 @@ endif::flag-devex-rest-api[]
 [#enable-settings-per-session-or-per-query]
 === Enable Query Profiling for a Request
 
-ifdef::flag-devex-tools[]
 To activate profiling at the request level, you can:
 
 ifdef::flag-devex-rest-api[]
@@ -1068,7 +1065,6 @@ SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
 ----
 --
 ====
-endif::flag-devex-tools[]
 
 The Query tab automatically enables Query profiling, with detailed timing information.
 To disable or enable Query profiling with the Query tab, specify the *Collect query timings* option using the xref:clusters:query-service/query-workbench.adoc#query-settings[Query Settings].
@@ -1078,14 +1074,11 @@ To disable or enable Query profiling with the Query tab, specify the *Collect qu
 
 You can access the profiling information:
 
-ifdef::flag-devex-tools[]
 * In the <<profile,query responses>>.
-endif::flag-devex-tools[]
 * In the <<plan,system catalogs>>.
 
 When a query executes a user-defined function, profiling information is available for the {sqlpp} queries within the user-defined function as well.
 
-ifdef::flag-devex-tools[]
 [[profile]]
 === Profiling Details in Query Responses
 
@@ -1327,7 +1320,6 @@ the cbq shell, the following statistics are returned when `profile` is set to `t
 The `profile` object contains the following attributes:
 
 include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[tags=profile]
-endif::flag-devex-tools[]
 
 [[plan]]
 === Profiling Details in System Catalogs
@@ -1475,14 +1467,7 @@ Getting the plan for a statement that you ran when the profile was set to `timin
 ----
 ====
 
-ifdef::flag-devex-tools[]
 For field names and meanings, see <<_execution_timings,Execution Timings>>.
-endif::flag-devex-tools[]
-ifndef::flag-devex-tools[]
-The query plan contains the following attributes:
-
-include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[lines=699..749]
-endif::flag-devex-tools[]
 
 == Query Profiling Summary
 
@@ -1498,7 +1483,7 @@ s| {blank}
 s| Query +
 workbench
 s|
-ifdef::flag-devex-tools[cbq]
+cbq
 s|
 ifdef::flag-devex-rest-api[REST API]
 s| Active +
@@ -1508,22 +1493,17 @@ Requests
 s| Prepared +
 Statements
 
-ifdef::flag-devex-tools[]
 | `off`
 a|  &mdash;
 a|  &mdash;
-a|  &mdash;
+a| ifdef::flag-devex-rest-api[&mdash;]
 a| icon:check[fw] phases
 a| icon:check[fw] phases
 a| icon:check[fw] timings
-endif::flag-devex-tools[]
 
 | `phases`
 a| &mdash;
-a| 
-ifdef::flag-devex-tools[]
-icon:check[fw] phases
-endif::flag-devex-tools[]
+a| icon:check[fw] phases
 a| 
 ifdef::flag-devex-rest-api[]
 icon:check[fw] phases
@@ -1535,10 +1515,8 @@ a| icon:check[fw] timings
 | `timings`
 a| &mdash;
 a| [%hardbreaks]
-ifdef::flag-devex-tools[]
 icon:check[fw] phases
 icon:check[fw] timings
-endif::flag-devex-tools[]
 a| [%hardbreaks]
 ifdef::flag-devex-rest-api[]
 icon:check[fw] phases
