@@ -1,120 +1,76 @@
-= Buckets, Scopes and Collections
-:description: In this section, you'll learn how to logically partition your data in Couchbase using buckets, scopes and collections.
+= Implement the Data Model
+:description: Create a cluster and use buckets, scopes, and collections to partition your data.
+:page-topic-type: tutorial
 :imagesdir: ../images
 :page-pagination: full
-
-include::partial$tutorial-globals.adoc[]
 
 [abstract]
 {description}
 
-== So What is a Bucket Exactly?
+== Buckets, Scopes, and Collections
 
-If you think in database terms, a Couchbase Bucket is analogous to a database: it's the data store where you're going to store and retrieve related information about the students.
+To organize and manage your data in Couchbase, you can create buckets, scopes, and collections inside your cluster.
 
-You can click on the menu:Dashboard[Buckets] link to access the Buckets page, then click on btn:[Add Bucket].
-
-In this dialog, enter `student-bucket` in the *Name* box.
-
-image::add-student-bucket.png[alt="Adding student bucket to Couchbase"]
-
-Once you have entered the bucket name, press the btn:[Add Bucket] button to return to the main bucket list.
-
-
-[#scopes_and_collections]
-== Scopes and Collections
-
-In all but the simplest cases, it's better to provide some kind of separation between documents of different types.
-Couchbase has a simple hierarchy model which allows for such separation:
+A bucket is equivalent to a database in a relational database management system, while scopes and collections are used to provide separation between documents of different types.
+A bucket can hold any number of scopes, and a scope can hold any number of collections.
 
 [plantuml,couchbase-hierarchy,svg]
 ....
 include::partial$diagrams/couchbase-hierarchy.puml[]
 ....
 
-You're already familiar with clusters, nodes, and buckets.
-Inside a bucket you can also have any number of _scopes_, and inside a scope you can have any number of _collections_.
-
-{empty}
 [horizontal]
-*scopes*:: acts as a parent to a collection.
-When you create a new bucket, Couchbase will provide you with a default scope called `_default`.
-You can use the default scope to store
-*collections*:: a collection can contain a set of documents.
-A default collection (`_default`) is provided, but it is recommended that you create your own collection named to reflect the documents store inside it.
+bucket:: Stores and retrieves data in the server.              
+scope:: Stores collections. When you create a new bucket, Couchbase provides you with a default scope called `_default`.
+collection:: Contains a set of documents. Couchbase provides you with a default collection called `_default`.
 
-Rather than have our student records stored in the default collection, we're going to add two collections: one will be used to store the student records, the other will be used to store the course details.
+To continue this tutorial, you must create a bucket to hold all student data, a scope to narrow down the data into only data related to an art school, and two collections to narrow it down further into art school students and art school courses.
 
-Now looking again at the relational design of our student database:
+For more information about buckets, scopes, and collections, see xref:cloud:data-service:about-buckets-scopes-collections.adoc[Buckets, Scopes, and Collections] in the Capella documentation.
 
-[plantuml,student-record-erd,svg]
-....
-include::partial$diagrams/student-record-erd.puml[]
-....
 
-We can see that our equivalent document-based system could do with a little decomposition:
+== Create a Bucket
 
-[plantuml,student-document-database-design,svg]
-....
-include::partial$diagrams/student-document-database-design.puml[]
-....
+To create a bucket:
 
-So, inside our `student-bucket` we've set up a scope called `art-school-scope`.
-Perhaps we have a number of schools and we want to restrict access to the school based on the role of the user; using scopes is the ideal way to do it.
+. In the Couchbase Web Console, go to menu:Buckets[].
+. Click btn:[Add Bucket].
+. For the bucket name, enter `student-bucket`.
+. Click btn:[Add Bucket] to create your bucket.
 
-Within the `scope` we set up two collections:
 
-[horizontal]
-*student-record-collection*:: contains the student records, and within each student record we carry a list of all
-their enrollments.
-Again, this moves away from the standard relational decomposition since we're actually storing the
-enrollments as part of the student's record, instead of implementing it as a link table between the students and the courses.
+== Create a Scope
 
-*course-record-collection*:: The enrollment records will carry a link to the course record it applies to, so we can
-retrieve other details such as the full name of the course and the number of credit points the student receives for
-completing it.
+To create a scope:
 
-NOTE: Of course, it's possible to just add the details of the course to the student's enrollment records, but this may have downsides.
-Changing the credit points on the course, for example, would involve running through every
-student's enrollments and changing the credit details on each one.
-This is why the document model and relational model are used in conjunction to get the best combination of robust design and performance.
+. In the list of buckets, next to `student-bucket`, click *Scopes & Collections*.
+. Click btn:[Add Scope].
+. For the scope name, enter `art-school-scope`.
+. Click btn:[Save] to create your scope.
 
-Now that you understand the basics of scopes and collections, return to your administration screen so we can add
-them to your bucket.
 
-=== Adding the Student Scope
+== Create Collections
 
-Return to the `Buckets` screen and click the btn:[Scopes & Collections] link.
+For this tutorial, create two collections: one to store student records, and one to store course details.
 
-image::click-scopes-and-collections.png[alt="Examining the scopes and collections"]
+To create a collection:
 
-Although the bucket is created with a default scope, for this example, you're going to create your own. Click on the btn:[Add Scope] link.
+. In the list of scopes and collections, next to `art-school-scope`, click *Add Collection*.
+. Click btn:[Add Collection] next to `art-school-scope`.
+. For the scope name, enter `student-record-collection`.
+. Click btn:[Save] to create your first collection.
 
-On the next dialog, create your `art-school-scope`.
+To create the second collection, follow the previous steps but name the collection `course-record-collection`.
 
-image::create-scope.png[alt="Dialog to create a new scope"]
+The two collections allow you to use the relational model and the document model at the same time to achieve the best design and performance possible.
 
-Press btn:[Save] to save the new scope and return to the bucket screen.
-The new scope should be showing in the list.
+The `student-record-collection` contains student records, and each student record contains a list of that student's enrollments.
+Unlike the standard relational model decomposition where a link table is created between students and courses, a document model stores the enrollments as part of the student records.
 
-== Adding the collections
+The `course-record-collection`, on the other hand, uses the relational model to link the enrollment records to the course records they apply to. 
+This allows you to retrieve other details like the full title of the course or the number of credits students receive upon completing the course.
 
-Next, we're going to add two collections for the new scope. Click the btn:[Add Collection] link for the
-`art-school-scope'.
 
-image::add-collection-link.png[alt="Adding a new collection"]
+== Next Steps
 
-When the collection dialog is displayed, fill in the name of the first collection: `student-record-collection`; then
-press btn:[Save].
-
-Now do the same again to create the `course-record-collection`.
-
-You should now have the `art-school-scope` containing your two collections.
-
-image::completed-art-school-scope.png[alt="Screen showing new collections added"]
-
-[#select-your-language]
-== Next steps
-
-So you have your cluster, bucket, scope and collections set up and ready to be populated.
-In the next section, you'll set up your system to write your first Couchbase application.
+After implementing the data model, you can xref:java-tutorial/install-couchbase-java-sdk.adoc[set up a Couchbase SDK and connect it to your cluster to write your first application].
