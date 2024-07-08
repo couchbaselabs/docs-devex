@@ -1,67 +1,216 @@
-= Retrieving documents
-:description: In this section, you're going to look at two methods of retrieving documents from a collection: \
-you will use the administration console to build simple queries, and also write a short program to retrieve documents \
-matching certain criteria. Both of the methods will introduce {sqlpp}, Couchbase's SQL-based query language.
+= Retrieve Records
+:description: Retrieve records, or documents, from your collections using {sqlpp}, Couchbase's SQL-based query language.
+:page-topic-type: tutorial
 :page-pagination: full
+:page-toclevels: 2
 :imagesdir: ../../images
-
-include::partial$tutorial-globals.adoc[]
 
 [abstract]
 {description}
+You can retrieve your records using the <<#retrieve-with-query-editor,query editor>> or the <<#retrieve-with-sdk,SDK>>.
 
-include::partial$retrieve-documents-using-query-bench-section.adoc[leveloffset="+1"]
+[#retrieve-with-query-editor]
+== With the Query Editor
 
-== Using the SDK
+To retrieve the records with the Query Editor, you must first define an index.
 
-Of course, you can also retrieve documents using the JDK. In this section, you're going to use the same {sqlpp} queries as part of a small Java application.
-Let's start with a basic record retrieval:
+=== Define an Index
 
-[source, java]
+Before you can retrieve your records with the query editor, you must first define an index in your bucket.
+The index helps your cluster find specific data when you run a query.
+
+To define an index:
+
+. In your Couchbase cluster in your browser, click menu:Query[] to open the query editor.
+. Select *student-bucket* and *art-school-scope* in the *context* drop-down.
+Using these filters means you can narrow down the scope of your queries. 
+You do not need to add the names of your bucket and scope to your queries.
++
+image::query-editor-filters.png[alt="Filters in the Query Editor"]
++
+. Enter the following query into your query editor:
++
+[source, sqlpp]
 ----
-include::{java-sample-location}ArtSchoolRetriever.java[]
+create primary index course_idx on `course-record-collection`
+----
++
+. Click btn:[Execute] to create a single index called `course_idx` in your `course-record-collection`.
+
+=== Retrieve Your Records
+
+You can use the Query Editor to retrieve all course records at once, or narrow your search down to retrieve records based on specific criteria.
+
+==== Retrieve All Course Records
+
+To retrieve all of your course records using the query editor:
+
+. Enter the following query into your query editor:
++
+[source, sqlpp]
+----
+select crc.* from `course-record-collection` crc
+----
++
+. Click btn:[Execute] to retrieve all course records.
++
+[source, json]
+----
+[
+  {
+    "course-name": "art history",
+    "credit-points": 100,
+    "faculty": "fine art"
+  },
+  {
+    "course-name": "fine art",
+    "credit-points": 50,
+    "faculty": "fine art"
+  },
+  {
+    "course-name": "graphic design",
+    "credit-points": 200,
+    "faculty": "media and communication"
+  }
+]
 ----
 
-If you build and run this program:
+==== Retrieve Course Records with Less than 200 Credits
 
-[source, sh]
+You can expand your query to narrow your search down further.
+To retrieve only courses with less than 200 `credit-points` using the query editor:
+
+. Enter the following query into your query editor:
++
+[source, sqlpp]
 ----
-mvn exec:java -Dexec.mainClass="ArtSchoolRetriever" -Dexec.cleanupDaemonThreads=false
+select crc.* from `course-record-collection` crc where crc.`credit-points` < 200
+----
++
+. Click btn:[Execute] to retrieve all courses with less than 200 credits.
++
+[source, json]
+----
+[
+  {
+    "course-name": "art history",
+    "credit-points": 100,
+    "faculty": "fine art"
+  },
+  {
+    "course-name": "fine art",
+    "credit-points": 50,
+    "faculty": "fine art"
+  }
+]
 ----
 
-Then you'll get a list of the classes in the output.
+=== Retrieve Record IDs
 
-image::retrieve-courses-cli.png[alt="Terminal window showing course records retrieved with the Java SDK"]
+The `id` field is not automatically returned when you retrieve all of your course information.
 
-You may have noticed a difference between the SQL statement we used in the web console, and the statement used as part of the application:
+The `id` is part of a document's meta structure, and to retrieve it you must adjust your {sqlpp} query and run it again:
+
+. Enter the following query into your query editor:
++
+[source, sqlpp]
+----
+select META().id, crc.* from `course-record-collection` crc where crc.`credit-points` < 200
+----
++
+The `META()` function call returns any property contained inside the document's metadata, including the ID.
++
+. Click btn:[Execute] to retrieve course records and their IDs.
++
+[source, json]
+----
+[
+  {
+    "course-name": "art history",
+    "credit-points": 100,
+    "faculty": "fine art",
+    "id": "ART-HISTORY-000001"
+  },
+  {
+    "course-name": "fine art",
+    "credit-points": 50,
+    "faculty": "fine art",
+    "id": "FINE-ART-000002"
+  }
+]
+----
+
+
+[#retrieve-with-sdk]
+== With the SDK
+
+You can also use {sqlpp} queries to retrieve your records with the SDK.
+Unlike the query editor, though, you must include the name of the bucket and the scope to fully qualify the name of the collection in the {sqlpp} statement in your application. 
+For example:
 
 [source, sqlpp]
 ----
 select crc.* from `student-bucket`.`art-school-scope`.`course-record-collection` crc
 ----
 
-The name of the collection in the {sqlpp} statement has to be fully qualified, including the name of the bucket as well as the containing scope.
+=== Retrieve Your Records
 
-You can, of course, set parameters as part of your query, as shown in the next example:
+You can use the SDK to retrieve all course records at once, or narrow your search down to retrieve records based on specific criteria.
 
+==== Retrieve All Course Records
+
+To retrieve all of your course records using the Java SDK:
+
+. In your `java` directory, create a new file called `ArtSchoolRetriever.java`.
+. Paste the following code block into your `ArtSchoolRetriever.java` file:
++
 [source, java]
 ----
-include::{java-sample-location}ArtSchoolRetrieverParameters.java[]
+include::example$ArtSchoolRetrieverAll.java[]
 ----
++
+. Open a terminal window and navigate to your `student` directory.
+. Run the command `mvn install` to pull in all the dependencies and rebuild your application.
+. Run the following command to retrieve all course records:
++
+[source, sh]
+----
+mvn exec:java -Dexec.mainClass="ArtSchoolRetriever" -Dexec.cleanupDaemonThreads=false
+----
++
+If the retrieval is successful, the course information outputs in the console log.
++
+image::record-retrieval-console-output.png[alt="Console showing successful course retrieval using the SDK"]
 
-<1> The {sqlpp} statement takes a parameters `$creditPoints` which will be substituted with a correctly typed value when the statement is called.
+==== Retrieve Course Records with Less than 200 Credits
 
-<2> The value to substitute is provided in the `QueryOptions` given as the second parameter in the call.
-The value of the map entry is the actual parameter value (in this case, 200 which we're using to test the `credit-points`).
+You can set parameters in your code to narrow your search down further.
+To retrieve only courses with less than 200 `credit-points` using the Java SDK:
 
-You can use `maven` to run the program:
-
+. In your `java` directory, create a new file called `ArtSchoolRetrieverParameters.java`.
+. Paste the following code block into your `ArtSchoolRetrieverParameters.java` file:
++
+[source, java]
+----
+include::example$ArtSchoolRetriever.java[]
+----
++
+. Open a terminal window and navigate to your `student` directory.
+. Run the command `mvn install` to pull in all the dependencies and rebuild your application.
+. Run the following command to retrieve all course records:
++
 [source, sh]
 ----
 mvn exec:java -Dexec.mainClass="ArtSchoolRetrieverParameters" -Dexec.cleanupDaemonThreads=false
 ----
++
+If the retrieval is successful, the course information with your parameters outputs in the console log.
++
+image::record-retrieval-parameters-console-output.png[alt="Console showing successful course retrieval using parameters using the SDK"]
 
-== Next steps
+If you come across errors in your console, see the xref:java-tutorial/tutorial-troubleshooting.adoc[troubleshooting page].
 
-Now you can add and search for records, the next section will consolidate what you've learned so far by demonstrating how to amend existing records by adding enrollment details.
-So when you're ready carry on to xref:java-tutorial/adding-course-enrollments.adoc[].
+
+== Next Steps
+
+After retrieving student and course records, you can xref:java-tutorial/adding-course-enrollments.adoc[add enrollment details to the student records using the SDK].
