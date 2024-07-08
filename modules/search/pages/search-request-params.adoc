@@ -59,7 +59,7 @@ Contains properties to control search result highlighting.
 
 For more information about how to configure highlighting in Search results, see <<highlight,>>.
 
-|fields |Array |No a|
+|[[fields]]fields |Array |No a|
 
 An array of strings to specify each indexed field you want to return in search results. 
 
@@ -166,7 +166,7 @@ An object in the `knn` array can contain the following properties:
 
 Enter the total number of results that you want to return from your Vector Search query. 
 
-The Search Service returns the `k` closest vectors to the vector given in `vector`.
+The Search Service returns the `k` closest vectors to the vector given in `vector` or, if your database is running Couchbase Server version 7.6.2 or later, `vector_base64`.
 
 NOTE: The <<size-limit,size or limit property>> overrides any value set in `k`.
 
@@ -174,7 +174,7 @@ NOTE: The <<size-limit,size or limit property>> overrides any value set in `k`.
 
 The name of the field that contains the vector data you want to search. 
 
-|vector |Array of Floats |Yes a| 
+|vector |Array of Floats |Must have `vector` or `vector_base64` a| 
 
 Enter the vector that you want to compare to the vector data in `field`.
 
@@ -184,6 +184,15 @@ NOTE: The vector in your Search query must match the dimension of the vectors st
 If the dimensions do not match, your Search query does not return any results.
 For more information about the dimension value, see the xref:search-index-params.adoc#dims[dims property] or the xref:child-field-options-reference.adoc#dimension[Dimension option] in the UI. 
 
+|vector_base64 |Base64 Encoded String |Must have `vector` or `vector_base64` a|
+
+If your database is running Couchbase Server version 7.6.2 or later, enter a vector, encoded as a base64 string, that you want to compare to the vector data in `field`. 
+
+The Search Service uses the similarity metric defined in the xref:search-index-params.adoc#similarity[Search index definition] to return the `k` closest vectors from the Search index.
+
+NOTE: The vector in your Search query must match the dimension of the vectors stored in your Search index. 
+If the dimensions do not match, your Search query does not return any results.
+For more information about the dimension value, see the xref:search-index-params.adoc#dims[dims property] or the xref:child-field-options-reference.adoc#dimension[Dimension option] in the UI. 
 |====
 
 [#query-object]
@@ -1730,6 +1739,7 @@ Set the `analyzer` property to the name of the analyzer you want to use on the c
 
 The specified analyzer only applies to the content of your Search request.
 It does not apply to the contents of documents in the Search index.
+However, the analyzer set on your Search request and in your Search index should match. 
 a|
 
 .Match query for "location" and "hostel" in reviews.content with the "en" analyzer
@@ -1893,7 +1903,7 @@ For example, the `SearchIndexName` object contains 2 vBucket mappings, UUIDs, an
 include::example$run-search-full-request.jsonc[tag=vectors]
 ----
 
-If your Search query uses an xref:server:fts:fts-creating-full-text-aliases.adoc[index alias] that references multiple Search indexes, you must include a `\{search-index-name\}` object for each Search index in the alias. 
+If your Search query uses an xref:index-aliases.adoc[index alias] that references multiple Search indexes, you must include a `\{search-index-name\}` object for each Search index in the alias. 
 
 To get the vBucket mapping, UUID, and the sequence number for a data write, use a `MutationToken` from a Data Service `MutationResult`. 
 The Data Service returns a `MutationResult` object or promise for CRUD operations.
