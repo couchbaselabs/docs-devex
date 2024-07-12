@@ -1,7 +1,8 @@
-= Create a Vector Search Index with the Web Console
+= Create a Vector Search Index with the {page-ui-name}
 :page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
+:page-toclevels: 2
 :description: You can create a Vector Search index with the Couchbase {page-ui-name}. 
 
 [abstract]
@@ -21,8 +22,12 @@ For more information about how to deploy a new node and Services on your databas
 For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[]. 
 
 * You have documents in a keyspace inside your bucket that contain vector embeddings.
+Embeddings can be an array of floats or a base64 encoded string. 
 +
+[TIP]
+--
 include::partial$download-sample-partial.adoc[]
+--
 
 * Your user account has the *Search Admin* role for the bucket where you want to create the index.  
 
@@ -57,15 +62,17 @@ You cannot have 2 indexes with the same name inside the same bucket and scope.
 .. In the *Field* field, enter the name of the field in your documents that contains your vector embeddings.
 +
 Vectors must be represented as an array of floating point numbers. 
-.. In the *Type* list, select *vector*. 
+.. In the *Type* list, do one of the following:
+... If your child field contains vector embeddings as an array, click *vector*.
+... (Couchbase Server version 7.6.2 or later) If your child field contains vector embeddings formatted as a base64 encoded string, click *vector_base64*. 
 .. In the *Dimension* field, enter the total number of elements in the array that holds the vector embeddings for your documents.
 + 
-The Search Service supports arrays up to 2048 elements.
+From Couchbase Server version 7.6.2 and later, the Search Service supports arrays with up to 4096 elements.
 Arrays can be an array of arrays.  
-.. In the *Similarity metric* list, select the method to use to calculate the similarity between search term and Search index vectors.
+.. In the *Similarity metric* list, choose the method to use to calculate the similarity between search term and Search index vectors.
 + 
 For more information, see xref:search:child-field-options-reference.adoc[].
-.. In the *Optimized for* list, select whether the Search Service should optimize Search queries for accuracy (*recall*) or speed (*latency*).
+.. In the *Optimized for* list, choose whether the Search Service should optimize Search queries for accuracy (*recall*) or speed (*latency*).
 +
 For more information, see xref:search:child-field-options-reference.adoc[].
 .. Select *Index*.
@@ -73,12 +80,37 @@ For more information, see xref:search:child-field-options-reference.adoc[].
 . (Optional) xref:search:create-child-field.adoc[Create another child field] on the new collection type mapping for any additional fields you want to return in your search results.
 +
 For example, you could add the text field that you used to generate your vector embeddings. 
+. Next to the `default` dynamic type mapping, clear the checkbox. 
 . Click btn:[Create Index].
+
+[#example]
+=== Example: Creating a Vector Search Index for Vector Search Query Examples 
+
+If you want to use the sample dataset for the examples in xref:run-vector-search-ui.adoc[] and xref:run-vector-search-sdk.adoc[], then you can xref:search:import-search-index.adoc[import] the following Search index definition into {page-ui-name}:
+
+[source,json]
+----
+include::example$sample-vector-search-index-payload.json[]
+----
+
+NOTE: Make sure you imported the sample dataset with the recommended settings. 
+
+This Vector Search index has a type mapping for a `color.rgb` collection and includes the following fields: 
+
+* The *brightness number* field, which is included in search results and supports sorting and faceting.
+* The *color string* and *description string* fields, which are included in search results, support highlighting, phrase matching, and sorting and faceting.
+* The *colorvect_l2 [ number ]* field, which has a Dimension of `3` and uses the *l2_norm* Similarity Metric.
+* The *embedding_vector_dot [ number ]* field, which has a dimension of `1536` and uses the *dot_product* Similarity Metric. 
 
 == Next Steps 
 
-This basic Vector Search index includes the vector embeddings from the child field you specified in your type mapping.
-If you chose to add additional child fields and enabled *Include in search results*, the Search Service can also return data from those fields when you run a Vector Search query.  
+A basic Vector Search index includes the vector embeddings from the child field you specified in your type mapping.
+If you choose to add additional child fields and enable *Include in search results*, the Search Service can also return data from those child fields when you run a Vector Search query.
+
+For more information about how to add additional child fields to your index, see xref:search:create-quick-index.adoc[] or xref:search:create-child-field.adoc[].
+
+For example, if you used the Vector Search sample data, you might want to add another child field for the *color* string field to your Vector Search index, to return color names with your Search query.
+For more information about how to add additional child fields to your index, see xref:search:create-child-field.adoc[].
 
 You can customize your Vector Search index like any other Search index to add additional data and improve search results. 
 For more information about how to customize an index, see xref:search:customize-index.adoc[].

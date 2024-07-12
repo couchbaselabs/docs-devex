@@ -35,7 +35,11 @@ curl -s -XPUT -H "Content-Type: application/json" \
             "inventory.landmark": {
               "dynamic": false,
               "enabled": true,
-              "properties": {
+                "properties": {
+                  "_$xattrs": {
+                  "dynamic": true,
+                  "enabled": true
+                },
                 "content": {
                   "dynamic": false,
                   "enabled": true,
