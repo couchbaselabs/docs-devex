@@ -24,7 +24,8 @@ Couchbase supports the following:
 * <<advanced-increment-op,Advanced INCREMENT>>
 * <<advanced-decrement-op,Advanced DECREMENT>>
 * <<advanced-touch-op,Advanced TOUCH>>
-* <<advanced-subdoc-array-op,Sub-Document MUTATEIN Operation>>
+* <<advanced-subdoc-array-op-mutatein,Sub-Document MUTATEIN Operation>>
+* <<advanced-subdoc-array-op-lookupin,Sub-Document LOOKUPIN Operation>>
 * <<multiple-collection-functions,Operations that Listen to Multiple Collections>>
 * <<optional-params,Optional Parameters>>
 
@@ -406,9 +407,7 @@ function OnUpdate(doc, meta) {
 [#advanced-touch-op]
 == Advanced TOUCH Operation
 
-ifeval::['{page-component-version}' == '7.6'] 
-_(Introduced in Couchbase Server 7.6)_ 
-endif::[]
+[.status]#Couchbase Server 7.6#
 
 `result = couchbase.touch(binding, meta)`
 
@@ -461,22 +460,23 @@ function OnUpdate(doc, meta) {
 ====
 
 
-[#advanced-subdoc-array-op]
+[#advanced-subdoc-array-op-mutatein]
 == Sub-Document MUTATEIN Operation
 
-ifeval::['{page-component-version}' == '7.6'] 
-_(Introduced in Couchbase Server 7.6)_ 
-endif::[]
+[.status]#Couchbase Server 7.6#
 
 `result = couchbase.mutateIn(binding, meta, subdoc_operation_array, options)`
 
-Sub-Document operations let you modify only parts of a document instead of the entire document.
+Sub-Document MUTATEIN operations let you modify only parts of a document instead of the entire document.
 This makes them faster and more efficient than full-document operations like REPLACE and UPSERT.
 
-Sub-Document array operations do not have concurrency issues and can be performed without checking CAS.
+By default, a MUTATEIN operation does not modify Extended Attributes (XATTRs).
+To modify a document's XATTRs, you must:
 
-NOTE: Couchbase only supports Sub-Document MUTATEIN operations. 
-It does not support Sub-Document LOOKUPIN operations.
+* Pass `xattrs` as the third argument of your OnUpdate function.
+* Pass `{ "xattrs": true }` in the `subdoc_operation_array` argument of your OnUpdate function.
+
+Sub-Document array operations do not have concurrency issues and can be performed without checking CAS.
 
 ==== Examples
 ====
@@ -510,8 +510,88 @@ function OnUpdate(doc, meta) {
         couchbase.MutateInSpec.arrayPrepend("arrayTest", 1),
         couchbase.MutateInSpec.arrayInsert("arrayTest[0]", 0),
         couchbase.MutateInSpec.arrayAddUnique("arrayTest", 3)
-    ])
+    ]);
 };
+----
+====
+
+====
+.Operation
+[source,javascript]
+----
+function OnUpdate(doc, meta, xattrs) {
+    var meta = {"id": meta.id};
+ 
+    // INSERT XATTR 
+    couchbase.mutateIn(dst_bucket, meta, [
+        couchbase.MutateInSpec.insert("testField", "insert", {"xattrs": true})
+    ]);
+ 
+    // UPSERT XATTR
+    couchbase.mutateIn(dst_bucket, meta, [
+        couchbase.MutateInSpec.upsert("testField", "upsert", {"xattrs": true})
+    ]);
+ 
+    // REPLACE XATTR
+    couchbase.mutateIn(dst_bucket, meta, [
+        couchbase.MutateInSpec.replace("testField", "replace", {"xattrs": true})
+    ]);
+ 
+    // REMOVE XATTR
+    couchbase.mutateIn(dst_bucket, meta, [
+        couchbase.MutateInSpec.remove("testField", {"xattrs": true})
+    ]);
+ 
+    // ARRAY OPERATIONS WITH XATTR
+    couchbase.mutateIn(dst_bucket, meta, [
+        couchbase.MutateInSpec.upsert("arrayTest", [], {"xattrs": true}),
+        couchbase.MutateInSpec.arrayAppend("arrayTest", 2, {"xattrs": true}),
+        couchbase.MutateInSpec.arrayPrepend("arrayTest", 1, {"xattrs": true}),
+        couchbase.MutateInSpec.arrayInsert("arrayTest[0]", 0, {"xattrs": true}),
+        couchbase.MutateInSpec.arrayAddUnique("arrayTest", 3, {"xattrs": true})
+    ]);
+};
+----
+====
+
+
+[#advanced-subdoc-array-op-lookupin]
+== Sub-Document LOOKUPIN Operation
+
+[.status]#Couchbase Server 7.6.2#
+
+`result = couchbase.lookupIn(binding, meta, subdoc_array, options)`
+
+Sub-Document LOOKUPIN operations let you search for a specific field in a document without having to search and retrieve the entire document.
+
+By default, a LOOKUPIN operation does not fetch Extended Attributes (XATTRs).
+To fetch a document's XATTRs, you must:
+
+* Pass `xattrs` as the third argument of your OnUpdate function.
+* Pass `{ "xattrs": true }` in the `subdoc_array` argument of your OnUpdate function.
+
+The `subdoc_array` argument contains one or more of the following `couchbase.lookupIn.get` specs:
+
+* `<subdoc_path>`, which is the key of the subdocument you want to fetch.
+* `{ "xattrs": true }`, if you want to fetch a document's XATTRs.
+* `{ "doc":[{ "value”: <subdoc_value_0>, ”success”: <bool> }, { "value”: <subdoc_value_1>, ”success”:<bool>} ], ”meta”: <meta>, ”success”: <overall fetch operation success bool> }`, which returns results.
+* `result.doc[i].value`, which gives you access to the i-th value of the subdocument.
+If there's an error in fetching the i-th `subdoc_path`, the `result.doc[i].value` is undefined.
+
+==== Example
+====
+.Operation
+[source,javascript]
+----
+function OnUpdate(doc, meta, xattrs) {
+  var meta = {"id": meta.id}; 
+  var result = couchbase.lookupIn(dst_bucket, meta, [
+    couchbase.LookupInSpec.get("<subdoc_path_0>", {"xattrs": true}),
+    couchbase.LookupInSpec.get("<subdoc_path_1>", {"xattrs": true})
+  ]);
+  var value_0 = result.doc[0].value;
+  var value_1 = result.doc[1].value;
+} 
 ----
 ====
 
@@ -626,9 +706,7 @@ function OnUpdate(doc, meta) {
 [#optional-params-recursion]
 === Optional `{ "self_recursion": true }` Parameter
 
-ifeval::['{page-component-version}' == '7.6'] 
-_(Introduced in Couchbase Server 7.6)_ 
-endif::[]
+[.status]#Couchbase Server 7.6#
 
 You can use the optional fourth parameter `{ "self_recursion": true }` to prevent the suppression of recursive source bucket mutations and to process the mutations that you have just created.
 
