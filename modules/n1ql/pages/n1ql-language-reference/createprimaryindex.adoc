@@ -14,6 +14,9 @@ Primary indexes contain a full set of keys in a given keyspace.
 :index-replication: xref:learn:services-and-indexes/indexes/index-replication.adoc#index-replication
 :query-settings: xref:server:manage:manage-settings/query-settings.adoc
 
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
 The `CREATE PRIMARY INDEX` statement allows you to create a primary index.
 Primary indexes contain a full set of keys in a given keyspace.
 Primary indexes are optional and are only required for running ad hoc queries on a keyspace that is not supported by a secondary index.
@@ -53,26 +56,28 @@ include::partial$grammar/ddl.ebnf[tag=create-primary-index]
 
 image::n1ql-language-reference/create-primary-index.png["Syntax diagram: refer to source code listing", align=left]
 
+// TODO: Automatic links in EBNF.
+
+[horizontal]
 index-name::
-[Optional] A unique name that identifies the index.
-If a name is not specified, the default name of `#primary` is applied.
+(Optional) A unique name that identifies the index.
+If a name is not specified, the default name of `#primary` is applied. [small]##[<<note-index-name>>]##
 +
 Valid GSI index names can contain any of the following characters: `A-Z` `a-z` `0-9` `&num;` `&lowbar;`, and must start with a letter, [`A-Z` `a-z`].
 The minimum length of an index name is 1 character and there is no maximum length set for an index name.
 When querying, if the index name contains a `&num;` or `&lowbar;` character, you must enclose the index name within backticks.
-+
-IMPORTANT: Unnamed primary indexes are dropped by using the `DROP PRIMARY INDEX` statement, and named primary indexes are dropped by using the `DROP INDEX` statement.
-
-// TODO: Automatic links in EBNF.
 
 keyspace-ref:: [Required] Specifies the keyspace where the index is created.
 Refer to <<keyspace-ref>> below.
 
-index-using:: [Optional] Specifies the index type.
+index-using:: (Optional) Specifies the index type.
 Refer to <<index-using>> below.
 
-index-with:: [Optional] Specifies options for the index.
+index-with:: (Optional) Specifies options for the index.
 Refer to <<index-with>> below.
+
+[[note-index-name,note]]
+NOTE: You can drop unnamed primary indexes using the `DROP PRIMARY INDEX` statement, and named primary indexes using the `DROP INDEX` statement.
 
 [[if-not-exists]]
 === IF NOT EXISTS Clause
@@ -113,6 +118,7 @@ image::n1ql-language-reference/keyspace-path.png["Syntax diagram: refer to sourc
 If the keyspace is a named collection, or the default collection in the default scope within a bucket, the keyspace reference may be a keyspace path.
 In this case, the {query-context}[query context] should not be set.
 
+[horizontal]
 namespace::
 (Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[namespace] of the keyspace.
 Currently, only the `default` namespace is available.
@@ -148,6 +154,7 @@ image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to so
 Alternatively, if the keyspace is a named collection, the keyspace reference may be just the collection name with no path.
 In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
 
+[horizontal]
 collection::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
 
@@ -180,44 +187,62 @@ image::n1ql-language-reference/index-with.png["Syntax diagram: refer to source c
 
 Use the WITH clause to specify additional options.
 
-[[index-with-args]]
+[horizontal#index-with-args]
 expr::
-An object with the following properties:
+An object with the following properties.
 
-nodes;;
-[Optional] An array of strings, each of which represents a node name.
-+
+[options="header", cols="1a,4a,1a"]
+|===
+|Name|Description|Schema
+
+|**nodes** +
+__optional__
+| An array of strings, each of which represents a node name.
+
+include::partial$n1ql-language-reference/file-based-index-rebalance-note.adoc[]
+
+'''
+
 You can specify multiple nodes to distribute replicas of an index across nodes running the indexing service: for example, `WITH {"nodes": ["node1:8091", "node2:8091", "node3:8091"]}`.
 For details and examples, refer to {index-replication}[Index Replication].
-+
+
 If specifying both [.var]`nodes` and [.var]`num_replica`, the number of nodes in the array must be one greater than the specified number of replicas otherwise the index creation will fail.
-+
+
 (((default index placement)))If [.var]`nodes` is not specified, then the system chooses nodes on which to place the new index and any replicas, in order to achieve the best resource utilization across nodes running the indexing service.
 This is done by taking into account the current resource usage statistics of index nodes.
-+
-IMPORTANT: A node name passed to the `nodes` property must include the cluster administration port, by default 8091.
-For example `WITH {"nodes": ["192.0.2.0:8091"]}` instead of `WITH {"nodes": ["192.0.2.0"]}`.
 
-defer_build;;
-[Optional] Boolean.
+'''
+A node name passed to the `nodes` property must include the cluster administration port, by default 8091.
 
-true:::
-When set to `true`, the `CREATE PRIMARY INDEX` operation queues the task for building the index but immediately pauses the building of the index of type `GSI`.
+**Example:** `["192.0.2.0:8091"]`
+|String array
+
+|**defer_build** +
+__optional__
+| Whether the index should be created in deferred build mode.
+
+When set to `true`, the `CREATE PRIMARY INDEX` operation queues the task for building the GSI index but immediately pauses the building of the index.
 Index building requires an expensive scan operation.
 Deferring building of the index with multiple indexes can optimize the expensive scan operation.
-Admins can defer building multiple indexes and, using the `BUILD INDEX` statement, multiple indexes to be built efficiently with one efficient scan of keyspace data.
+Admins can defer building multiple indexes and, using the `BUILD INDEX` statement, build multiple indexes efficiently with one efficient scan of keyspace data.
 
-false:::
-When set to `false`, the `CREATE PRIMARY INDEX` operation queues the task for building the index and immediately kicks off the building of the index of type `GSI`.
+When set to `false`, the `CREATE PRIMARY INDEX` operation queues the task for building the GSI index and immediately kicks off the building of the index.
 
-num_replica;;
-+
-[Optional] Integer that specifies the number of {index-replication}[replicas] of the index to create.
-+
+**Default:** `false`
+|Boolean
+
+|**num_replica** +
+__optional__
+| The number of {index-replication}[replicas] of the index to create.
+
 The indexer will automatically distribute these replicas amongst index nodes in the cluster for load-balancing and high availability purposes.
 The indexer will attempt to distribute the replicas based on the server groups in use in the cluster where possible.
-+
+
 If the value of this property is not less than the number of index nodes in the cluster, then the index creation will fail.
+
+**Default:** `1`
+|Integer
+|===
 
 == Usage
 

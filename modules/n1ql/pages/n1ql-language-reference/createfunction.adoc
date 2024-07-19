@@ -14,14 +14,7 @@ include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 == Purpose
 
-There are two types of user-defined function:
-
-* [def]_Inline functions_ are defined using {sqlpp} expressions.
-They enable you to name and reuse complex or repetitive expressions, including subqueries, in order to simplify your queries.
-
-* [def]_External functions_ are defined using an external language.
-They enable you to create functions that may be difficult or impossible to define using built-in {sqlpp} expressions.
-The only supported language is JavaScript.
+include::javascript-udfs:partial$javascript-udf-introduction.adoc[]
 
 External functions in {sqlpp} support most of the language constructs available in ECMAScript.
 For more information about the restrictions and extensions that come with the Couchbase implementation, see xref:javascript-udfs:javascript-functions-with-couchbase.adoc[].
@@ -31,12 +24,12 @@ For more information about the restrictions and extensions that come with the Co
 
 You can create user-defined functions at two different levels of the {sqlpp} xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy[logical hierarchy].
 
-* A [def]_global function_ is created within a namespace, at the same level as the buckets within the namespace.
+* A [.term]#global function# is created within a namespace, at the same level as the buckets within the namespace.
 When you call a global function, any partial keyspace references within the function definition are resolved against the function's namespace, regardless of the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
 +
 For example, when you call a global function `default:global()` which contains the keyspace reference `{backtick}travel-sample{backtick}`, the keyspace reference is always resolved within the context of the function to the `default:{backtick}travel-sample{backtick}` bucket.
 
-* A [def]_scoped function_ is created within a scope, at the same level as the collections within the scope.
+* A [.term]#scoped function# is created within a scope, at the same level as the collections within the scope.
 When you call a scoped function, any partial keyspace references within the function definition are resolved against the function's scope, regardless of the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
 +
 For example, when you call a scoped function `default:{backtick}travel-sample{backtick}.inventory.scope()` which contains the keyspace reference `route`, the keyspace reference is always resolved within the context of the function to `default:{backtick}travel-sample{backtick}.inventory.route`.
@@ -50,31 +43,10 @@ If you want to call a user-defined function outside of the current query context
 Finally, it is important to note that a global function is _not_ the same as a scoped function stored in the default scope in a bucket.
 
 ifdef::flag-devex-javascript-udfs[]
-=== External Libraries
-
-(((library namespacing)))
-You can store external functions in _libraries_.
-This enables you to share external function code in more than one user-defined function.
-
-You must create the external library and the external function code using the {sqlpp} xref:server:n1ql:n1ql-rest-api/functions.adoc[Functions REST API].
-
-Like user-defined functions, these libraries may also be scoped or global.
-This enables you to keep the code for external functions separate where required.
-
-Code which is stored in a _scoped library_ is private to users of that scope, and is not visible or available to users of another scope.
-Code which is stored in a _global library_ is available to users of all scopes.
-
-A global library may have the same name as a scoped library, and scoped libraries may have the same name as each other.
-For example, you may have a global `math` library, and a `math` library in each scope.
+include::javascript-udfs:partial$libraries-and-scopes.adoc[tags=extract]
 endif::flag-devex-javascript-udfs[]
 
-=== {sqlpp} Managed User-Defined Functions
-
-In clusters using Couchbase Server 7.6 and later, you can create the code for an external function and the corresponding {sqlpp} user-defined function in a single operation.
-This means that you don't have to specify an external library and create the code for the external function, before creating the {sqlpp} user-defined function.
-
-With a {sqlpp} managed user-defined function, the external function code is stored inline, along with the {sqlpp} user-defined function.
-You cannot share this external function code with other user-defined functions, or access it from any external libraries.
+include::javascript-udfs:partial$sqlpp-managed-udfs.adoc[]
 
 == Prerequisites
 

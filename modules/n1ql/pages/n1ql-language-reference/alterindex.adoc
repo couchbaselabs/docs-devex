@@ -9,6 +9,9 @@
 :logical-hierarchy: xref:n1ql:n1ql-intro/queriesandresults.adoc#logical-hierarchy
 :querying-indexes: xref:n1ql-intro/sysinfo.adoc#querying-indexes
 
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
 [abstract]
 {description}
 
@@ -50,9 +53,10 @@ image::n1ql-language-reference/alter-index.png["Syntax diagram: refer to source 
 
 The ALTER INDEX statement provides two possible syntaxes for specifying the index and the keyspace where the index is located.
 
-index-name:: (Required) A unique name that identifies the index.
-
 // TODO: Automatic links in EBNF.
+
+[horizontal]
+index-name:: (Required) A unique name that identifies the index.
 
 index-path:: (Optional) One possible syntax for specifying the keyspace.
 Refer to <<index-path>> below.
@@ -96,6 +100,7 @@ image::n1ql-language-reference/keyspace-full.png["Syntax diagram: refer to sourc
 If the index is built on a named collection, the index path may be a full keyspace path, including namespace, bucket, scope, and collection, followed by the index name.
 In this case, the {query-context}[query context] is ignored.
 
+[horizontal]
 namespace::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[namespace] of the keyspace.
 Currently, only the `default` namespace is available.
@@ -126,6 +131,7 @@ image::n1ql-language-reference/keyspace-prefix.png["Syntax diagram: refer to sou
 If the index is built on the default collection in the default scope within a bucket, the index path may be just an optional namespace and the bucket name, followed by the index name.
 In this case, the {query-context}[query context] should not be set.
 
+[horizontal]
 namespace::
 (Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[namespace] of the keyspace.
 Currently, only the `default` namespace is available.
@@ -151,6 +157,7 @@ image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to so
 Alternatively, if the keyspace is a named collection, the index path may be just the collection name, followed by the index name.
 In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
 
+[horizontal]
 collection::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
 
@@ -187,6 +194,7 @@ image::n1ql-language-reference/keyspace-path.png["Syntax diagram: refer to sourc
 If the keyspace is a named collection, or the default collection in the default scope within a bucket, the keyspace reference may be a keyspace path.
 In this case, the {query-context}[query context] should not be set.
 
+[horizontal]
 namespace::
 (Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[namespace] of the keyspace.
 Currently, only the `default` namespace is available.
@@ -222,6 +230,7 @@ image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to so
 Alternatively, if the keyspace is a named collection, the keyspace reference may be just the collection name.
 In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
 
+[horizontal]
 collection::
 (Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
 
@@ -254,11 +263,17 @@ image::n1ql-language-reference/index-with.png["Syntax diagram: refer to source c
 
 Use the `WITH` clause to specify additional options.
 
+[horizontal]
 expr::
-An object with the following properties:
+An object with the following properties.
 
-action;;
-[Required] A string denoting the operation to be performed.
+[options="header", cols="1a,4a,1a"]
+|===
+|Name|Description|Schema
+
+|**action** +
+__required__
+| A string denoting the operation to be performed.
 The possible values are:
 
 move:::
@@ -274,21 +289,39 @@ The planner decides where to place any new index replicas on the available index
 drop_replica:::
 Drops a specified replica temporarily; for example, to repair a replica.
 You must use the `replicaId` property to specify the replica to drop.
+| enum (move, replica_count, drop_replica)
 
-num_replica;;
-[Required if `action` is set to `replica_count`] An integer specifying the number of replicas of the index.
+|**num_replica** +
+__optional__
+| Required if `action` is set to `replica_count`.
+
+An integer specifying the number of replicas of the index.
 The index service will automatically distribute these indexes amongst the index nodes in the cluster for load balancing and high availability purposes.
 The index service attempts to distribute the replicas based on the server groups in use in the cluster where possible.
 (You can restrict the number of index nodes available for index and index replica placement using the `nodes` property, described below.)
+| Integer
 
-nodes;;
-[Required if `action` is set to `move`; optional if `action` is set to `replica_count`] An array of strings, specifying a list of nodes.
+|**nodes** +
+__optional__
+| Required if `action` is set to `move`; +
+Optional if `action` is set to `replica_count`.
+
+An array of strings, specifying a list of nodes.
 If `action` is set to `move`, the node list determines the new destination nodes for the index and its replicas.
-If `action` is set to `replica_count` and you are _increasing_ the number of replicas, the node list restricts the set of nodes available for placement of the index and its replicas.
-However, if `action` is set to `replica_count` and you are _decreasing_ the number of replicas, the `nodes` property is ignored.
+If `action` is set to `replica_count` and you are increasing the number of replicas, the node list restricts the set of nodes available for placement of the index and its replicas.
+However, if `action` is set to `replica_count` and you are decreasing the number of replicas, the `nodes` property is ignored.
 
-replicaId;;
-[Required if `action` is set to `drop_replica`] An integer, specifying a replica ID.
+NOTE: You cannot use this property in Couchbase Capella, as it defaults to file-based index rebalancing. 
+See xref:server:learn:clusters-and-availability/rebalance.adoc#index-rebalance-methods[Index Rebalance Methods].
+| String array
+
+|**replicaId** +
+__optional__
+| Required if `action` is set to `drop_replica`.
+
+An integer, specifying a replica ID.
+| Integer
+|===
 
 == Usage
 
