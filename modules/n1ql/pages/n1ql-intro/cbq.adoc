@@ -21,7 +21,7 @@ For instructions on how to install the sample data, see xref:server:manage:manag
 == Running the cbq Shell
 
 When starting the cbq shell you can provide a set of command line options.
-If no options are present then it assumes default values for expected options.
+If no options are present then cbq assumes default values for expected options.
 
 To run [.cmd]`cbq` on the local host:
 
@@ -167,7 +167,7 @@ See <<cbq-file-based-ops>> for more information.
 The [.cmd]`cbq` shell stores the history for every session.
 All the commands executed in a session are stored in history.
 By default, history is stored in `~/.cbq_history`.
-You can change the name of the file using the SET command to set the predefined parameter [.var]`HISTFILE`.
+You can change the name of the file using the SET command to set the predefined parameter [.var]`histfile`.
 See <<cbq-parameter-manipulation>> for more information.
 
 By default, all the commands are stored in the specified file.
@@ -287,7 +287,7 @@ You cannot specify the port when using the `couchbase://` or `couchbases://` pro
 
 === Disconnecting
 
-You can close the connection with an existing node or cluster during the session without exiting the shell using the [.cmd]`\DISCONNECT;` command.
+You can close the connection with an existing node or cluster during the session without exiting the shell using the [.cmd]`\DISCONNECT` command.
 If the shell is not connected to any endpoint, an error with a message that the shell is not connected to any instance is thrown.
 
 ====
@@ -306,7 +306,7 @@ Couchbase query shell not connected to any endpoint. Use \CONNECT command to con
 === Bringing Up an Unconnected Instance
 
 You can bring up the shell without connecting to any query service or cluster endpoint by using the [.opt]`-ne` or [.opt]`--no-engine` option.
-After starting cbq without any service, you can connect to a specific endpoint using the [.cmd]`CONNECT` command.
+After starting cbq without any service, you can connect to a specific endpoint using the [.cmd]`\CONNECT` command.
 
 ====
 .Example
@@ -500,7 +500,7 @@ For more information about the `creds` parameter, see xref:n1ql:n1ql-rest-api/in
 
 === Displaying the Credentials
 
-You can display the credentials for the current session using the <<cbq-echo,ECHO>> shell command.
+You can display the credentials for the current session using the <<cbq-echo,\ECHO>> shell command.
 This command displays only the user names (and not the passwords).
 
 ====
@@ -516,7 +516,7 @@ Administrator:*
 ----
 ====
 
-You can also display a full list of variables using the <<cbq-set,SET>> command specified without any arguments.
+You can also display a full list of variables using the <<cbq-set,\SET>> command specified without any arguments.
 
 ====
 .Example
@@ -527,16 +527,24 @@ You can also display a full list of variables using the <<cbq-set,SET>> command 
 
 .Result
 ----
-Query Parameters ::
-Parameter name : timeout Value  ["3ms" "4s"]
+ Query Parameters : 
+ Parameter name : creds
+ Value : [ "<USER>:*" ]
 
-Named Parameters ::
-Parameter name : r Value  [9.5 9.5]
 
-User Defined Session Parameters ::
+ Named Parameters : 
 
-Predefined Session Parameters ::
-Parameter name : histfile Value  [".cbq_history"]
+ User Defined Session Parameters : 
+
+ Predefined Session Parameters : 
+ Parameter name : histfile
+ Value : [".cbq_history"]
+
+ Parameter name : batch
+ Value : ["off"]
+
+ Parameter name : quiet
+ Value : [false]
 ----
 ====
 
@@ -724,12 +732,25 @@ The following table lists the available predefined session variables.
 |===
 | Variable Name | Possible Values | Description
 
-| HISTFILE
+| `histfile`
 | Valid file name
 | Specifies the file name to store the command history.
 By default the file is saved in the user's home directory.
 
 Default: `.cbq_history`
+
+| `batch`
+| String (`"on"`, `"off"`)
+| This variable is available only with the Analytics Service.
+When specified, cbq sends the queries to Analytics only when you hit EOF or \ to indicate the end of the batch input.
+
+Default: `"off"`
+
+| `quiet`
+| Boolean
+| When specified, disables the startup connection message for the cbq shell.
+
+Default: `false`
 |===
 
 === Resetting Variable Values
