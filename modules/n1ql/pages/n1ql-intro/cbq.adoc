@@ -106,28 +106,11 @@ cbq
 
 === Executing a Single Command
 
-You can use the [.param]`--script` option to execute a single {sqlpp} query and exit the shell:
+To execute a {sqlpp} query at the cbq prompt, type the query.
+At the end of the query, type a semicolon `;` and press kbd:[Enter].
 
-====
-.Example
-[source,sh]
-----
-./cbq -u Administrator -p password -e "http://localhost:8091" \
---script="SELECT * FROM \`travel-sample\`.inventory.airline LIMIT 1;"
-----
-
-.Results
-----
-Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
-
-Path to history file for the shell : ~/.cbq_history
-
-SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
-{
-    ...
-}
-----
-====
+To execute a cbq command at the cbq prompt, type the command name starting with a backslash `\`.
+At the end of the command, type a semicolon `;` and press kbd:[Enter].
 
 === Support for Multi-line Queries
 
@@ -191,14 +174,6 @@ By default, all the commands are stored in the specified file.
 You can scroll through history and retrieve the commands from history using the scrolling arrow keys.
 Once the query is on the command prompt, you can edit it before executing the updated query.
 
-=== Exit Status
-
-The cbq shell returns the exit status 0 for successful exit with no errors and 1 if an error was encountered before exiting.
-
-=== Exit On Error
-
-When you specify the argument `--exit-on-error`, the cbq shell checks the result returned after executing the query for any error and exits when the first error is encountered.
-
 === Help
 
 Help displays the help information for the shell commands and for the general usage of cbq.
@@ -236,6 +211,1131 @@ If you do not specify a command, the cbq shell lists all the commands for which 
 ----
 --
 ====
+
+[#cbq-connect-to-cluster]
+== Connecting to the Cluster or Query Node
+
+You can connect the cbq shell to Couchbase Server either through the query service or through the cluster endpoint.
+There are two ways to establish a connection.
+
+[tabs]
+====
+Command Line Option::
++
+--
+To establish a connection on startup, use the `-e` or `--engine` command line option, optionally followed by a URL.
+
+'''
+
+.Example
+[source,sh]
+----
+./cbq -e http://localhost:8091 -u Administrator -p password
+----
+
+.Result
+----
+Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
+
+Path to history file for the shell : ~/.cbq_history
+----
+--
+
+Shell Command::
++
+--
+To establish a connection during a session, use the `\CONNECT` shell command, optionally followed by a URL.
+
+'''
+
+.Example
+[source,sqlpp]
+----
+\CONNECT http://127.0.0.1:8091;
+----
+
+.Result
+----
+Connected to : http://127.0.0.1:8091. Type Ctrl-D or \QUIT to exit.
+----
+--
+====
+
+The URL may contain up to three components: the protocol scheme, the host, and a port number.
+The URL is optional and if it is not specified, the default URL `+http://localhost:8091+` is used.
+An error is thrown if the URL is invalid.
+
+The cbq shell supports the `http://`, `https://`, `couchbase://` and `couchbases://` protocol schemes.
+The `https://` and `couchbases://` protocol schemes are encrypted.
+For more details, refer to <<cbq-encrypted>>.
+
+The host may be the IP address or hostname of any node in the cluster, as cbq will automatically discover the query nodes.
+The cbq shell supports both IPV4 and IPV6 addresses.
+
+The `couchbase://` and `couchbases://` protocol schemes support the domain name service (DNS).
+When using one of these protocol schemes, the host may be a domain name which is resolved using DNS.
+For example, this enables you to connect to a cluster or node over the internet.
+
+Note that you must use the encrypted `couchbases://` protocol scheme to connect to a cluster or node deployed in Couchbase Capella.
+
+You may optionally specify the port when using the `http://` or `https://` protocol schemes.
+When connecting to the query service, use the query port 8093, or 18093 for an encrypted connection.
+When connecting to the cluster, you don't need to specify the port as the connection uses round robin to find a query service to connect to.
+If you want to specify a port, use the admin port 8091, or 18091 for an encrypted connection.
+
+You cannot specify the port when using the `couchbase://` or `couchbases://` protocol schemes.
+
+=== Disconnecting
+
+You can close the connection with an existing node or cluster without exiting the shell at any given time during the session using the [.cmd]`\DISCONNECT;` command.
+If the shell is not connected to any endpoint, an error with a message that the shell is not connected to any instance is thrown.
+
+[tabs]
+====
+Shell Command::
++
+--
+.Example
+[source,sqlpp]
+----
+\DISCONNECT;
+----
+
+.Result
+----
+Couchbase query shell not connected to any endpoint. Use \CONNECT command to connect.
+----
+--
+====
+
+=== Bringing Up an Unconnected Instance
+
+You can bring up the shell without connecting to any query service or cluster endpoint by using the [.opt]`-ne` or [.opt]`--no-engine` option.
+After starting cbq without any service, you can connect to a specific endpoint using the [.cmd]`CONNECT` command.
+
+[tabs]
+====
+Command Line Option::
++
+--
+.Example
+[source,sh]
+----
+./cbq -ne
+----
+
+.Result
+----
+Path to history file for the shell : ~/.cbq_history
+----
+--
+====
+
+=== Exiting the cbq Shell
+
+You can exit the cbq shell by pressing kbd:[Ctrl+D] or by using the `\EXIT` or `\QUIT` command.
+
+The cbq shell first saves the history, closes existing connections, saves the current session in a session file, resets all environment variables, and then closes the shell liner interface.
+
+[tabs]
+====
+Shell Command::
++
+--
+.Example
+[source,sqlpp]
+----
+\EXIT;
+----
+
+.Result
+[source,console]
+----
+$
+----
+--
+====
+
+[#cbq-single-cred]
+== Providing Single User Credentials
+
+You can pass a single user name credential to the cbq shell on startup using the `-u` or `--username` command line option, followed by the user name.
+The shell then prompts you for a password.
+
+====
+.Example
+[source,sh]
+----
+./cbq -u=Administrator
+----
+
+.Result
+----
+Enter Password:
+Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
+----
+====
+
+You can also provide a single password credential using the `-p` or `--password` command line option, followed by the password.
+You cannot use this option by itself.
+It must be used with the `-u` option to specify the user name that the password is associated with.
+
+====
+.Example
+[source,sh]
+----
+./cbq -e http://localhost:8091 -u=Administrator -p=password
+----
+
+.Result
+----
+Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
+----
+====
+
+[#accessing-a-secure-keyspace]
+=== Providing Credentials in the Connection String
+
+You can pass the username and password by inserting them into the connection string.
+This method is not recommended when starting cbq, as you must quote or URL-encode any special characters in the username or password.
+However, this method may be useful for specifying the username and password when connecting to the cluster or node within a cbq session.
+
+To pass credentials in the connection string:
+
+. Add the username immediately after the `couchbases://` protocol scheme.
+. After the username, add a colon `:` followed by the password.
+. After the password, add an at sign `@` followed by the rest of the connection string.
+
+[tabs]
+====
+Command Line Option::
++
+--
+To access a secure keyspace on startup, use the `-e` or `--engine` command line option, and specify the username and password in the URL.
+
+'''
+
+The following example starts cbq, assuming that you have set the password for the `travel-sample` keyspace to `w1fg2Uhj89`.
+(By default, this keyspace has no password.)
+
+.Example
+[source,sh]
+----
+./cbq -engine="http://travel-sample:w1fg2Uhj89@localhost:8091/"
+----
+
+The following example starts cbq, using the Administrator username and password.
+
+.Example
+[source,sh]
+----
+./cbq -engine="http://Administrator:password@localhost:8091/"
+----
+--
+
+Shell Command::
++
+--
+To access a secure keyspace during a session, use the `\CONNECT` shell command, and specify the username and password in the URL.
+
+'''
+
+The following example connects to a cluster, assuming that you have set the password for the `travel-sample` keyspace to `w1fg2Uhj89`.
+(By default, this keyspace has no password.)
+
+.Example
+[source,sqlpp]
+----
+\CONNECT http://travel-sample:w1fg2Uhj89@localhost:8091;
+----
+
+The following example connects to a cluster, using the Administrator username and password.
+
+.Example
+[source,sqlpp]
+----
+\CONNECT http://Administrator:password@localhost:8091;
+----
+--
+====
+
+[#cbq-multiple-creds]
+=== Providing Multiple Credentials for Authorization
+
+When starting the cbq shell, you can set the credentials using a single command line option, as an alternative to specifying the username and password separately.
+This method is not recommended, as you must quote or escape any special characters in the username or password.
+
+You can also use the `\SET` or `\PUSH` shell command to set the credentials query parameter within a session.
+This enables you to change credentials before executing a query, for example to switch to a database user with access to another keyspace.
+Note that the credentials are set for the remainder of the shell session and not just on a per query basis.
+
+The list of credentials can contain one or multiple credentials.
+Each credential consists of an identity and a password separated by a colon `:`.
+To specify multiple credentials, append all the user names and passwords to the same credentials array.
+
+[tabs#pass-cred-shell-cmd]
+====
+Command Line Option::
++
+--
+To set the credentials for different users on startup, use the `-c` or `--credentials` command line option, followed by the list of credentials.
+
+'''
+
+.Example
+[source,sh]
+----
+./cbq -e http://localhost:8091 -c=travel-sample:pwd1,beer-sample:pwd2
+----
+--
+
+Shell Command::
++
+--
+To switch between users and change credentials during a session, use the `\SET` shell command to specify the [.param]`-creds` query parameter.
+
+NOTE: The credentials are set for the shell session and not on a per query basis.
+You can use the SET, PUSH, POP and UNSET commands to reset the credentials during a session.
+
+To pass authentication credentials per query, set the query parameter to a new value using the SET shell command before executing the query.
+
+'''
+
+.Example
+[source,sqlpp]
+----
+\SET -creds travel-sample:b1, session:s1;
+----
+--
+====
+
+For information on passing a single user name credential to the cbq shell, see <<cbq-single-cred>>.
+
+For more information about the `creds` parameter, see xref:n1ql:n1ql-rest-api/intro.adoc#creds[Query Service REST API] and xref:n1ql:n1ql-rest-api/exauthrequest.adoc[].
+
+=== Displaying the Credentials
+
+You can display the credentials for the current session using the <<cbq-echo,ECHO>> shell command.
+This command displays only the user names (and not the passwords).
+
+====
+.Example
+[source,sqlpp]
+----
+\ECHO -creds;
+----
+
+.Result
+----
+Administrator:*
+----
+====
+
+You can also display a full list of variables using the <<cbq-set,SET>> command specified without any arguments.
+
+====
+.Example
+[source,sqlpp]
+----
+\SET;
+----
+
+.Result
+----
+Query Parameters ::
+Parameter name : timeout Value  ["3ms" "4s"]
+
+Named Parameters ::
+Parameter name : r Value  [9.5 9.5]
+
+User Defined Session Parameters ::
+
+Predefined Session Parameters ::
+Parameter name : histfile Value  [".cbq_history"]
+----
+====
+
+[#cbq-encrypted]
+== Using an Encrypted Connection
+
+The cbq shell supports self-signed certificates for encrypting communication between clusters.
+
+You can connect to the cluster or node with an encrypted protocol scheme -- that is, either `https://` or `couchbases://`.
+To do this, you can provide the root CA certificate, the chain certificate, and the client key file using the <<opt-cacert,--cacert>>, <<opt-cert,--cert>>, and <<opt-key,--key>> options.
+You can use the <<opt-skip-verify,--no-ssl-verify>> option to skip the verification of certificates.
+
+When connecting to a cluster or node with an encrypted protocol scheme, the default ports are 18091 and 18093.
+You need not specify the port when connecting to the cluster.
+
+You can use the encrypted `couchbases://` protocol scheme with a domain name to connect to a node or cluster deployed in Couchbase Capella.
+For more details, refer to <<cbq-connect-to-cluster>>.
+
+[#cbq-parameter-manipulation]
+== Parameter Manipulation
+
+The cbq shell categorizes parameters into the following types:
+
+* Query parameters
+* Named parameters
+* User-defined session variables
+* Pre-defined session variables
+
+=== Parameter Configuration
+
+When using parameters, you can set a stack of values for each parameter.
+You can either push a new value onto the stack using the `\PUSH` command, or set the current value for a parameter using the `\SET` command.
+The `\SET` command always modifies the top of a variable's stack while the `\PUSH` command adds to the stack.
+When you use `\PUSH` with no arguments, it copies the top element of every parameter's stack (except the predefined parameters) and pushes that copy to the top of its respective stack.
+As a result, each stack grows by 1, but the values are preserved.
+You can then use the `\SET` command to modify the top value.
+
+To unset the values from a parameter's stack, you can use the `\UNSET` command to remove all the values from the stack and delete the corresponding parameter stack.
+However, if you want to delete a single value from the settings, use the `\POP` command.
+When you use the `\POP` command with no arguments, it pops the one value from the top of each parameter's stack.
+
+To display all the parameters defined in a session, use the `\SET` command with no arguments.
+
+=== Setting Variable Values
+
+To set the value of a parameter, use the `\SET` or `\PUSH` shell command, followed by a parameter name and parameter value.
+
+The parameter name may have a prefix, depending on the type of parameter: query parameter, named parameter, user-defined session variable, or predefined session variable.
+The cbq shell uses the prefix to differentiate between the different types of parameters.
+
+.Prefixes for Parameters
+[#table_ltk_c5s_5v,cols="2,5"]
+|===
+| Prefix | Parameter Type
+
+| `-`
+| Query parameter
+
+| `-$` or `-@`
+| Named parameters
+
+| `$`
+| User defined session variable
+
+| No prefix
+| Predefined (built-in) session variable
+|===
+
+NOTE: Positional parameters are set using the [.param]`-args` query parameter.
+
+For more details about the available query parameters (prefixed by `-`), see xref:n1ql:n1ql-manage/query-settings.adoc#section_nnj_sjk_k1b[Request-Level Parameters].
+As a best practice, save the initial set of basic parameters and their default values using the [.cmd]`\PUSH` command (with no arguments).
+
+====
+The following example sets the `airport` named parameter, pushes two positional parameters to the `args` query parameter stack, and then displays all parameters.
+
+.Example
+[source,sqlpp]
+----
+\SET -$airport "SJC";
+\PUSH -args ["LAX", 6];
+\SET;
+----
+
+.Result
+----
+Query Parameters ::
+Parameter name : args Value  [["LAX",6]]
+
+Named Parameters ::
+Parameter name : airport Value  ["SJC"]
+
+User Defined Session Parameters ::
+
+Predefined Session Parameters ::
+Parameter name : histfile Value  [".cbq_history"]
+----
+
+The following example pushes a new value to the `airport` named parameter stack, duplicates the top value in each stack except the predefined session parameters, and then displays all parameters.
+
+.Example
+[source,sqlpp]
+----
+\PUSH -$airport "SFO";
+\PUSH;
+\SET;
+----
+
+.Result
+----
+Query Parameters ::
+Parameter name : args Value  [["LAX",6] ["LAX",6]]
+
+Named Parameters ::
+Parameter name : airport Value  ["SJC" "SFO" "SFO"]
+
+User Defined Session Parameters ::
+
+Predefined Session Parameters ::
+Parameter name : histfile Value  [".cbq_history"]
+----
+
+The following example sets the top level of the `airport` named parameter stack to a new value, and then displays all parameters.
+
+.Example
+[source,sqlpp]
+----
+\SET -args ["SFO", 8];
+\SET;
+----
+
+.Result
+----
+Query Parameters ::
+Parameter name : args Value  [["LAX",6] ["SFO",8]]
+
+Named Parameters ::
+Parameter name : airport Value  ["SJC" "SFO" "SFO"]
+
+User Defined Session Parameters ::
+
+Predefined Session Parameters ::
+Parameter name : histfile Value  [".cbq_history"]
+----
+====
+
+=== Handling Named Parameters
+
+To define named parameters, use the `\SET` or `\PUSH` command.
+For each named parameter, prefix the variable name with `-$` or `-@`.
+
+For more details about named parameters, see xref:n1ql:n1ql-manage/query-settings.adoc#section_srh_tlm_n1b[Named Parameters and Positional Parameters].
+
+====
+The following example creates named parameters `r` and `date` with values `9.5` and `"1-1-2016"` respectively.
+
+.Example
+[source,sqlpp]
+----
+\SET -$r 9.5;
+\SET -@date "1-1-2016";
+----
+====
+
+=== Handling Positional Parameters
+
+To define positional parameters, use the `\SET` or `\PUSH` command with the [.param]`-args` query parameter, followed by an array containing the different values that correspond to positions within the query.
+
+For more details about positional parameters, see xref:n1ql:n1ql-manage/query-settings.adoc#section_srh_tlm_n1b[Named Parameters and Positional Parameters].
+
+====
+.Example
+[source,sqlpp]
+----
+\SET -args [ 9.5, "1-1-2016"];
+----
+====
+
+=== Handling Predefined Session Variables
+
+The following table lists the available predefined session variables.
+
+.Predefined Session Variables
+[cols="1,1,2"]
+|===
+| Variable Name | Possible Values | Description
+
+| HISTFILE
+| Valid file name
+| Specifies the file name to store the command history.
+By default the file is saved in the user's home directory.
+
+Default: `.cbq_history`
+|===
+
+=== Resetting Variable Values
+
+You can reset the value of a variable by either popping it or deleting it altogether.
+
+To pop the top of every parameter's stack once, use the `\POP` command without any arguments.
+
+====
+.Example
+[source,sqlpp]
+----
+\POP;
+\SET;
+----
+
+.Result
+----
+Query Parameters ::
+Parameter name : args Value  [["LAX",6]]
+
+Named Parameters ::
+Parameter name : airport Value  ["SJC" "SFO"]
+
+User Defined Session Parameters ::
+
+Predefined Session Parameters ::
+Parameter name : histfile Value  [".cbq_history"]
+----
+====
+
+To pop the top value from a single parameter's stack, use the `\POP` command, followed by the parameter prefix and parameter name.
+
+====
+.Example
+[source,sqlpp]
+----
+\POP -$airport;
+\SET;
+----
+
+.Result
+----
+Query Parameters ::
+Parameter name : args Value  [["LAX",6]]
+
+Named Parameters ::
+Parameter name : airport Value  ["SJC"]
+
+User Defined Session Parameters ::
+
+Predefined Session Parameters ::
+Parameter name : histfile Value  [".cbq_history"]
+----
+====
+
+To pop all the values of a parameter's stack and then delete the parameter, use the `\UNSET` command, followed by the parameter prefix and parameter name.
+
+====
+.Example
+[source,sqlpp]
+----
+\UNSET -$airport;
+\SET;
+----
+
+.Result
+----
+Query Parameters ::
+Parameter name : args Value  [["LAX",6]]
+
+Named Parameters ::
+
+User Defined Session Parameters ::
+
+Predefined Session Parameters ::
+Parameter name : histfile Value  [".cbq_history"]
+----
+====
+
+[#cbq-shell-cmd-echo]
+== Using ECHO to Display Values of Parameters and More
+
+The ECHO command displays the current values of the parameters set for a session.
+You can use it to display any input string or command aliases that have been created using the ALIAS shell command.
+
+=== Echo a String or Statement
+
+To echo a string or a {sqlpp} statement, use the `\ECHO` command, followed by the string or statement.
+
+====
+.Example
+[source,sqlpp]
+----
+\ECHO hello;
+----
+
+.Result
+----
+hello
+----
+====
+
+=== Echo an Alias
+
+To echo a command alias, use the `\ECHO` command, followed by two backslashes and the command alias name.
+
+====
+.Example
+[source,sqlpp]
+----
+\ECHO \\travel-alias1;
+----
+
+.Result
+[source,sqlpp]
+----
+SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
+----
+====
+
+=== Echo a Parameter
+
+To echo a parameter, use the `\ECHO` command, followed by the parameter prefix and parameter name.
+
+If you do not include the parameter prefix, the shell considers the parameter as a generic statement and displays the parameter as is.
+
+====
+.Example
+[source,sqlpp]
+----
+\ECHO -$r;
+----
+
+.Result
+----
+9.5
+----
+====
+
+[#cbq-shell-cmd-alias]
+== Command Alias
+
+Using the ALIAS shell command, you can define and store aliases for commands.
+This is useful when you have lengthy queries that need to be executed often.
+
+=== Create Command Aliases
+
+To define an alias, use the `\ALIAS` command, followed by the command alias name and the query.
+
+====
+.Example
+[source,sqlpp]
+----
+\ALIAS travel-alias1 SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
+----
+====
+
+=== Run Command Aliases
+
+To run the command alias, type two backslashes `\\`, followed by the command alias name.
+
+====
+.Example
+[source,sqlpp]
+----
+\\travel-alias1;
+----
+
+.Result
+[source,json]
+----
+{
+    "requestID": "b25c84d6-7b7b-440a-a286-5027e6ecbbb5",
+    "signature": {
+        "*": "*"
+    },
+    "results": [
+    {
+        "airline": {
+            "callsign": "MILE-AIR",
+            "country": "United States",
+            "iata": "Q5",
+            "icao": "MLA",
+            "id": 10,
+            "name": "40-Mile Air",
+            "type": "airline"
+        }
+    }
+    ],
+    "status": "success",
+    // ...
+}
+----
+====
+
+=== List Command Aliases
+
+To list all the existing aliases, use the `\ALIAS` command without options.
+
+====
+.Example
+[source,sqlpp]
+----
+\ALIAS;
+----
+
+.Result
+----
+serverversion  select version()
+travel-alias1  SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
+----
+====
+
+=== Delete Command Aliases
+
+You can delete a defined alias using the `\UNLIAS` command, followed by the alias name.
+This command can take multiple arguments and deletes the defined alias for every input name.
+
+====
+.Example
+[source,sqlpp]
+----
+\UNALIAS serverversion travel-alias1;
+----
+
+.Check aliases
+[source,sqlpp]
+----
+\ALIAS;
+----
+
+.Result
+----
+ ERROR 141 : Alias does not exist :
+----
+====
+
+[#cbq-prepared-stmts]
+== Executing Prepared Statements
+
+You can use the shell command to execute prepared statements.
+As a pre-requisite, you must first prepare a statement.
+To prepare and execute a statement, follow these steps:
+
+. Set the named and positional parameters that are present in the prepared statement.
+. Prepare a statement using the {sqlpp} xref:n1ql:n1ql-language-reference/prepare.adoc[PREPARE] statement.
+If you do not specify a name for the prepared statement, a unique name is assigned.
+You can use this auto-assigned name when executing the prepared statement.
+If you specify a name, you can use this name to run the prepared statement.
+. Execute the prepared statement using the {sqlpp} xref:n1ql:n1ql-language-reference/execute.adoc[EXECUTE] statement.
+
+== Canceling a Query
+
+You can cancel a running query by using the kbd:[Ctrl+C] keys.
+
+=== Connection Timeout Parameter
+
+You can use the timeout parameter to limit the running time of a query.
+This parameter specifies the time to wait before returning an error when executing a query.
+
+Timeout can be specified in the following units: `ns` for nanoseconds, `μs` for microseconds, `ms` for milliseconds, `s` for seconds, `m` for minutes, and `h` for hours.
+Examples of valid values include `"0.5s"`, `"10ms"`, or `"1m"`.
+An error is thrown if the timeout is invalid.
+
+[tabs]
+====
+Command Line Option::
++
+--
+Use the `-t` or `--timeout` command line option, followed by the length of the timeout.
+
+'''
+
+.Example
+[source,sh]
+----
+./cbq --timeout="2s"
+----
+--
+
+Shell Command::
++
+--
+Use the `\SET` shell command to set the `TIMEOUT` parameter, followed by the length of the timeout.
+
+'''
+
+.Example
+[source,sqlpp]
+----
+\SET -TIMEOUT 1ms;
+----
+--
+====
+
+[#cbq-file-based-ops]
+== File Based Operations
+
+Using the file based commands and options, the cbq shell can execute {sqlpp} and shell commands contained in files.
+There are two ways to accomplish this.
+
+[tabs]
+====
+Command Line Option::
++
+--
+Use the `-f` or `--file` command line option, followed by the input file.
+
+The cbq shell executes the commands present in the input file, prints them to stdout (or to a file if using redirects), and exits.
+
+'''
+// tag::sample-txt[]
+Consider the input file, `sample.txt`, containing the following commands.
+
+[source,sqlpp]
+.sample.txt
+----
+CREATE PRIMARY INDEX ON `travel-sample`.inventory.airline USING GSI;
+SELECT * from `travel-sample`.inventory.airline LIMIT 2;
+SELECT callsign from `travel-sample`.inventory.airline LIMIT 3;
+\HELP;
+----
+// end::sample-txt[]
+
+[source,sh]
+.Example
+----
+./cbq -f=sample.txt
+----
+
+.Results
+----
+ Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
+
+ Path to history file for the shell : ~/.cbq_history 
+CREATE PRIMARY INDEX ON `travel-sample`.inventory.airline USING GSI;
+{ ...
+  "results": [ ],
+  ...
+}
+SELECT * from `travel-sample`.inventory.airline LIMIT 2;
+{ ...
+  "results": [ ],
+  ...
+}
+SELECT callsign from `travel-sample`.inventory.airline LIMIT 3;
+{ ...
+  "results": [ ],
+  ...
+}
+\HELP;
+Help information for all shell commands.
+...
+$
+----
+--
+
+Shell Command::
++
+--
+Use the `\SOURCE` shell command, followed by the input file.
+
+cbq runs the commands present in the input file and prints the result to stdout.
+
+'''
+
+include::cbq.adoc[tag=sample-txt]
+
+[source,sqlpp]
+.Example
+----
+\SOURCE sample.txt;
+----
+
+.Results
+----
+CREATE PRIMARY INDEX ON `travel-sample`.inventory.airline USING GSI;
+{ ...
+  "results": [ ],
+ ...
+}
+SELECT * from `travel-sample`.inventory.airline LIMIT 2;
+{ ...
+  "results": [ ],
+  ...
+}
+SELECT callsign from `travel-sample`.inventory.airline LIMIT 3;
+{ ...
+  "results": [ ],
+  ...
+}
+\HELP;
+Help information for all shell commands.
+...
+cbq>
+----
+--
+====
+
+=== Redirecting Results to a File
+
+You can redirect all the output for a session or part of a session to a specified output file.
+If the file doesn't exist, it is created.
+If the file already exists, it is overwritten.
+
+[tabs]
+====
+Command Line Option::
++
+--
+Use the `-o` or `--output` command line option, followed by the output file.
+
+'''
+
+.Example
+[source,sh]
+----
+./cbq -o temp_output.txt
+----
+--
+
+Shell Command::
++
+--
+To start redirecting commands during a session, use `\REDIRECT` followed by the output file.
+To stop redirecting commands, use `\REDIRECT OFF`.
+All the commands specified after `\REDIRECT` and before `\REDIRECT OFF` are saved into the specified output file.
+
+You can specify multiple `\REDIRECT` commands.
+When you do so, the output file changes to the specified files and switches back to [.out]`stdout` only when you specify `\REDIRECT OFF`.
+
+You can append redirected output to an existing file using <<file-append-mode>>.
+
+'''
+
+.Example
+[source,sqlpp]
+----
+\REDIRECT temp_output.txt;
+CREATE PRIMARY INDEX ON `travel-sample`.inventory.airline USING GSI;
+SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
+\HELP;
+\REDIRECT OFF;
+----
+--
+====
+
+[[file-append-mode]]
+=== File Append Mode
+
+You can use file append mode to specify that cbq should append redirected output to the end of an existing file, rather than overwriting the existing file.
+
+Note that file append mode is only available with the `\REDIRECT` command within a shell session.
+It is not available for the `-o` or `--output` command line option.
+When you use the `-o` or `--output` command line option, the specified output file is always overwritten.
+
+To use file append mode, include a plus sign `+` at the start of the output path or filename.
+
+====
+.Example
+[source,sqlpp]
+----
+\REDIRECT +temp_output.txt;
+SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
+\REDIRECT OFF;
+----
+
+Every time you start appending to the output file, a timestamp is added to the end of the output file, followed by any redirected commands and results.
+
+----
+-- <2021-07-30T14:48:43.661+01:00> : opened in append mode
+
+SELECT * FROM `travel-sample`.inventory.airline LIMIT 1
+...
+----
+====
+
+[#cbq-server-shell-info]
+== Server and Shell Information
+
+The cbq shell provides commands that convey information about the shell or cluster endpoints.
+
+=== Version
+
+You can find the version of the client (shell) by using either the command line option to display the current version of the shell and exit, or as a shell command to print the version of the shell during the shell session.
+
+To display the version of the query service, use the xref:n1ql:n1ql-language-reference/metafun.adoc#version[VERSION()] function in {sqlpp}.
+
+[tabs]
+====
+Command Line Option::
++
+--
+Use the `-v` or `--version` command line option.
+
+'''
+
+.Example
+[source,sh]
+----
+./cbq -v
+----
+
+.Result
+----
+GO VERSION : go1.21.6
+SHELL VERSION : 7.6.0-2176
+
+Use N1QL queries select version(); or select min_version(); to display server version.
+----
+--
+
+Shell Command::
++
+--
+Use the `\VERSION` shell command.
+
+'''
+
+.Example
+[source,sqlpp]
+----
+\VERSION;
+----
+
+.Result
+----
+GO VERSION : go1.21.6
+SHELL VERSION : 7.6.0-2176
+
+Use N1QL queries select version(); or select min_version(); to display server version.
+----
+--
+====
+
+=== Copyright
+
+You can view the copyright, attributions, and distribution terms of the command line query tool using the `\COPYRIGHT` shell command.
+
+====
+.Example
+[source,sqlpp]
+----
+\COPYRIGHT;
+----
+
+.Result
+----
+Copyright (c) 2016 Couchbase, Inc. Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software distributed under the
+License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+either express or implied. See the License for the specific language governing permissions
+and limitations under the License.
+----
+====
+
+== Executing a Script
+
+You can use the [.param]`--script` option to execute a single {sqlpp} query and exit the shell.
+
+====
+.Example
+[source,sh]
+----
+./cbq -u Administrator -p password -e "http://localhost:8091" \
+--script="SELECT * FROM \`travel-sample\`.inventory.airline LIMIT 1;"
+----
+
+.Results
+----
+Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
+
+Path to history file for the shell : ~/.cbq_history
+
+SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
+{
+    ...
+}
+----
+====
+
+=== Exit On Error
+
+When you specify the argument `--exit-on-error`, the cbq shell checks the result returned after executing the query for any error and exits when the first error is encountered.
+
+=== Exit Status
+
+The cbq shell returns the exit status 0 for successful exit with no errors and 1 if an error was encountered before exiting.
 
 == Available Command Line Options and Shell Commands
 
@@ -1165,1088 +2265,6 @@ a| Redirects the output of subsequent commands from a custom file to standard ou
 \REDIRECT OFF;
 ----
 |===
-
-[#cbq-connect-to-cluster]
-== Connecting to the Cluster or Query Node
-
-You can connect the cbq shell to Couchbase Server either through the query service or through the cluster endpoint.
-There are two ways to establish a connection.
-
-[tabs]
-====
-Command Line Option::
-+
---
-To establish a connection on startup, use the `-e` or `--engine` command line option, optionally followed by a URL.
-
-'''
-
-.Example
-[source,sh]
-----
-./cbq -e http://localhost:8091 -u Administrator -p password
-----
-
-.Result
-----
-Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
-
-Path to history file for the shell : ~/.cbq_history
-----
---
-
-Shell Command::
-+
---
-To establish a connection during a session, use the `\CONNECT` shell command, optionally followed by a URL.
-
-'''
-
-.Example
-[source,sqlpp]
-----
-\CONNECT http://127.0.0.1:8091;
-----
-
-.Result
-----
-Connected to : http://127.0.0.1:8091. Type Ctrl-D or \QUIT to exit.
-----
---
-====
-
-The URL may contain up to three components: the protocol scheme, the host, and a port number.
-The URL is optional and if it is not specified, the default URL `+http://localhost:8091+` is used.
-An error is thrown if the URL is invalid.
-
-The cbq shell supports the `http://`, `https://`, `couchbase://` and `couchbases://` protocol schemes.
-The `https://` and `couchbases://` protocol schemes are encrypted.
-For more details, refer to <<cbq-encrypted>>.
-
-The host may be the IP address or hostname of any node in the cluster, as cbq will automatically discover the query nodes.
-The cbq shell supports both IPV4 and IPV6 addresses.
-
-The `couchbase://` and `couchbases://` protocol schemes support the domain name service (DNS).
-When using one of these protocol schemes, the host may be a domain name which is resolved using DNS.
-For example, this enables you to connect to a cluster or node over the internet.
-
-Note that you must use the encrypted `couchbases://` protocol scheme to connect to a cluster or node deployed in Couchbase Capella.
-
-You may optionally specify the port when using the `http://` or `https://` protocol schemes.
-When connecting to the query service, use the query port 8093, or 18093 for an encrypted connection.
-When connecting to the cluster, you don't need to specify the port as the connection uses round robin to find a query service to connect to.
-If you want to specify a port, use the admin port 8091, or 18091 for an encrypted connection.
-
-You cannot specify the port when using the `couchbase://` or `couchbases://` protocol schemes.
-
-=== Disconnecting
-
-You can close the connection with an existing node or cluster without exiting the shell at any given time during the session using the [.cmd]`\DISCONNECT;` command.
-If the shell is not connected to any endpoint, an error with a message that the shell is not connected to any instance is thrown.
-
-[tabs]
-====
-Shell Command::
-+
---
-.Example
-[source,sqlpp]
-----
-\DISCONNECT;
-----
-
-.Result
-----
-Couchbase query shell not connected to any endpoint. Use \CONNECT command to connect.
-----
---
-====
-
-=== Bringing Up an Unconnected Instance
-
-You can bring up the shell without connecting to any query service or cluster endpoint by using the [.opt]`-ne` or [.opt]`--no-engine` option.
-After starting cbq without any service, you can connect to a specific endpoint using the [.cmd]`CONNECT` command.
-
-[tabs]
-====
-Command Line Option::
-+
---
-.Example
-[source,sh]
-----
-./cbq -ne
-----
-
-.Result
-----
-Path to history file for the shell : ~/.cbq_history
-----
---
-====
-
-=== Exiting the cbq Shell
-
-You can exit the cbq shell by pressing kbd:[Ctrl+D] or by using the `\EXIT` or `\QUIT` command.
-
-The cbq shell first saves the history, closes existing connections, saves the current session in a session file, resets all environment variables, and then closes the shell liner interface.
-
-[tabs]
-====
-Shell Command::
-+
---
-.Example
-[source,sqlpp]
-----
-\EXIT;
-----
-
-.Result
-[source,console]
-----
-$
-----
---
-====
-
-== Accessing a Secure Keyspace
-
-If your keyspace has a password, you can pass the keyspace name and keyspace password as part of the cluster or node URL.
-
-[tabs]
-====
-Command Line Option::
-+
---
-To access a secure keyspace on startup, use the `-e` or `--engine` command line option, and specify the username and password in the URL.
-
-'''
-
-The following example starts cbq, assuming that you have set the password for the `travel-sample` keyspace to `w1fg2Uhj89`.
-(By default, this keyspace has no password.)
-
-.Example
-[source,sh]
-----
-./cbq -engine="http://travel-sample:w1fg2Uhj89@localhost:8091/"
-----
-
-The following example starts cbq, using the Administrator username and password.
-
-.Example
-[source,sh]
-----
-./cbq -engine="http://Administrator:password@localhost:8091/"
-----
---
-
-Shell Command::
-+
---
-To access a secure keyspace during a session, use the `\CONNECT` shell command, and specify the username and password in the URL.
-
-'''
-
-The following example connects to a cluster, assuming that you have set the password for the `travel-sample` keyspace to `w1fg2Uhj89`.
-(By default, this keyspace has no password.)
-
-.Example
-[source,sqlpp]
-----
-\CONNECT http://travel-sample:w1fg2Uhj89@localhost:8091;
-----
-
-The following example connects to a cluster, using the Administrator username and password.
-
-.Example
-[source,sqlpp]
-----
-\CONNECT http://Administrator:password@localhost:8091;
-----
---
-====
-
-[#cbq-single-cred]
-== Providing Single User Credentials
-
-You can pass a single user name credential to the cbq shell on startup using the `-u` or `--username` command line option, followed by the user name.
-The shell then prompts you for a password.
-
-====
-.Example
-[source,sh]
-----
-./cbq -u=Administrator
-----
-
-.Result
-----
-Enter Password:
-Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
-----
-====
-
-You can also provide a single password credential using the `-p` or `--password` command line option, followed by the password.
-You cannot use this option by itself.
-It must be used with the `-u` option to specify the user name that the password is associated with.
-
-====
-.Example
-[source,sh]
-----
-./cbq -e http://localhost:8091 -u=Administrator -p=password
-----
-
-.Result
-----
-Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
-----
-====
-
-For information on passing the user name and password credentials using other mechanisms, see <<cbq-multiple-creds>>.
-
-[#cbq-multiple-creds]
-== Providing Multiple Credentials for Authorization
-
-The cbq shell supports self-signed certificates for encrypting communication between clusters.
-
-Using the cbq shell, you can set the credentials for different users on startup or use the `\SET` shell command to set the credentials query parameter.
-You can also use this to provide authentication credentials for multiple SASL buckets per session.
-Depending on the type of credential being set, there are multiple possible values for the credentials query parameter.
-
-The list of credentials can contain one or multiple credentials.
-Each credential consists of an identity and a password separated by a colon `:`.
-To specify multiple credentials, append all the user names and passwords to the same credentials array.
-
-[tabs#pass-cred-shell-cmd]
-====
-Command Line Option::
-+
---
-To set the credentials for different users on startup, use the `-c` or `--credentials` command line option, followed by the list of credentials.
-
-'''
-
-.Example
-[source,sh]
-----
-./cbq -e http://localhost:8091 -c=travel-sample:pwd1,beer-sample:pwd2
-----
---
-
-Shell Command::
-+
---
-To switch between users and change credentials during a session, use the `\SET` shell command to specify the [.param]`-creds` query parameter.
-
-NOTE: The credentials are set for the shell session and not on a per query basis.
-You can use the SET, PUSH, POP and UNSET commands to reset the credentials during a session.
-
-To pass authentication credentials per query, set the query parameter to a new value using the SET shell command before executing the query.
-
-'''
-
-.Example
-[source,sqlpp]
-----
-\SET -creds travel-sample:b1, session:s1;
-----
---
-====
-
-For information on passing a single user name credential to the cbq shell, see <<cbq-single-cred>>.
-
-For more information about the `creds` parameter, see xref:n1ql:n1ql-rest-api/intro.adoc#creds[Query Service REST API] and xref:n1ql:n1ql-rest-api/exauthrequest.adoc[].
-
-=== Displaying the Credentials
-
-You can display the credentials for the current session using the <<cbq-echo,ECHO>> shell command.
-This command displays only the user names (and not the passwords).
-
-====
-.Example
-[source,sqlpp]
-----
-\ECHO -creds;
-----
-
-.Result
-----
-Administrator:*
-----
-====
-
-You can also display a full list of variables using the <<cbq-set,SET>> command specified without any arguments.
-
-====
-.Example
-[source,sqlpp]
-----
-\SET;
-----
-
-.Result
-----
-Query Parameters ::
-Parameter name : timeout Value  ["3ms" "4s"]
-
-Named Parameters ::
-Parameter name : r Value  [9.5 9.5]
-
-User Defined Session Parameters ::
-
-Predefined Session Parameters ::
-Parameter name : histfile Value  [".cbq_history"]
-----
-====
-
-[#cbq-encrypted]
-== Using an Encrypted Connection
-
-You can connect to the cluster or node with an encrypted protocol scheme -- that is, either `https://` or `couchbases://`.
-To do this, you can provide the root CA certificate, the chain certificate, and the client key file using the <<opt-cacert,--cacert>>, <<opt-cert,--cert>>, and <<opt-key,--key>> options.
-You can use the <<opt-skip-verify,--no-ssl-verify>> option to skip the verification of certificates.
-
-When connecting to a cluster or node with an encrypted protocol scheme, the default ports are 18091 and 18093.
-You need not specify the port when connecting to the cluster.
-
-You can use the encrypted `couchbases://` protocol scheme with a domain name to connect to a node or cluster deployed in Couchbase Capella.
-For more details, refer to <<cbq-connect-to-cluster>>.
-
-[#cbq-parameter-manipulation]
-== Parameter Manipulation
-
-The cbq shell categorizes parameters into the following types:
-
-* Query parameters
-* Named parameters
-* User-defined session variables
-* Pre-defined session variables
-
-=== Parameter Configuration
-
-When using parameters, you can set a stack of values for each parameter.
-You can either push a new value onto the stack using the `\PUSH` command, or set the current value for a parameter using the `\SET` command.
-The `\SET` command always modifies the top of a variable's stack while the `\PUSH` command adds to the stack.
-When you use `\PUSH` with no arguments, it copies the top element of every parameter's stack (except the predefined parameters) and pushes that copy to the top of its respective stack.
-As a result, each stack grows by 1, but the values are preserved.
-You can then use the `\SET` command to modify the top value.
-
-To unset the values from a parameter's stack, you can use the `\UNSET` command to remove all the values from the stack and delete the corresponding parameter stack.
-However, if you want to delete a single value from the settings, use the `\POP` command.
-When you use the `\POP` command with no arguments, it pops the one value from the top of each parameter's stack.
-
-To display all the parameters defined in a session, use the `\SET` command with no arguments.
-
-=== Setting Variable Values
-
-To set the value of a parameter, use the `\SET` or `\PUSH` shell command, followed by a parameter name and parameter value.
-
-The parameter name may have a prefix, depending on the type of parameter: query parameter, named parameter, user-defined session variable, or predefined session variable.
-The cbq shell uses the prefix to differentiate between the different types of parameters.
-
-.Prefixes for Parameters
-[#table_ltk_c5s_5v,cols="2,5"]
-|===
-| Prefix | Parameter Type
-
-| `-`
-| Query parameter
-
-| `-$` or `-@`
-| Named parameters
-
-| `$`
-| User defined session variable
-
-| No prefix
-| Predefined (built-in) session variable
-|===
-
-NOTE: Positional parameters are set using the [.param]`-args` query parameter.
-
-For more details about the available query parameters (prefixed by `-`), see xref:n1ql:n1ql-manage/query-settings.adoc#section_nnj_sjk_k1b[Request-Level Parameters].
-As a best practice, save the initial set of basic parameters and their default values using the [.cmd]`\PUSH` command (with no arguments).
-
-====
-The following example sets the `airport` named parameter, pushes two positional parameters to the `args` query parameter stack, and then displays all parameters.
-
-.Example
-[source,sqlpp]
-----
-\SET -$airport "SJC";
-\PUSH -args ["LAX", 6];
-\SET;
-----
-
-.Result
-----
-Query Parameters ::
-Parameter name : args Value  [["LAX",6]]
-
-Named Parameters ::
-Parameter name : airport Value  ["SJC"]
-
-User Defined Session Parameters ::
-
-Predefined Session Parameters ::
-Parameter name : histfile Value  [".cbq_history"]
-----
-
-The following example pushes a new value to the `airport` named parameter stack, duplicates the top value in each stack except the predefined session parameters, and then displays all parameters.
-
-.Example
-[source,sqlpp]
-----
-\PUSH -$airport "SFO";
-\PUSH;
-\SET;
-----
-
-.Result
-----
-Query Parameters ::
-Parameter name : args Value  [["LAX",6] ["LAX",6]]
-
-Named Parameters ::
-Parameter name : airport Value  ["SJC" "SFO" "SFO"]
-
-User Defined Session Parameters ::
-
-Predefined Session Parameters ::
-Parameter name : histfile Value  [".cbq_history"]
-----
-
-The following example sets the top level of the `airport` named parameter stack to a new value, and then displays all parameters.
-
-.Example
-[source,sqlpp]
-----
-\SET -args ["SFO", 8];
-\SET;
-----
-
-.Result
-----
-Query Parameters ::
-Parameter name : args Value  [["LAX",6] ["SFO",8]]
-
-Named Parameters ::
-Parameter name : airport Value  ["SJC" "SFO" "SFO"]
-
-User Defined Session Parameters ::
-
-Predefined Session Parameters ::
-Parameter name : histfile Value  [".cbq_history"]
-----
-====
-
-=== Handling Named Parameters
-
-To define named parameters, use the `\SET` or `\PUSH` command.
-For each named parameter, prefix the variable name with `-$` or `-@`.
-
-For more details about named parameters, see xref:n1ql:n1ql-manage/query-settings.adoc#section_srh_tlm_n1b[Named Parameters and Positional Parameters].
-
-====
-The following example creates named parameters `r` and `date` with values `9.5` and `"1-1-2016"` respectively.
-
-.Example
-[source,sqlpp]
-----
-\SET -$r 9.5;
-\SET -@date "1-1-2016";
-----
-====
-
-=== Handling Positional Parameters
-
-To define positional parameters, use the `\SET` or `\PUSH` command with the [.param]`-args` query parameter, followed by an array containing the different values that correspond to positions within the query.
-
-For more details about positional parameters, see xref:n1ql:n1ql-manage/query-settings.adoc#section_srh_tlm_n1b[Named Parameters and Positional Parameters].
-
-====
-.Example
-[source,sqlpp]
-----
-\SET -args [ 9.5, "1-1-2016"];
-----
-====
-
-=== Handling Predefined Session Variables
-
-The following table lists the available predefined session variables.
-
-.Predefined Session Variables
-[cols="1,1,2"]
-|===
-| Variable Name | Possible Values | Description
-
-| HISTFILE
-| Valid file name
-| Specifies the file name to store the command history.
-By default the file is saved in the user's home directory.
-
-Default: `.cbq_history`
-|===
-
-=== Resetting Variable Values
-
-You can reset the value of a variable by either popping it or deleting it altogether.
-
-To pop the top of every parameter's stack once, use the `\POP` command without any arguments.
-
-====
-.Example
-[source,sqlpp]
-----
-\POP;
-\SET;
-----
-
-.Result
-----
-Query Parameters ::
-Parameter name : args Value  [["LAX",6]]
-
-Named Parameters ::
-Parameter name : airport Value  ["SJC" "SFO"]
-
-User Defined Session Parameters ::
-
-Predefined Session Parameters ::
-Parameter name : histfile Value  [".cbq_history"]
-----
-====
-
-To pop the top value from a single parameter's stack, use the `\POP` command, followed by the parameter prefix and parameter name.
-
-====
-.Example
-[source,sqlpp]
-----
-\POP -$airport;
-\SET;
-----
-
-.Result
-----
-Query Parameters ::
-Parameter name : args Value  [["LAX",6]]
-
-Named Parameters ::
-Parameter name : airport Value  ["SJC"]
-
-User Defined Session Parameters ::
-
-Predefined Session Parameters ::
-Parameter name : histfile Value  [".cbq_history"]
-----
-====
-
-To pop all the values of a parameter's stack and then delete the parameter, use the `\UNSET` command, followed by the parameter prefix and parameter name.
-
-====
-.Example
-[source,sqlpp]
-----
-\UNSET -$airport;
-\SET;
-----
-
-.Result
-----
-Query Parameters ::
-Parameter name : args Value  [["LAX",6]]
-
-Named Parameters ::
-
-User Defined Session Parameters ::
-
-Predefined Session Parameters ::
-Parameter name : histfile Value  [".cbq_history"]
-----
-====
-
-[#cbq-shell-cmd-echo]
-== Using ECHO to Display Values of Parameters and More
-
-The ECHO command displays the current values of the parameters set for a session.
-You can use it to display any input string or command aliases that have been created using the ALIAS shell command.
-
-=== Echo a String or Statement
-
-To echo a string or a {sqlpp} statement, use the `\ECHO` command, followed by the string or statement.
-
-====
-.Example
-[source,sqlpp]
-----
-\ECHO hello;
-----
-
-.Result
-----
-hello
-----
-====
-
-=== Echo an Alias
-
-To echo a command alias, use the `\ECHO` command, followed by two backslashes and the command alias name.
-
-====
-.Example
-[source,sqlpp]
-----
-\ECHO \\travel-alias1;
-----
-
-.Result
-[source,sqlpp]
-----
-SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
-----
-====
-
-=== Echo a Parameter
-
-To echo a parameter, use the `\ECHO` command, followed by the parameter prefix and parameter name.
-
-If you do not include the parameter prefix, the shell considers the parameter as a generic statement and displays the parameter as is.
-
-====
-.Example
-[source,sqlpp]
-----
-\ECHO -$r;
-----
-
-.Result
-----
-9.5
-----
-====
-
-[#cbq-shell-cmd-alias]
-== Command Alias
-
-Using the ALIAS shell command, you can define and store aliases for commands.
-This is useful when you have lengthy queries that need to be executed often.
-
-=== Create Command Aliases
-
-To define an alias, use the `\ALIAS` command, followed by the command alias name and the query.
-
-====
-.Example
-[source,sqlpp]
-----
-\ALIAS travel-alias1 SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
-----
-====
-
-=== Run Command Aliases
-
-To run the command alias, type two backslashes `\\`, followed by the command alias name.
-
-====
-.Example
-[source,sqlpp]
-----
-\\travel-alias1;
-----
-
-.Result
-[source,json]
-----
-{
-    "requestID": "b25c84d6-7b7b-440a-a286-5027e6ecbbb5",
-    "signature": {
-        "*": "*"
-    },
-    "results": [
-    {
-        "airline": {
-            "callsign": "MILE-AIR",
-            "country": "United States",
-            "iata": "Q5",
-            "icao": "MLA",
-            "id": 10,
-            "name": "40-Mile Air",
-            "type": "airline"
-        }
-    }
-    ],
-    "status": "success",
-    // ...
-}
-----
-====
-
-=== List Command Aliases
-
-To list all the existing aliases, use the `\ALIAS` command without options.
-
-====
-.Example
-[source,sqlpp]
-----
-\ALIAS;
-----
-
-.Result
-----
-serverversion  select version()
-travel-alias1  SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
-----
-====
-
-=== Delete Command Aliases
-
-You can delete a defined alias using the `\UNLIAS` command, followed by the alias name.
-This command can take multiple arguments and deletes the defined alias for every input name.
-
-====
-.Example
-[source,sqlpp]
-----
-\UNALIAS serverversion travel-alias1;
-----
-
-.Check aliases
-[source,sqlpp]
-----
-\ALIAS;
-----
-
-.Result
-----
- ERROR 141 : Alias does not exist :
-----
-====
-
-[#cbq-prepared-stmts]
-== Executing Prepared Statements
-
-You can use the shell command to execute prepared statements.
-As a pre-requisite, you must first prepare a statement.
-To prepare and execute a statement, follow these steps:
-
-. Set the named and positional parameters that are present in the prepared statement.
-. Prepare a statement using the {sqlpp} xref:n1ql:n1ql-language-reference/prepare.adoc[PREPARE] statement.
-If you do not specify a name for the prepared statement, a unique name is assigned.
-You can use this auto-assigned name when executing the prepared statement.
-If you specify a name, you can use this name to run the prepared statement.
-. Execute the prepared statement using the {sqlpp} xref:n1ql:n1ql-language-reference/execute.adoc[EXECUTE] statement.
-
-== Canceling a Query
-
-You can cancel a running query by using the kbd:[Ctrl+C] keys.
-
-=== Connection Timeout Parameter
-
-You can use the timeout parameter to limit the running time of a query.
-This parameter specifies the time to wait before returning an error when executing a query.
-
-Timeout can be specified in the following units: `ns` for nanoseconds, `μs` for microseconds, `ms` for milliseconds, `s` for seconds, `m` for minutes, and `h` for hours.
-Examples of valid values include `"0.5s"`, `"10ms"`, or `"1m"`.
-An error is thrown if the timeout is invalid.
-
-[tabs]
-====
-Command Line Option::
-+
---
-Use the `-t` or `--timeout` command line option, followed by the length of the timeout.
-
-'''
-
-.Example
-[source,sh]
-----
-./cbq --timeout="2s"
-----
---
-
-Shell Command::
-+
---
-Use the `\SET` shell command to set the `TIMEOUT` parameter, followed by the length of the timeout.
-
-'''
-
-.Example
-[source,sqlpp]
-----
-\SET -TIMEOUT 1ms;
-----
---
-====
-
-[#cbq-file-based-ops]
-== File Based Operations
-
-Using the file based commands and options, the cbq shell can execute {sqlpp} and shell commands contained in files.
-There are two ways to accomplish this.
-
-[tabs]
-====
-Command Line Option::
-+
---
-Use the `-f` or `--file` command line option, followed by the input file.
-
-The cbq shell executes the commands present in the input file, prints them to stdout (or to a file if using redirects), and exits.
-
-'''
-// tag::sample-txt[]
-Consider the input file, `sample.txt`, containing the following commands.
-
-[source,sqlpp]
-.sample.txt
-----
-CREATE PRIMARY INDEX ON `travel-sample`.inventory.airline USING GSI;
-SELECT * from `travel-sample`.inventory.airline LIMIT 2;
-SELECT callsign from `travel-sample`.inventory.airline LIMIT 3;
-\HELP;
-----
-// end::sample-txt[]
-
-[source,sh]
-.Example
-----
-./cbq -f=sample.txt
-----
-
-.Results
-----
- Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
-
- Path to history file for the shell : ~/.cbq_history 
-CREATE PRIMARY INDEX ON `travel-sample`.inventory.airline USING GSI;
-{ ...
-  "results": [ ],
-  ...
-}
-SELECT * from `travel-sample`.inventory.airline LIMIT 2;
-{ ...
-  "results": [ ],
-  ...
-}
-SELECT callsign from `travel-sample`.inventory.airline LIMIT 3;
-{ ...
-  "results": [ ],
-  ...
-}
-\HELP;
-Help information for all shell commands.
-...
-$
-----
---
-
-Shell Command::
-+
---
-Use the `\SOURCE` shell command, followed by the input file.
-
-cbq runs the commands present in the input file and prints the result to stdout.
-
-'''
-
-include::cbq.adoc[tag=sample-txt]
-
-[source,sqlpp]
-.Example
-----
-\SOURCE sample.txt;
-----
-
-.Results
-----
-CREATE PRIMARY INDEX ON `travel-sample`.inventory.airline USING GSI;
-{ ...
-  "results": [ ],
- ...
-}
-SELECT * from `travel-sample`.inventory.airline LIMIT 2;
-{ ...
-  "results": [ ],
-  ...
-}
-SELECT callsign from `travel-sample`.inventory.airline LIMIT 3;
-{ ...
-  "results": [ ],
-  ...
-}
-\HELP;
-Help information for all shell commands.
-...
-cbq>
-----
---
-====
-
-=== Redirecting Results to a File
-
-You can redirect all the output for a session or part of a session to a specified output file.
-If the file doesn't exist, it is created.
-If the file already exists, it is overwritten.
-
-[tabs]
-====
-Command Line Option::
-+
---
-Use the `-o` or `--output` command line option, followed by the output file.
-
-'''
-
-.Example
-[source,sh]
-----
-./cbq -o temp_output.txt
-----
---
-
-Shell Command::
-+
---
-To start redirecting commands during a session, use `\REDIRECT` followed by the output file.
-To stop redirecting commands, use `\REDIRECT OFF`.
-All the commands specified after `\REDIRECT` and before `\REDIRECT OFF` are saved into the specified output file.
-
-You can specify multiple `\REDIRECT` commands.
-When you do so, the output file changes to the specified files and switches back to [.out]`stdout` only when you specify `\REDIRECT OFF`.
-
-You can append redirected output to an existing file using <<file-append-mode>>.
-
-'''
-
-.Example
-[source,sqlpp]
-----
-\REDIRECT temp_output.txt;
-CREATE PRIMARY INDEX ON `travel-sample`.inventory.airline USING GSI;
-SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
-\HELP;
-\REDIRECT OFF;
-----
---
-====
-
-[[file-append-mode]]
-=== File Append Mode
-
-You can use file append mode to specify that cbq should append redirected output to the end of an existing file, rather than overwriting the existing file.
-
-Note that file append mode is only available with the `\REDIRECT` command within a shell session.
-It is not available for the `-o` or `--output` command line option.
-When you use the `-o` or `--output` command line option, the specified output file is always overwritten.
-
-To use file append mode, include a plus sign `+` at the start of the output path or filename.
-
-====
-.Example
-[source,sqlpp]
-----
-\REDIRECT +temp_output.txt;
-SELECT * FROM `travel-sample`.inventory.airline LIMIT 1;
-\REDIRECT OFF;
-----
-
-Every time you start appending to the output file, a timestamp is added to the end of the output file, followed by any redirected commands and results.
-
-----
--- <2021-07-30T14:48:43.661+01:00> : opened in append mode
-
-SELECT * FROM `travel-sample`.inventory.airline LIMIT 1
-...
-----
-====
-
-[#cbq-server-shell-info]
-== Server and Shell Information
-
-The cbq shell provides commands that convey information about the shell or cluster endpoints.
-
-=== Version
-
-You can find the version of the client (shell) by using either the command line option to display the current version of the shell and exit, or as a shell command to print the version of the shell during the shell session.
-
-To display the version of the query service, use the xref:n1ql:n1ql-language-reference/metafun.adoc#version[VERSION()] function in {sqlpp}.
-
-[tabs]
-====
-Command Line Option::
-+
---
-Use the `-v` or `--version` command line option.
-
-'''
-
-.Example
-[source,sh]
-----
-./cbq -v
-----
-
-.Result
-----
-GO VERSION : go1.21.6
-SHELL VERSION : 7.6.0-2176
-
-Use N1QL queries select version(); or select min_version(); to display server version.
-----
---
-
-Shell Command::
-+
---
-Use the `\VERSION` shell command.
-
-'''
-
-.Example
-[source,sqlpp]
-----
-\VERSION;
-----
-
-.Result
-----
-GO VERSION : go1.21.6
-SHELL VERSION : 7.6.0-2176
-
-Use N1QL queries select version(); or select min_version(); to display server version.
-----
---
-====
-
-=== Copyright
-
-You can view the copyright, attributions, and distribution terms of the command line query tool using the `\COPYRIGHT` shell command.
-
-====
-.Example
-[source,sqlpp]
-----
-\COPYRIGHT;
-----
-
-.Result
-----
-Copyright (c) 2016 Couchbase, Inc. Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License. You may obtain a copy of the
-License at http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software distributed under the
-License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-either express or implied. See the License for the specific language governing permissions
-and limitations under the License.
-----
-====
 
 == Shortcut Keys for cbq Shell
 
