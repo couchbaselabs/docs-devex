@@ -6,6 +6,9 @@
 You can select, join, project, nest, unnest, group, and sort in a single SELECT statement.
 :page-topic-type: reference
 
+// Cross-references
+:query-select: xref:learn:security/roles.adoc#query-select
+
 // TEMP
 include::partial$n1ql-language-reference/collapsible-style.adoc[]
 
@@ -28,8 +31,8 @@ include::ROOT:partial$query-context.adoc[tag=statement]
 
 == Prerequisites
 
-The user executing the SELECT statement must have the _Query Select_ privileges granted on all keyspaces referred in the query.
-// Note that, the SELECT query may not refer to any keyspace or with JOIN queries or subqueries, it may refer to multiple keyspaces.
+The user executing the SELECT statement must have the {query-select}[Query Select] privileges granted on all keyspaces referred in the query.
+Note that the SELECT statement may refer to one keyspace, multiple keyspaces, or no keyspaces at all.
 For more details about user roles, see
 xref:learn:security/authorization-overview.adoc[Authorization].
 
@@ -44,14 +47,14 @@ To execute the following statement, the user does not need any special privilege
 SELECT 1
 ----
 
-To execute the following statement, the user must have the  _Query Select_ privilege on `airline`.
+To execute the following statement, the user must have the {query-select}[Query Select] privilege on `airline`.
 
 [source,sqlpp]
 ----
 SELECT * FROM airline;
 ----
 
-To execute the following statement, the user must have the _Query Select_ privilege on `route` and `airline`.
+To execute the following statement, the user must have the {query-select}[Query Select] privilege on `route` and `airline`.
 
 [source,sqlpp]
 ----
@@ -61,7 +64,7 @@ ON KEYS route.airlineid
 WHERE route.airlineid IN ["airline_330", "airline_225"]
 ----
 
-To execute the following statement, the user must have the _Query Select_ privilege on `airport` and `landmark`.
+To execute the following statement, the user must have the {query-select}[Query Select] privilege on `airport` and `landmark`.
 
 [source,sqlpp]
 ----
@@ -69,7 +72,7 @@ SELECT * FROM airport
 WHERE city IN (SELECT RAW city FROM landmark);
 ----
 
-To execute the following statement, the user must have the _Query Select_ privilege on `hotel` and `landmark`.
+To execute the following statement, the user must have the {query-select}[Query Select] privilege on `hotel` and `landmark`.
 
 [source,sqlpp]
 ----
@@ -137,6 +140,10 @@ SELECT * FROM airport USE KEYS "airport_3469";
 
 With projections, you retrieve just the fields that you need and not the entire document.
 This is especially useful when querying for a large dataset as it results in shorter processing times and better performance.
+
+Beginning with Couchbase Server 7.6, the projection is returned in the order specified by the query.
+In prior versions, the projection was sorted alphabetically.
+To revert to this behavior, use the xref:n1ql:n1ql-manage/query-settings.adoc#sort_projection[sort_projection] request-level parameter.
 
 The SELECT statement provides a variety of data processing capabilities such as <<filtering,filtering>>, <<query-across-relationships,querying across relationships>> using JOINs or subqueries, <<deep-traversal-nested-docs,deep traversal of nested documents>>, <<aggregation,aggregation>>, <<combine-resultsets,combining result sets>> using operators, <<group-sort-limit,grouping>>, <<group-sort-limit,sorting>>, and more.
 Follow the links for examples that demonstrate each capability.
