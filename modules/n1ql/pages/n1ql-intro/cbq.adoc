@@ -12,22 +12,65 @@ The cbq shell enables you to perform all the operations that are supported by th
 include::ROOT:partial$component-signpost.adoc[]
 
 The cbq shell executable, [.cmd]`cbq`, is available in the Couchbase Server installation directory.
+It is also available in the xref:cli:cli-intro.adoc#server-tools-packages[Couchbase Server tools] package beginning with version 7.6.2.
 
 == Examples on this Page
 
 The examples on this page use the `travel-sample` dataset, which is supplied with Couchbase Server.
 For instructions on how to install the sample data, see xref:server:manage:manage-settings/install-sample-buckets.adoc[Sample Buckets].
 
+[tabs]
+====
+Linux::
++
+--
+In the command line examples:
+
+* `$BASE_URL` is the URL of any node in the Couchbase cluster.
+* `$USER` is the user name to connect to Couchbase Server.
+* `$PASSWORD` is the password to connect to Couchbase Server.
+--
+
+macOS::
++
+--
+In the command line examples:
+
+* `$BASE_URL` is the URL of any node in the Couchbase cluster.
+* `$USER` is the user name to connect to Couchbase Server.
+* `$PASSWORD` is the password to connect to Couchbase Server.
+--
+
+Microsoft Windows::
++
+--
+In the command line examples:
+
+* `%BASE_URL%` is the URL of any node in the Couchbase cluster.
+* `%USER%` is the user name to connect to Couchbase Server.
+* `%PASSWORD%` is the password to connect to Couchbase Server.
+--
+
+Shell Command::
++
+--
+In the shell command examples:
+
+* `<BASE_URL>` is the URL of any node in the Couchbase cluster.
+* `<USER>` is the user name to connect to Couchbase Server.
+* `<PASSWORD>` is the password to connect to Couchbase Server.
+--
+====
+
 == Running the cbq Shell
 
 When starting the cbq shell you can provide a set of command line options.
 If no options are present then cbq assumes default values for expected options.
 
-To run [.cmd]`cbq` on the local host:
+To run [.cmd]`cbq`:
 
-. Log in to a Couchbase Server node that has the query service enabled.
 . Open a command window.
-. Change to the Couchbase tools directory.
+. Change to the directory where the Couchbase command line tools are installed.
 +
 [tabs]
 ====
@@ -59,7 +102,7 @@ cd C:\Program Files\Couchbase\Server\bin
 --
 ====
 
-. Run the following command to connect to the local query node and start the interactive query shell:
+. Run the following command to connect to the node or cluster and start the interactive query shell:
 +
 [tabs]
 ====
@@ -68,7 +111,7 @@ Linux::
 --
 [source,sh]
 ----
-./cbq
+./cbq -u $USER -p $PASSWORD -e $BASE_URL
 ----
 --
 
@@ -77,7 +120,7 @@ macOS::
 --
 [source,sh]
 ----
-./cbq
+./cbq -u $USER -p $PASSWORD -e $BASE_URL
 ----
 --
 
@@ -86,7 +129,7 @@ Microsoft Windows::
 --
 [source,cmd]
 ----
-cbq
+cbq -u %USER% -p %PASSWORD% -e %BASE_URL%
 ----
 --
 ====
@@ -94,6 +137,7 @@ cbq
 For more information about connecting to a node or cluster, see <<cbq-connect-to-cluster>>, <<cbq-single-cred>>, and <<cbq-encrypted>>.
 
 For the complete list of command line options, see <<table_a3h_rhz_dw>>.
+
 
 === Executing a Single Command
 
@@ -224,8 +268,7 @@ If you do not specify a command, the cbq shell lists all the commands for which 
 [#cbq-connect-to-cluster]
 == Connecting to the Cluster or Query Node
 
-You can connect the cbq shell to Couchbase Server either through the query service or through the cluster endpoint.
-There are two ways to establish a connection.
+You can connect the cbq shell to Couchbase Server through any of the nodes in the cluster.
 
 [tabs]
 ====
@@ -239,12 +282,12 @@ To establish a connection on startup, use the `-e` or `--engine` command line op
 .Example
 [source,sh]
 ----
-./cbq -e http://localhost:8091 -u Administrator -p password
+./cbq -e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 .Result
 ----
-Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
+Connected to : http://<HOST>:8091/. Type Ctrl-D or \QUIT to exit.
 
 Path to history file for the shell : ~/.cbq_history
 ----
@@ -260,12 +303,12 @@ To establish a connection during a session, use the `\CONNECT` shell command, op
 .Example
 [source,sqlpp]
 ----
-\CONNECT http://127.0.0.1:8091;
+\CONNECT <BASE_URL>;
 ----
 
 .Result
 ----
-Connected to : http://127.0.0.1:8091. Type Ctrl-D or \QUIT to exit.
+Connected to : http://<HOST>:8091. Type Ctrl-D or \QUIT to exit.
 ----
 --
 ====
@@ -280,12 +323,11 @@ For more details, refer to <<cbq-encrypted>>.
 
 The host may be the IP address or hostname of any node in the cluster, as cbq will automatically discover the query nodes.
 The cbq shell supports both IPV4 and IPV6 addresses.
+For example: `localhost`, `node1`, `127.0.0.1`, or `[fd63:6f75:6368:1075:816:3c1d:789b:bc4]`.
 
 The `couchbase://` and `couchbases://` protocol schemes support the domain name service (DNS).
 When using one of these protocol schemes, the host may be a domain name which is resolved using DNS.
 For example, this enables you to connect to a cluster or node over the internet.
-
-Note that you must use the encrypted `couchbases://` protocol scheme to connect to a cluster or node deployed in Couchbase Capella.
 
 You may optionally specify the port when using the `http://` or `https://` protocol schemes.
 When connecting to the query service, use the query port 8093, or 18093 for an encrypted connection.
@@ -296,7 +338,7 @@ You cannot specify the port when using the `couchbase://` or `couchbases://` pro
 
 === Disconnecting
 
-You can close the connection with an existing node or cluster during the session without exiting the shell using the [.cmd]`\DISCONNECT` command.
+You can close the connection with a node or cluster during the session without exiting the shell using the [.cmd]`\DISCONNECT` command.
 If the shell is not connected to any endpoint, an error with a message that the shell is not connected to any instance is thrown.
 
 ====
@@ -314,8 +356,8 @@ Couchbase query shell not connected to any endpoint. Use \CONNECT command to con
 
 === Bringing Up an Unconnected Instance
 
-You can bring up the shell without connecting to any query service or cluster endpoint by using the [.opt]`-ne` or [.opt]`--no-engine` option.
-After starting cbq without any service, you can connect to a specific endpoint using the [.cmd]`\CONNECT` command.
+You can bring up the shell without connecting to any query service or cluster node by using the [.opt]`-ne` or [.opt]`--no-engine` option.
+After starting cbq without any connection, you can connect to a node using the [.cmd]`\CONNECT` command.
 
 ====
 .Example
@@ -351,7 +393,7 @@ $
 ====
 
 [#cbq-single-cred]
-== Providing Single User Credentials
+== Providing Credentials
 
 You can pass a single user name credential to the cbq shell on startup using the `-u` or `--username` command line option, followed by the user name.
 The shell then prompts you for a password.
@@ -360,13 +402,13 @@ The shell then prompts you for a password.
 .Example
 [source,sh]
 ----
-./cbq -u=Administrator
+./cbq -e $BASE_URL -u $USER
 ----
 
 .Result
 ----
 Enter Password:
-Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
+Connected to : http://<HOST>:8091/. Type Ctrl-D or \QUIT to exit.
 ----
 ====
 
@@ -378,12 +420,12 @@ It must be used with the `-u` option to specify the user name that the password 
 .Example
 [source,sh]
 ----
-./cbq -e http://localhost:8091 -u=Administrator -p=password
+./cbq --e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 .Result
 ----
-Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
+Connected to : http://<HOST>:8091/. Type Ctrl-D or \QUIT to exit.
 ----
 ====
 
@@ -396,7 +438,7 @@ However, this method may be useful for specifying the username and password when
 
 To pass credentials in the connection string:
 
-. Add the username immediately after the `couchbases://` protocol scheme.
+. Add the username immediately after the protocol scheme.
 . After the username, add a colon `:` followed by the password.
 . After the password, add an at sign `@` followed by the rest of the connection string.
 
@@ -409,21 +451,12 @@ To pass credentials on startup, use the `-e` or `--engine` command line option, 
 
 '''
 
-The following example starts cbq, assuming that you have set the password for the `travel-sample` keyspace to `w1fg2Uhj89`.
-(By default, this keyspace has no password.)
+In this example, `$HOST` and `$PORT` are the parts of the cluster or node URL following the protocol scheme.
 
 .Example
 [source,sh]
 ----
-./cbq -engine="http://travel-sample:w1fg2Uhj89@localhost:8091/"
-----
-
-The following example starts cbq, using the Administrator username and password.
-
-.Example
-[source,sh]
-----
-./cbq -engine="http://Administrator:password@localhost:8091/"
+./cbq -engine="http://$USER:$PASSWORD@$HOST:$PORT/"
 ----
 --
 
@@ -434,21 +467,12 @@ To pass credentials during a session, use the `\CONNECT` shell command, and spec
 
 '''
 
-The following example connects to a cluster, assuming that you have set the password for the `travel-sample` keyspace to `w1fg2Uhj89`.
-(By default, this keyspace has no password.)
+In this example, `<HOST>` and `<PORT>` are the parts of the cluster or node URL following the protocol scheme.
 
 .Example
 [source,sqlpp]
 ----
-\CONNECT http://travel-sample:w1fg2Uhj89@localhost:8091;
-----
-
-The following example connects to a cluster, using the Administrator username and password.
-
-.Example
-[source,sqlpp]
-----
-\CONNECT http://Administrator:password@localhost:8091;
+\CONNECT http://<USER>:<PASSWORD>@<HOST>:<PORT>/;
 ----
 --
 ====
@@ -472,40 +496,37 @@ To specify multiple credentials, append all the user names and passwords to the 
 Command Line Option::
 +
 --
-To set the credentials for different users on startup, use the `-c` or `--credentials` command line option, followed by the list of credentials.
+To set the credentials on startup, use the `-c` or `--credentials` command line option, followed by the list of credentials.
 
 '''
+
+In this example, `$USER2` and `$PASSWORD2` are alternative credentials with access to a second keyspace.
 
 .Example
 [source,sh]
 ----
-./cbq -e http://localhost:8091 -c=travel-sample:pwd1,beer-sample:pwd2
+./cbq e $BASE_URL -c=$USER:$PASSWORD,$USER2:$PASSWORD2
 ----
 --
 
 Shell Command::
 +
 --
-To switch between users and change credentials during a session, use the `\SET` shell command to specify the [.param]`-creds` query parameter.
-
-NOTE: The credentials are set for the shell session and not on a per query basis.
-You can use the SET, PUSH, POP and UNSET commands to reset the credentials during a session.
-
-To pass authentication credentials per query, set the query parameter to a new value using the SET shell command before executing the query.
+To change credentials during a session, use the `\SET` shell command to specify the [.param]`-creds` query parameter, followed by the list of credentials.
 
 '''
+
+In this example, `<USER2>` and `<PASSWORD2>` are alternative credentials with access to a second keyspace.
 
 .Example
 [source,sqlpp]
 ----
-\SET -creds travel-sample:b1, session:s1;
+\SET -creds <USER>:<PASSWORD>, <USER2>:<PASSWORD2>;
 ----
 --
 ====
 
-For information on passing a single user name credential to the cbq shell, see <<cbq-single-cred>>.
-
-For more information about the `creds` parameter, see xref:n1ql:n1ql-rest-api/intro.adoc#creds[Query Service REST API] and xref:n1ql:n1ql-rest-api/exauthrequest.adoc[].
+For more information about using multiple credentials, see xref:n1ql:n1ql-rest-api/intro.adoc#creds[Query Service REST API] and xref:n1ql:n1ql-rest-api/exauthrequest.adoc[].
 
 === Displaying the Credentials
 
@@ -521,7 +542,7 @@ This command displays only the user names (and not the passwords).
 
 .Result
 ----
-Administrator:*
+<USER>:*
 ----
 ====
 
@@ -567,9 +588,8 @@ To do this, you can provide the root CA certificate, the chain certificate, and 
 You can use the <<opt-skip-verify,--no-ssl-verify>> option to skip the verification of certificates.
 
 When connecting to a cluster or node with an encrypted protocol scheme, the default ports are 18091 and 18093.
-You need not specify the port when connecting to the cluster.
+You cannot specify the port when using the `couchbases://` protocol scheme.
 
-You can use the encrypted `couchbases://` protocol scheme with a domain name to connect to a node or cluster deployed in Couchbase Capella.
 For more details, refer to <<cbq-connect-to-cluster>>.
 
 [#cbq-parameter-manipulation]
@@ -1037,7 +1057,7 @@ Use the `-t` or `--timeout` command line option, followed by the length of the t
 .Example
 [source,sh]
 ----
-./cbq --timeout="2s"
+./cbq -e $BASE_URL -u $USER -p $PASSWORD --timeout="2s"
 ----
 --
 
@@ -1088,12 +1108,13 @@ SELECT callsign from `travel-sample`.inventory.airline LIMIT 3;
 [source,sh]
 .Example
 ----
-./cbq -f=sample.txt
+./cbq -e $BASE_URL -u $USER -p $PASSWORD -f=sample.txt
 ----
 
 .Results
+[source,console]
 ----
- Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
+ Connected to : http://<HOST>:8091/. Type Ctrl-D or \QUIT to exit.
 
  Path to history file for the shell : ~/.cbq_history 
 CREATE PRIMARY INDEX ON `travel-sample`.inventory.airline USING GSI;
@@ -1136,6 +1157,7 @@ include::cbq.adoc[tag=sample-txt]
 ----
 
 .Results
+[source,console]
 ----
 CREATE PRIMARY INDEX ON `travel-sample`.inventory.airline USING GSI;
 { ...
@@ -1178,7 +1200,7 @@ Use the `-o` or `--output` command line option, followed by the output file.
 .Example
 [source,sh]
 ----
-./cbq -o temp_output.txt
+./cbq -e $BASE_URL -u $USER -p $PASSWORD -o temp_output.txt
 ----
 --
 
@@ -1266,8 +1288,8 @@ Use the `-v` or `--version` command line option.
 
 .Result
 ----
-GO VERSION : go1.21.6
-SHELL VERSION : 7.6.0-2176
+GO VERSION : go1.22.2
+SHELL VERSION : 7.6.2-3721
 
 Use N1QL queries select version(); or select min_version(); to display server version.
 ----
@@ -1288,8 +1310,8 @@ Use the `\VERSION` shell command.
 
 .Result
 ----
-GO VERSION : go1.21.6
-SHELL VERSION : 7.6.0-2176
+GO VERSION : go1.22.2
+SHELL VERSION : 7.6.2-3721
 
 Use N1QL queries select version(); or select min_version(); to display server version.
 ----
@@ -1319,6 +1341,26 @@ and limitations under the License.
 ----
 ====
 
+== Exiting the cbq Shell
+
+You can exit the cbq shell by pressing kbd:[Ctrl+D] or by using the `\EXIT` or `\QUIT` command.
+
+The cbq shell first saves the history, closes existing connections, saves the current session in a session file, resets all environment variables, and then closes the shell liner interface.
+
+====
+.Example
+[source,sqlpp]
+----
+\EXIT;
+----
+
+.Result
+[source,console]
+----
+$
+----
+====
+
 == Executing a Script
 
 You can use the [.param]`--script` option to start cbq, execute a single {sqlpp} query, and exit the shell.
@@ -1327,13 +1369,13 @@ You can use the [.param]`--script` option to start cbq, execute a single {sqlpp}
 .Example
 [source,sh]
 ----
-./cbq -u Administrator -p password -e "http://localhost:8091" \
+./cbq -u $USER -p $PASSWORD -e $BASE_URL \
 --script="SELECT * FROM \`travel-sample\`.inventory.airline LIMIT 1;"
 ----
 
 .Results
 ----
-Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
+Connected to : http://<HOST>:8091/. Type Ctrl-D or \QUIT to exit.
 
 Path to history file for the shell : ~/.cbq_history
 
@@ -1379,27 +1421,19 @@ Shell command: <<cbq-connect,\CONNECT>>
 .Examples
 [source,sh]
 ----
-./cbq -e couchbase://localhost
+./cbq --engine $BASE_URL \
+-u $USER -p $PASSWORD
 ----
 
 [source,sh]
 ----
-./cbq --engine http://localhost:8091
-----
-
-[source,sh]
-----
-./cbq -e http://localhost:8091
-----
-
-[source,sh]
-----
-./cbq -e http://[fd63:6f75:6368:1075:816:3c1d:789b:bc4]:8091
+./cbq -e $BASE_URL \
+-u $USER -p $PASSWORD
 ----
 
 .Result
 ----
-Connected to : http://localhost:8091/. Type Ctrl-D or \QUIT to exit.
+Connected to : http://<HOST>:8091/. Type Ctrl-D or \QUIT to exit.
 Path to history file for the shell : /Users/myuser1/.cbq_history
 ----
 
@@ -1437,7 +1471,8 @@ a| Specifies whether to connect to a node's principal or alternate address.
 .Example
 [source,sh]
 ----
-./cbq -ncfg default -e http://localhost:8091
+./cbq -ncfg default \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 | [[opt-quiet]]
@@ -1453,7 +1488,8 @@ a| When specified, disables the startup connection message for the cbq shell.
 .Example
 [source,sh]
 ----
-./cbq -q -e http://localhost:8091
+./cbq -q \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 .Result
@@ -1473,9 +1509,10 @@ a| Runs ADVISE on all queries in the specified file, or that are read from stand
 `false`
 
 .Example
-[source, console]
+[source, sh]
 ----
-./cbq -advise -file queries.txt
+./cbq -advise -file queries.txt \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 .queries.txt
@@ -1537,7 +1574,8 @@ This option also switches on <<opt-batch,batch mode>>.
 .Example
 [source,sh]
 ----
-./cbq --analytics
+./cbq --analytics \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 | [[opt-batch]]
@@ -1546,7 +1584,7 @@ This option also switches on <<opt-batch,batch mode>>.
 `--batch`
 | string (`on`, `off`)  footnote:[Invoking this option with no value sets the value to `on`.]
 a| This option is available only with the Analytics Service.
-When specified, cbq sends the queries to server only when you hit EOF or \ to indicate the end of the batch input.
+When specified, cbq sends the queries to Analytics only when you hit EOF or \ to indicate the end of the batch input.
 
 .Default
 `off`
@@ -1554,7 +1592,8 @@ When specified, cbq sends the queries to server only when you hit EOF or \ to in
 .Examples
 [source,sh]
 ----
-./cbq --batch
+./cbq --batch \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 You can also set the batch mode in the interactive session using the <<cbq-set,\SET>> command:
@@ -1581,7 +1620,8 @@ none
 .Example
 [source,sh]
 ----
-./cbq -e http://localhost:8091 -qc "travel-sample.inventory"
+./cbq -qc "travel-sample.inventory" \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 | [[opt-timeout]]
@@ -1600,7 +1640,8 @@ Shell command: <<cbq-set,\SET>> `-timeout`
 .Example
 [source,sh]
 ----
-./cbq -e http://localhost:8091 --timeout="1s"
+./cbq --timeout="1s" \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 For further examples, see <<connection-timeout-parameter>>.
@@ -1623,7 +1664,8 @@ none
 .Example
 [source,sh]
 ----
-./cbq -e http://localhost:8091 -u=Administrator
+./cbq -u $USER \
+-e $BASE_URL
 ----
 
 .Result
@@ -1650,7 +1692,8 @@ none
 .Example
 [source,sh]
 ----
-./cbq -e http://localhost:8091 -u=Administrator -p=password
+./cbq -u $USER -p $PASSWORD \
+-e $BASE_URL
 ----
 
 | [[opt-credentials]]
@@ -1671,7 +1714,8 @@ none
 .Example
 [source,sh]
 ----
-./cbq -e http://localhost:8091 -c=travel-sample:password,Administrator:password
+./cbq -c=$USER:$PASSWORD,$USER2:$PASSWORD2 \
+-e $BASE_URL
 ----
 
 | [[opt-version]]
@@ -1680,7 +1724,7 @@ none
 `--version`
 | boolean footnote:boolean[]
 a| When specified, provides the version of the cbq shell.
-To display the query engine version of Couchbase Server (this is not the same as the version of Couchbase Server itself), use one of the following {sqlpp} queries:
+To display the version of the query engine (this is not the same as the version of Couchbase Server itself), use one of the following {sqlpp} queries:
 
 [source,sqlpp]
 ----
@@ -1745,12 +1789,14 @@ none
 .Examples
 [source,sh]
 ----
-./cbq -u Administrator -p password -s="SELECT * FROM \`travel-sample\`.inventory.airline LIMIT 1;"
+./cbq -s="SELECT * FROM \`travel-sample\`.inventory.airline LIMIT 1;" \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 [source,sh]
 ----
-./cbq -s="\SET v 1" -s="\SET b 2" -s="\PUSH b3" -s="\SET b 5" -s="\SET" -ne
+./cbq -s="\SET v 1" -s="\SET b 2" -s="\PUSH b3" \
+-s="\SET b 5" -s="\SET" -ne
 ----
 
 .Result
@@ -1795,7 +1841,8 @@ none
 .Example
 [source,sh]
 ----
-./cbq --file="sample.txt"
+./cbq --file="sample.txt" \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 | [[opt-output]]
@@ -1816,7 +1863,8 @@ none
 .Example
 [source,sh]
 ----
-./cbq -u Administrator -p password -o="results.txt" -s="SELECT * FROM \`travel-sample\`.inventory.airline LIMIT 1;"
+./cbq -o="results.txt" -s="SELECT * FROM \`travel-sample\`.inventory.airline LIMIT 1;" \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 | [[opt-pretty]]
@@ -1833,7 +1881,8 @@ To specify that the output should _not_ be formatted with line breaks and indent
 .Example
 [source,sh]
 ----
-./cbq -u Administrator -p password --pretty=false -s="SELECT * FROM \`travel-sample\`.inventory.airline LIMIT 1;"
+./cbq --pretty=false -s="SELECT * FROM \`travel-sample\`.inventory.airline LIMIT 1;" \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 | [[opt-exit-on-error]]
@@ -1847,7 +1896,8 @@ a| When specified, the cbq shell must exit when it encounters the first error.
 .Example
 [source,sh]
 ----
-./cbq --exit-on-error -f="sample.txt"
+./cbq --exit-on-error -f="sample.txt" \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 | [[opt-cacert]]
@@ -1863,7 +1913,8 @@ none
 .Example
 [source,sh]
 ----
-./cbq --cacert ./root/ca.pem
+./cbq --cacert ./root/ca.pem \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 | [[opt-cert]]
@@ -1887,7 +1938,7 @@ none
 | string (path)
 a| Only applicable when using an encrypted protocol scheme -- either `https://` or `couchbases://`.
 
-Specifies the path to the client key file. 
+Specifies the path to the client key file.
 
 .Default
 none
@@ -1913,12 +1964,14 @@ When specified, the cbq shell can skip the verification of certificates.
 .Examples
 [source,sh]
 ----
-./cbq --no-ssl-verify -f="sample.txt"
+./cbq --no-ssl-verify -f="sample.txt" \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 
 [source,sh]
 ----
-./cbq -skip-verify https://127.0.0.1:18091
+./cbq -skip-verify \
+-e $BASE_URL -u $USER -p $PASSWORD
 ----
 |===
 
@@ -1941,12 +1994,7 @@ Command Line Option: <<opt-engine,-e>> or <<opt-engine,--engine>>
 .Examples
 [source,sqlpp]
 ----
-\CONNECT http://localhost:8093;
-----
-
-[source,sqlpp]
-----
-\CONNECT http://[fd63:6f75:6368:1075:816:3c1d:789b:bc4]:8091;
+\CONNECT <BASE_URL>;
 ----
 
 | [[cbq-disconnect]]
