@@ -1,7 +1,7 @@
 = Configure Queries
 :description: You can configure the Query service using cluster-level query settings, node-level query settings, and request-level query parameters.
 :page-aliases: manage:manage-settings/query-settings, settings:query-settings
-:tabs:
+:page-partial:
 
 // External cross-references
 :rest-cluster-query-settings: xref:rest-api:rest-cluster-query-settings.adoc
@@ -384,7 +384,7 @@ The following example sets the node-level profile parameter:
 
 [source,sh]
 ----
-curl http://localhost:8093/admin/settings -u user:pword \
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
   -H 'Content-Type: application/json' \
   -d '{"profile": "phases"}'
 ----
@@ -448,7 +448,7 @@ The following example sets the request-level timeout, pretty-print, and max para
 SELECT * FROM "world" AS hello;
 ----
 
-For more examples, see xref:cli:cbq-tool.adoc#cbq-parameter-manipulation[Parameter Manipulation] in the cbq documentation.
+For more examples, see {cbq-shell}#cbq-parameter-manipulation[Parameter Manipulation] in the cbq documentation.
 --
 
 REST API::
@@ -557,9 +557,49 @@ You can supply the values for placeholder parameters using any of the methods us
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
-.Named Parameters
+.{example-caption} {counter:example}. Named Parameters
+{blank}
+
+[tabs]
 ====
+Web Console::
++
+--
+// tag::intro-names[]
 The following query uses named parameter placeholders.
+// end::intro-names[]
+The parameter values are supplied using the Run-Time Preferences window.
+
+[caption=]
+.Named Parameters
+[cols="1s,2,1s,2"]
+|===
+| name
+| `$country`
+| value
+| `"France"`
+
+| name
+| `$altitude`
+| value
+| `500`
+|===
+
+[source,sqlpp]
+----
+include::example$settings/param-names.n1ql[tags=statement]
+----
+
+// tag::note-names[]
+The named parameters and named parameter placeholders in this example use a mixture of `@` and `$` symbol prefixes.
+You can use either of these symbols as preferred.
+// end::note-names[]
+--
+
+Command Line::
++
+--
+include::query-settings.adoc[tag=intro-names]
 The parameter values are supplied using the cbq shell.
 
 [source,sqlpp]
@@ -567,13 +607,69 @@ The parameter values are supplied using the cbq shell.
 include::example$settings/param-names.n1ql[tags=**]
 ----
 
-The named parameters and named parameter placeholders in this example use a mixture of `@` and `$` symbol prefixes.
-You can use either of these symbols as preferred.
+include::query-settings.adoc[tag=note-names]
+--
+
+REST API::
++
+--
+include::query-settings.adoc[tag=intro-names]
+The parameter values are supplied using the Query Service REST API.
+
+'''
+
+[source,sh]
+----
+curl -v $BASE_URL/query/service \
+     -d 'statement=SELECT COUNT(*) FROM airport
+                   WHERE country = $country AND geo.alt > @altitude
+       & query_context=travel-sample.inventory
+       & $country="France" & $altitude=500' \
+     -u $USER:$PASSWORD
+----
+
+include::query-settings.adoc[tag=note-names]
+--
 ====
 
-.Numbered Positional Parameters
+.{example-caption} {counter:example}. Numbered Positional Parameters
+{blank}
+
+[tabs]
 ====
+Web Console::
++
+--
+// tag::intro-numbers[]
 The following query uses numbered positional parameter placeholders.
+// end::intro-numbers[]
+The parameter values are supplied using the Run-Time Preferences window.
+
+[caption=]
+.Positional Parameters
+[cols="1s,5"]
+|===
+| $1 | `"France"`
+| $2 | `500`
+|===
+
+[source,sqlpp]
+----
+include::example$settings/param-numbers.n1ql[tags=statement]
+----
+
+// tag::note-numbers[]
+In this case, the first positional parameter value is used for the placeholder numbered `$1`, the second positional parameter value is used for the placeholder numbered `@2`, and so on.
+
+The numbered positional parameter placeholders in this example use a mixture of `@` and `$` symbol prefixes.
+You can use either of these symbols as preferred.
+// end::note-numbers[]
+--
+
+Command Line::
++
+--
+include::query-settings.adoc[tag=intro-numbers]
 The parameter values are supplied using the cbq shell.
 
 [source,sqlpp]
@@ -581,15 +677,66 @@ The parameter values are supplied using the cbq shell.
 include::example$settings/param-numbers.n1ql[tag=**]
 ----
 
-In this case, the first positional parameter value is used for the placeholder numbered `$1`, the second positional parameter value is used for the placeholder numbered `@2`, and so on.
+include::query-settings.adoc[tag=note-numbers]
+--
 
-The numbered positional parameter placeholders in this example use a mixture of `@` and `$` symbol prefixes.
-You can use either of these symbols as preferred.
+REST API::
++
+--
+include::query-settings.adoc[tag=intro-numbers]
+The parameter values are supplied using the Query Service REST API.
+
+'''
+
+[source,sh]
+----
+curl -v $BASE_URL/query/service \
+     -d 'statement=SELECT COUNT(*) FROM airport
+                   WHERE country = $1 AND geo.alt > @2
+       & query_context=travel-sample.inventory
+       & args=["France", 500]' \
+     -u $USER:$PASSWORD
+----
+
+include::query-settings.adoc[tag=note-numbers]
+--
 ====
 
-.Unnumbered Positional Parameters
+.{example-caption} {counter:example}. Unnumbered Positional Parameters
+{blank}
+
+[tabs]
 ====
+Web Console::
++
+--
+// tag::intro-positions[]
 The following query uses unnumbered positional parameter placeholders.
+// end::intro-positions[]
+The parameter values are supplied using the Run-Time Preferences window.
+
+[caption=]
+.Positional Parameters
+[cols="1s,5"]
+|===
+| $1 | `"France"`
+| $2 | `500`
+|===
+
+[source,sqlpp]
+----
+include::example$settings/param-positions.n1ql[tags=statement]
+----
+
+// tag::note-positions[]
+In this case, the first positional parameter value is used for the first `?` placeholder, the second positional parameter value is used for the second `?` placeholder, and so on.
+// end::note-positions[]
+--
+
+Command Line::
++
+--
+include::query-settings.adoc[tag=intro-positions]
 The parameter values are supplied using the cbq shell.
 
 [source.no-callouts,sqlpp]
@@ -597,7 +744,29 @@ The parameter values are supplied using the cbq shell.
 include::example$settings/param-positions.n1ql[tag=**]
 ----
 
-In this case, the first positional parameter value is used for the first `?` placeholder, the second positional parameter value is used for the second `?` placeholder, and so on.
+include::query-settings.adoc[tag=note-positions]
+--
+
+REST API::
++
+--
+include::query-settings.adoc[tag=intro-positions]
+The parameter values are supplied using the Query Service REST API.
+
+'''
+
+[source,sh]
+----
+curl -v $BASE_URL/query/service \
+     -d 'statement=SELECT COUNT(*) FROM airport
+                   WHERE country = ? AND geo.alt > ?
+       & query_context=travel-sample.inventory
+       & args=["France", 500]' \
+     -u $USER:$PASSWORD
+----
+
+include::query-settings.adoc[tag=note-positions]
+--
 ====
 
 For more details and examples, including examples using SDKs, see the xref:guides:prep-statements.adoc[] guide.
