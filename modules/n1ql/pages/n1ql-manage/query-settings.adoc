@@ -1,6 +1,6 @@
 = Configure Queries
 :description: You can configure the Query service using request-level query parameters.
-:tabs:
+:page-partial:
 
 // External cross-references
 :rest-cluster-query-settings: xref:rest-api:rest-cluster-query-settings.adoc
@@ -61,19 +61,13 @@ include::ROOT:partial$component-signpost.adoc[]
 To set a request-level parameter, do one of the following:
 
 * Use the {query-settings}[Query Options] window in the Query tab.
-ifdef::flag-devex-tools[]
 * Use the {cbq-shell}[cbq] shell at the command line.
-endif::flag-devex-tools[]
 ifdef::flag-devex-rest-api[]
 * Make a REST API call to the {n1ql-rest-api-index}[] (`/query/service` endpoint).
 endif::flag-devex-rest-api[]
 * Use an SDK client program.
 
-Generally, use
-ifdef::flag-devex-tools[]
-the `cbq` shell or
-endif::flag-devex-tools[]
-the Query tab as a sandbox to test queries in your Capella database.
+Generally, use the `cbq` shell or the Query tab as a sandbox to test queries in your Capella database.
 Use
 ifdef::flag-devex-rest-api[]
 a REST API call or
@@ -98,7 +92,6 @@ image::clusters:query-workbench-settings.png["The Query Options window.",334,284
 For more examples, see the xref:guides:transactions.adoc#settings[Couchbase Transactions] guide.
 --
 
-ifdef::flag-devex-tools[]
 Command Line::
 +
 --
@@ -117,9 +110,8 @@ The following example sets the request-level timeout, pretty-print, and max para
 SELECT * FROM "world" AS hello;
 ----
 
-For more examples, see xref:cli:cbq-tool.adoc#cbq-parameter-manipulation[Parameter Manipulation] in the cbq documentation.
+For more examples, see {cbq-shell}#cbq-parameter-manipulation[Parameter Manipulation] in the cbq documentation.
 --
-endif::flag-devex-tools[]
 
 ifdef::flag-devex-rest-api[]
 REST API::
@@ -150,7 +142,7 @@ The table below contains details of all request-level parameters, along with exa
 .Request-Level Parameters
 include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[tag=settings]
 
-[discrete,#transactional-scan-consistency]
+[discrete#transactional-scan-consistency]
 ===== Transactional Scan Consistency
 
 If the request contains a `BEGIN TRANSACTION` statement, or a DML statement with the <<tximplicit,tximplicit>> parameter set to `true`, then the <<scan_consistency,scan_consistency>> parameter sets the [def]__transactional scan consistency__.
@@ -232,24 +224,19 @@ The dollar sign `$` syntax is supported in all versions of Couchbase Server.
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
-.Named Parameters
+.{example-caption} {counter:example}. Named Parameters
+{blank}
+
+[tabs]
 ====
+Capella UI::
++
+--
+// tag::intro-names[]
 The following query uses named parameter placeholders.
-ifdef::flag-devex-tools[]
-The parameter values are supplied using the cbq shell.
-endif::flag-devex-tools[]
-ifndef::flag-devex-tools[]
+// end::intro-names[]
 The parameter values are supplied using the Query Options window.
-endif::flag-devex-tools[]
 
-ifdef::flag-devex-tools[]
-[source,sqlpp]
-----
-include::example$settings/param-names.n1ql[tags=**]
-----
-endif::flag-devex-tools[]
-
-ifndef::flag-devex-tools[]
 [caption=]
 .Named Parameters
 [cols="1s,2,1s,2"]
@@ -269,31 +256,42 @@ ifndef::flag-devex-tools[]
 ----
 include::example$settings/param-names.n1ql[tags=statement]
 ----
-endif::flag-devex-tools[]
 
+// tag::note-names[]
 The named parameters and named parameter placeholders in this example use a mixture of `@` and `$` symbol prefixes.
 In databases running Couchbase Server 7.6.0 and later, you can use either of these symbols as preferred.
 In previous versions of Couchbase Server, you must use the `$` symbol prefix.
-====
+// end::note-names[]
+--
 
-.Numbered Positional Parameters
-====
-The following query uses numbered positional parameter placeholders.
-ifdef::flag-devex-tools[]
+Command Line::
++
+--
+include::query-settings.adoc[tag=intro-names]
 The parameter values are supplied using the cbq shell.
-endif::flag-devex-tools[]
-ifndef::flag-devex-tools[]
-The parameter values are supplied using the Query Options window.
-endif::flag-devex-tools[]
 
-ifdef::flag-devex-tools[]
 [source,sqlpp]
 ----
-include::example$settings/param-numbers.n1ql[tag=**]
+include::example$settings/param-names.n1ql[tags=**]
 ----
-endif::flag-devex-tools[]
 
-ifndef::flag-devex-tools[]
+include::query-settings.adoc[tag=note-names]
+--
+====
+
+.{example-caption} {counter:example}. Numbered Positional Parameters
+{blank}
+
+[tabs]
+====
+Capella UI::
++
+--
+// tag::intro-numbers[]
+The following query uses numbered positional parameter placeholders.
+// end::intro-numbers[]
+The parameter values are supplied using the Query Options window.
+
 [caption=]
 .Positional Parameters
 [cols="1s,5"]
@@ -306,33 +304,44 @@ ifndef::flag-devex-tools[]
 ----
 include::example$settings/param-numbers.n1ql[tags=statement]
 ----
-endif::flag-devex-tools[]
 
+// tag::note-numbers[]
 In this case, the first positional parameter value is used for the placeholder numbered `$1`, the second positional parameter value is used for the placeholder numbered `@2`, and so on.
 
 The numbered positional parameter placeholders in this example use a mixture of `@` and `$` symbol prefixes.
 In databases running Couchbase Server 7.6.0 and later, you can use either of these symbols as preferred.
 In previous versions of Couchbase Server, you must use the `$` symbol prefix.
-====
+// end::note-numbers[]
+--
 
-.Unnumbered Positional Parameters
-====
-The following query uses unnumbered positional parameter placeholders.
-ifdef::flag-devex-tools[]
+Command Line::
++
+--
+include::query-settings.adoc[tag=intro-numbers]
 The parameter values are supplied using the cbq shell.
-endif::flag-devex-tools[]
-ifndef::flag-devex-tools[]
+
+[source,sqlpp]
+----
+include::example$settings/param-numbers.n1ql[tag=**]
+----
+
+include::query-settings.adoc[tag=note-numbers]
+--
+====
+
+.{example-caption} {counter:example}. Unnumbered Positional Parameters
+{blank}
+
+[tabs]
+====
+Capella UI::
++
+--
+// tag::intro-positions[]
+The following query uses unnumbered positional parameter placeholders.
+// end::intro-positions[]
 The parameter values are supplied using the Query Options window.
-endif::flag-devex-tools[]
 
-ifdef::flag-devex-tools[]
-[source.no-callouts,sqlpp]
-----
-include::example$settings/param-positions.n1ql[tag=**]
-----
-endif::flag-devex-tools[]
-
-ifndef::flag-devex-tools[]
 [caption=]
 .Positional Parameters
 [cols="1s,5"]
@@ -345,9 +354,25 @@ ifndef::flag-devex-tools[]
 ----
 include::example$settings/param-positions.n1ql[tags=statement]
 ----
-endif::flag-devex-tools[]
 
+// tag::note-positions[]
 In this case, the first positional parameter value is used for the first `?` placeholder, the second positional parameter value is used for the second `?` placeholder, and so on.
+// end::note-positions[]
+--
+
+Command Line::
++
+--
+include::query-settings.adoc[tag=intro-positions]
+The parameter values are supplied using the cbq shell.
+
+[source.no-callouts,sqlpp]
+----
+include::example$settings/param-positions.n1ql[tag=**]
+----
+
+include::query-settings.adoc[tag=note-positions]
+--
 ====
 
 For more details and examples, including examples using SDKs, see the xref:guides:prep-statements.adoc[] guide.

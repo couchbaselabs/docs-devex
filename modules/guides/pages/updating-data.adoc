@@ -2,7 +2,6 @@
 :description: How to update documents with a command line tool or an SDK.
 :page-pagination: full
 :page-topic-type: guide
-:tabs:
 :github: Click the icon:github[] View button to see this code in context.
 
 include::partial$example-attributes.adoc[]
@@ -26,62 +25,46 @@ include::partial$data-warning.adoc[]
 
 To update a document, or create the document if it doesn't exist, perform an upsert operation.
 
-[{tabs}]
+[tabs]
 ====
-ifdef::flag-devex-command-line[]
-cbc::
+cbsh::
 +
 --
-. Create a JSON document containing the updated data.
+. If you haven't already done so, use `cb-env` to set the bucket, scope, and collection where the document is stored.
 
-. Use the `cbc create` command with `--mode upsert` to update the document in the database.
-If it doesn't exist, Couchbase will simply create a new document.
+. Create a structured JSON object containing the updated data.
+
+. Use `doc upsert` to update the document.
+
+If the document doesn't exist, Couchbase Capella creates a new document.
 
 '''
 
 {kv-update-upsert-example}
 
-First, create the updated file `hotel-123.json` and store it the `tmp` directory:
-
-.hotel-123
-[source,json]
-----
-{
-  "id": 123,
-  "name": "Medway Youth Hostel",
-  "address": "Capstone Road, ME7 3JE",
-  "url": "http://www.yha.org.uk",
-  "country": "United Kingdom",
-  "city": "Medway",
-  "state": null,
-  "vacancy": true,
-  "description": "40 bed summer hostel about 3 miles from Gillingham."
-}
-----
-
-Now insert the document:
-
 [source,sh]
 ----
-include::example$kv/kv-cbc.sh[tag=cbc-kv-upsert]
+include::example$kv/kv-cbsh.nu[tag=cbsh-kv-upsert]
 ----
 
 .Result
 [source,console]
 ----
-hotel-123            Stored. CAS=0x16bd48617f9d0000
-                     SYNCTOKEN=500,228620113724555,292
+╭───┬───────────┬─────────┬────────┬──────────┬─────────╮
+│ # │ processed │ success │ failed │ failures │ cluster │
+├───┼───────────┼─────────┼────────┼──────────┼─────────┤
+│ 0 │         1 │       1 │      0 │          │ capella │
+╰───┴───────────┴─────────┴────────┴──────────┴─────────╯
 ----
 
-{cbc-api-url}
+For further details, refer to {cbsh-api-url}/#_mutating[Mutating^] in the Couchbase Shell documentation.
 --
-endif::flag-devex-command-line[]
 
 pass:[.NET]::
 +
 --
 Use the `UpsertAsync()` method to update a document in the database.
-If it doesn't exist, Couchbase will simply create a new document.
+If it doesn't exist, Couchbase Capella creates a new document.
 
 '''
 
@@ -101,7 +84,7 @@ Java::
 +
 --
 Use the `upsert()` method to update a document in the database.
-If it doesn't exist, Couchbase will simply create a new document.
+If it doesn't exist, Couchbase Capella creates a new document.
 
 '''
 
@@ -121,7 +104,7 @@ Node.js::
 +
 --
 Use the `upsert()` function to update a document in the database.
-If it doesn't exist, Couchbase will simply create a new document.
+If it doesn't exist, Couchbase Capella creates a new document.
 
 '''
 
@@ -141,7 +124,7 @@ Python::
 +
 --
 Use the `upsert()` function to update a document in the database.
-If it doesn't exist, Couchbase will simply create a new document.
+If it doesn't exist, Couchbase Capella creates a new document.
 
 '''
 
@@ -162,74 +145,40 @@ For further details, refer to {python-api-url}#collection-object[Collection^].
 
 To update a document that already exists, perform a replace operation.
 
-[{tabs}]
+[tabs]
 ====
-ifdef::flag-devex-command-line[]
-cbc::
+cbsh::
 +
 --
-. Update a JSON document with some new data.
+. If you haven't already done so, use `cb-env` to set the bucket, scope, and collection where the document is stored.
 
-. Use the `cbc create` command with `--mode replace` to update a document.
+. Create a structured JSON object containing the new data.
+
+. Use `doc replace` to update the document.
 
 '''
 
 {kv-update-replace-example}
 
-First, create the updated file `hotel-123.json` and store it the `tmp` directory:
-
-.hotel-123
-[source,json]
-----
-{
-  "id": 123,
-  "name": "Medway Youth Hostel",
-  "address": "Capstone Road, ME7 3JE",
-  "url": "http://www.yha.org.uk",
-  "geo": {
-    "lat": 51.35785,
-    "lon": 0.55818,
-    "accuracy": "RANGE_INTERPOLATED"
-  },
-  "country": "United Kingdom",
-  "city": "Medway",
-  "state": null,
-  "reviews": [
-    {
-      "content": "This was our 2nd trip here and we enjoyed it more than last year.",
-      "author": "Ozella Sipes",
-      "date": "2021-12-13T17:38:02.935Z"
-    },
-    {
-      "content": "This hotel was cozy, conveniently located and clean.",
-      "author": "Carmella O'Keefe",
-      "date": "2021-12-13T17:38:02.974Z"
-    }
-  ],
-  "vacancy": true,
-  "description": "40 bed summer hostel about 3 miles from Gillingham."
-}
-----
-
-Now insert the document:
-
 [source,sh]
 ----
-include::example$kv/kv-cbc.sh[tag=cbc-kv-replace]
+include::example$kv/kv-cbsh.nu[tag=cbsh-kv-replace]
 ----
 
 .Result
 [source,console]
 ----
-hotel-123            Stored. CAS=0x16bd486ce6250000
-                     SYNCTOKEN=500,228620113724555,293
+╭───┬───────────┬─────────┬────────┬──────────┬─────────╮
+│ # │ processed │ success │ failed │ failures │ cluster │
+├───┼───────────┼─────────┼────────┼──────────┼─────────┤
+│ 0 │         1 │       1 │      0 │          │ capella │
+╰───┴───────────┴─────────┴────────┴──────────┴─────────╯
 ----
 
-NOTE: If the document cannot be found, [.cmd]`cbc` will return a `LCB_ERR_DOCUMENT_NOT_FOUND` error. 
+NOTE: If the document cannot be found, Couchbase Shell returns a `Key not found` error.
 
-{cbc-api-url}
+For further details, refer to {cbsh-api-url}/#_mutating[Mutating^] in the Couchbase Shell documentation.
 --
-endif::flag-devex-command-line[]
 
 pass:[.NET]::
 +
@@ -339,41 +288,43 @@ For further details, refer to {python-api-url}#collection-object[Collection^].
 
 == Updating a Sub-Document
 
-To change a specific field inside a document, you can perform a _Sub-Document_ operation.
-You can use either a Sub-Document upsert or replace operation depending on what is required for your application.
+To change a specific field inside a document, you can perform a sub-document operation.
+You can use either a sub-document upsert or replace operation depending on what is required for your application.
 
-[{tabs}]
+[tabs]
 ====
-ifdef::flag-devex-command-line[]
-cbc-subdoc::
+cbsh::
 +
 --
-. Connect to the `cbc-subdoc` interactive shell.
+. If you haven't already done so, use `cb-env` to set the bucket, scope, and collection where the document is stored.
 
-. Use the `dict-upsert` command to update/add a field in a document, or use the `replace` command if you require the field to exist. 
+. Use the `doc get` command to retrieve a document by ID.
 
-. Pass the field to update/add and its value with the `--path` argument. 
+. Pipe the document through the `upsert` filter to update or add the field containing the sub-document, or use the `update` filter if you require the field to exist.
+
+. Pipe the output, including the `id` and `content` fields, through the `doc replace` command to update the document.
 
 '''
 
 {kv-subdoc-update-example}
 
-[source,console]
+[source,sh]
 ----
-cbc-subdoc -u Administrator -P password -U couchbase://localhost/travel-sample
-subdoc> dict-upsert airport_1254 --path pets_ok=true
+include::example$kv/kv-subdoc.nu[tag=cbsh-subdoc-upsert]
 ----
 
 .Result
 [source,console]
 ----
-airport_1254         CAS=0x16be23af9f630000
-0. Size=0, RC=LCB_SUCCESS (0)
+╭───┬───────────┬─────────┬────────┬──────────┬─────────╮
+│ # │ processed │ success │ failed │ failures │ cluster │
+├───┼───────────┼─────────┼────────┼──────────┼─────────┤
+│ 0 │         1 │       1 │      0 │          │ capella │
+╰───┴───────────┴─────────┴────────┴──────────┴─────────╯
 ----
 
-{cbc-subdoc-api-url}
+For further details, refer to {nushell-api-url}/upsert.html[upsert for filters^] or {nushell-api-url}/update.html[update for filters^] in the Nushell documentation.
 --
-endif::flag-devex-command-line[]
 
 pass:[.NET]::
 +

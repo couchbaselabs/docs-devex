@@ -1,9 +1,8 @@
 = Create Documents
 :description: How to create documents with a command line tool or an SDK.
-:page-pagination: full 
+:page-pagination: full
 :page-topic-type: guide
 :page-toclevels: 2
-:tabs:
 :github: Click the icon:github[] View button to see this code in context.
 
 include::partial$example-attributes.adoc[]
@@ -15,9 +14,9 @@ include::ROOT:partial$component-signpost.adoc[]
 
 == Introduction
 
-Couchbase stores its xref:server:learn:data/data.adoc[data] as either JSON or Binary _documents_ with unique IDs (primary keys) by which they can be located.
+Couchbase stores its xref:server:learn:data/data.adoc[data] as either JSON or Binary [.term]#documents# with unique IDs (primary keys) by which they can be located.
 
-Documents are organized and grouped in _buckets_ using xref:tutorials:buckets-scopes-and-collections.adoc[scopes and collections].
+Documents are organized and grouped in [.term]#buckets# using xref:clusters:data-service/about-buckets-scopes-collections.adoc[scopes and collections].
 If a scope or collection is not provided when creating a document, Couchbase will automatically store data in the `_default` collection or `_default` scope.
 
 include::partial$clients.adoc[tag=refs]
@@ -26,61 +25,49 @@ include::partial$data-warning.adoc[]
 
 == Inserting a Document
 
-To create a single document in Couchbase, perform an insert operation.
+To create a single document, perform an insert operation.
 
-[{tabs}]
+[tabs]
 ====
-ifdef::flag-devex-command-line[]
-cbc::
+cbsh::
 +
 --
-. Create a structured JSON document to insert in the database.
+. If you haven't already done so, use `cb-env` to set the bucket, scope, and collection in which to store the document.
 
-. Use the `cbc create` command with `--mode insert` to create the document. 
+. Create a structured JSON object containing your data.
 
-. Pass the `--scope` and `--collection` parameters to specify the keyspace in which to store the document, and use `<` to specify the JSON document to insert.
+. Use `doc insert` to create the document.
 
 '''
 
 {kv-insert-example}
 
-First, create the file `hotel-123.json` and store it in the `tmp` directory:
-
-.hotel-123.json
-[source,json]
-----
-include::example$kv/hotel-123.json[]
-----
-
-Now insert the document:
-
 [source,sh]
 ----
-include::example$kv/kv-cbc.sh[tag=cbc-kv-insert]
+include::example$kv/kv-cbsh.nu[tag=cbsh-kv-insert]
 ----
-
-`hotel-123` is the document's ID.
-The document is redirected (`<`) to the `cbc` command's standard input.
 
 .Result
 [source,console]
 ----
-hotel-123          Stored. CAS=0x16b37e5081690000
-                   SYNCTOKEN=829,51260943619833,92
+╭───┬───────────┬─────────┬────────┬──────────┬─────────╮
+│ # │ processed │ success │ failed │ failures │ cluster │
+├───┼───────────┼─────────┼────────┼──────────┼─────────┤
+│ 0 │         1 │       1 │      0 │          │ capella │
+╰───┴───────────┴─────────┴────────┴──────────┴─────────╯
 ----
 
-NOTE: If the document already exists, [.cmd]`cbc` will return a `LCB_ERR_DOCUMENT_EXISTS` error.
+NOTE: If the document already exists, Couchbase Shell returns a `Key already exists` error.
 
-{cbc-api-url}
+For further details, refer to {cbsh-api-url}/#_mutating[Mutating^] in the Couchbase Shell documentation.
 --
-endif::flag-devex-command-line[]
 
 pass:[.NET]::
 +
 --
 . Create a structured document object containing your data.
 
-. Use the `InsertAsync()` method to insert the document in a given keyspace. 
+. Use the `InsertAsync()` method to insert the document in a given keyspace.
 
 A `MutationResult` object is returned containing the result and metadata relevant to the insert operation.
 
@@ -93,7 +80,7 @@ A `MutationResult` object is returned containing the result and metadata relevan
 include::dotnet-sdk:hello-world:example$KvHelloWorldScoped.csx[tag=kv-insert,indent=0]
 ----
 
-NOTE: If the document already exists, the SDK will return a `DocumentExistsException` error.
+NOTE: If the document already exists, the SDK returns a `DocumentExistsException` error.
 
 {github}
 
@@ -105,7 +92,7 @@ Java::
 --
 . Create a structured document object containing your data.
 
-. Use the `insert()` method to insert the document in a given keyspace. 
+. Use the `insert()` method to insert the document in a given keyspace.
 
 A `MutationResult` object is returned containing the result and metadata relevant to the insert operation.
 
@@ -118,7 +105,7 @@ A `MutationResult` object is returned containing the result and metadata relevan
 include::java-sdk:hello-world:example$KvHelloWorldScoped.java[tag=kv-insert,indent=0]
 ----
 
-NOTE: If the document already exists, the SDK will return a `DocumentExistsException` error.
+NOTE: If the document already exists, the SDK returns a `DocumentExistsException` error.
 
 {github}
 
@@ -130,7 +117,7 @@ Node.js::
 --
 . Create a structured document object containing your data.
 
-. Use the `insert()` method to insert the document in a given keyspace. 
+. Use the `insert()` method to insert the document in a given keyspace.
 
 A `MutationResult` promise is returned containing the result and metadata relevant to the insert operation.
 
@@ -143,7 +130,7 @@ A `MutationResult` promise is returned containing the result and metadata releva
 include::nodejs-sdk:hello-world:example$kv-hello-world-scoped.js[tag=kv-insert,indent=0]
 ----
 
-NOTE: If the document already exists, the SDK will return a `DocumentExistsError` error.
+NOTE: If the document already exists, the SDK returns a `DocumentExistsError` error.
 
 {github}
 
@@ -168,7 +155,7 @@ A `MutationResult` object is returned containing the result and metadata relevan
 include::python-sdk:devguide:example$python/kv_hello_world_scoped.py[tag=kv-insert,indent=0]
 ----
 
-NOTE: If the document already exists, the SDK will return a `DocumentExistsException` error.
+NOTE: If the document already exists, the SDK returns a `DocumentExistsException` error.
 
 {github}
 
@@ -176,57 +163,48 @@ For further details, refer to {python-api-url}#collection-object[Collection^].
 --
 ====
 
-When a document is created, Couchbase assigns it a xref:java-sdk:howtos:concurrent-document-mutations.adoc[CAS (Compare And Swap)] value to keep track of the document’s state within the database. 
-Each time a document is mutated the CAS will change accordingly. 
+When a document is created, Couchbase assigns it a xref:java-sdk:howtos:concurrent-document-mutations.adoc[CAS (Compare And Swap)] value to keep track of the document's state within the database.
+Each time a document is mutated the CAS will change accordingly.
 This unique value allows the database to protect against concurrent updates to the same document.
 
 === Inserting with Options
 
 To specify further parameters for the inserted document, such as expiry, add the options to the insert operation.
 
-[{tabs}]
+[tabs]
 ====
-ifdef::flag-devex-command-line[]
-cbc::
+cbsh::
 +
 --
-. Create a structured document object containing your data.
+. If you haven't already done so, use `cb-env` to set the bucket, scope, and collection in which to store the document.
 
-. Use the `cbc create` command with `--mode insert` to create the document. 
+. Create a structured JSON object containing your data.
 
-. Pass the `--scope` and `--collection` parameters to specify the keyspace in which to store the document.
+. Use `doc insert` to create the document.
 
-. Pass any required options, such as `--expiry`, and use `<` to specify the JSON document to insert.
+. Pass any required options, such as `--expiry`.
 
 '''
 
 {kv-insert-with-options-example}
 
-First, create the file `hotel-456.json` and store it in the `tmp` directory:
-
-.hotel-456.json
-[source,json]
-----
-include::example$kv/hotel-456.json[]
-----
-
-Now insert the document:
-
 [source,sh]
 ----
-include::example$kv/kv-cbc.sh[tag=cbc-kv-insert-expiry]
+include::example$kv/kv-cbsh.nu[tag=cbsh-kv-insert-expiry]
 ----
 
 .Result
 [source,console]
 ----
-hotel-456          Stored. CAS=0x16b5dc9223f30000
-                   SYNCTOKEN=733,211618429638288,95
+╭───┬───────────┬─────────┬────────┬──────────┬─────────╮
+│ # │ processed │ success │ failed │ failures │ cluster │
+├───┼───────────┼─────────┼────────┼──────────┼─────────┤
+│ 0 │         1 │       1 │      0 │          │ capella │
+╰───┴───────────┴─────────┴────────┴──────────┴─────────╯
 ----
 
-{cbc-api-url}
+For further details, refer to {cbsh-api-url}/#_mutating[Mutating^] in the Couchbase Shell documentation.
 --
-endif::flag-devex-command-line[]
 
 pass:[.NET]::
 +

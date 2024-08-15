@@ -2,7 +2,6 @@
 :description: How to perform bulk CRUD operations with a command line tool or an SDK.
 :page-pagination: prev
 :page-topic-type: guide
-:tabs:
 :github: Click the icon:github[] View button to see this code in context.
 
 include::partial$example-attributes.adoc[]
@@ -15,7 +14,7 @@ include::ROOT:partial$component-signpost.adoc[]
 == Introduction
 
 Performing bulk operations with Couchbase Capella can be done in several ways, depending on the SDK or command line tool used to perform them.
-This guide contains basic procedures for performing bulk CRUD operations on Couchbase documents.
+This guide contains basic procedures for performing bulk CRUD operations on documents.
 
 include::partial$clients.adoc[tag=refs]
 
@@ -23,10 +22,45 @@ include::partial$data-warning.adoc[]
 
 == Creating Multiple Documents
 
-To create multiple documents in Couchbase perform a bulk insert operation.
+To create multiple documents, perform a bulk insert operation.
 
-[{tabs}]
+[tabs]
 ====
+cbsh::
++
+--
+. If you haven't already done so, use `cb-env` to set the bucket, scope, and collection in which to store the documents.
+
+. Create an array of structured documents to insert.
+
+. Pipe each item through the `wrap` filter to wrap it in a `content` field.
+
+. Pipe each item through the `insert` filter to add an `id` field with a unique value: for example, by copying a unique field from the content.
+
+. Pipe the output through the `doc insert` command to create the documents.
+
+'''
+
+{kv-bulk-insert-example}
+
+[source,sh]
+----
+include::example$kv/kv-cbsh.nu[tag=cbsh-bulk-insert]
+----
+
+.Result
+[source,console]
+----
+╭───┬───────────┬─────────┬────────┬──────────┬─────────╮
+│ # │ processed │ success │ failed │ failures │ cluster │
+├───┼───────────┼─────────┼────────┼──────────┼─────────┤
+│ 0 │         3 │       3 │      0 │          │ capella │
+╰───┴───────────┴─────────┴────────┴──────────┴─────────╯
+----
+
+For further details, refer to {cbsh-api-url}/#_mutating[Mutating^] in the Couchbase Shell documentation.
+--
+
 pass:[.NET]::
 +
 --
@@ -34,7 +68,7 @@ pass:[.NET]::
 
 . Initialize a list of `IMutationResult` tasks.
 
-. Perform an insert operation on each document and store the result in the tasks list. 
+. Perform an insert operation on each document and store the result in the tasks list.
 
 . Wait for all the tasks to complete before accessing the results.
 
@@ -133,15 +167,20 @@ For further details, refer to {python-api-url}#collection-object[Collection^].
 
 == Reading Multiple Documents
 
-To read multiple documents in Couchbase perform a bulk `get` operation.
+To read multiple documents, perform a bulk `get` operation.
 
-[{tabs}]
+[tabs]
 ====
-ifdef::flag-devex-command-line[]
-cbc::
+cbsh::
 +
 --
-Use the `cbc cat` command to retrieve multiple documents by their IDs. 
+. If you haven't already done so, use `cb-env` to set the bucket, scope, and collection where the documents are stored.
+
+. Create an array of document IDs.
+
+. Pipe each document ID through the `wrap` filter to wrap it in an `id` field.
+
+. Pipe the output through the `doc get` command to retrieve multiple documents by their IDs.
 
 '''
 
@@ -149,43 +188,22 @@ Use the `cbc cat` command to retrieve multiple documents by their IDs.
 
 [source,sh]
 ----
-include::example$kv/kv-cbc.sh[tag=cbc-bulk-get]
+include::example$kv/kv-cbsh.nu[tag=cbsh-bulk-get]
 ----
 
 .Result
 [source,console]
 ----
-0                    CAS=0x16be2392ca2e0000, Flags=0x0, Size=904, Datatype=0x01(JSON)
-{
-  "name": "Keon Hoppe",
-  "addresses": [
-    {
-      "type": "home",
-      "address": "222 Sauer Neck",
-      "city": "London",
-      "country": "United Kingdom"
-    },
-  ],
-  ...
-}
-1                    CAS=0x16be2392c9870000, Flags=0x0, Size=697, Datatype=0x01(JSON)
-{
-  "name": "Rigoberto Bernier",
-  "addresses": [
-    {
-      "type": "home",
-      "address": "0622 Adams Mills",
-      "city": "Manchester",
-      "country": "United Kingdom"
-    }
-  ],
-  ...
-}
+╭───┬────┬────────────────────┬─────────────────────┬───────┬─────────╮
+│ # │ id │      content       │         cas         │ error │ cluster │
+├───┼────┼────────────────────┼─────────────────────┼───────┼─────────┤
+│ 0 │ 1  │ {record 11 fields} │ 1717505682500419584 │       │ capella │
+│ 1 │ 0  │ {record 11 fields} │ 1717505682774949888 │       │ capella │
+╰───┴────┴────────────────────┴─────────────────────┴───────┴─────────╯
 ----
 
-{cbc-api-url}
+For further details, refer to {cbsh-api-url}/#_reading[Reading^] in the Couchbase Shell documentation.
 --
-endif::flag-devex-command-line[]
 
 pass:[.NET]::
 +
@@ -280,10 +298,45 @@ For further details, refer to {python-api-url}#collection-object[Collection^].
 
 == Updating Multiple Documents
 
-To update multiple documents in Couchbase perform a bulk upsert or replace operation.
+To update multiple documents, perform a bulk upsert or replace operation.
 
-[{tabs}]
+[tabs]
 ====
+cbsh::
++
+--
+. If you haven't already done so, use `cb-env` to set the bucket, scope, and collection where the documents are stored.
+
+. Create an array of updated structured documents.
+
+. Pipe each item through the `wrap` filter to wrap it in a `content` field.
+
+. Pipe each item through the `insert` filter to add an `id` field with a unique value: for example, by copying a unique field from the content.
+
+. Pipe the output through the `doc upsert` or `doc replace` command to update the documents.
+
+'''
+
+{kv-bulk-update-example}
+
+[source,sh]
+----
+include::example$kv/kv-cbsh.nu[tag=cbsh-bulk-upsert]
+----
+
+.Result
+[source,console]
+----
+╭───┬───────────┬─────────┬────────┬──────────┬─────────╮
+│ # │ processed │ success │ failed │ failures │ cluster │
+├───┼───────────┼─────────┼────────┼──────────┼─────────┤
+│ 0 │         3 │       3 │      0 │          │ capella │
+╰───┴───────────┴─────────┴────────┴──────────┴─────────╯
+----
+
+For further details, refer to {cbsh-api-url}/#_mutating[Mutating^] in the Couchbase Shell documentation.
+--
+
 pass:[.NET]::
 +
 --
@@ -385,10 +438,43 @@ For further details, refer to {python-api-url}#collection-object[Collection^].
 
 == Deleting Multiple Documents
 
-To delete multiple documents in Couchbase perform a bulk remove operation.
+To delete multiple documents, perform a bulk remove operation.
 
-[{tabs}]
+[tabs]
 ====
+cbsh::
++
+--
+. If you haven't already done so, use `cb-env` to set the bucket, scope, and collection where the documents are stored.
+
+. Create an array of document IDs.
+
+. Pipe each document ID through the `wrap` filter to wrap it in an `id` field.
+
+. Pipe the output through the `doc remove` command to delete multiple documents by their IDs.
+
+'''
+
+{kv-bulk-delete-example}
+
+[source,sh]
+----
+include::example$kv/kv-cbsh.nu[tag=cbsh-bulk-delete]
+----
+
+.Result
+[source,console]
+----
+╭───┬───────────┬─────────┬────────┬──────────┬─────────╮
+│ # │ processed │ success │ failed │ failures │ cluster │
+├───┼───────────┼─────────┼────────┼──────────┼─────────┤
+│ 0 │         3 │       3 │      0 │          │ capella │
+╰───┴───────────┴─────────┴────────┴──────────┴─────────╯
+----
+
+For further details, refer to {cbsh-api-url}/#_removing[Removing^] in the Couchbase Shell documentation.
+--
+
 pass:[.NET]::
 +
 --
