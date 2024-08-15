@@ -61,7 +61,7 @@ LIMIT 1;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-simple.jsonc[tag=projection]
+include::example$pushdown-simple.jsonc[tag=projection]
 ----
 
 The query refers to fields `sourceairport` and `type`.
@@ -95,7 +95,7 @@ The `span` and `range` from the EXPLAIN output of <<example-simple>>.
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-simple.jsonc[tag=predicate]
+include::example$pushdown-simple.jsonc[tag=predicate]
 ----
 
 * Each Span defines details about one index-key summarizing corresponding predicate conditions into a range-scan lookup for the index.
@@ -174,7 +174,7 @@ WHERE distance < 2000 AND sourceairport = "LAX"; -- <1>
 .Results
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-comp-explain.jsonc[tag=excerpt]
+include::example$pushdown-comp-explain.jsonc[tag=excerpt]
 ----
 
 <.> The `spans` attribute of the EXPLAIN query plan output shows that the predicate is accurately represented and pushed-down to the indexer.
@@ -187,7 +187,7 @@ For example, when you xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc[enable mo
 
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-comp-plan.jsonc[tags=index;ellipsis;final]
+include::example$pushdown-comp-plan.jsonc[tags=index;ellipsis;final]
 ----
 ====
 
@@ -217,7 +217,7 @@ There is no predicate on the 2nd index-key `sourceairport`.
 .Results
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-skip.jsonc[tag=excerpt]
+include::example$pushdown-skip.jsonc[tag=excerpt]
 ----
 
 <.> The EXPLAIN query plan output shows that the predicate is pushed-down to the indexer.
@@ -253,7 +253,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -267,7 +267,7 @@ OFFSET  4000  LIMIT 10000;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-page-1.jsonc[tag=excerpt]
+include::example$pushdown-page-1.jsonc[tag=excerpt]
 ----
 
 <1> The `IndexScan3` operator handles `limit`.
@@ -297,7 +297,7 @@ OFFSET  4000  LIMIT 10000;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-page-2.jsonc[tag=excerpt]
+include::example$pushdown-page-2.jsonc[tag=excerpt]
 ----
 
 <1> The `PrimaryScan3` operator handles `limit`.
@@ -313,7 +313,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 .Query
 [source,sqlpp]
@@ -328,7 +328,7 @@ OFFSET  4000  LIMIT 10000;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-page-3.jsonc[tags=index;ellipsis;order]
+include::example$pushdown-page-3.jsonc[tags=index;ellipsis;order]
 ----
 
 <1> The `IndexScan3` operator does not handle `offset` or `limit`.
@@ -351,7 +351,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -365,7 +365,7 @@ ORDER BY city;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-idx-1.jsonc[tags=index;ellipsis;query]
+include::example$pushdown-idx-1.jsonc[tags=index;ellipsis;query]
 // ...
 ----
 
@@ -382,7 +382,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -396,7 +396,7 @@ ORDER BY meta().id;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-idx-2.jsonc[tags=index;ellipsis;query]
+include::example$pushdown-idx-2.jsonc[tags=index;ellipsis;query]
 ----
 
 <1> In this example, you can see an additional ORDER operator before the final projection, because the ORDER BY field `meta().id` is different from the index order key `city`.
@@ -435,7 +435,7 @@ ORDER BY city DESC;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-idx-3.jsonc[tags=index;ellipsis;query]
+include::example$pushdown-idx-3.jsonc[tags=index;ellipsis;query]
 ----
 ====
 
@@ -459,7 +459,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -474,7 +474,7 @@ WHERE city IS NOT NULL;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-max.jsonc[tag=excerpt]
+include::example$pushdown-max.jsonc[tag=excerpt]
 ----
 ====
 
@@ -493,7 +493,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -508,7 +508,7 @@ WHERE city IS NOT NULL;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-min.jsonc[tag=excerpt]
+include::example$pushdown-min.jsonc[tag=excerpt]
 ----
 ====
 
@@ -525,7 +525,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -565,7 +565,7 @@ WHERE city IS NOT NULL;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-count.jsonc[tag=excerpt]
+include::example$pushdown-count.jsonc[tag=excerpt]
 ----
 
 <1> The index operator `IndexCountScan3` counts values so the Query Service does not need to do additional processing.
@@ -584,7 +584,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -624,7 +624,7 @@ WHERE city IS NOT NULL;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-distinct.jsonc[tag=excerpt]
+include::example$pushdown-distinct.jsonc[tag=excerpt]
 ----
 
 <1> The index operator `IndexCountScan3` counts distinct values so the Query Service does not need to do additional processing.
