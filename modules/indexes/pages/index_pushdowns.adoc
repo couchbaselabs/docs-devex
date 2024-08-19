@@ -98,18 +98,17 @@ The `span` and `range` from the EXPLAIN output of <<example-simple>>.
 include::example$pushdown-simple.jsonc[tag=predicate]
 ----
 
-* Each Span defines details about one index-key summarizing corresponding predicate conditions into a range-scan lookup for the index.
+* Each span defines details about one index-key summarizing corresponding predicate conditions into a range-scan lookup for the index.
 In this example, the predicate condition (`sourceairport = "SFO"`) translates to one span with one range that specifies both `low` and `high` values of "SFO" (to imply equals condition).
-* Refer to section xref:index-scans.adoc[Scans] for more information.
+* Refer to section xref:index-scans.adoc[] for more information.
 ====
 
 == Composite Predicate Pushdown
 
 Compound or composite predicates are those with multiple conditions on different fields of the document.
-When the predicate is conjunctive with multiple AND conditions, then a single `span` with multiple `ranges` are specified in the index-scan request.
-When the predicate is disjunctive, then multiple `spans` are specified.
-See xref:index-scans.adoc[Scans]
-for more details and examples on how predicate pushdown works for various types of index-scans as well as the conjunctive predicate AND and the disjunctive predicate OR.
+When the predicate is conjunctive with multiple `AND` conditions, then a single span with multiple ranges is specified in the index-scan request.
+When the predicate is disjunctive, then multiple spans are specified.
+See xref:index-scans.adoc[] for more details and examples on how predicate pushdown works for various types of index-scans, as well as the conjunctive predicate `AND` and the disjunctive predicate `OR`.
 
 === Index Key Order and Structure
 
@@ -121,7 +120,7 @@ For example, consider the following hypothetical index:
 CREATE INDEX `idx_age_name` ON users(age, name);
 ----
 
-image::IndexKeyOrder.png[,570]
+image::IndexKeyOrder.png["Order of keys in a composite index",570]
 
 Various age and name values are stored in the index in a tree-like structure, represented in simplified form in the diagram above, with all the index key values linearly sorted as ordered pairs.
 For instance,
@@ -446,10 +445,10 @@ In such cases, the Query engine pushes down necessary hints or options to the In
 
 === MAX() Pushdown
 
-This function returns the highest value of the input field based on the default collation rules. (For details, see xref:n1ql:n1ql-language-reference/datatypes.adoc[Data types] and xref:n1ql:n1ql-language-reference/comparisonops.adoc[Comparison Operators].)
+This function returns the highest value of the input field based on the default collation rules.
+(For details, see xref:n1ql:n1ql-language-reference/datatypes.adoc[] and xref:n1ql:n1ql-language-reference/comparisonops.adoc[].)
 
-Prior to Couchbase Server 5.5, MAX() could be pushed to the Indexer only when the index was created with matching index keys in descending order.
-This limitation has been removed in Couchbase Server 5.5 and later.
+You do not need to create the index with the matching index keys sorted in descending order to push MAX() to the Indexer.
 
 .MAX of a String Field
 ====
@@ -480,10 +479,10 @@ include::example$pushdown-max.jsonc[tag=excerpt]
 
 === MIN() Pushdown
 
-This function returns the lowest value of the input field based on the default collation rules. (For details, see xref:n1ql:n1ql-language-reference/datatypes.adoc[Data types] and xref:n1ql:n1ql-language-reference/comparisonops.adoc[Comparison Operators].)
+This function returns the lowest value of the input field based on the default collation rules.
+(For details, see xref:n1ql:n1ql-language-reference/datatypes.adoc[] and xref:n1ql:n1ql-language-reference/comparisonops.adoc[].)
 
-Prior to Couchbase Server 5.5, MIN() could be pushed to the Indexer only when the index was created with matching index keys in ascending order.
-This limitation has been removed in Couchbase Server 5.5 and later.
+You do not need to create the index with the matching index keys sorted in ascending order to push MIN() to the Indexer.
 
 .MIN of a String Field
 ====
