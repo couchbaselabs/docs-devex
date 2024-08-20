@@ -1,8 +1,8 @@
 = Index Pushdowns
 :description: Index Pushdowns are performance optimizations where the Query engine pushes more of the work down to the Indexer.
-:imagesdir: ../../../assets/images
+:imagesdir: ../images
 :page-topic-type: concept
-:page-aliases: performance:index_pushdowns
+:page-aliases: learn:services-and-indexes/indexes/index_pushdowns,performance:index_pushdowns
 
 [abstract]
 {description}
@@ -60,7 +60,7 @@ LIMIT 1;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-simple.jsonc[tag=projection]
+include::example$pushdown-simple.jsonc[tag=projection]
 ----
 
 The query refers to fields `sourceairport` and `type`.
@@ -94,21 +94,20 @@ The `span` and `range` from the EXPLAIN output of <<example-simple>>.
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-simple.jsonc[tag=predicate]
+include::example$pushdown-simple.jsonc[tag=predicate]
 ----
 
-* Each Span defines details about one index-key summarizing corresponding predicate conditions into a range-scan lookup for the index.
+* Each span defines details about one index-key summarizing corresponding predicate conditions into a range-scan lookup for the index.
 In this example, the predicate condition (`sourceairport = "SFO"`) translates to one span with one range that specifies both `low` and `high` values of "SFO" (to imply equals condition).
-* Refer to section xref:learn:services-and-indexes/indexes/index-scans.adoc[Scans] for more information.
+* Refer to section xref:index-scans.adoc[] for more information.
 ====
 
 == Composite Predicate Pushdown
 
 Compound or composite predicates are those with multiple conditions on different fields of the document.
-When the predicate is conjunctive with multiple AND conditions, then a single `span` with multiple `ranges` are specified in the index-scan request.
-When the predicate is disjunctive, then multiple `spans` are specified.
-See xref:learn:services-and-indexes/indexes/index-scans.adoc[Scans]
-for more details and examples on how predicate pushdown works for various types of index-scans as well as the conjunctive predicate AND and the disjunctive predicate OR.
+When the predicate is conjunctive with multiple `AND` conditions, then a single span with multiple ranges is specified in the index-scan request.
+When the predicate is disjunctive, then multiple spans are specified.
+See xref:index-scans.adoc[] for more details and examples on how predicate pushdown works for various types of index-scans, as well as the conjunctive predicate `AND` and the disjunctive predicate `OR`.
 
 === Index Key Order and Structure
 
@@ -120,7 +119,7 @@ For example, consider the following hypothetical index:
 CREATE INDEX `idx_age_name` ON users(age, name);
 ----
 
-image::services-and-indexes/indexes/IndexKeyOrder.png[,570]
+image::IndexKeyOrder.png["Order of keys in a composite index",570]
 
 Various age and name values are stored in the index in a tree-like structure, represented in simplified form in the diagram above, with all the index key values linearly sorted as ordered pairs.
 For instance,
@@ -173,7 +172,7 @@ WHERE distance < 2000 AND sourceairport = "LAX"; -- <1>
 .Results
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-comp-explain.jsonc[tag=excerpt]
+include::example$pushdown-comp-explain.jsonc[tag=excerpt]
 ----
 
 <.> The `spans` attribute of the EXPLAIN query plan output shows that the predicate is accurately represented and pushed-down to the indexer.
@@ -186,7 +185,7 @@ For example, when you xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc[enable mo
 
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-comp-plan.jsonc[tags=index;ellipsis;final]
+include::example$pushdown-comp-plan.jsonc[tags=index;ellipsis;final]
 ----
 ====
 
@@ -216,7 +215,7 @@ There is no predicate on the 2nd index-key `sourceairport`.
 .Results
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-skip.jsonc[tag=excerpt]
+include::example$pushdown-skip.jsonc[tag=excerpt]
 ----
 
 <.> The EXPLAIN query plan output shows that the predicate is pushed-down to the indexer.
@@ -252,7 +251,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -266,7 +265,7 @@ OFFSET  4000  LIMIT 10000;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-page-1.jsonc[tag=excerpt]
+include::example$pushdown-page-1.jsonc[tag=excerpt]
 ----
 
 <1> The `IndexScan3` operator handles `limit`.
@@ -296,7 +295,7 @@ OFFSET  4000  LIMIT 10000;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-page-2.jsonc[tag=excerpt]
+include::example$pushdown-page-2.jsonc[tag=excerpt]
 ----
 
 <1> The `PrimaryScan3` operator handles `limit`.
@@ -312,7 +311,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 .Query
 [source,sqlpp]
@@ -327,7 +326,7 @@ OFFSET  4000  LIMIT 10000;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-page-3.jsonc[tags=index;ellipsis;order]
+include::example$pushdown-page-3.jsonc[tags=index;ellipsis;order]
 ----
 
 <1> The `IndexScan3` operator does not handle `offset` or `limit`.
@@ -350,7 +349,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -364,7 +363,7 @@ ORDER BY city;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-idx-1.jsonc[tags=index;ellipsis;query]
+include::example$pushdown-idx-1.jsonc[tags=index;ellipsis;query]
 // ...
 ----
 
@@ -381,7 +380,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -395,7 +394,7 @@ ORDER BY meta().id;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-idx-2.jsonc[tags=index;ellipsis;query]
+include::example$pushdown-idx-2.jsonc[tags=index;ellipsis;query]
 ----
 
 <1> In this example, you can see an additional ORDER operator before the final projection, because the ORDER BY field `meta().id` is different from the index order key `city`.
@@ -434,7 +433,7 @@ ORDER BY city DESC;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-idx-3.jsonc[tags=index;ellipsis;query]
+include::example$pushdown-idx-3.jsonc[tags=index;ellipsis;query]
 ----
 ====
 
@@ -445,9 +444,10 @@ In such cases, the Query engine pushes down necessary hints or options to the In
 
 === MAX() Pushdown
 
-This function returns the highest value of the input field based on the default collation rules. (For details, see xref:n1ql:n1ql-language-reference/datatypes.adoc[Data types] and xref:n1ql:n1ql-language-reference/comparisonops.adoc[Comparison Operators].)
+This function returns the highest value of the input field based on the default collation rules.
+(For details, see xref:n1ql:n1ql-language-reference/datatypes.adoc[] and xref:n1ql:n1ql-language-reference/comparisonops.adoc[].)
 
-MAX() can be pushed to the Indexer even if the index was not created with matching index keys or sort order.
+You do not need to create the index with the matching index keys sorted in descending order to push MAX() to the Indexer.
 
 .MAX of a String Field
 ====
@@ -457,7 +457,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -472,15 +472,16 @@ WHERE city IS NOT NULL;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-max.jsonc[tag=excerpt]
+include::example$pushdown-max.jsonc[tag=excerpt]
 ----
 ====
 
 === MIN() Pushdown
 
-This function returns the lowest value of the input field based on the default collation rules. (For details, see xref:n1ql:n1ql-language-reference/datatypes.adoc[Data types] and xref:n1ql:n1ql-language-reference/comparisonops.adoc[Comparison Operators].)
+This function returns the lowest value of the input field based on the default collation rules.
+(For details, see xref:n1ql:n1ql-language-reference/datatypes.adoc[] and xref:n1ql:n1ql-language-reference/comparisonops.adoc[].)
 
-MIN() can be pushed to the Indexer even if the index was not created with matching index keys or sort order.
+You do not need to create the index with the matching index keys sorted in ascending order to push MIN() to the Indexer.
 
 .MIN of a String Field
 ====
@@ -490,7 +491,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -505,7 +506,7 @@ WHERE city IS NOT NULL;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-min.jsonc[tag=excerpt]
+include::example$pushdown-min.jsonc[tag=excerpt]
 ----
 ====
 
@@ -522,7 +523,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -562,7 +563,7 @@ WHERE city IS NOT NULL;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-count.jsonc[tag=excerpt]
+include::example$pushdown-count.jsonc[tag=excerpt]
 ----
 
 <1> The index operator `IndexCountScan3` counts values so the Query Service does not need to do additional processing.
@@ -581,7 +582,7 @@ This example uses the `def_inventory_landmark_city` index that comes pre-install
 .Index
 [source,sqlpp]
 ----
-include::example$services-and-indexes/indexes/pushdown-def-city.n1ql[]
+include::example$pushdown-def-city.n1ql[]
 ----
 
 .Query
@@ -621,7 +622,7 @@ WHERE city IS NOT NULL;
 .Result
 [source,json]
 ----
-include::example$services-and-indexes/indexes/pushdown-distinct.jsonc[tag=excerpt]
+include::example$pushdown-distinct.jsonc[tag=excerpt]
 ----
 
 <1> The index operator `IndexCountScan3` counts distinct values so the Query Service does not need to do additional processing.
@@ -629,7 +630,7 @@ include::example$services-and-indexes/indexes/pushdown-distinct.jsonc[tag=excerp
 
 == Related Links
 
-* xref:learn:services-and-indexes/indexes/index-scans.adoc#query-execution-details[Query Execution: Details]
-* xref:n1ql:n1ql-language-reference/covering-indexes.adoc[Covering Indexes]
-* xref:n1ql:n1ql-language-reference/groupby-aggregate-performance.adoc[Grouping and Aggregate Pushdown]
-* xref:learn:services-and-indexes/indexes/early-filters-and-pagination.adoc[Early Filters, Ordering and Pagination]
+* xref:index-scans.adoc#query-execution-details[Query Execution: Details]
+* xref:covering-indexes.adoc[]
+* xref:groupby-aggregate-performance.adoc[]
+* xref:early-filters-and-pagination.adoc[]
