@@ -1,6 +1,7 @@
 = Index Lifecycle
 :page-topic-type: concept
-:imagesdir: ../../../assets/images
+:page-aliases: learn:services-and-indexes/indexes/index-lifecycle
+:imagesdir: ../images
 :description: An overview of the lifecycle of a Global Secondary Index, from creation and building to updates and scans.
 
 [abstract]
@@ -20,7 +21,7 @@ The build phase cannot start until the creation phase is complete.
 
 During the build phase, the Index Service reads the documents from the Data Service and builds the index.
 
-image::services-and-indexes/indexes/index-lifecycle-build.png[align=center]
+image::index-lifecycle-build.png[align=center]
 
 . The projector requests a DCP stream on the specified collection.
 . DCP streams only the documents in the collection.
@@ -37,9 +38,9 @@ For more information and examples, refer to xref:n1ql:n1ql-language-reference/cr
 
 When a Global Secondary Index has been created on a collection, the index is updated when documents within the collection are updated.
 
-image::services-and-indexes/indexes/index-lifecycle-update-1.png[align=center]
+image::index-lifecycle-update-1.png[align=center]
 
-image::services-and-indexes/indexes/index-lifecycle-update-2.png[align=center]
+image::index-lifecycle-update-2.png[align=center]
 
 . The projector keeps a _bucket-level_ DCP stream open for updates -- this limits the number of DCP connections.
 . When a document within the collection is updated, the projector utilizes the collection ID available with each mutation, and only evaluates the indexes defined for that collection.
@@ -53,11 +54,11 @@ Refer to xref:learn:clusters-and-availability/intra-cluster-replication.adoc#dat
 
 When a query needs to make use of a Global Secondary Index, the index is scanned.
 
-image::services-and-indexes/indexes/index-lifecycle-scan.png[align=center]
+image::index-lifecycle-scan.png[align=center]
 
 * If the index consistency is `not_bounded`, the scan proceeds without waiting for the index to be updated.
 * If the scan consistency is `at_plus` or `request_plus`, the scan coordinator waits for the index to be updated for that collection only, and then performs the scan.
 
 The scan coordinator does not need to wait for indexes on other collections to be updated, even if documents in other collections are being mutated.
 
-Refer to xref:learn:services-and-indexes/indexes/index-scans.adoc[Index Scans] and xref:learn:services-and-indexes/indexes/index-replication.adoc#index-consistency[Index Consistency] for further details.
+Refer to xref:index-scans.adoc[Index Scans] and xref:index-replication.adoc#index-consistency[Index Consistency] for further details.
