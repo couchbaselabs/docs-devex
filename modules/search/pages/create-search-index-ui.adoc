@@ -1,59 +1,96 @@
-= Create a Basic Search Index in Advanced Mode
+= Create a Search Index with the Capella UI
 :page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
-:description: Use Advanced Mode to create a Search index in the Couchbase {page-ui-name} with full customization and advanced features.
+:page-aliases: create-quick-index.adoc, create-type-mapping.adoc, create-xattrs-mapping.adoc, create-child-field.adoc, create-child-mapping.adoc
+:description: 
 
 [abstract]
 {description}
 
-Use xref:create-quick-index.adoc[Quick Mode] if you do not need full customization or advanced settings to quickly create a Search index and xref:customize-index.adoc#type-mappings[type mappings].
+Use Advanced Mode to create a Search index in the Couchbase {page-ui-name} with full customization and advanced features, such as xref:create-custom-analyzer.adoc[creating custom analyzers] or xref:set-type-identifier.adoc[setting a document filter].
+
+Use Quick Mode if you do not need full customization. 
 
 You must create a Search index before you can xref:simple-search-ui.adoc[run a search] with the Search Service.
 
 == Prerequisites
 
-* You have the Search Service enabled on a node in your database.
-For more information about how to change Services on your database, see xref:cloud:clusters:modify-database.adoc[].
+* You have the Search Service enabled on a node in your operational cluster.
+For more information about how to change Services on your operational cluster, see xref:cloud:clusters:modify-database.adoc[].
 
-* You have a bucket with scopes and collections in your database. 
+* You have a bucket with scopes and collections in your operational cluster. 
 For more information, see xref:cloud:clusters:data-service/manage-buckets.adoc[].
 
 * You have logged in to the Couchbase {page-ui-name}.
 
 == Procedure 
 
-To use Advanced Mode in Couchbase {page-product-name} to create a Search index:
+To the {page-ui-name} to create a Search index:
 
-. On the *Databases* page, select the database where you want to create a Search index. 
+. On the *Databases* page, select the operational cluster where you want to create a Search index. 
 . Go to menu:Data Tools[Search].
 . Click btn:[Create Search Index].
-. Click btn:[Advanced Mode].
+. (Optional) To add additional customization options to your Search index, click btn:[Enable Advanced Options].
 . In the *Index Name* field, enter a name for the Search index. 
 +
 [NOTE]
 ====
 Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
 
-For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope. You cannot have 2 indexes with the same name inside the same bucket and scope.
+For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope.
+You cannot have 2 indexes with the same name inside the same bucket and scope.
 ====
  
-. Under *Type Mappings*, in the *Bucket* list, select the bucket where you want to create your Search index.
-. In the *Scope* list, select the scope where you want to create your Search index.
-. Click btn:[Add Mapping].
-. In the *Collection* list, select a collection for the type mapping.
-. (Optional) To switch from a xref:customize-index.adoc#type-mappings[dynamic to a static type mapping], click *Index only specified fields*.
-. Click btn:[Submit].
-. (Optional) Do any of the following: 
-.. If you created a xref:customize-index.adoc#type-mappings[static type mapping], then you should xref:create-child-field.adoc[add a child field] or xref:create-child-mapping.adoc[add a child mapping] to your type mapping to specify the documents you want to include in your index. 
-.. Add additional features to your Search index to improve performance and search results.
-For more information, see xref:customize-index.adoc[].
+. In the *Bucket* and *Scope* lists, choose the bucket and scope where you want to create your Search index.
+. In the *Collections* list, select the collections you want to include in your Search index, or accept the default of *All*.
++
+If you select specific collections, you can only use documents from these collections in your Search index.
+. <<add-mapping,Add at least 1 mapping or type mapping>>.
+. (Optional) <<configure-settings,Configure additional settings>>.
 . Click btn:[Create Index].
+
+[#add-mapping]
+=== Add Type Mappings and Mappings
+
+You must add at least 1 mapping or type mapping to your Search index. 
+
+To create a new type mapping or mapping: 
+
+. Under *Type Mappings*, do one of the following to add existing collections, objects, or fields to your index: 
+.. To add an entire collection as a new type mapping, click a collection name and xref:type-mapping-options.adoc#collection[configure your type mapping options].
+.. To add Extended Attributes (XATTRs) document metadata as a new mapping, expand a collection, then click btn:["__$xattrs"] and xref:type-mapping-options.adoc#xattrs[configure your mapping options].
+.. To add an entire JSON object from your documents as a new mapping, expand a collection, then click an object from your document schema and xref:type-mapping-options.adoc#object[configure your mapping options].
+.. To add only a single field from your documents as a new type mapping, expand a collection, then click a field from your document schema and xref:type-mapping-options.adoc#field[configure your type mapping options].
+. To add the new type mapping or mapping to your index, click btn:[Add to Index].
+
+==== Add a Mapping or Type Mapping for a Future Object or Field 
+
+You can choose to add a mapping or type mapping for a JSON object or field that does not yet exist in your document schema. 
+
+To add a mapping or type mapping for this type of object or field: 
+
+. Select *Enable Advanced Options*. 
+. Next to *Configured Type Mappings*, click btn:[Add].
+.. Choose whether you want to create a JSON *Object* or a new *Field*.
+.. In the *Property Name* field, enter the name of the JSON object or field.
+.. Configure your xref:type-mapping-options.adoc#object[object mapping] or xref:type-mapping-options.adoc#field[field type mapping] options. 
+.. Click btn:[Add to Index].
+
+[#configure-settings]
+=== Configure Additional Search Index Settings 
+
+. Expand *Global Index Settings*:
+.. [[default-analyzer]]In the *Default Analyzer* list, select the xref:customize-index.adoc#analyzers[default analyzer] to assign to new xref:customize-index.adoc#type-mappings[type mappings] in your index. 
+.. In the *Default Date/Time Parser* list, select the xref:customize-index.adoc#date-time[default date/time parser] to use for date data in your index. 
++
+TIP: If you're editing your index in xref:create-search-indexes.adoc#advanced-mode[Advanced Mode Editing], you can also choose to xref:create-custom-analyzer.adoc[] or xref:create-custom-date-time-parser.adoc[]. 
+. (Advanced Mode Only) In the *Configured Type Mappings* pane, under *Choose Document Filter*, xref:set-type-identifier.adoc[configure a document filter] for your Search index. 
 
 == Next Steps 
 
-If you did not create a static type mapping, this basic index includes all documents from the collection you selected. 
-You can run a search against this index, but it's recommended that you customize your index to improve performance and reduce the index size. 
+Your Search index will contain documents that match the mappings and type mappings you specified and enabled in your settings. 
+If you created a lot of xref:customize-index.adoc#dynamic[dynamic type mappings] on whole collections, you can run a search against your index, but it's recommended that you create more specific type mappings to improve performance and reduce the index size. 
  
 For more information about the different features you can add to your Search index to improve performance and search results, see xref:customize-index.adoc[].
 
