@@ -17,7 +17,9 @@ For more information about how to change Services on your database, see xref:clo
  
 * You have logged in to the Couchbase {page-ui-name}. 
 
-* You have started to create or already created an index in xref:create-search-index-ui.adoc[Advanced Mode].
+* You have started to create or already created an index in xref:create-search-indexes.adoc#advanced-mode[Advanced Mode Editing].
+
+* You have already created or started to create a xref:create-custom-analyzer.adoc[custom analyzer] in your Search index.
 
 == Procedure 
 
@@ -25,12 +27,15 @@ To create a custom token filter with the {page-ui-name} in Advanced Mode:
 
 . On the *Databases* page, select the database that has the Search index you want to edit. 
 . Go to menu:Data Tools[Search].
-. Click the index where you want to create a custom token filter.
-. Under *Advanced Settings*, expand *Custom Filters*. 
-+
-NOTE: Make sure you use *Advanced Mode*. 
-. Click btn:[Add Token Filter].
-. In the *Name* field, enter a name for the token filter.
+. Click the index where you want to create a custom token filter to use with a custom analyzer.
+. (Optional) If you did not create your index with Advanced Mode, select *Enable Advanced Options*.
+. Expand *Global Index Settings*.
+. Do one of the following: 
+.. To create a new custom analyzer with a new token filter, click btn:[Add Custom Analyzer].
+.. To add a new custom token filter to use with an existing analyzer, expand the *Default Analyzer* list, and next to your custom analyzer, click btn:[Edit].
+. Click btn:[Add Custom Token Filter].
+. In the *Token Filter Name* field, enter a name for the token filter.
+. In the *Type* list, select a token filter type.
 
 You can create any of the following custom token filters: 
 
@@ -38,16 +43,16 @@ You can create any of the following custom token filters:
 | Token Filter Type | Description
 
 | <<dict-compound,dict_compound>>
-| Use a wordlist to find and create tokens from compound words in existing tokens.
+| Use a xref:customize-index.adoc#wordlists[word list] to find and create tokens from compound words in existing tokens.
 
 | <<edge-ngram,edge_ngram>>
 | Use a set character length to create tokens from the start or end of existing tokens.
 
 | <<elision,elision>>
-| Use a wordlist to remove elisions from input tokens.
+| Use a xref:customize-index.adoc#wordlists[word list] to remove elisions from input tokens.
 
 | <<keyword-marker,keyword_marker>> 
-| Use a wordlist of keywords to find and create new tokens.
+| Use a xref:customize-index.adoc#wordlists[word list] of keywords to find and create new tokens.
 
 | <<length,length>>
 | Use a set character length to filter out tokens that are too long or too short.
@@ -62,7 +67,7 @@ You can create any of the following custom token filters:
 | Use a set character length and separator to concatenate and create new tokens.
 
 | <<stop-tokens,stop_tokens>>
-| Use a wordlist to find and remove words from tokens.
+| Use a xref:customize-index.adoc#wordlists[word list] to find and remove words from tokens.
 
 | <<truncate-token,truncate_token>>
 | Use a set character length to truncate existing tokens.
@@ -77,10 +82,13 @@ include::partial$custom-token-filters-descriptions.adoc[tags=dict;!dict_example]
 To create a new `dict_compound` token filter with the {page-ui-name} in Advanced Mode:
  
 . In the *Type* list, select *dict_compound*. 
-. In the *Sub Words* list, select the wordlist to use to find subwords in input tokens.
-+
-You can choose your own xref:create-custom-wordlist.adoc[custom wordlist] or a xref:default-wordlists-reference.adoc[default wordlist]. Each subword match creates a new token. 
-. Click btn:[Submit]. 
+. In the *Sub Words* list, do one of the following to configure how the token filter finds subwords to create new tokens:
+.. Choose an available xref:default-wordlists-reference.adoc[default word list].
+.. Click btn:[Create Custom Word List].
+... In the *Word List Name* field, enter a name for the new custom word list.
+... In the *Add Words* field, enter each word you want to add to your custom word list, separated by commas (`,`).
+... Click btn:[Create Custom Word List].
+. Click btn:[Add Custom Token Filter]. 
 
 [#edge-ngram]
 === Create a Custom `edge_ngram` Token Filter 
@@ -94,7 +102,7 @@ To create a new `edge_ngram` token filter with the {page-ui-name} in Advanced Mo
 .. To create new tokens starting from the beginning of input tokens, clear *Back*. 
 . In the *Min* box, enter the minimum character length for a new token. 
 . In the *Max* box, enter the maximum character length for a new token.
-. Click btn:[Submit].
+. Click btn:[Add Custom Token Filter].
 
 [#elision]
 === Create a Custom `elision` Token Filter
@@ -104,10 +112,13 @@ include::partial$custom-token-filters-descriptions.adoc[tags=elision;!elision_ex
 To create a new `elision` token filter with the {page-ui-name} in Advanced Mode:
 
 . In the *Type* list, select *elision*. 
-. In the *Articles* list, select a wordlist to use to find elisions in input tokens.
-+
-You can choose your own xref:create-custom-wordlist.adoc[custom wordlist] or a xref:default-wordlists-reference.adoc[default wordlist].
-. Click btn:[Submit]. 
+. In the *Articles* list, do one of the following to choose how to find elisions in input tokens:
+.. Choose an available xref:default-wordlists-reference.adoc[default word list].
+.. Click btn:[Create Custom Word List].
+... In the *Word List Name* field, enter a name for the new custom word list.
+... In the *Add Words* field, enter each word you want to add to your custom word list, separated by commas (`,`).
+... Click btn:[Create Custom Word List].
+. Click btn:[Add Custom Token Filter]. 
 
 [#keyword-marker]
 === Create a Custom `keyword_marker` Token Filter 
@@ -117,10 +128,13 @@ include::partial$custom-token-filters-descriptions.adoc[tags=keyword;!keyword_ex
 To create a new `keyword_marker` token filter with the {page-ui-name} in Advanced Mode:
 
 . In the *Type* list, select *keyword_marker*. 
-. In the *Articles* list, select a wordlist to use to find keywords to create tokens.
-+
-You can choose your own xref:create-custom-wordlist.adoc[custom wordlist] or a xref:default-wordlists-reference.adoc[default wordlist].
-. Click btn:[Submit]. 
+. In the *Articles* list, do one of the following to choose how to find keywords to create tokens:
+.. Choose an available xref:default-wordlists-reference.adoc[default word list].
+.. Click btn:[Create Custom Word List].
+... In the *Word List Name* field, enter a name for the new custom word list.
+... In the *Add Words* field, enter each word you want to add to your custom word list, separated by commas (`,`).
+... Click btn:[Create Custom Word List].
+. Click btn:[Add Custom Token Filter]. 
 
 [#length]
 === Create a Custom `length` Token Filter 
@@ -132,7 +146,7 @@ To create a new `length` token filter with the {page-ui-name} in Advanced Mode:
 . In the *Type* list, select *length*. 
 . In the *Min* box, enter the minimum character length for a new token. 
 . In the *Max* box, enter the maximum character length for a new token.
-. Click btn:[Submit].
+. Click btn:[Add Custom Token Filter].
 
 [#ngram]
 === Create a Custom `ngram` Token Filter
@@ -144,7 +158,7 @@ To create a new `ngram` token filter with the {page-ui-name} in Advanced Mode:
 . In the *Type* list, select *ngram*. 
 . In the *Min* box, enter the minimum character length for a new token. 
 . In the *Max* box, enter the maximum character length for a new token.
-. Click btn:[Submit].
+. Click btn:[Add Custom Token Filter].
 
 [#normalize-unicode]
 === Create a Custom `normalize_unicode` Token Filter 
@@ -156,11 +170,15 @@ To create a new `normalize_unicode` token filter with the {page-ui-name} in Adva
 . In the *Type* list, select *normalize_unicode*. 
 . In the *Form* list, select the type of Unicode normalization to apply: 
 +
-* *nfc*: Use canonical decomposition and canonical composition to normalize characters. The token filter separates combined unicode characters, then merges them into a single character.
-* *nfd*: Use canonical decomposition to normalize characters. The token filter separates combined unicode characters.
-* *nfkc*: Use compatibility decomposition to normalize characters. The token filter converts unicode characters to remove variants.
-* *nfkd*: Use compatibility decomposition and canonical composition to normalize characters. The token filter removes variants, then separates combined unicode characters to merge them into a single character.
-. Click btn:[Submit].
+* *nfc*: Use canonical decomposition and canonical composition to normalize characters.
+The token filter separates combined unicode characters, then merges them into a single character.
+* *nfd*: Use canonical decomposition to normalize characters.
+The token filter separates combined unicode characters.
+* *nfkc*: Use compatibility decomposition to normalize characters.
+The token filter converts unicode characters to remove variants.
+* *nfkd*: Use compatibility decomposition and canonical composition to normalize characters.
+The token filter removes variants, then separates combined unicode characters to merge them into a single character.
+. Click btn:[Add Custom Token Filter].
 
 [#shingle]
 === Create a Custom `shingle` Token Filter 
@@ -177,7 +195,7 @@ To create a new `shingle` token filter with the {page-ui-name} in Advanced Mode:
 .. To remove the original token from output, clear *Include original token*. 
 . (Optional) In the *Separator* field, enter a character or characters to add in between concatenated tokens. 
 . (Optional) In the *Filler* field, enter a character or characters to replace tokens that are removed by another token filter.
-. Click btn:[Submit].
+. Click btn:[Add Custom Token Filter].
 
 [#stop-tokens]
 === Create a Custom `stop_tokens` Token Filter
@@ -187,10 +205,13 @@ include::partial$custom-token-filters-descriptions.adoc[tags=stop;!stop_example]
 To create a new `stop_tokens` token filter with the {page-ui-name} in Advanced Mode:
 
 . In the *Type* list, select *stop_tokens*. 
-. In the *Stop Words* list, select a wordlist to use to remove tokens.
-+
-You can choose your own xref:create-custom-wordlist.adoc[custom wordlist] or a xref:default-wordlists-reference.adoc[default wordlist].
-. Click btn:[Submit].
+. In the *Stop Words* list, do one of the following to choose what word list the token filter should use to remove tokens:
+.. Choose an available xref:default-wordlists-reference.adoc[default word list].
+.. Click btn:[Create Custom Word List].
+... In the *Word List Name* field, enter a name for the new custom word list.
+... In the *Add Words* field, enter each word you want to add to your custom word list, separated by commas (`,`).
+... Click btn:[Create Custom Word List].
+. Click btn:[Add Custom Token Filter].
 
 [#truncate-token]
 === Create a Custom `truncate_token` Token Filter 
@@ -201,7 +222,7 @@ To create a new `truncate_token` token filter with the {page-ui-name} in Advance
 
 . In the *Type* list, select *truncate_token*.
 . In the *Length* box, enter the maximum character length for an output token. 
-. Click btn:[Submit].
+. Click btn:[Add Custom Token Filter].
 
 == Next Steps
 
@@ -209,14 +230,9 @@ After you create a custom token filter, you can use it with xref:create-custom-a
 
 To continue customizing your Search index, you can also: 
 
-* xref:set-advanced-settings.adoc[]
 * xref:set-type-identifier.adoc[]
-* xref:create-type-mapping.adoc[]
-* xref:create-child-field.adoc[]
-* xref:create-child-mapping.adoc[]
 * xref:create-custom-analyzer.adoc[]
 * xref:create-custom-character-filter.adoc[]
 * xref:create-custom-tokenizer.adoc[]
-* xref:create-custom-wordlist.adoc[]
 
 To run a search and test the contents of your Search index, see xref:simple-search-ui.adoc[].
