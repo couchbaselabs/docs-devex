@@ -34,16 +34,16 @@ include::ROOT:partial$query-context.adoc[tag=statement]
 [#index-replication]
 == Index Replication
 
-Secondary indexes can be replicated across database-nodes.
+Secondary indexes can be replicated across cluster-nodes.
 This ensures:
 
 * _Availability_: If one Index-Service node is lost, the other continues to provide access to replicated indexes.
 * _High Performance_: If original and replica copies are available, incoming queries are load-balanced across them.
 
 Index-replicas can be created with the {sqlpp} `CREATE INDEX` statement.
-Note that whenever a given number of index-replicas is specified for creation, the number must be less than the number of database-nodes currently running the {index-service}[Index Service].
+Note that whenever a given number of index-replicas is specified for creation, the number must be less than the number of cluster-nodes currently running the {index-service}[Index Service].
 If it is not, the index creation fails.
-Note also that if, following creation of the maximum number of copies, the number of nodes running the Index Service decreases, Couchbase Capella progressively assigns replacement index-replicas to any and all Index-Service nodes subsequently be added to the database, until the required number of index-replicas again exists for each replicated index.
+Note also that if, following creation of the maximum number of copies, the number of nodes running the Index Service decreases, Couchbase Capella progressively assigns replacement index-replicas to any and all Index-Service nodes subsequently be added to the cluster, until the required number of index-replicas again exists for each replicated index.
 
 Index-replicas can be created as follows:
 
@@ -58,7 +58,7 @@ include::example$services-and-indexes/indexes/replication-nodes.n1ql[]
 ----
 
 * Specifying _no_ destination nodes; but specifying instead, by means of the `WITH` clause and the `num_replica` attribute, only the _number_ of replicas required.
-The replicas are automatically distributed across those nodes of the database that are running the Index Service: the distribution-pattern is based on a projection of optimal index-availability, given the number and disposition of Index-Service nodes across defined server-groups.
+The replicas are automatically distributed across those nodes of the cluster that are running the Index Service: the distribution-pattern is based on a projection of optimal index-availability, given the number and disposition of Index-Service nodes across defined server-groups.
 +
 In the following example, an index is created with two replicas, with no destination-nodes specified:
 +
@@ -69,9 +69,10 @@ include::example$services-and-indexes/indexes/replication-num.n1ql[]
 +
 Note that if `nodes` and `num_replica` are both specified in the `WITH` clause, the specified number of nodes must be _one greater_ than `num_replica`.
 
+ifdef::flag-devex-rest-api[]
 * Specifying a number of index-replicas to be created by the Index Service whenever `CREATE INDEX` is invoked.
 The default is `0`.
-If the default is changed to, say, `2`, creation of a single index is henceforth accompanied by the creation of two replicas, which are automatically distributed across the nodes of the database running the Index Service.
+If the default is changed to, say, `2`, creation of a single index is henceforth accompanied by the creation of two replicas, which are automatically distributed across the nodes of the cluster running the Index Service.
 No explicit specification within the `CREATE INDEX` statement is required.
 +
 With credentials that provide appropriate authorization, this default can be changed by means of the `curl` command, as follows:
@@ -84,12 +85,13 @@ curl -X POST -u 'Administrator:password' \
 ----
 +
 Here, `numReplica` is an integer that establishes the default number of replicas that must be created whenever `CREATE INDEX` is invoked.
-Note that this call only succeeds if the database contains enough Index Service nodes to host each new index and its replicas: for example, if `2` is specified as the default number of replicas, the Index Service must have been established on at least 3 nodes.
+Note that this call only succeeds if the cluster contains enough Index Service nodes to host each new index and its replicas: for example, if `2` is specified as the default number of replicas, the Index Service must have been established on at least 3 nodes.
 +
 Note also that whenever explicit specification of replica-numbers is made within the `CREATE INDEX` statement, this explicit specification takes precedence over any established default.
 
 You can change index replication settings via the {index-storage-mode}[UI] or the {index-settings-via-rest}[REST API].
 For further information on using {sqlpp}, refer to {query}[Query Fundamentals].
+endif::flag-devex-rest-api[]
 
 [[index-partitioning]]
 == Index Partitioning
@@ -146,7 +148,9 @@ One or more _index snapshots_ are maintained on disk, to permit rapid recovery i
 In cases where recovery requires an Index-Service node to be restarted, the node’s indexes are rebuilt from the snapshots retained on disk.
 
 By default, two index snapshots are stored on disk.
+ifdef::flag-devex-rest-api[]
 You can change index snapshot settings via the {index-storage-settings-via-cli}[CLI] or the {index-settings-via-rest}[REST API].
+endif::flag-devex-rest-api[]
 
 [[index-rollback]]
 == Index Rollback
@@ -154,7 +158,9 @@ You can change index snapshot settings via the {index-storage-settings-via-cli}[
 The index service also maintains a {database-change-protocol}[DCP failover log].
 If necessary, the data service can request the index service to return to a specified rollback point and update its history.
 
+ifdef::flag-devex-rest-api[]
 You can change index rollback settings via the {index-storage-settings-via-cli}[CLI] or the {index-settings-via-rest}[REST API].
+endif::flag-devex-rest-api[]
 
 [[index-rollback-after-failover]]
 === Index Rollback After Failover
