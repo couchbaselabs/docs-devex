@@ -331,6 +331,265 @@ SELECT DS_VERSION() as server_version;
 ----
 ====
 
+[[finderr,FINDERR()]]
+== FINDERR(`expression`)
+
+ifeval::['{page-component-version}' == '7.6'] 
+[.status]#Couchbase Server 7.6.4#
+endif::[]
+
+=== Description
+
+Returns the full details of any Query service or cbq shell error.
+
+=== Arguments
+
+expression:: One of the following:
++
+--
+* A number representing an error code.
+In this case, the function returns the full details of the error matching the error code.
+
+* A string.
+In this case, the function searches for the target string in all of the error message fields except for `user_error`, and returns the full details of any errors that match the string.
+
+* A regular expression.
+In this case, the function searches for the regular expression in all of the error message fields except for `user_error`, and returns the full details of any errors that match the pattern.
+--
+
+=== Return Value
+
+The return value is an array of one or more objects, each of which contains the details of an error that matches the find expression.
+
+For each error, the function returns the following fields.
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**applies_to** +
+__required__
+|One of the following:
+
+* `cbq-shell`: The error applies to the cbq shell.
+* `Server`: The error applies to the server.
+|enum (cbq-shell, Server)
+
+|**code** +
+__required__
+|A number representing the error.
+|Integer
+
+|**description** +
+__required__
+|Message describing why the error occurred.
+|String
+
+|**reason** +
+__optional__
+|List of possible causes of the error.
+|String array
+
+|**user_action** +
+__optional__
+|List of possible steps a user can take to mitigate the error.
+|String array
+
+|**user_error** +
+__optional__
+|One of the following:
+
+* `Yes`: The error was caused by the user.
+* `No`: The error was caused by other services, or was internal to the server.
+* `Maybe`: A combination of both.
+|enum (Yes, No, Maybe)
+|===
+
+NOTE: The error details also include a `symbol` field, which contains a representation string for the error.
+This field is for internal use only, and is not shown in the results.
+However, the FINDERR function does search this field when the find expression is a string or a regular expression.
+
+=== Examples
+
+[[finderr-ex1,FINDERR() Example 1]]
+.Find error details by code number
+====
+.Query
+[source,sqlpp]
+----
+SELECT FINDERR(5011);
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      {
+        "applies_to": "Server",
+        "code": 5011,
+        "description": "Abort: «reason»",
+        "reason": [
+          [
+            "The SQL++ abort() function was called in the statement.",
+            "e.g. SELECT abort('An example cause')"
+          ]
+        ],
+        "user_error": "Yes"
+      }
+    ]
+  }
+]
+----
+====
+
+[[finderr-ex2,FINDERR() Example 2]]
+.Find error details by matching a string
+====
+.Query
+[source,sqlpp]
+----
+SELECT FINDERR("A semantic error is present in the statement.");
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      {
+        "applies_to": "Server",
+        "code": 3100,
+        "description": "A semantic error is present in the statement.",
+        "reason": [
+          "The statement includes portions that violate semantic constraints."
+        ],
+        "user_action": [
+          "The cause will contain more detail on the violation; revise the statement and re-submit."
+        ],
+        "user_error": "Yes"
+      }
+    ]
+  }
+]
+----
+====
+
+[[finderr-ex3,FINDERR() Example 3]]
+.Find multiple error details by matching a string
+====
+.Query
+[source,sqlpp]
+----
+SELECT FINDERR("semantic");
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      {
+        "applies_to": "Server",
+        "code": 3100,
+        "description": "A semantic error is present in the statement.",
+        "reason": [
+          "The statement includes portions that violate semantic constraints."
+        ],
+        "user_action": [
+          "The cause will contain more detail on the violation; revise the statement and re-submit."
+        ],
+        "user_error": "Yes"
+      },
+      {
+        "applies_to": "Server",
+        "code": 3220,
+        "description": "«name» window function «clause» «reason»",
+        "reason": [
+          "A violation of the window function semantic restrictions was present in the statement."
+        ],
+        "user_action": [
+          "Revise the statement to remove the violation."
+        ],
+        "user_error": "Yes"
+      },
+      {
+        "applies_to": "Server",
+        "code": 3300,
+        "description": "recursive_with semantics: «cause»",
+        "reason": [
+          "The statement specifies restricted syntax in a recursive common table expression definition."
+        ],
+        "user_action": [
+          "Revise the statement removing the restricted syntax."
+        ],
+        "user_error": "Yes"
+      }
+    ]
+  }
+]
+----
+====
+
+[[finderr-ex4,FINDERR() Example 4]]
+.Find multiple error details by matching a regular expression
+====
+.Query
+[source,sqlpp]
+----
+SELECT FINDERR("[IU][NP]SERT");
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      {
+        "applies_to": "Server",
+        "code": 3150,
+        "description": "MERGE with ON KEY clause cannot have document key specification in INSERT action.",
+        "reason": [
+          [
+            "A lookup merge statement specified a document key.",
+            "e.g. MERGE INTO default USING [{},{}] AS source ON KEY 'aaa' WHEN NOT MATCHED THEN INSERT ('key',{})"
+          ]
+        ],
+        "user_action": [
+          "Refer to the documentation for lookup merge statements."
+        ],
+        "user_error": "Yes"
+      },
+// ...
+      {
+        "applies_to": "Server",
+        "code": 5072,
+        "description": "No UPSERT key for «value»",
+        "user_action": [
+          "Contact support."
+        ]
+      },
+// ...
+      {
+        "applies_to": "Server",
+        "code": 15005,
+        "description": "No keys to insert «details»"
+      }
+    ]
+  }
+]
+----
+====
+
+=== See Also
+
+* The xref:cli:finderr.adoc[finderr] command line tool
+* xref:n1ql:n1ql-language-reference/n1ql-error-codes.adoc[]
+
 [[flatten_keys,FLATTEN_KEYS()]]
 == FLATTEN_KEYS(`expr1` [ `modifiers` ], `expr2` [ `modifiers` ], ...)
 
