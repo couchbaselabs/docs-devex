@@ -188,7 +188,7 @@ INSERT INTO bookings
 ====
 
 [[ex-nextval-key]]
-.Insert a sequential value in a document key
+.Insert a sequential value in a document key and body
 ====
 The following statement uses the `ordNum` sequence to generate the document key and a booking number within the body of the document.
 
@@ -200,6 +200,12 @@ INSERT INTO bookings
     {"num": NEXTVAL FOR ordNum, "user": 1})
   RETURNING META().id, *;
 ----
+
+This query gives different results, depending on the version of Couchbase Server.
+
+'''
+
+[.status]##Couchbase Server 7.6&ndash;7.6.3##
 
 .Results
 [source,json]
@@ -215,12 +221,33 @@ INSERT INTO bookings
 ]
 ----
 
-Since the key is not part of the document, the query has incremented the sequence twice.
-This gives a different sequence number for the document key and the document value, which may not be what you want.
+In versions of Couchbase Server prior to 7.6.4, the key is not regarded as part of the document, so this query increments the sequence twice.
+This gives a different sequence number for the document key and the document value.
+
+'''
+
+[.status]#Couchbase Server 7.6.4#
+
+.Results
+[source,json]
+----
+[
+  {
+    "id": "1001",
+    "bookings": {
+      "num": 1001,
+      "user": 1
+    }
+  }
+]
+----
+
+In Couchbase Server 7.6.4 and later, the entire VALUES clause (key, value, and options) is regarded as a single document, so the query only increments the sequence once.
+This gives the same sequence number in the document key and the document value.
 ====
 
 [[ex-nextval-same]]
-.Insert the same sequential value in a document key and body
+.Insert a sequential value with INSERT SELECT
 ====
 The following statement uses an INSERT SELECT statement.
 With this query, the document key and document value are both generated within the same document.
