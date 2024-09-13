@@ -131,16 +131,17 @@ endif::flag-devex-rest-api[]
 Yes.
 Functions can be "paused, edited and resumed" without losing a single mutation; as such continuity is maintained. Note this sequence is similar to the operations of "undeploy, edited, and deployed with a feed boundary ‘From now’", however in this later case you can lose mutations.
 
-
+ifdef::flag-devex-command-line[]
 * How do I perform a Function's lifecycle operations from CI/CD?
 +
 To perform Functions lifecycle operations from CI/CD, refer to the xref:cli:cbcli/couchbase-cli-eventing-function-setup.adoc[CLI Eventing] section.
+endif::flag-devex-command-line[]
 
-
+ifdef::flag-devex-rest-api[]
 * How to invoke a REST endpoint from inside the Function?
 +
-To invoke a REST Endpoint from inside the Function, refer to the https://docs.couchbase.com/server/6.5/eventing/eventing-api.html[Functions REST API] section.
-
+To invoke a REST Endpoint from inside the Function, refer to the xref:eventing-api.html[] section.
+endif::flag-devex-rest-api[]
 
 * How does the Functions offering compare with the Couchbase’s Kafka Connector?
 +
@@ -211,8 +212,10 @@ It shouldn't be used for any other data storage.
 ** If an Eventing function uses timers, then an additional fixed amount of space of about 0.2MB (1024 * docs of 196 bytes) is needed. 
 From version 6.6.1 on only 0.04MB (256 docs * 196 bytes) is needed if the function uses timers.
 ** If an Eventing function uses timers, then for each active timer, an additional amount of space between 832 and 1856 bytes (832 bytes + sizeof(context)) is needed.
-Where by default the context cannot be larger than 1024 bytes and the maximum number of active timers is based on both the business logic and the mutation rate.
+Where by default the context cannot be larger than 1024 bytes and the maximum number of active timers is based on both the business logic and the mutation rate.
+ifdef::flag-devex-rest-api[]
 Note, the "timer_context_size" can be overridden on a per function bases via the xref:eventing-api.adoc[Eventing: REST API].
+endif::flag-devex-rest-api[]
 It is best to keep the size of the context small by using a reference rather than passing and storing a massive document in the timer.
 ** Every timer requires up to three documents (_root_, _alarm_, and _context_) which are stored in the Eventing Storage (or metadata collection).
 Note sometimes only two (2) additional documents are needed if the timer shares the same scan interval or _root_ document with a previous timer.
@@ -251,11 +254,11 @@ As of the release 6.6.0, recurring Timers can be created days, weeks, or years i
 
 * Why do I see a burst of activity in bucket OPs (in the bucket that holds the metadata collection) after a timer is paused for an extended period of time?
 +
-Resuming an Eventing Function with a timer callback or handler after a prolonged period of time where the Function was in the paused state (like days) will cause a period of high bucket OPs upon resuming the Function.  In addition mutation processing is blocked until the timer scan is completed which can take some time (this delay is proportional to the duration of pause).
+Resuming an Eventing Function with a timer callback or handler after a prolonged period of time where the Function was in the paused state (like days) will cause a period of high bucket OPs upon resuming the Function. In addition mutation processing is blocked until the timer scan is completed which can take some time (this delay is proportional to the duration of pause).
 
 * Why do I see unexpected documents in the metadata collection when I cancel or overwrite an Eventing Timer?
 +
-When overwriting or canceling a Timer only one of possible three documents, i.e. the "context", is immediately cleared from the metadata bucket. The extra documents, an "alarm" document associated with each Timer and a "root" document (1 per vBucket for the specific time) are left in the metadata bucket. These items are cleaned up at the original execution time that the Timer was scheduled to fire.
+When overwriting or canceling a Timer only one of possible three documents, i.e. the "context", is immediately cleared from the metadata bucket. The extra documents, an "alarm" document associated with each Timer and a "root" document (1 per vBucket for the specific time) are left in the metadata bucket. These items are cleaned up at the original execution time that the Timer was scheduled to fire.
 
 * Can I pass a binding (Bucket or URL alias) in a Timer's context?
 +
