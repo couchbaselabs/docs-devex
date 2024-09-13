@@ -117,30 +117,31 @@ allows propagation of data changes to other systems, notifying the application a
 with data from external resources, and so on. The native cURL that lets users propagate events of interest to other APIs when
 mutation rates are low.
 
-
+ifdef::flag-devex-rest-api[]
 * Can a Function be debugged and what happens when a Function is debugged?
 +
 Yes.
 Functions offer multiple diagnosability solutions (debugger, logs, and statistics), all designed to have minimal impact on overall
 performance and scalability.
 When debugging a function a single mutation is blocked and handed off to the debugger session, while the rest of the mutations continue to be serviced by the Eventing Function, refer to the xref:eventing:eventing-debugging-and-diagnosability.adoc[Debugging and Diagnosability] section.
-
+endif::flag-devex-rest-api[]
 
 * Can the logic in a Function in production be altered while it is running?
 +
 Yes.
 Functions can be "paused, edited and resumed" without losing a single mutation; as such continuity is maintained. Note this sequence is similar to the operations of "undeploy, edited, and deployed with a feed boundary ‘From now’", however in this later case you can lose mutations.
 
-
+ifdef::flag-devex-command-line[]
 * How do I perform a Function's lifecycle operations from CI/CD?
 +
 To perform Functions lifecycle operations from CI/CD, refer to the xref:cli:cbcli/couchbase-cli-eventing-function-setup.adoc[CLI Eventing] section.
+endif::flag-devex-command-line[]
 
-
+ifdef::flag-devex-rest-api[]
 * How to invoke a REST endpoint from inside the Function?
 +
-To invoke a REST Endpoint from inside the Function, refer to the https://docs.couchbase.com/server/6.5/eventing/eventing-api.html[Functions REST API] section.
-
+To invoke a REST Endpoint from inside the Function, refer to the xref:eventing-api.html[] section.
+endif::flag-devex-rest-api[]
 
 * How does the Functions offering compare with the Couchbase’s Kafka Connector?
 +
@@ -167,7 +168,7 @@ Functions do not allow global variables, this restriction is mandatory for the F
 * What is in the "meta" Function parameter (OnUpdate, OnDelete)? Is this the metadata we currently write in order to figure out what has changed in the document?
 +
 No, the meta parameter does not include information on what fields changed or mutated in the document.
-This parameter is composed of the meta fields associated with the document. For more information, refer to the https://docs.couchbase.com/server/6.5/learn/data/data.html#metadata[metadata] section.
+This parameter is composed of the meta fields associated with the document. For more information, refer to the xref:server:learn:data/data.adoc#metadata[metadata] section.
 +
 It should be noted, “document metadata” is different from the "Eventing Storage" keyspace (metadata collection), described in the next section, used by the Eventing Service to maintain state and checkpoints.
 
@@ -196,7 +197,7 @@ For example, you can your enrich or update a document with data from another doc
 
 * What is the Eventing Storage keyspace? Do I need to create a separate collection?
 +
-To provide better resiliency and restartability semantics across Eventing nodes, some of the metadata that is used by the Eventing service needs a collection to be stored in a standard xref:learn:buckets-memory-and-storage/buckets.adoc[Couchbase bucket] (hereafter referred to as the 'metadata collection').
+To provide better resiliency and restartability semantics across Eventing nodes, some of the metadata that is used by the Eventing service needs a collection to be stored in a standard xref:clusters:data-service/about-buckets-scopes-collections.adoc[Couchbase bucket] (hereafter referred to as the 'metadata collection').
 +
 After provisioning the Eventing nodes in your cluster, you'll need to create the metadata collection before you can start using the Eventing service.
 All Eventing functions within a cluster can share the same metadata collection (this is a best practice but not a requirement), regardless of the number of functions, or their source and destination collection.
@@ -204,15 +205,17 @@ All Eventing functions within a cluster can share the same metadata collection (
 +
 Some additional requirements of the metadata collection are as follows:
 +
-** You should enable xref:manage:manage-buckets/create-bucket.adoc[vBucket replicas] on the metadata collection to allow for failure recovery.
+** You should enable xref:clusters:data-service/manage-buckets.adoc#add-bucket[replicas] on the metadata collection to allow for failure recovery.
 ** You should reserve the metadata collection solely for Eventing housekeeping.
 It shouldn't be used for any other data storage.
 ** Each Eventing function always requires a fixed amount of space of about 2MB (1024 docs * 1884 bytes).
 ** If an Eventing function uses timers, then an additional fixed amount of space of about 0.2MB (1024 * docs of 196 bytes) is needed. 
 From version 6.6.1 on only 0.04MB (256 docs * 196 bytes) is needed if the function uses timers.
 ** If an Eventing function uses timers, then for each active timer, an additional amount of space between 832 and 1856 bytes (832 bytes + sizeof(context)) is needed.
-Where by default the context cannot be larger than 1024 bytes and the maximum number of active timers is based on both the business logic and the mutation rate.
+Where by default the context cannot be larger than 1024 bytes and the maximum number of active timers is based on both the business logic and the mutation rate.
+ifdef::flag-devex-rest-api[]
 Note, the "timer_context_size" can be overridden on a per function bases via the xref:eventing-api.adoc[Eventing: REST API].
+endif::flag-devex-rest-api[]
 It is best to keep the size of the context small by using a reference rather than passing and storing a massive document in the timer.
 ** Every timer requires up to three documents (_root_, _alarm_, and _context_) which are stored in the Eventing Storage (or metadata collection).
 Note sometimes only two (2) additional documents are needed if the timer shares the same scan interval or _root_ document with a previous timer.
@@ -235,25 +238,27 @@ For more details on Timer scheduling refer to xref:eventing-timers.adoc#wall-clo
 * Can I cancel a Timer?
 +
 Yes.
-As of the release 6.6.0 Eventing Timers can be cancelled using _cancelTimer()_ function, or by creating a new Timer with the same reference as an existing Timer refer to xref:eventing-timers.adoc#limitations[Timers: Limitations].
+As of the release 6.6.0 Eventing Timers can be cancelled using _cancelTimer()_ function, or by creating a new Timer with the same reference as an existing Timer.
+Refer to xref:eventing-timers.adoc[].
 
 * Can I create a Recurring timer?
 +
 Yes.
-As of the release 6.6.0 Recurring Timers are fully supported, i.e. a function that is invoked by a Timer callback can reliably create fresh Timers refer to xref:eventing-timers.adoc#limitations[Timers: Limitations].
+As of the release 6.6.0 Recurring Timers are fully supported, i.e. a function that is invoked by a Timer callback can reliably create fresh Timers.
+Refer to xref:eventing-timers.adoc[].
 
 * Can I schedule a Timer far into the future?
 +
 Yes.
-As of the release 6.6.0, recurring Timers can be created days, weeks, or years in the future with no adverse performance impact on an otherwise idle Eventing system. Refer to xref:eventing-timers.adoc#limitations[Timers: Limitations].
+As of the release 6.6.0, recurring Timers can be created days, weeks, or years in the future with no adverse performance impact on an otherwise idle Eventing system. Refer to xref:eventing-timers.adoc[].
 
 * Why do I see a burst of activity in bucket OPs (in the bucket that holds the metadata collection) after a timer is paused for an extended period of time?
 +
-Resuming an Eventing Function with a timer callback or handler after a prolonged period of time where the Function was in the paused state (like days) will cause a period of high bucket OPs upon resuming the Function.  In addition mutation processing is blocked until the timer scan is completed which can take some time (this delay is proportional to the duration of pause).
+Resuming an Eventing Function with a timer callback or handler after a prolonged period of time where the Function was in the paused state (like days) will cause a period of high bucket OPs upon resuming the Function. In addition mutation processing is blocked until the timer scan is completed which can take some time (this delay is proportional to the duration of pause).
 
 * Why do I see unexpected documents in the metadata collection when I cancel or overwrite an Eventing Timer?
 +
-When overwriting or canceling a Timer only one of possible three documents, i.e. the "context", is immediately cleared from the metadata bucket. The extra documents, an "alarm" document associated with each Timer and a "root" document (1 per vBucket for the specific time) are left in the metadata bucket. These items are cleaned up at the original execution time that the Timer was scheduled to fire.
+When overwriting or canceling a Timer only one of possible three documents, i.e. the "context", is immediately cleared from the metadata bucket. The extra documents, an "alarm" document associated with each Timer and a "root" document (1 per vBucket for the specific time) are left in the metadata bucket. These items are cleaned up at the original execution time that the Timer was scheduled to fire.
 
 * Can I pass a binding (Bucket or URL alias) in a Timer's context?
 +
