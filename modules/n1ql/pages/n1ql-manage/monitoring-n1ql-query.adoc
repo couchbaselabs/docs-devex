@@ -819,6 +819,82 @@ curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
   -d '{"completed-limit":1000}'
 ----
 
+[[sys-history]]
+== Stream Completed Requests
+
+[.status]#Couchbase Server 7.6.4#
+
+In Couchbase Server 7.6.4 and later, you can stream completed requests to disk.
+
+To enable completed request streaming, use the Admin API `/admin/settings` endpoint to specify the `completed_stream_size` property.
+
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"completed_stream_size":500}'
+----
+
+This property is a file size in MiB.
+When set to `0` (the default), completed request streaming is disabled.
+
+When set to any size greater than `0`, completed requests are streamed to archive files.
+The value of this property determines the size of the data to retain, per node.
+The configuration for completed requests determines which requests are saved.
+
+NOTE: The additional processing required to save completed requests to disk may limit overall request throughput on a Query node, but typically only when every completed request is being recorded, and requests are very small or short-lived.
+The speed of the file system on which the server logs directory resides naturally affects the potential impact too.
+
+[#sys-history-files]
+=== Archived Request Files
+
+When streaming is enabled, completed requests are saved to GZIP archives with the prefix `local_request_log` in the Couchbase Server `logs` directory.
+Each saved GZIP archive file contains multiple JSON entries, one for each for each recorded completed request.
+
+Couchbase Server writes multiple archive files in parallel, so whilst the order of requests in a file is sequential, a single given file may not contain a contiguous sequence of requests.
+
+When an archive file reaches or exceeds 100 MiB, it is finalized and saved to disk.
+This is not a hard limit -- entries are not truncated to adhere to it.
+Files may also be finalized with less content, if nothing has been written to them for an extended period.
+Files that are actively being written are not available for reading, and they don't count towards the configured size limit until they're finalized.
+
+Couchbase Server tries to manage and retain archive files such that the total disk space used by the files is within the specified limit for the node.
+When the specified limit is reached, older files are removed as necessary to make space for newly finalized files.
+When a file is removed, it isn't guaranteed that only the oldest requests are evicted, given that Couchbase Server writes to multiple archive files in parallel.
+
+[#sys-history-view]
+=== View Archived Requests
+
+To view archived completed requests, use `gzip` and `jq` on the command line, or a {sqlpp} query.
+
+[tabs%sync]
+====
+Command Line::
++
+--
+To view all archived completed requests in `$FILE`:
+
+[source,sh]
+----
+gzip -qdc $FILE | jq .
+----
+--
+
+{sqlpp}::
++
+--
+To get a list of archived completed requests using {sqlpp}:
+
+[source,sqlpp]
+----
+SELECT * FROM system:completed_requests_history;
+----
+--
+====
+
+The `system:completed_requests_history` keyspace is provided for {sqlpp} access to the archived files, but as they are external GZIP archives performance is restricted, particularly with large histories on clusters with multiple Query service nodes.
+Directly reading the files may be more useful in some cases.
+
 [#query-monitoring-settings]
 == Query Profiling
 
