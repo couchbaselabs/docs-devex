@@ -52,7 +52,7 @@ This information can be very useful to assess the current workload and performan
 [#sys-vitals-get]
 === Get System Vitals
 
-To view system vitals, use the Admin REST API or a {sqlpp} query.
+To view system vitals, use the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] or a {sqlpp} query.
 
 [tabs]
 ====
@@ -126,7 +126,7 @@ The `system:active_requests` catalog lists all currently executing active reques
 [[sys-active-get]]
 === Get Active Requests
 
-To view active requests, use the Admin REST API or a {sqlpp} query.
+To view active requests, use the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] or a {sqlpp} query.
 
 [tabs]
 ====
@@ -173,7 +173,7 @@ SELECT *, meta().plan FROM system:active_requests;
 [[sys-active-delete]]
 === Terminate an Active Request
 
-The DELETE command can be used to terminate an active request, for instance, a non-responding or a long-running query.
+To terminate an active request, for instance, a non-responding or a long-running query, use the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] or a {sqlpp} query.
 
 [tabs]
 ====
@@ -272,7 +272,7 @@ When there are multiple prepared statements with the same name in different quer
 [[sys-prepared-get]]
 === Get Prepared Statements
 
-To get a list of all known prepared statements, use the Admin REST API or a {sqlpp} query.
+To get a list of all known prepared statements, use the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] or a {sqlpp} query.
 
 [tabs]
 ====
@@ -346,7 +346,7 @@ SELECT *, meta().plan FROM system:prepareds;
 [[sys-prepared-delete]]
 === Delete Prepared Statements
 
-To delete a specific prepared statement, use the Admin REST API or a {sqlpp} query.
+To delete a specific prepared statement, use the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] or a {sqlpp} query.
 
 [tabs]
 ====
@@ -492,7 +492,7 @@ This information provides a general insight into the health and performance of t
 [[sys-completed-get]]
 === Get Completed Requests
 
-To get a list of all logged completed requests, use the Admin REST API or a {sqlpp} query.
+To get a list of all logged completed requests, use the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] or a {sqlpp} query.
 
 [tabs]
 ====
@@ -559,7 +559,7 @@ SELECT *, meta().plan FROM system:completed_requests;
 [[sys-completed-delete]]
 === Purge the Completed Requests
 
-To purge a specific completed request, use the Admin REST API or a {sqlpp} query.
+To purge a specific completed request, use the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] or a {sqlpp} query.
 
 [tabs]
 ====
@@ -690,9 +690,9 @@ For field names and meanings, see xref:n1ql-rest-admin:index.adoc#Requests[Reque
 For query plan field names and meanings, see <<monitor-profile-details>>.
 
 [[sys-completed-config]]
-== Configure the Completed Requests
+== Configure Completed Requests
 
-You can configure the `system:completed_requests` keyspace by specifying parameters through the Admin API `/admin/settings` endpoint.
+You can configure the `system:completed_requests` keyspace by specifying parameters through the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] `/admin/settings` endpoint.
 
 You can specify the conditions for completed request logging using the `completed` field.
 This field takes a JSON object containing the names and values of logging qualifiers.
@@ -818,6 +818,82 @@ curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
   -H 'Content-Type: application/json' \
   -d '{"completed-limit":1000}'
 ----
+
+[[sys-history]]
+== Stream Completed Requests
+
+[.status]#Couchbase Server 7.6.4#
+
+In Couchbase Server 7.6.4 and later, you can stream completed requests to disk.
+
+To enable completed request streaming, use the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] `/admin/settings` endpoint to specify the `completed_stream_size` property.
+
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"completed_stream_size":500}'
+----
+
+This property is a file size in MiB.
+When set to `0` (the default), completed request streaming is disabled.
+
+When set to any size greater than `0`, completed requests are streamed to archive files.
+The value of this property determines the size of the data to retain, per node.
+The configuration for completed requests determines which requests are saved.
+
+NOTE: The additional processing required to save completed requests to disk may limit overall request throughput on a Query node, but typically only when every completed request is being recorded, and requests are very small or short-lived.
+The speed of the file system on which the server logs directory resides naturally affects the potential impact too.
+
+[#sys-history-files]
+=== Archived Request Files
+
+When streaming is enabled, completed requests are saved to GZIP archives with the prefix `local_request_log` in the Couchbase Server `logs` directory.
+Each saved GZIP archive file contains multiple JSON entries, one for each for each recorded completed request.
+
+Couchbase Server writes multiple archive files in parallel, so whilst the order of requests in a file is sequential, a single given file may not contain a contiguous sequence of requests.
+
+When an archive file reaches or exceeds 100 MiB, it is finalized and saved to disk.
+This is not a hard limit -- entries are not truncated to adhere to it.
+Files may also be finalized with less content, if nothing has been written to them for an extended period.
+Files that are actively being written are not available for reading, and they don't count towards the configured size limit until they're finalized.
+
+Couchbase Server tries to manage and retain archive files such that the total disk space used by the files is within the specified limit for the node.
+When the specified limit is reached, older files are removed as necessary to make space for newly finalized files.
+When a file is removed, it isn't guaranteed that only the oldest requests are evicted, given that Couchbase Server writes to multiple archive files in parallel.
+
+[#sys-history-view]
+=== View Archived Requests
+
+To view archived completed requests, use https://www.gnu.org/software/gzip[gzip] and https://jqlang.github.io/jq[jq] on the command line, or a {sqlpp} query.
+
+[tabs,sync-group-id="REST API|{sqlpp}"]
+====
+Command Line::
++
+--
+To view all archived completed requests in `$FILE`:
+
+[source,sh]
+----
+gzip -qdc $FILE | jq .
+----
+--
+
+{sqlpp}::
++
+--
+To get a list of archived completed requests using {sqlpp}:
+
+[source,sqlpp]
+----
+SELECT * FROM system:completed_requests_history;
+----
+--
+====
+
+The `system:completed_requests_history` keyspace is provided for {sqlpp} access to the archived files, but as they are external GZIP archives performance is restricted, particularly with large histories on clusters with multiple Query service nodes.
+Directly reading the files may be more useful in some cases.
 
 [#query-monitoring-settings]
 == Query Profiling
