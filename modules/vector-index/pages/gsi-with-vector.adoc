@@ -1,0 +1,45 @@
+= Use GSI with a Vector Column
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: You can extend a Couchbase {product-name}'s Global Secondary Index (GSI) with a single vector column to enable queries to find semantically-related content.
+
+{description}
+
+The added vector column lets your application perform a hybrid query using both the index's scalar. array, and object index entries plus a vector value. 
+See xref:learn:services-and-indexes/indexes/indexes.adoc[] for an overview of GSI and other indexes.
+
+== How the GSI's Column Works 
+
+You can add a single vector column to a GSI to enable semantic and similarity searches within your {sqlpp} queries.
+When creating the index, you set the type of the attribute containing the embedded vector to `VECTOR`.
+In the process of creating the index, the Index Service quantizes the data in the attribute to make it easier to scan and process. 
+For more information about quantization, see xref:use-vector-indexes.adoc#quantize[Reducing Vector Complexity].
+
+When your query uses a GSI containing a vector column, the Query Service uses any non-vector predicates in the query to filter index entries before it performs an IndexScan for relevant vectors. 
+This behavior reduces the number of vector similarity comparisons the Query Service must do to find similar vectors.
+
+
+== Prerequisites
+
+* You must have the Index Service enabled on a node in your database. 
+For more information about how to deploy a new node and Services on your database, see xref:manage:manage-nodes/node-management-overview.adoc[].
+
+* You must have a bucket with scopes and collections in your database. 
+For more information about how to create a bucket, see xref:manage:manage-buckets/create-bucket.adoc[].
+
+* You have documents in a keyspace inside your bucket that contain a vector embedding. 
+Embeddings can be an array of floats or a base64 encoded string.
+
+* Your account has the xref:learn:security:roles.adoc#query-manage-index[Query Manage Index] role.
+
+== Planning a GSI Extended with a Vector Column
+
+Before you create a GSI with a vector column, you must make several decisions:
+
+* The type of quantization to use when storing the vector in you your index.
+GSI always uses Inverted File (IVF) indexing with a form of quantization for its vector column.
+It supports two types of quantization:
+** *IVF Scalar Quantization (SQ)* reduces each dimension of the vector independently.
+It reduces the size of the vector stored in the index at the cost of some precision.
+** *IVF Product Quantization (PQ)*     

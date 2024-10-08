@@ -1,0 +1,96 @@
+@startuml ai-app-workflow
+
+!pragma layout smetana
+!include <material/common>
+!include <material/numeric_1_box>
+!include <material/numeric_2_box>
+!include <material/numeric_3_box>
+!include <material/numeric_4_box>
+!include <material/numeric_5_box>
+!include <material/numeric_6_box>
+!include <material/numeric_7_box>
+!include <material/numeric_8_box>
+sprite Couchbase <svg width="98" height="98" viewBox="0 0 98 98">
+<path fill="#EC1218"
+   d="m 82.1,57.6 c 0,2.9 -1.7,5.5 -5,6.1 -5.8,1 -17.9,1.6 -28.1,1.6 -10.2,0 -22.3,-0.7 -28.1,-1.6 -3.3,-0.6 -5,-3.2 -5,-6.1 V 38.4 c 0,-2.9 2.3,-5.7 5,-6.1 1.7,-0.3 5.6,-0.6 8.8,-0.6 1.2,0 2.2,0.9 2.2,2.3 V 47.3 C 37.8,47.3 43,47 49,47 c 6,0 11.2,0.3 17.2,0.3 V 34.1 c 0,-1.4 1,-2.3 2.2,-2.3 3.2,0 7.1,0.3 8.8,0.6 2.7,0.4 5,3.2 5,6.1 z M 49,0 C 21.9,0 0,21.9 0,49 0,76.1 21.9,98 49,98 76.1,98 98,76.1 98,49 98,21.9 76.1,0 49,0 Z" />
+</svg>
+
+'title: Application Workflow with Vector Indexes
+
+skinparam defaultTextAlignment center
+
+skinparam linetype ortho
+
+top to bottom direction
+
+
+  frame "Your Application" as APP {
+    card DL [
+      Data
+      Loading
+    ]
+    card EM [
+      Embedding 
+      Models
+    ]
+    card SE [
+      Search & Query Logic
+    ]
+
+    DL --> EM  : <$ma_numeric_1_box{scale=0.4}>Complex\nData
+    EM --> DL  : Vectors
+    SE --> EM  : <$ma_numeric_4_box{scale=0.4}>Complex\nData
+    EM --> SE  : Vectors
+
+  }
+
+  frame "<$Couchbase{scale=0.15}> Couchbase Cluster" as CC {
+    database DS [
+      <$Couchbase{scale=0.15,color=red}>
+      ..
+      Data
+      ..
+      Service
+      ..
+    ]
+    rectangle " <$Couchbase{scale=0.15}> Index Service" as IS {
+      card GSI [
+        GSI with
+        Vector
+        Column
+      ]
+      card VI [
+        Vector
+        Index
+      ]
+    }
+    rectangle " <$Couchbase{scale=0.15}> Search Service" as SSERV {
+      card SI [
+        Search
+        Index
+        w/ Vector
+      ]
+    }
+
+     rectangle "<$Couchbase{scale=0.15}> Query Service" as QS {
+      
+     }
+
+  }
+
+
+DL ----> DS  : <$ma_numeric_2_box{scale=0.4}> Data &\nVectors
+DS --> GSI : Data &\nVectors
+DS --> VI  : Data &\nVectors
+DS --> SI  : <$ma_numeric_3_box{scale=0.4}>Data &\nVectors
+
+QS <--> IS :Index\nScans
+
+
+SE ----> QS : <$ma_numeric_5_box{scale=0.4}>Queries
+SE --------> SSERV : <$ma_numeric_5_box{scale=0.4}>Searches
+
+QS ----> SE :<$ma_numeric_6_box{scale=0.4}> Results
+SSERV ---------> SE :<$ma_numeric_6_box{scale=0.4}> Results
+
+@enduml
