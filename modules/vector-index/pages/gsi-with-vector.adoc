@@ -9,14 +9,15 @@
 The added vector column lets your application perform a hybrid query using both the index's scalar. array, and object index entries plus a vector value. 
 See xref:learn:services-and-indexes/indexes/indexes.adoc[] for an overview of GSI and other indexes.
 
-== How the GSI's Column Works 
+== How the GSI's Vector Column Works 
 
 You can add a single vector column to a GSI to enable semantic and similarity searches within your {sqlpp} queries.
-When creating the index, you set the type of the attribute containing the embedded vector to `VECTOR`.
+When creating the index, you use a `VECTOR` key attribute to designate the attribute that contains the embedded vectors.
 In the process of creating the index, the Index Service quantizes the data in the attribute to make it easier to scan and process. 
 For more information about quantization, see xref:use-vector-indexes.adoc#quantize[Reducing Vector Complexity].
 
-When your query uses a GSI containing a vector column, the Query Service uses any non-vector predicates in the query to filter index entries before it performs an IndexScan for relevant vectors. 
+When your query contains a embedded vector, the Query Service uses any non-vector predicates in the query to filter index entries.
+Then it performs an index scan on the remaining index entries, using the similarity function you specify in the query to locate similar vectors. 
 This behavior reduces the number of vector similarity comparisons the Query Service must do to find similar vectors.
 
 
@@ -28,18 +29,162 @@ For more information about how to deploy a new node and Services on your databas
 * You must have a bucket with scopes and collections in your database. 
 For more information about how to create a bucket, see xref:manage:manage-buckets/create-bucket.adoc[].
 
-* You have documents in a keyspace inside your bucket that contain a vector embedding. 
+* Your account must have the xref:learn:security:roles.adoc#query-manage-index[Query Manage Index] role to be able to create an index.
+
+* You have documents in a collection that contain one or more vector embeddings.
+You can add a single vector to a GSI index.
+If your documents contain multiple embedded vectors, you can create multiple indexes---one for each vector attribute.
++
 Embeddings can be an array of floats or a base64 encoded string.
+Couchbase {product-name} does not embed vectors itself. 
+You must use an external embedding model to embed vectors into your data and add them to your documents.
++
+[TIP]
+--
+include::vector-search:partial$download-sample-partial.adoc[]
+--
 
-* Your account has the xref:learn:security:roles.adoc#query-manage-index[Query Manage Index] role.
+* You must know the number of dimensions the vector contains. 
+The embedding model you use to embed the vectors determines this value for you.  
+For example,  OpenAI API's `text-embedding-ada-002` embedding model that was used for the sample data creates vectors that have 1536 dimensions.
 
-== Planning a GSI Extended with a Vector Column
+You also have several options to choose before you create a GSI that has a vector column:
 
-Before you create a GSI with a vector column, you must make several decisions:
 
-* The type of quantization to use when storing the vector in you your index.
-GSI always uses Inverted File (IVF) indexing with a form of quantization for its vector column.
-It supports two types of quantization:
-** *IVF Scalar Quantization (SQ)* reduces each dimension of the vector independently.
-It reduces the size of the vector stored in the index at the cost of some precision.
-** *IVF Product Quantization (PQ)*     
+* The type of quantization you want to use when storing the vector in you your index.
+GSI vector columns support two types of quantization: Scalar Quantization (SQ) and Product Quantization (PQ). 
+See xref:vector-index:use-vector-indexes.adoc#quantize[Reducing Vector Size] for more information about quantization.
++ 
+In addition to the quantization type, you can also supply a value that affects the quantization:
++
+** For SQ, the value sets the data type and number of bits that represent a dimension. For example, `SQ8` uses 8 bits to represent a dimension. `SQfp16` uses a 16-bit floating point value to represent a dimension.
+** For PQ, the value sets the number of subquantizers and the number of bits each quantizers uses. For example `PQ8x8` uses 8 subquantizer each of which uses 8 bits. `PQ32x8` uses thirty two quantizers with 8 bits per quantizer. 
+* Optionally, choose the number of centroids to use if the quantization uses centroids.
+
+* The proximity function to use when generating the index. 
+For the best results, use the same proximity function used to embed the 
+
+== Create a GSI with a Vector Column
+
+Creating a GSI with a vector column is similar to creating a non-vector GSI index.
+In the `CREATE INDEX` statement to create the GSI, add the `VECTOR` lead key attribute after the  vector's to declare that the attribute contains an embedded vector.
+
+You must also use the `WITH` clause to specify some additional information for the vector column:
+
+* `dimension` in an integer value that sets the number of dimensions in the vector.
+* `similarity` is a string that sets the distance function to use when comparing vectors during index creation.
+For the highest accuracy, use the distance function you plan to use when querying or searching vector data.
+* `description` is a string that sets the number of centroids and the quantization to use when creating the index. 
+The format for this string is:
++
+[source,sqlpp]
+----
+'IVF<number_of_centroids>,[PQ|SQ]<quantization_setting>'
+----
+
+// Note: I originally thought that the similarity function had to match the function used to embed the vectors, but
+// embedding doesn't require a distance function? But there was a reference to keeping the function here and in the queries
+// the same, so will mention that later.
+
+[#examples]
+=== Examples
+
+The following examples show you how to create two Global Secondary Indexes with a vector column using the sample data.
+They both use the data from the `color_data_2vectors.zip` file mentioned previously. 
+The data in `rgb.json` file looks like this:
+
+[source,json]
+----
+[
+  {
+    "id": "#FFEFD5",
+    "color": "papaya whip",
+    "brightness": 240.82,
+    "colorvect_l2": [
+      255,
+      239,
+      213
+    ],
+    "wheel_pos": "other",
+    "verbs": [
+      "soften",
+      "mellow",
+      "lighten"
+    ],
+    "description": "Papaya whip is a soft and mellow color that can be described as a light shade of peach or coral. It has a calming and soothing effect, similar to the tropical fruit it is named after. This color is perfect for creating a warm and inviting atmosphere, and it pairs well with other pastel shades or neutral tones. Papaya whip is a versatile color that can be used in both fashion and interior design, adding a touch of elegance and sophistication to any space.",
+    "embedding_model": "text-embedding-ada-002-v2",
+    "embedding_vector_dot": [
+      -0.014644118957221508,
+      0.017003899440169334,
+      -0.013450744561851025,
+      0.0021356006618589163,
+      0.006283756345510483,
+      0.01162360142916441,
+    . . . 
+    ]
+ }
+  . . . 
+] 
+----
+
+==== Index the RGB Values
+
+The `rgb.json` file's `colorvect_l2` attribute defines an array containing the RGB values for the entry's color. 
+While this technically is not an embedded vector, you can still create a vector index column for this array. 
+The following example creates a GSI for this attribute as an embedded vector as well as the color's name and brightness.
+
+[source,sqlpp]
+----
+CREATE INDEX `color_vectors_idx` ON `vector-sample`.`colors`.`rgb`
+       (`colorvect_l2` VECTOR, color, brightness)
+       WITH {  "dimension":3 , "similarity":"L2", "description":"IVF,SQ8"};
+----
+
+In this example:
+
+* The number of dimensions is 3, because there are three values in the array containing the RGB value.
+* The similarity function is `L2`. 
+This is a slower, but more accurate function that other options.
+* The description sets the index column to use SQ quantization, reducing dimension values to an 8-bit value.
+
+The result of running example is:
+
+[source,json]
+----
+[
+  {
+    "id": "f572fa0b1c7358ee",
+    "name": "color_vectors_idx",
+    "state": "online"
+  }
+]
+----
+
+==== Create a GSI Using the Embedded Vectors
+
+The `embedding_vector_dot` attribute contains the embedded vectors for the text in the `description` attribute.
+The data sample shown in <<#examples>> truncated this attribute to several values.
+The embedded vector contains 1536 dimensions.
+
+The following example creates a GSI that indexes the embedded vectors in the `embedding_vector_dot` as well as indexing the scalar `color` that contains the color's name and `brightness.`
+
+[source,sqlpp]
+----
+CREATE INDEX `color_desc_idx` ON `vector-sample`.`colors`.`rgb`
+       (`embedding_vector_dot` VECTOR, color, brightness)
+       WITH {  "dimension":1536, "similarity":"l2", "description":" IVF16,SQ8" }
+----
+
+The response:
+
+[source, json]
+----
+[
+  {
+    "id": "c965205718c3e4c2",
+    "name": "color_desc_idx",
+    "state": "online"
+  }
+]
+----
+
