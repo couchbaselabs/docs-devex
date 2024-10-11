@@ -2,7 +2,7 @@
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 :keywords: secondary, index, placement
-:description: The CREATE INDEX statement allows you to create a secondary index. \
+:description: FIXME: The CREATE INDEX statement allows you to create a secondary index. \
 Secondary indexes contain a filtered or a full set of keys in a given keyspace.
 
 :authorization-overview: xref:learn:security/authorization-overview.adoc
@@ -23,7 +23,7 @@ Secondary indexes contain a filtered or a full set of keys in a given keyspace.
 // TEMP
 include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
-The `CREATE INDEX` statement allows you to create a secondary index.
+FIXME: The `CREATE INDEX` statement allows you to create a secondary index.
 Secondary indexes contain a filtered or a full set of keys in a given keyspace.
 Secondary indexes are optional but increase query efficiency on a keyspace.
 
@@ -75,14 +75,12 @@ When querying, if the index name contains a `&num;` or `&lowbar;` character, you
 keyspace-ref:: (Required) Specifies the keyspace where the index is created.
 Refer to <<keyspace-ref>> below.
 
-index-key:: (Required) Specifies an index key.
-Refer to <<index-key>> below.
+index-keys-and-attribs:: (Required) Specified the index keys and index key attributes.
+Refer to <<index-keys-and-attribs>> below.
 
-lead-key-attribs:: (Optional) Specifies attributes for the leading index key.
-Refer to <<index-key-attrib>> below.
-
-key-attribs:: (Optional) Specifies attributes for a non-leading index key.
-Refer to <<index-key-attrib>> below.
+index-include:: (Optional) Specifies non-key fields to include in the index.
+For use with vector indexes and secondary indexes with a vector field.
+Refer to <<index-include>> below.
 
 index-partition:: (Optional) Specifies index partitions.
 Refer to <<index-partition>> below.
@@ -95,6 +93,12 @@ Refer to <<index-using>> below.
 
 index-with:: (Optional) Specifies options for the index.
 Refer to <<index-with>> below.
+
+[[vector]]
+=== VECTOR Keyword
+
+FIXME: The optional `VECTOR` keyword indicates that the index is a vector index.
+For details, see Vector Indexes.
 
 [[if-not-exists]]
 === IF NOT EXISTS Clause
@@ -179,8 +183,31 @@ collection::
 For example, `airline` indicates the `airline` collection, assuming the query context is set.
 ====
 
+[[index-keys-and-attribs]]
+=== Index Keys and Attributes
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=index-keys-and-attribs]
+----
+
+image::n1ql-language-reference/index-keys-and-attribs.png["Syntax diagram: refer to source code listing", align=left]
+
+TODO: Secondary indexes can have many keys.
+Vector indexes can only have one key, which must be a vector field.
+
+[horizontal]
+index-key:: (Required) Specifies an index key.
+Refer to <<index-key>> below.
+
+lead-key-attribs:: (Optional) Specifies attributes for the leading index key.
+Refer to <<index-key-attrib>> below.
+
+key-attribs:: (Optional) Specifies attributes for a non-leading index key.
+Refer to <<index-key-attrib>> below.
+
 [[index-key]]
-=== Index Key
+==== Index Key
 
 [source,ebnf]
 ----
@@ -203,7 +230,7 @@ Array indexing enables you to create global indexes on array elements and optimi
 For details, refer to {indexing-arrays}[Array Indexing].
 
 [[index-key-attrib]]
-=== Index Key Attributes
+==== Index Key Attributes
 
 [source,ebnf]
 ----
@@ -228,8 +255,11 @@ Refer to <<index-order>> below.
 include-missing:: (Optional) The leading index key may also include `INCLUDE MISSING` clause.
 Refer to <<include-missing>> below.
 
+include-vector:: (Optional) The leading index key may also include `INCLUDE MISSING` clause.
+Refer to <<include-vector>> below.
+
 [[index-order]]
-==== Index Order
+===== Index Order
 
 [source,ebnf]
 ----
@@ -250,7 +280,7 @@ The index key is sorted in descending order.
 This clause is optional; if omitted, the default is `ASC`.
 
 [[include-missing]]
-==== INCLUDE MISSING Clause
+===== INCLUDE MISSING Clause
 
 [source,ebnf]
 ----
@@ -264,6 +294,26 @@ If this clause is not present, then documents without the index key field are no
 
 The `INCLUDE MISSING` clause can only be applied to the leading index key.
 The `INCLUDE MISSING` clause may be included before or after the `ASC` or `DESC` keyword.
+
+[[include-vector]]
+===== VECTOR Field
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=index-vector]
+----
+
+image::n1ql-language-reference/index-vector.png["Syntax diagram: refer to source code listing", align=left]
+
+FIXME: Indicates that the index key is a vector field.
+For details, see Vector Indexes and Secondary Indexes with a Vector Field.
+
+[[index-include]]
+=== INCLUDE Clause
+
+FIXME: Used to include non-key fields in the index.
+This is used for vector indexes and secondary indexes with a vector field.
+For details, see Vector Indexes and Secondary Indexes with a Vector Field.
 
 [[index-partition]]
 === PARTITION BY HASH Clause
@@ -377,6 +427,9 @@ If the value of this property is not less than the number of index nodes in the 
 **Default:** `1`
 |Integer
 |===
+
+TODO: Vector indexes and secondary indexes with a vector field support further options.
+See Vector Indexes and Secondary Indexes with a Vector Field. 
 
 == Usage
 
