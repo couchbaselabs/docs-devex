@@ -7,19 +7,19 @@
 [abstract]
 {description}
 
-For more information about how the Search Service scores documents in search results, see xref:run-searches.adoc#scoring[Scoring for Search Queries].
+For more information about how the Search Service scores documents in search results, see xref:fts:fts-scoring.adoc[Scoring for Search Queries].
 
-== Prerequisites 
+== Prerequisites
 
 * You have the Search Service enabled on a node in your database.
 For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
 
 * You have a bucket with scopes and collections in your database.
-For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[]. 
+For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[].
 
-* Your user account has the *Search Admin* or *Search Reader* role. 
+* Your user account has the *Search Admin* or *Search Reader* role.
 
-* You have created a Vector Search index. 
+* You have created a Vector Search index.
 +
 For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[].
 +
@@ -27,14 +27,14 @@ For more information about how to create a Vector Search index, see xref:create-
 --
 include::partial$download-sample-partial.adoc[]
 
-For the best results, consider using the sample Vector Search index from xref:create-vector-search-index-ui.adoc#example[Create a Vector Search Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create a Vector Search Index with the REST API and curl/HTTP]. 
+For the best results, consider using the sample Vector Search index from xref:create-vector-search-index-ui.adoc#example[Create a Vector Search Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create a Vector Search Index with the REST API and curl/HTTP].
 --
 
-* You have logged in to the Couchbase {page-ui-name}. 
+* You have logged in to the Couchbase {page-ui-name}.
 
-== Procedure 
+== Procedure
 
-To run a Vector Search with the Couchbase {page-ui-name}: 
+To run a Vector Search with the Couchbase {page-ui-name}:
 
 . Go to *Search*.
 . Click the index where you want to run a search.
@@ -54,26 +54,26 @@ include::example$run-vector-search-payload-ui.jsonc[]
 The Search query is only a Vector Search query.
 It only returns the `k` number of similar vectors.
 
-When running a hybrid Search query, the Search Service combines the Vector search results from a `knn` object with the traditional `query` object by using an `OR` function. 
-If the same documents match the `knn` and `query` objects, the Search Service ranks those documents higher in search results. 
+When running a hybrid Search query, the Search Service combines the Vector search results from a `knn` object with the traditional `query` object by using an `OR` function.
+If the same documents match the `knn` and `query` objects, the Search Service ranks those documents higher in search results.
 
-The document for the color `navy` should be the first result, followed by a similar color. 
+The document for the color `navy` should be the first result, followed by a similar color.
 
 [#hybrid]
-=== Example: Running a Simple Hybrid Search Query 
+=== Example: Running a Simple Hybrid Search Query
 
-The following hybrid Search query searches for the top vector similar to the vector `[ 0, 0, 128 ]` in the `colorvect_l2` field. 
-It also runs a xref:search:search-request-params.adoc#numeric-range-queries[Numeric Range Query] on the `brightness` field to only return colors that have a brightness value between `70` and `80`: 
+The following hybrid Search query searches for the top vector similar to the vector `[ 0, 0, 128 ]` in the `colorvect_l2` field.
+It also runs a xref:search:search-request-params.adoc#numeric-range-queries[Numeric Range Query] on the `brightness` field to only return colors that have a brightness value between `70` and `80`:
 
 [source,json]
 ----
 include::example$run-hybrid-search-payload-ui.jsonc[]
 ----
 
-The Search Service combines the Vector search results from a `knn` object with the traditional `query` object by using an `OR` function. 
+The Search Service combines the Vector search results from a `knn` object with the traditional `query` object by using an `OR` function.
 If the same documents match the `knn` and `query` objects, the Search Service ranks those documents higher in search results.
 
-The document for the color `navy` should be the first result, followed by colors that are similar and match the `brightness` field query. 
+The document for the color `navy` should be the first result, followed by colors that are similar and match the `brightness` field query.
 
 [#large]
 === Example: Running a Semantic Search Query with a Large Embedding Vector
@@ -88,7 +88,7 @@ This query should return the document for the color `navy`, based on a generated
 What is a classic, refined hue that exudes elegance and is often linked to power and stability?
 ----
 
-The following shows part of the sample Search query: 
+The following shows part of the sample Search query:
 
 [source,json]
 ----
@@ -96,24 +96,24 @@ include::example$run-vector-search-long-payload-ui.jsonc[tag=partial]
 ----
 [NOTE]
 ====
-Due to the size of the embedding vector, only part of the full query is being displayed in the documentation. 
+Due to the size of the embedding vector, only part of the full query is being displayed in the documentation.
 
-Click btn:[View on GitHub] to view and copy the entire Vector Search query payload. 
+Click btn:[View on GitHub] to view and copy the entire Vector Search query payload.
 Make sure you remove the lines for `// tag::partial[]` and `// end::partial[]`.
-==== 
+====
 
 [#base64]
-=== Example: Running a Semantic Search Query with a base64 Encoded String 
+=== Example: Running a Semantic Search Query with a base64 Encoded String
 
-If your database is running Couchbase Server version 7.6.2 or later, you can use vectors encoded as base64 strings with Vector Search. 
-For example, the following document describes the color `navy`, with base64 encoded strings in the `embedding_vector_dot` and `colorvect_l2` fields instead of arrays: 
+If your database is running Couchbase Server version 7.6.2 or later, you can use vectors encoded as base64 strings with Vector Search.
+For example, the following document describes the color `navy`, with base64 encoded strings in the `embedding_vector_dot` and `colorvect_l2` fields instead of arrays:
 
 [source,json]
 ----
 include::example$vector-search-base64-document-example.json[]
 ----
 
-The following query uses a base64 encoded string for the same query as <<large,Running a Semantic Search Query with a Large Embedding Vector>> to return the document for `navy`: 
+The following query uses a base64 encoded string for the same query as <<large,Running a Semantic Search Query with a Large Embedding Vector>> to return the document for `navy`:
 
 [source,json]
 ----
@@ -121,12 +121,12 @@ include::example$run-vector-search-payload-base64-ui.jsonc[]
 ----
 
 NOTE: You can use base64 encoded strings in your Vector Search queries only if your documents use base64 encoded strings, indexed with the *vector_base64* field data type.
-You cannot search for and return vectors you indexed as arrays with the *vector* field data type by using a Search query with a base64 encoded string. 
+You cannot search for and return vectors you indexed as arrays with the *vector* field data type by using a Search query with a base64 encoded string.
 
-== Next Steps 
+== Next Steps
 
 If you do not get the search results you were expecting, you can change the xref:search:search-request-params.adoc[JSON payload for your Search query].
 
-You can also xref:search:customize-index.adoc[customize your Search index] with additional features. 
+You can also xref:search:customize-index.adoc[customize your Search index] with additional features.
 
 Either of the example queries on this page can also be used with the xref:run-vector-search-rest-api.adoc[REST API] to run a search.

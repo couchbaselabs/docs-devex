@@ -1,0 +1,106 @@
+= Fine-tuning Vector Searches
+:page-topic-type: concept
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:stem:
+:description: pass:q[Additional parameters can be added to a vector search REST call that will allow you to tune the search for recall and/or accuracy.]
+
+[abstract]
+{description}
+
+== Prerequisites
+
+* You have a good grounding in the principles and use of Couchbase's Vector Search:
+
+** You have the Search Service enabled on a node in your database.
+For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+
+** You have a bucket with scopes and collections in your database.
+For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[].
+
+** Your user account has the *Search Admin* or *Search Reader* role.
+
+** You installed the Couchbase command-line tool (CLI).
+
+** You have the hostname or IP address for the node in your database where you're running the Search Service.
++
+For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
+
+** You have created a Vector Search index.
++
+For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
++
+[TIP]
+--
+include::partial$download-sample-partial.adoc[]
+
+For the best results, consider using the sample Vector Search index from xref:create-vector-search-index-ui.adoc#example[Create a Vector Search Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create a Vector Search Index with the REST API and curl/HTTP].
+--
+
+== Fine-Tuning Parameters
+
+The Vector Search API will accept an additional parameter object, allowing for tuning the recall and/or accuracy of the search execution.
+
+The service maintains a number of `centroids` as part of the vector index. The centroids are used to quickly find the surrounding closest matches in the index. Increasing the number of centroids will increase accuracy but will decrease the speed of the search.
+
+The value of `nprobe` is the number of the `centroids` that the search will check for similar vectors. In addition to this number, the search will also accept:
+
+[horizontal]
+`ivf_nprobe_pct`::
+The percentage of vector `centroids` that exist for the vector index.
+The default depends on the number of vectors in the partition and the `vector_index_optimized_for` setting (recall, latency, memory-efficient) for large corpora (in the millions) the default is very low as in 1.325% for 2M vectors in a partition. This impacts the traditional `nprobe` setting in Vector.
+
+`ivf_max_codes_pct`::
+The default value for this is 100, and the value represents the percentage of `centroids` that will be visited during a search.
+
+For example, given a cluster `vector_index_optimized_for`: "recall" and `indexPartitions`: 5,  `nlist` and `nprobe` are determined based on the current vector count in a given partition:
+
+'''
+[options="noheader", frame="none", grid="none" cols="1,1"]
+|===
+| stem:["Total vectors in index"] (optimization = recall)
+| 10,000,000
+
+| stem:["Average vectors in a partition for 5 partitions total"]
+| 2,000,000
+
+| stem:["nlist"] (or stem:["centroids"]) = stem:[4 times sqrt("total vectors in index")]
+| 5657
+
+| stem:["nprobes"] = stem:[sqrt(nlist)]
+| 75
+
+| stem:["Calculated default: ivf_nprobe_pct"]
+| 1.325%
+
+| stem:["Calculated default: ivf_max_codes_pct"]
+| 100%
+
+|===
+
+'''
+Applying `ivf_nprobe_pct` will increase the number of `centroids` used in the vector.
+
+Applying `ivf_max_codes_pct` will select only a subset of `centroids` used in the search.
+
+[source, json]
+----
+{
+  "fields": ["*"],
+  "knn": [{
+    "k": 10,
+    "params": {
+      "ivf_nprobe_pct": 1,
+      "ivf_max_codes_pct": 0.2
+    },
+    "field": "embedding",
+    "vector": [0.024901132253900747, 1535]
+  }]
+}
+----
+
+
+
+
+
+
