@@ -5,9 +5,9 @@ CREATE INDEX `color_vectors_idx` ON `vector-sample`.`colors`.`rgb`
 /* end::create-rgb-idx[] */
 
 /* tag::create-vectors-idx[] */
-CREATE INDEX `color_vectors_idx` ON `vector-sample`.`colors`.`rgb`
-             (`colorvect_l2` VECTOR, color, brightness)
-             WITH {  "dimension":3, "similarity":"DOT", "description":" IVF16,SQ8" }
+CREATE INDEX `color_desc_idx` ON `vector-sample`.`colors`.`rgb` 
+     (`embedding_vector_dot` VECTOR, color, brightness) 
+     WITH { "dimension":1536, "similarity":"DOT", "description":" IVF,SQ8" }
 /* end::create-rgb-idx[] */
 
 /* tag::query-rgb-idx[] */
@@ -16,6 +16,13 @@ WHERE b.brightness > 128
 ORDER BY APPROX_VECTOR_DISTANCE(b.colorvect_l2,[128,128,128],"L2") 
 LIMIT 5;
 /* end::query-rgb-idx[] */
+
+/* tag::query-rgb-idx-w-predicate[] */
+SELECT b.color, b.colorvect_l2, b.brightness from `rgb` AS b
+WHERE b.brightness > 128 
+ORDER BY APPROX_VECTOR_DISTANCE(b.colorvect_l2,[128,128,128],"L2") 
+LIMIT 5;
+/* end::query-rgb-idx-w-predicate[] */
 
 /* tag::query-vectors-idx-subquery[] */
 WITH question_vec AS (
@@ -27,6 +34,20 @@ order by VECTOR_DISTANCE(b.embedding_vector_dot,
 question_vec[0], "DOT")  LIMIT 3;
 /* end::query-vectors-idx-subquery[] */
 
+/* tag::query-vectors-idx-truncated[] */
+SELECT b.color, b.description from `rgb` AS b 
+order by VECTOR_DISTANCE(b.embedding_vector_dot, 
+[
+            0.005115953739732504,
+            0.004331615287810564,
+            0.014279481954872608,
+            /* long list of vector values omitted */    
+            -0.005022349301725626,
+            0.002007648814469576,
+            -0.03757078945636749
+          ], "DOT")  LIMIT 3;
+/* end::query-vectors-idx-truncated[] */
+
 /* tag::query-vectors-idx-whole[] */
 SELECT b.color, b.description from `rgb` AS b 
 order by VECTOR_DISTANCE(b.embedding_vector_dot, 
@@ -35,7 +56,6 @@ order by VECTOR_DISTANCE(b.embedding_vector_dot,
             0.004331615287810564,
             0.014279481954872608,
             0.000619320897385478,
-/* end::query-vectors-idx-full-list[] */
             0.006700769532471895,
             0.018410978838801384,
             -0.010367471724748611,
@@ -1567,7 +1587,6 @@ order by VECTOR_DISTANCE(b.embedding_vector_dot,
             -0.004421991761773825,
             -0.005022349301725626,
             0.002007648814469576,
-/* tag::query-vectors-full-list[] */
             -0.03757078945636749
           ], "DOT")  LIMIT 3;
 /* end::query-vectors-idx-whole[] */

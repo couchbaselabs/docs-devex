@@ -111,7 +111,11 @@ The data in `rgb.json` file looks like this:
       "mellow",
       "lighten"
     ],
-    "description": "Papaya whip is a soft and mellow color that can be described as a light shade of peach or coral. It has a calming and soothing effect, similar to the tropical fruit it is named after. This color is perfect for creating a warm and inviting atmosphere, and it pairs well with other pastel shades or neutral tones. Papaya whip is a versatile color that can be used in both fashion and interior design, adding a touch of elegance and sophistication to any space.",
+    "description": "Papaya whip is a soft and mellow color that can be described as a light shade of 
+    peach or coral. It has a calming and soothing effect, similar to the tropical fruit it is named 
+    after. This color is perfect for creating a warm and inviting atmosphere, and it pairs well with 
+    other pastel shades or neutral tones. Papaya whip is a versatile color that can be used in both 
+    fashion and interior design, adding a touch of elegance and sophistication to any space.",
     "embedding_model": "text-embedding-ada-002-v2",
     "embedding_vector_dot": [
       -0.014644118957221508,
@@ -120,10 +124,10 @@ The data in `rgb.json` file looks like this:
       0.0021356006618589163,
       0.006283756345510483,
       0.01162360142916441,
-    . . . 
+    // . . . 
     ]
- }
-  . . . 
+ },
+ // . . . 
 ] 
 ----
 
@@ -168,9 +172,7 @@ The following example creates a GSI that indexes the embedded vectors in the `em
 
 [source,sqlpp]
 ----
-CREATE INDEX `color_desc_idx` ON `vector-sample`.`colors`.`rgb`
-       (`embedding_vector_dot` VECTOR, color, brightness)
-       WITH {  "dimension":1536, "similarity":"l2", "description":" IVF16,SQ8" }
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-vectors-idx]
 ----
 
 If successful, Couchbase {product-name} responds with:
@@ -188,20 +190,197 @@ If successful, Couchbase {product-name} responds with:
 
 == Query with a GSI Vector Column
 
-Something
+You query embedded vector attributes that you have indexed in a GSI to find similar vectors and therefore similar semantic content.
+To find the most similar vectors, you use a `GROUP BY` clause in your query to return the most relevant vectors first. 
+In this clause, you call one of two functions that actually performs the vector comparisons: `APPROX_VECTOR_DISTANCE` or `VECTOR_DISTANCE`.
+The first of these functions is faster, but less precise.
+The second is more precise, but slower.
+Which you choose depends on your use case.
 
-=== Query GSI RGB Values
+=== Query RGB Values
 
-Something
+Querying the RGB values in `rgb.colorvect_l2` requires a vector with only three values.
+You can easily specify the vector by hand.
+The following example finds colors that are similar to grey, which has an RGB value of 128, 128, 128:
+
+[source, sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-rgb-idx]
+----
+
+The query uses the `APPROX_VECTOR_DISTANCE` function to sort the results. 
+You pass it the vector column to search, the vector to search for (in this case, the array `128, 128, 128`) and the distance function.
+For the best accuracy, use the same distance function you specified when creating the GSI (in this case, `L2`).
+The `LIMIT` clause is pushed down into the index scan, so once it finds the 5 entries that satify the query, it exits.
+
+The top result is the entry for grey. The other results are all shades of grey:
+
+[source,json]
+----
+[{
+        "color": "grey",
+        "colorvect_l2": [
+            128,
+            128,
+            128
+        ],
+        "brightness": 128
+    },
+    {
+        "color": "slate gray",
+        "colorvect_l2": [
+            112,
+            128,
+            144
+        ],
+        "brightness": 125.04
+    },
+    {
+        "color": "light slate gray",
+        "colorvect_l2": [
+            119,
+            136,
+            153
+        ],
+        "brightness": 132.855
+    },
+    {
+        "color": "light gray",
+        "colorvect_l2": [
+            144,
+            144,
+            144
+        ],
+        "brightness": 144
+    },
+    {
+        "color": "dim gray",
+        "colorvect_l2": [
+            105,
+            105,
+            105
+        ],
+        "brightness": 105
+    }
+]
+----
+
+You can also add other predicates to help reduce the workload of searching for similar vectors by excluding vectors.
+The following example searches for colors similar to grey, which has an RGB value of 128, 128, 128 and have a brightness greater than 128:
+
+[source, sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-rgb-idx-w-predicate[]
+----
+
+The result of running this query are:
+
+[source, json]
+----
+[{
+        "color": "light slate gray",
+        "colorvect_l2": [
+            119,
+            136,
+            153
+        ],
+        "brightness": 132.855
+    },
+    {
+        "color": "light gray",
+        "colorvect_l2": [
+            144,
+            144,
+            144
+        ],
+        "brightness": 144
+    },
+    {
+        "color": "cadet blue",
+        "colorvect_l2": [
+            95,
+            158,
+            160
+        ],
+        "brightness": 139.391
+    },
+    {
+        "color": "rosy brown",
+        "colorvect_l2": [
+            188,
+            143,
+            143
+        ],
+        "brightness": 156.455
+    },
+    {
+        "color": "dark sea green",
+        "colorvect_l2": [
+            143,
+            188,
+            143
+        ],
+        "brightness": 169.415
+    }
+]
+----
 
 ===  Query the Embedded Vectors
 
+To query the `color_desc_idx` GSI containing the embedded vector for the description attribute, you must supply a vector.
+In a production environment, your application will call the same embedding model it called to generate the embedded vectors in your documents to generate a vector for the query value.
+
+For this example, you can use embedded vectors in the `rgb_questions.json` file that's in the `color_data_2vectors.zip` file.
+This file contains a `question` attribute containing a search prompt for a particular color. 
+The `couchbase_search_query.knn.vector` attribute contains the embedded vector for the `question` attribute:
+
+[source,json]
+----
+[
+  {
+    "id": "#FFEFD5",
+    "question": "What is the name of the color that is reminiscent of a tropical fruit and has a calming
+     effect, often used in fashion and interior design?",
+    "wanted_similar_color_from_search": "papaya whip",
+    "embedding_model": "text-embedding-ada-002-v2",
+    "couchbase_search_query": {
+      "fields": [
+        "*"
+      ],
+      "knn": [
+        {
+          "field": "embedding_vector_dot",
+          "k": 3,
+          "vector": [
+            0.005115953739732504,
+            0.004331615287810564,
+            0.014279481954872608,
+            // ....
+          ]
+        }
+      ],
+      "query": {
+        "match_none": {}
+      },
+      "sort": [
+        "-_score"
+      ]
+    }
+  },
+  // ...
+]
+----
+
+
+This example uses the more accurate `VECTOR_DISTANCE` function to order the results of querying the  `embedding_vector_dot` column. 
+It appears here with most of the 1536 vectors omitted:
+
 [source,sqlpp]
 ----
-include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-vectors-idx-whole;!query-vectors-idx-full-list]
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-vectors-idx-truncated]
 ----
 
-
+You can expand the following dropdown to see and copy the entire query with all the vectors:
 
 .Show full example
 [%collapsible]
@@ -211,3 +390,42 @@ include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-vectors-id
 include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-vectors-idx-whole]
 ----
 ====
+
+Another option is to import the `rgb_questions.json` file into another collection in the `vector-sample` bucket's `colors` scope named `rgb-questions`.
+Then you can use a subquery to get the vectors for the question and use it in your query of the `rgb` collection's `embedding_vector_dot` attribute:
+
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-vectors-idx-subquery]
+----
+
+In either case, the results of the query are the same:
+
+[source,json]
+----
+[
+  {
+    "color": "cantalope",
+    "description": "The color cantaloupe is a soft and soothing shade that evokes feelings of calmness 
+    and relaxation. It is a refreshing hue that brings to mind the juicy and sweet fruit it is named 
+    after. This delicate color is a pale orange with hints of pink, giving it a subtle and gentle 
+    appearance. It is a perfect color for creating a peaceful and tranquil atmosphere."
+  },
+  {
+    "color": "papaya whip",
+    "description": "Papaya whip is a soft and mellow color that can be described as a light shade of 
+    peach or coral. It has a calming and soothing effect, similar to the tropical fruit it is named 
+    after. This color is perfect for creating a warm and inviting atmosphere, and it pairs well with 
+    other pastel shades or neutral tones. Papaya whip is a versatile color that can be used in both 
+    fashion and interior design, adding a touch of elegance and sophistication to any space."
+  },
+  {
+    "color": "apricot",
+    "description": "Apricot is a warm and inviting color, reminiscent of the soft glow of a sunset. It 
+    has the ability to soften the harshness of other colors and enliven any space it is used in. It is a 
+    delicate and soothing hue, perfect for creating a cozy and welcoming atmosphere."
+  }
+]
+----
+
+The second result, the color "papaya whip," matches the `rgb_questions`'s `wanted_similar_color_from_search` attribute. 
