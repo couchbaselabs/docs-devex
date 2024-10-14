@@ -8,11 +8,10 @@ CREATE INDEX `color_vectors_idx` ON `vector-sample`.`colors`.`rgb`
 CREATE INDEX `color_desc_idx` ON `vector-sample`.`colors`.`rgb` 
      (`embedding_vector_dot` VECTOR, color, brightness) 
      WITH { "dimension":1536, "similarity":"DOT", "description":" IVF,SQ8" }
-/* end::create-rgb-idx[] */
+/* end::create-vectors-idx[] */
 
 /* tag::query-rgb-idx[] */
 SELECT b.color, b.colorvect_l2, b.brightness from `rgb` AS b
-WHERE b.brightness > 128 
 ORDER BY APPROX_VECTOR_DISTANCE(b.colorvect_l2,[128,128,128],"L2") 
 LIMIT 5;
 /* end::query-rgb-idx[] */
