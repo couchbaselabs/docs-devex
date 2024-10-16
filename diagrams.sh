@@ -3,10 +3,10 @@
 [[ -d ./build ]] || mkdir ./build
 
 # install-rr
-[[ -f ./build/rr-2.0-java11.zip ]] || curl -L -o ./build/rr-2.0-java11.zip https://github.com/GuntherRademacher/rr/releases/download/v2.0/rr-2.0-java11.zip
+[[ -f ./build/rr-2.1-java11.zip ]] || curl -L -o ./build/rr-2.1-java11.zip https://github.com/GuntherRademacher/rr/releases/download/v2.1/rr-2.1-java11.zip
 
 # extract-rr
-[[ -f ./build/rr/rr.war ]] || unzip ./build/rr-2.0-java11.zip -d ./build/rr
+[[ -f ./build/rr/rr.war ]] || unzip ./build/rr-2.1-java11.zip -d ./build/rr
 
 for file in n1ql dcl ddl dml dql tcl hints utility
 do
