@@ -8,50 +8,78 @@
 [abstract]
 {description}
 
-== Prerequisites
+[#overview]
+== Overview
 
-* You have a good grounding in the principles and use of Couchbase's Vector Search:
+Couchbase automatically dynamically tunes vector indexes to achieve a balance between recall (the quality of the search results),
+latency (search response time), and memory efficiency.
+This tuning occurs during indexing and querying, eliminating the need for users to adjust optimization parameters manually.
 
-** You have the Search Service enabled on a node in your database.
-For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+Couchbase dynamically adjusts two critical vector parameters:
 
-** You have a bucket with scopes and collections in your database.
-For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[].
-
-** Your user account has the *Search Admin* or *Search Reader* role.
-
-** You installed the Couchbase command-line tool (CLI).
-
-** You have the hostname or IP address for the node in your database where you're running the Search Service.
+`nlist` (or `Centroid` count)::
+The number of clusters used for indexing.
+The centroids are used to quickly find the surrounding closest matches in the index. Increasing the number of centroids will increase accuracy but will decrease the speed of the search.
 +
-For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
-
-** You have created a Vector Search index.
+The `nlist` is determined dynamically based on the size of the dataset (number of vectors) in a partition:
 +
-For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
+[%header, cols="3*a"]
+|===
+| Number of vectors in partition (`nvec`)
+| `nlist` calculation
+| Notes
+
+| stem:["nvec " ge " 200,000"]
+| stem:[4 xx sqrt("nvec")]
+| This formula is designed to handle larger datasets
+ where increasing the number of datasets does not yield significant improvements in recall.
+
+| stem:["200,000" le "nvec" lt "1000" ]
+| stem:["nvec" div 100]
+| This formula targets approximately 100 vectors per cluster,
+which balances between too few and too many clusters, ensuring efficient indexing.
+
+| stem:["nvec" lt 1000]
+| N/A
+| For number of vectors less than 1000, Couchbase will carry out a straight forward one-to-one mapping between IDs and vectors with an exact vector comparison.
+Vectors are directly stored without the need for additional processing for the `nlist` calculation.
+
+|===
+
+`nprobes` (or `probes`)::
+The number of `centroids` that a query will check for similar vectors.
+The `nprobe` value is only set when Couchbase is using an Inverted File Index. Couchbase will select the best index type and comparison method depending on the size of the dataset and the `vector_index_optimized_for` setting.
 +
-[TIP]
---
-include::partial$download-sample-partial.adoc[]
++
+[%header, cols="3*a"]
+|===
+| Query optimization
+| `nprobe` calculation
+| Notes
 
-For the best results, consider using the sample Vector Search index from xref:create-vector-search-index-ui.adoc#example[Create a Vector Search Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create a Vector Search Index with the REST API and curl/HTTP].
---
 
-== Fine-Tuning Parameters
+| Default calculation
+| stem:[sqrt("nlist")]
+| This provides a balanced tradeoff between recall and latency by adjusting the number of clusters probed during queries.
+
+| Latency-optimized (`vector_index_optimized_for: latency`)
+| stem:[sqrt("nlist") / 2]
+| A minimum value of 1 is enforced to avoid setting `nprobe` too low.
+
+|===
+
+
+== Fine-Tuning Query Parameters
+
 
 The Vector Search API will accept an additional parameter object, allowing for tuning the recall and/or accuracy of the search execution.
 
-The service maintains a number of `centroids` as part of the vector index. The centroids are used to quickly find the surrounding closest matches in the index. Increasing the number of centroids will increase accuracy but will decrease the speed of the search.
-
-The value of `nprobe` is the number of the `centroids` that the search will check for similar vectors. In addition to this number, the search will also accept:
-
-[horizontal]
 `ivf_nprobe_pct`::
-The percentage of vector `centroids` that exist for the vector index.
-The default depends on the number of vectors in the partition and the `vector_index_optimized_for` setting (recall, latency, memory-efficient) for large corpora (in the millions) the default is very low as in 1.325% for 2M vectors in a partition. This impacts the traditional `nprobe` setting in Vector.
+Adjusts the number percentage of clusters searched during queries, allowing for fine-tuning of the balance between recall and performance.
+If the value of `nprobe` is 5% of `nlist` (the centroid count), then setting the value of `ivf_nprobe_pct` higher than 5% will have the search cover a higher percentage of clusters, which will improve the accuracy of the search.
 
 `ivf_max_codes_pct`::
-The default value for this is 100, and the value represents the percentage of `centroids` that will be visited during a search.
+The default value for this is 100, and the value represents the percentage of `centroids` that will be visited during a search. Reducing the value reduces the number of centroids visited, which will descrease accurary and recal, but will result in faster compute times.
 
 For example, given a cluster `vector_index_optimized_for`: "recall" and `indexPartitions`: 5,  `nlist` and `nprobe` are determined based on the current vector count in a given partition:
 
@@ -79,11 +107,9 @@ For example, given a cluster `vector_index_optimized_for`: "recall" and `indexPa
 |===
 
 '''
-Applying `ivf_nprobe_pct` will increase the number of `centroids` used in the vector.
-
-Applying `ivf_max_codes_pct` will select only a subset of `centroids` used in the search.
 
 [source, json]
+.Using tuning parameters
 ----
 {
   "fields": ["*"],
