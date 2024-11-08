@@ -1,0 +1,73 @@
+= Pre-filtering Vector Searches
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:description: You can specify filters as part of a vector search statement which will restrict the documents searched during the query.
+
+[abstract]
+{description}
+
+== About Pre-filtering
+
+Using pre-filtering as part of your vector search offers two key advantages:
+
+. *Enhanced precision and relevance:*
+Narrow your search results based on specific criteria, such as organization, date/time ranges, or geospatial locations.
+
+. *Performance optimization:*
+Reduce the search space before executing queries to improve query execution time and reduce computational overhead.
+
+== Prerequisites
+
+* You have the Search Service enabled on a node in your database.
+For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+
+* You have a bucket with scopes and collections in your database.
+For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[].
+
+* Your user account has the *Search Admin* or *Search Reader* role.
+
+* You installed the Couchbase command-line tool (CLI).
+
+* You have the hostname or IP address for the node in your database where you're running the Search Service.
+For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
+
+* You have created a Vector Search index.
++
+For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
++
+[TIP]
+--
+include::partial$download-sample-partial.adoc[]
+
+For the best results, consider using the sample Vector Search index from xref:create-vector-search-index-ui.adoc#example[Create a Vector Search Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create a Vector Search Index with the REST API and curl/HTTP].
+--
+
+== Procedure
+
+To run a pre-filtered vector search with the REST API:
+
+. In your command-line tool, enter a `curl` command with the `XPOST` verb.
+. Set your header content to include `"Content-Type: application/json"`.
+. Add your `username`, `password`, and the Search Service endpoint on port `8094`.
+. Add the `index name` you want to query to the endpoint.
+
+[source, console]
+----
+curl -XPOST -H "Content-Type: application/json" \
+  -u ${CB_USERNAME}:${CB_PASSWORD} http://${CB_HOSTNAME}:8094/api/bucket/vector-sample/scope/color/index/{INDEX_NAME}/query \
+-d \
+----
+
+=== Example
+
+In the following example, you will extend a search query
+to find matches in `color-index`.
+  A pre-filter on the query will narrow the documents in the index searched to those with a `color` field value
+  that closely matches `navy`.
+
+[source, console]
+----
+include::example$run-pre-filtered-vector-search-rest-api.sh[]
+----
+
+
