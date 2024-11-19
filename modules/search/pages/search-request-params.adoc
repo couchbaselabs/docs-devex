@@ -173,6 +173,12 @@ The Search Service returns the `k` closest vectors to the vector given in `vecto
 
 NOTE: The <<size-limit,size or limit property>> overrides any value set in `k`.
 
+|params |Object |No a|
+
+Enter additional parameters to control how the Search Service compares vectors when running a Vector Search request. 
+
+For more information about the `params` object, see <<knn-params,>>.
+
 |field |String |Yes a|
 
 The name of the field that contains the vector data you want to search. 
@@ -197,6 +203,40 @@ NOTE: The vector in your Search query must match the dimension of the vectors st
 If the dimensions do not match, your Search query does not return any results.
 For more information about the dimension value, see the xref:search-index-params.adoc#dims[dims property] or the xref:child-field-options-reference.adoc#dimension[Dimension option] in the UI. 
 
+|====
+
+[#knn-params]
+=== Knn params Object 
+
+Use the `params` object inside a `knn` object to fine tune the probes and centroids the Search Services uses and searches while running a Vector Search request. 
+
+The `params` object can contain the following properties: 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|ivf_nprobe_pct |Number (percentage) |No a|
+
+Set the `ivf_nprobe_pct` value to control the percentage of probes, or the percentage of clusters, that the Search Service searches during a single Vector Search query.
+
+The Search Service automatically calculates a default `nprobe` percentage based on the vectors in a given partition of your Vector Search index.
+For more information about this calculation, see xref:vector-search:fine-tune-vector-search.adoc[].
+
+If you set the value of `ivf_nprobe_pct` higher than this default calculated value, the Search Service will search a higher percentage of clusters in your processed vectors.
+This can increase your accuracy and recall for Vector Search, but requires more compute time for each query. 
+
+In the example, the Search Service searches only `1%` of the total available clusters. 
+
+|ivf_max_codes_pct |Number (percentage out of 100) |No a|
+
+Set the `ivf_max_codes_pct` value to control the maximum number of centroids that the Search Service accesses during a single Vector Search query. 
+
+By default, this value is always 100%. 
+
+If you reduce your `ivf_max_codes_pct` value, the Search Service accesses fewer centroids, which reduces your Vector Search accuracy and recall, but gives faster compute times for your search. 
+
+In the example, the Search Service searches only `0.2%` of the available centroids in your vector data. 
 |====
 
 [#query-object]
