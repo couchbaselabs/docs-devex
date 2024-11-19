@@ -2,13 +2,14 @@
 :description: You can configure the Query service using cluster-level query settings, node-level query settings, and request-level query parameters.
 :page-aliases: manage:manage-settings/query-settings, settings:query-settings
 :page-partial:
+:alt-markdown-links:
 
 // External cross-references
-:rest-cluster-query-settings: xref:rest-api:rest-cluster-query-settings.adoc
+:rest-cluster-query-settings: xref:n1ql-rest-settings:index.adoc
 :general-settings-query-settings: xref:manage:manage-settings/general-settings.adoc#query-settings
 :couchbase-cli-setting-query: xref:cli:cbcli/couchbase-cli-setting-query.adoc
-:n1ql-rest-api-admin: xref:n1ql:n1ql-rest-api/admin.adoc
-:n1ql-rest-api-index: xref:n1ql:n1ql-rest-api/index.adoc
+:n1ql-rest-api-admin: xref:n1ql-rest-admin:index.adoc
+:n1ql-rest-api-index: xref:n1ql-rest-query:index.adoc
 :cbq-shell: xref:n1ql:n1ql-intro/cbq.adoc
 :rest-intro: xref:rest-api:rest-intro.adoc
 :query-preferences: xref:tools:query-workbench.adoc#query-preferences
@@ -34,15 +35,36 @@ ifdef::basebackend-html[]
     width: auto !important;
   }
 
+  /* Wrap inline code in tables */
+  td.tableblock p code,
+  p.tableblock code{
+    overflow-wrap: anywhere;
+  }
+
   /* Do not hyphenate words in the table */
   td.tableblock p,
   p.tableblock{
-    hyphens: manual !important;
+    hyphens: manual;
   }
 
   /* Vertical alignment */
   td.tableblock{
     vertical-align: top !important;
+  }
+  /* Spacing for markdown blocks */
+  .doc .openblock > .content > p {
+    margin-top: 1rem;
+  }
+
+  .doc .openblock > .content > ul,
+  .doc .openblock > .content > ol {
+    margin-top: 1.5rem;
+    margin-left: 1rem;
+  }
+
+  .doc .openblock > .content > ul li + li,
+  .doc .openblock > .content > ol li + li {
+    margin-top: 0.5rem;
   }
 </style>
 ++++
@@ -171,7 +193,7 @@ a| [%hardbreaks]
 <<tximplicit,tximplicit>>
 <<txdata,txdata>>
 <<use_fts,use_fts>>
-<<identifier,{lt}__symbol__{gt}{lt}__identifier__{gt}>>
+<<identifier,_additional properties_>>
 |===
 
 .Equivalent Settings for Cluster-Level and Node-Level
@@ -245,7 +267,7 @@ a| [%hardbreaks]
 <<queryTimeout,queryTimeout>>
 <<queryTxTimeout,queryTxTimeout>>
 <<queryUseCBO,queryUseCBO>>
-<<queryUseDuplicates,queryUseDuplicates>>
+<<queryUseReplica,queryUseReplica>>
 
 a| [%hardbreaks]
 <<max-parallelism-srv,max-parallelism>>
@@ -257,7 +279,7 @@ a| [%hardbreaks]
 <<timeout-srv,timeout>>
 <<txtimeout-srv,txtimeout>>
 <<use-cbo-srv,use-cbo>>
-<<use-duplicates-srv,use-duplicates>>
+<<use-replica-srv,use-replica>>
 
 a| [%hardbreaks]
 <<max_parallelism_req,max_parallelism>>
@@ -269,7 +291,7 @@ a| [%hardbreaks]
 <<timeout_req,timeout>>
 <<txtimeout_req,txtimeout>>
 <<use_cbo_req,use_cbo>>
-<<use_duplicates_req,use_duplicates>>
+<<use_replica_req,use_replica>>
 |===
 
 [[cluster-level-query-settings]]
@@ -349,11 +371,11 @@ http://localhost:8091/settings/querySettings \
 The table below contains details of all cluster-level query settings.
 
 .Cluster-Level Query Settings
-include::rest-api:partial$query-settings/definitions.adoc[tag=settings]
+include::n1ql-rest-settings:index.adoc[tag=Settings]
 
-[[_access]]
+[[Access,Access]]
 **Access**
-include::rest-api:partial$query-settings/definitions.adoc[tag=access]
+include::n1ql-rest-settings:index.adoc[tag=Access]
 
 [[service-level-query-settings]]
 == Node-Level Query Settings
@@ -396,8 +418,12 @@ For more examples, see xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc[].
 The table below contains details of all node-level query settings.
 
 .Node-Level Query Settings
-[[_settings]]
-include::n1ql:partial$n1ql-rest-api/admin/definitions.adoc[tag=settings]
+[[Settings]]
+include::n1ql-rest-admin:index.adoc[tag=Settings]
+
+[[Logging_Parameters,Logging Parameters]]
+**Logging Parameters**
+include::n1ql-rest-admin:index.adoc[tag=Logging_Parameters]
 
 [#section_nnj_sjk_k1b]
 == Request-Level Parameters
@@ -476,11 +502,11 @@ For more examples, see the xref:n1ql:n1ql-rest-api/examplesrest.adoc[Query Servi
 The table below contains details of all request-level parameters, along with examples.
 
 .Request-Level Parameters
-include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[tag=settings]
+include::n1ql-rest-query:index.adoc[tag=Request]
 
-[[_credentials]]
+[[Credentials,Credentials]]
 **Credentials**
-include::n1ql:partial$n1ql-rest-api/query/definitions.adoc[tag=credentials]
+include::n1ql-rest-query:index.adoc[tag=Credentials]
 
 [discrete,#transactional-scan-consistency]
 ===== Transactional Scan Consistency
@@ -546,7 +572,7 @@ A placeholder parameter may be a named parameter or a positional parameter.
 
 To run a query containing placeholder parameters, you must supply values for the parameters.
 
-* The <<identifier,{lt}__symbol__{gt}{lt}__identifier__{gt}>> request-level parameter enables you to supply a value for a named parameter.
+* You can use <<identifier,additional>> request-level parameters to supply the values for named parameters.
 The name of this property is a dollar sign `$` or an at sign `@` followed by the parameter name.
 
 * The <<args,args>> request-level parameter enables you to supply a list of values for positional parameters.
