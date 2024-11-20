@@ -132,8 +132,7 @@ To turn on document relevancy scoring in search results, remove the `score` prop
 
 |[[search_after]]search_after |Array |No a|
 
-NOTE: If you use `search_after` in a search request, you can't use `search_before`.
-Both properties are included in the example code to show the correct syntax.
+NOTE: If you use `search_after` in a search request, you cannot use `search_before`. Both properties are included in the example code to show the correct syntax.
 
 Use `search_after` with `from/offset` and `sort` to control pagination in search results. 
 
@@ -145,15 +144,13 @@ Only result relevancy score values can be entered as strings in the array.
 
 The Search Service starts search result pagination after the document with the values you provide in the array.
 
-For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_after` set to `8`, documents 9-10 appear on the same page. 
+Use `search_after` to make the memory requirements of deeper page searches more manageable, when compared to using only `from/offset`.
+`search_after` lets you start your search results from a specific result, rather than needing to process a number of search results to skip.
 
 To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your <<sort_arr,sort array>>. 
 Set the `search_after` property to include the values from the last result on your previous page of search results to effectively paginate. 
 
-|[[search_before]]search_before |Array |No a|
-
-NOTE: If you use `search_before` in a search request, you can't use `search_after`.
-Both properties are included in the example code to show the correct syntax.
+NOTE: If you use `search_before` in a search request, you cannot use `search_after`. Both properties are included in the example code to show the correct syntax.
 
 Use `search_before` with `from/offset` and `sort` to control pagination in search results.
 
@@ -2248,6 +2245,8 @@ The following `sort` object orders search results by the values in `field1`, the
 ----
 include::example$run-search-full-request.jsonc[tag=sort]
 ----
+
+TIP: For the best results with sorting and page navigation in search results, always include your document ID values (`_id` or `-_id`) as the final sort criteria in your `sort` object.
 
 This means that if 2 documents have the same value in `field1`, then the Search Service will sort them again based on their `field2` values.
 If they have the same value in `field2`, then sorting will happen again based on each document's score, and then finally the documents' ID values. 
