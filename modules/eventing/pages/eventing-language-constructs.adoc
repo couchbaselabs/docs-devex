@@ -52,7 +52,7 @@ Replaces any existing value with the specified key.
 This operation throws an exception if the underlying bucket SET operation fails with an unexpected error.
 
 |DELETE
-|`operator[]` appears afer the JavaScript delete keyword.
+|`operator[]` appears after the JavaScript delete keyword.
 
 Deletes the provided key from the KV bucket that the variable is bound to.
 Returns a no-op if the object does not exist.
@@ -111,7 +111,7 @@ These operations are accessible through the returned iterable handle.
 {sqlpp} Query results, through the SELECT operation, are streamed in batches to the iterable handle as the iteration progresses through the result set.
 
 NOTE: To avoid recursion, an Eventing Function can listen for mutations in a bucket. 
-{sqlpp} DML statements canot manipulate documents in that same bucket.
+{sqlpp} DML statements cannot manipulate documents in that same bucket.
 To work around this, you can use the exposed data service KV map in your Eventing Function.
 
 The following Function has a feed boundary of *Everything*, which means the same {sqlpp} statement is executed 7,303 times.
@@ -198,7 +198,7 @@ To include comments in multiline statements, use `/* this format */` instead.
 
 The following features are not supported by Eventing Functions:
 
-* <<global_state,Global State>>
+* <<global-state,Global State>>
 * <<asynchrony,Asynchrony>>
 * <<browser_extensions,Browser and Other Extensions>>
 * <<library_imports,Library Imports>>
@@ -229,7 +229,7 @@ For example, a Constant alias of `debug` with a value of `true` or `false` behav
 Eventing Functions do not support asynchronous flows.
 
 Asynchrony creates a node-specific, long-running state that prevents persistence providers from capturing the entire state.
-This limits Eventing Functions to execute short-running, straight-line code without sleep and wakeups.
+This limits Eventing Functions to executing short-running, straight-line code without sleep and wake-ups.
 
 You can use Timers to add limited asynchrony back into your Function. 
 Timers are designed specifically to prevent a state from being node-specific.
@@ -269,6 +269,7 @@ Eventing Functions support the following built-in functions:
 * <<n1ql_call,`N1QL()`>>
 * <<analytics_call,`ANALYTICS()`>>
 * <<crc64_call,`crc64()`>>
+* <<crc_64_go_iso_call, `crc_64_go_iso()`>>
 * <<base64_call,`base64()`>>
 * <<timers_general,`createTimer()` and `cancelTimer()`>>
 * <<curl_call,`curl()`>>
@@ -292,7 +293,7 @@ The `N1QL()` function contains the following parameters:
 |The identified {sqlpp} statement. 
 This is passed to {sqlpp} through SDK to run as a prepared statement.
 
-All of the JavaScript variables referenced in the statement using the `$<variable>` notation are treated as named parameters.
+All the JavaScript variables referenced in the statement using the `$<variable>` notation are treated as named parameters.
 
 |`params`
 a|Can be a JavaScript array or a JavaScript map object.
@@ -380,7 +381,8 @@ The `close()` method on the iterable handle can throw an exception if the underl
 === `ANALYTICS()`
 
 ifeval::['{page-component-version}' == '7.6'] 
-_(Introduced in Couchbase Server 7.6)_ 
+
+[.status]#Introduced in Couchbase Server 7.6#
 endif::[]
 
 The `ANALYTICS()` function provides integration with {sqlpp} Analytics directly from the Eventing Service.
@@ -436,7 +438,7 @@ The `crc64()` function takes the object to checksum as its only parameter.
 The parameter can be any JavaScript object that can be encoded to JSON.
 
 The function returns the hash as a string. 
-The hash is sensitive to the order of the parameters in case of map objects.
+The hash is sensitive to the order of the parameters in the case of map objects.
 
 If multiple Eventing Functions share the same `crc64` checksum documents as the Sync Gateway, real mutations can be suppressed and missed.
 To prevent this from happening, you can make the checksum documents unique to each Eventing Function.
@@ -470,12 +472,41 @@ function OnUpdate(doc, meta) {
    // Business logic goes in here
 }
 ----
+.Translating strings
+[NOTE]
+====
+Bear in mind that using `crc64()` to convert strings will include any quotation marks as part of the conversion.
+If you want to translate the string [.underline]#without# including the enclosing quotes, then use the <<crc_64_go_iso_call, `crc_64_go_iso()`>> instead.
+
+This does not apply to any other data type (e.g., numeric data or JSON data types).
+====
+
+[#crc_64_go_iso_call]
+=== `crc_64_go_iso()`
+
+ifeval::['{page-component-version}' == '7.6'] 
+[.status]#Introduced in Couchbase Server 7.6#
+endif::[]
+
+`crc_64_go_iso()` performs the same function as <<crc64_call,`crc64()`>>, but does not include the enclosing quotation marks from the parameter in the translation if its parameter type is `string`. 
+
+Other datatypes work the same as the `crc64()` call.
+
+
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    var crc_iso_str = couchbase.crc_64_go_iso(doc);
+    /// Code goes here
+}
+----
+
 
 [#base64_call]
 === `base64()`
 
 ifeval::['{page-component-version}' == '7.6'] 
-_(Introduced in Couchbase Server 7.6.2)_ 
+[.status]#Introduced in Couchbase Server 7.6#
 endif::[]
 
 The `base64()` functions let you pack large-dimensional arrays of floats as base64 encoded strings when you use the Eventing Service to generate vector embeddings.
@@ -488,7 +519,7 @@ The following `base64()` functions are available:
 [source,javascript]
 ----
 function OnUpdate(doc, meta) {
-    var base_str = base64Encode(doc);
+    var base_str = couchbase.base64Encode(doc);
     /// Code goes here
 }
 ----
@@ -498,20 +529,20 @@ function OnUpdate(doc, meta) {
 [source,javascript]
 ----
 function OnUpdate(doc, meta) {
-    var base_str = base64Decode(doc);
+    var base_str = couchbase.base64Decode(doc);
     /// Code goes here
 }
 ----
 +
-* `base64Float32ArrayEncode()`, which takes a float32 number array and returns a base64 string.
-* `base64Float32ArrayDecode()`, which takes a base64 encoded string and returns a float32 number array.
-* `base64Float64ArrayEncode()`, which takes a float64 number array and returns a base64 string.
-* `base64Float64ArrayDecode()`, which takes a base64 encoded string and returns a float64 number array.
+* `couchbase.base64Float32ArrayEncode()`, which takes a float32 number array and returns a base64 string.
+* `couchbase.base64Float32ArrayDecode()`, which takes a base64 encoded string and returns a float32 number array.
+* `couchbase.base64Float64ArrayEncode()`, which takes a float64 number array and returns a base64 string.
+* `couchbase.base64Float64ArrayDecode()`, which takes a base64 encoded string and returns a float64 number array.
 
 [#timers_general]
 === `createTimer()` and `cancelTimer()`
 
-Timers are asynchronous compute.
+Timers are asynchronously computed.
 They allow Eventing Functions to execute in reference to wall-clock events.
 
 [#createtimer_call]
