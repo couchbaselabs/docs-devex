@@ -50,13 +50,57 @@ You can choose to copy a full command-line curl example, or copy just the xref:s
 For more information about how to perform a search with the UI, see xref:simple-search-ui.adoc[].
 ====
 
-=== Example
+=== Example: Simple Text Search 
 
 In the following example, the JSON payload queries an index named `landmark-content-index` for the strings `view`, `food`, and `beach`:
 
 [source,console]
 ----
 include::example$run-search-payload.sh[]
+----
+
+If the request is successful, the Search Service API starts by returning a status and a summary of the query request: 
+
+[source,json]
+----
+include::example$query-sample-results.jsonc[tag=query_summary]
+----
+
+The Search Service returns an array, called `hits`, which contains objects that describe the matches found in each document in the Search index: 
+
+[source,json]
+----
+include::example$query-sample-results.jsonc[tag=first_hit]
+----
+
+The Search query set score explanations to `true`, so the Search Service shows how it calculated the score for each document. 
+
+It also includes the locations of each match, under the `locations` object: 
+
+[source,json]
+----
+include::example$query-sample-results.jsonc[tag=locations]
+----
+
+The Search query enabled highlighting, so the Search Service uses the `<mark>` HTML tag to mark each match it found inside the Search index, inside a `fragments` object: 
+
+[source,json]
+----
+include::example$query-sample-results.jsonc[tag=highlight]
+----
+
+Since the target Search index was configured to store field values and return them in results, the Search Service returns the original field content in the `fields` object: 
+
+[source,json]
+----
+include::example$query-sample-results.jsonc[tag=field_content]
+----
+
+At the end of the `hits` array, the Search Service returns a quick summary of the total number of hits, the maximum score, how long the query took, and other information: 
+
+[source,json]
+----
+include::example$query-sample-results.jsonc[tag=end_summary]
 ----
 
 For more information about the available properties for a Search query JSON payload, see xref:search-request-params.adoc[].
@@ -67,6 +111,40 @@ If the REST API call is successful, the Search Service returns a `200 OK` and th
 ----
 include::example$run-search-response.json[]
 ----
+
+=== Example: Validate a Search Request 
+
+[.status]#Couchbase Server 7.6.4#
+
+In the following example, the JSON payload queries a Search index, `landmark-content-index`, using a xref:search-request-params.adoc#geopoint-queries-distance[Distance/Radius-Based Geopoint Query] on the `geo` field: 
+
+[source,json]
+----
+include::example$run-search-unindexed-field.sh[]
+----
+
+The query runs, but does not return any results: 
+
+[source,json]
+----
+include::example$query-sample-results-unindexed.jsonc[]
+----
+
+To try and validate why the query did not return any results, you can include the xref:search-request-params.adoc#ctl[ctl object] with the `validate` property:
+
+[source,json]
+----
+include::example$run-search-validate.sh[]
+----
+
+With the `validate` property included, the Search query now returns a `400 Bad Request` error and the following JSON response:
+
+[source,json]
+----
+include::example$query-sample-results-validate.jsonc[]
+----
+
+The Search Service validates the query and identifies that the `geo` field used in the query is not included in the Search index. 
 
 == Next Steps 
 
