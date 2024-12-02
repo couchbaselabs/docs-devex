@@ -49,6 +49,14 @@ Set the total number of results to return for a single page of search results.
 
 If you provide both the `size` and `limit` properties, the Search Service uses the `size` value.
 
+The Search Service returns the `size` number of results: 
+
+* Starting at the offset in the `from` or `offset` property.
+* Starting from the key specified in the <<search_after,search_after property>>.
+* Starting backward from the key specified in the <<search_before,search_before property>>.
+
+The `size` property is added by default to all Search requests, if not otherwise specified, with a value of `10`.
+
 |from/offset |Integer |No a|
 
 Set an offset value to change where pagination starts for search results, based on the Search query's <<sort,>>. 
@@ -56,6 +64,8 @@ Set an offset value to change where pagination starts for search results, based 
 For example, if you set a `size` value of `5` and a `from` value of `10`, the Search query returns results 11 through 15 on a page. 
 
 If you provide both the `from` and `offset` properties, the Search Service uses the `from` value.
+
+The `from` property is added by default to all Search requests, if not otherwise specified, with a value of `0`.
 
 |highlight |Object |No a|
 
@@ -87,7 +97,7 @@ To create an explanation for a search result's score in search results, set `exp
 
 To turn off explanations for search result scoring, set `explain` to `false`.
 
-|sort |Array |No a|
+|[[sort_arr]]sort |Array |No a|
 
 Contains an array of strings or JSON objects to set how to sort search results. 
 
@@ -114,31 +124,45 @@ To turn off document relevancy scoring in search results, set `score` to `none`.
 
 To turn on document relevancy scoring in search results, remove the `score` property.
 
-|search_after |Array |No a|
+|[[search_after]]search_after |Array |No a|
 
-NOTE: If you use `search_after` in a search request, you can't use `search_before`. Both properties are included in the example code to show the correct syntax.
+NOTE: If you use `search_after` in a search request, you can't use `search_before`.
+Both properties are included in the example code to show the correct syntax.
 
 Use `search_after` with `from/offset` and `sort` to control pagination in search results. 
 
-Give a value for each string or JSON object in the `sort` array to the `search_after` array.
-The Search Service starts search result pagination after the document with those values. 
+Give a value for each string or JSON object in the <<sort_arr,sort array>> to the `search_after` array.
+You must provide the values in the same order that they appear in the <<sort_arr,sort array>>.
+Values in the `search_after` array must be strings.
+You cannot use `search_after` with numbers or other field data types - if your `sort` array includes fields with a `date` or `number` type, you cannot use `search_after`. 
+Only result relevancy score values can be entered as strings in the array. 
 
-You must provide the values in the same order that they appear in the `sort` array. 
+The Search Service starts search result pagination after the document with the values you provide in the array.
 
 For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_after` set to `8`, documents 9-10 appear on the same page. 
 
-|search_before |Array |No a|
+To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your <<sort_arr,sort array>>. 
+Set the `search_after` property to include the values from the last result on your previous page of search results to effectively paginate. 
 
-NOTE: If you use `search_before` in a search request, you can't use `search_after`. Both properties are included in the example code to show the correct syntax.
+|[[search_before]]search_before |Array |No a|
+
+NOTE: If you use `search_before` in a search request, you can't use `search_after`.
+Both properties are included in the example code to show the correct syntax.
 
 Use `search_before` with `from/offset` and `sort` to control pagination in search results.
 
 Give a value for each string or JSON object in the `sort` array to the `search_before` array.
-The Search Service starts search result pagination before the document with those values. 
+You must provide the values in the same order that they appear in the `sort` array.
+Values in the `search_before` array must be strings.
+You cannot use `search_before` with numbers or other field data types - if your `sort` array includes fields with a `date` or `number` type, you cannot use `search_before`. 
+Only result relevancy score values can be entered as strings in the array.
 
-You must provide the values in the same order that they appear in the `sort` array. 
+The Search Service starts search result pagination before the document with the values you provide in the array.   
 
-For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_before` set to `8`, documents 2-6 appear on the same page. 
+For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_before` set to `8`, documents 2-6 appear on the same page.
+
+To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your <<sort_arr,sort array>>. 
+Set the `search_before` property to include the values from the last result on your previous page of search results to effectively paginate. 
 
 |[[collections]]collections |Array |No |Contains an array of strings that specify the collections where you want to run the query. 
 
@@ -1889,7 +1913,9 @@ The Search Service uses a consistency vector to synchronize the last document wr
 include::example$run-search-full-request.jsonc[tag=ctl]
 ----
 
-The `ctl` object contains the following properties:
+In Couchbase Server 7.6.4 and later, you can also use the `ctl` object with the `validate` property to add an extra check to your queries and get help troubleshooting when a query does not return results. 
+
+The `ctl` object can contain the following properties:
 
 [cols="1,1,1,4"]
 |====
@@ -1907,6 +1933,18 @@ The query might return partial results if any index partitions responded before 
 An object that contains a `vectors` object and the `level` and `results` properties.
 
 For more information, see <<consistency,>>.
+
+|[[validate]]validate |Boolean |No a|
+
+[.status]#Couchbase Server 7.6.4#
+
+Add the `validate` property with a value of `true` to add extra validation checks to your Search query.
+
+For example, the Search Service can tell you through the Web Console or the REST API that a field in your Search query is not in your Search index: 
+
+----
+err: query_validate: field not indexed, field: ratings.Cleanliness, type: number
+----
 
 |====
 
@@ -2165,6 +2203,9 @@ The following `sort` object orders search results by the values in `field1`, the
 ----
 include::example$run-search-full-request.jsonc[tag=sort]
 ----
+
+This means that if 2 documents have the same value in `field1`, then the Search Service will sort them again based on their `field2` values.
+If they have the same value in `field2`, then sorting will happen again based on each document's score, and then finally the documents' ID values. 
 
 The `sort` object can contain the following string values: 
 
