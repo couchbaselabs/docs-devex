@@ -110,7 +110,9 @@ For more information about the properties for a `sort` JSON object, see <<sort,>
 To return the position of each occurrence of a search term inside a document, set `includeLocations` to `true`. 
 
 NOTE: You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on a field to use `includeLocations`.
-For more information about how to enable term vectors, see xref:child-field-options-reference.adoc#term-vectors[Child Field Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+For more information about how to enable term vectors, see xref:type-mapping-options.adoc#term-vectors[Field Type Mapping Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+
+// Need to revisit what's up with term vectors 
 
 To turn off term locations, set `includeLocations` to `false`.
 
@@ -199,7 +201,7 @@ The Search Service uses the similarity metric defined in the xref:search-index-p
 
 NOTE: The vector in your Search query must match the dimension of the vectors stored in your Search index. 
 If the dimensions do not match, your Search query does not return any results.
-For more information about the dimension value, see the xref:search-index-params.adoc#dims[dims property] or the xref:child-field-options-reference.adoc#dimension[Dimension option] in the UI. 
+For more information about the dimension value, see the xref:search-index-params.adoc#dims[dims property] or the xref:type-mapping-options.adoc#dimension[Dimension option] in the UI. 
 
 |vector_base64 |Base64 Encoded String |Must have `vector` or `vector_base64` a|
 
@@ -209,7 +211,7 @@ The Search Service uses the similarity metric defined in the xref:search-index-p
 
 NOTE: The vector in your Search query must match the dimension of the vectors stored in your Search index. 
 If the dimensions do not match, your Search query does not return any results.
-For more information about the dimension value, see the xref:search-index-params.adoc#dims[dims property] or the xref:child-field-options-reference.adoc#dimension[Dimension option] in the UI. 
+For more information about the dimension value, see the xref:search-index-params.adoc#dims[dims property] or the xref:type-mapping-options.adoc#dimension[Dimension option] in the UI. 
 |====
 
 [#query-object]
@@ -384,7 +386,7 @@ You can reduce the properties you need to specify for a Search query with Query 
 
 If you do not add any additional Query String syntax to a query, the Search Service interprets the query as a match query. 
 It searches for an exact match to the provided term in any fields that have been added to the `default` field. 
-For more information about how to configure the default field for your Search index, see xref:set-advanced-settings.adoc#all-field[Set Search Index General Settings] or the xref:search-index-params.adoc#all-field[default_field property].
+For more information about how to configure the default field for your Search index, see the xref:search-index-params.adoc#all-field[default_field property].
 
 CAUTION: Query String syntax is not recommended for use in production environments.
 
@@ -518,7 +520,7 @@ To use a match phrase query:
 * You must specify a field to search with the <<field,field property>> or the <<field-name,{field-name}>> syntax in your search query. 
 * You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
 
-For more information about how to enable term vectors, see xref:child-field-options-reference.adoc#term-vectors[Child Field Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+For more information about how to enable term vectors, see xref:type-mapping-options.adoc#term-vectors[Field Type Mapping Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
 
 The Search Service searches for exact matches to the phrase you specify.
 
@@ -573,7 +575,7 @@ To use a match phrase query:
 * You must specify a field to search with the <<field,field property>> or the <<field-name,{field-name}>> syntax in your search query. 
 * You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
 
-For more information about how to enable term vectors, see xref:child-field-options-reference.adoc#term-vectors[Child Field Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
+For more information about how to enable term vectors, see xref:type-mapping-options.adoc#term-vectors[Field Type Mapping Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties].
 
 For more information about the additional properties you can specify with a match phrase query, see <<additional-query-properties,Additional Query Object Properties>>.
 a|
@@ -681,7 +683,7 @@ To use a phrase query:
 * You must set the <<field,field property>> in your search query. 
 * You must have *Include Term Vectors* enabled or the `include_term_vectors` property set to `true` on the field you want to search.
 
-For more information about how to enable term vectors, see xref:child-field-options-reference.adoc#term-vectors[Child Field Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties]. 
+For more information about how to enable term vectors, see xref:type-mapping-options.adoc#term-vectors[Field Type Mapping Options] or xref:search-index-params.adoc#term-vectors[Search Index JSON Properties]. 
 a|
 .Search for the phrase "nice view" in the reviews.content field
 [source,json]
@@ -917,8 +919,8 @@ Use a Geopoint distance/radius-based query to search for geo location values in 
 include::example$query-geopoint.jsonc[tag=distance]
 ----
 
-To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+To use a Geopoint query, you must have a document field in your Search index with the `geopoint` type.
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====
@@ -972,8 +974,8 @@ include::example$query-geopoint.jsonc[tag=rectangle]
 The Search Service takes a value for the top-left and bottom-right corners of a rectangle, and draws a bounding box that connects those points. 
 The resulting rectangle is used as the search area for geo location values. 
 
-To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+To use a Geopoint query, you must have a document field in your Search index with the `geopoint` type.
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====
@@ -1020,8 +1022,8 @@ include::example$query-geopoint.jsonc[tag=polygon]
 The Search Service takes an array of latitude and longitude values and connects them in the specified order to form a polygon. 
 The resulting polygon is used as the search area for geo location values. 
 
-To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+To use a Geopoint query, you must have a document field in your Search index with the `geopoint` type.
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====
@@ -1051,9 +1053,9 @@ Use a GeoJSON Point query to search for a single latitude and longitude coordina
 include::example$query-geojson.jsonc[tag=point]
 ----
 
-To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+To use a GeoJSON query, you must have a document field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====
@@ -1119,9 +1121,9 @@ Use a GeoJSON LineString query to search for a line of coordinates that intersec
 include::example$query-geojson.jsonc[tag=linestring]
 ----
 
-To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+To use a GeoJSON query, you must have a document field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====
@@ -1187,9 +1189,9 @@ Use a GeoJSON Polygon query to search for a defined area that intersects, is con
 include::example$query-geojson.jsonc[tag=polygon]
 ----
 
-To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+To use a GeoJSON query, you must have a document field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====
@@ -1258,9 +1260,9 @@ Use a GeoJSON MultiPoint query to search for multiple coordinate points that int
 include::example$query-geojson.jsonc[tag=multipoint]
 ----
 
-To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+To use a GeoJSON query, you must have a document field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====
@@ -1328,9 +1330,9 @@ Use a GeoJSON MultiLineString query to search for multiple <<geojson-queries-lin
 include::example$query-geojson.jsonc[tag=multilinestring]
 ----
 
-To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+To use a GeoJSON query, you must have a document field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====
@@ -1409,9 +1411,9 @@ Use a GeoJSON MultiPolygon query to search for a group of defined <<geojson-quer
 include::example$query-geojson.jsonc[tag=multipolygon]
 ----
 
-To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+To use a GeoJSON query, you must have a document field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====
@@ -1482,9 +1484,9 @@ Use a GeoJSON GeometryCollection query to search for a group of defined <<geojso
 include::example$query-geojson.jsonc[tag=geometrycollection]
 ----
 
-To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+To use a GeoJSON query, you must have a document field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====
@@ -1568,9 +1570,9 @@ Use a GeoJSON Circle query to search in a radius around a single latitude and lo
 include::example$query-geojson.jsonc[tag=circle]
 ----
 
-To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+To use a GeoJSON query, you must have a document field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====
@@ -1655,9 +1657,9 @@ Use a GeoJSON Envelope query to search in a bounded rectangle, based on a pair o
 include::example$query-geojson.jsonc[tag=envelope]
 ----
 
-To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
+To use a GeoJSON query, you must have a document field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a document field, see xref:create-type-mapping.adoc#field[Add a Single Document Field Mapping] or <<child-fields,the {field-name} object>>. 
 
 [cols="1,1,1,2"]
 |====

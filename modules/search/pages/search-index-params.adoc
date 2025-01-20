@@ -213,7 +213,8 @@ For example, to filter documents based on the value of their `type` field, set `
 [#mapping]
 === Mapping Object 
 
-The `mapping` object contains a Search index's xref:customize-index.adoc#analyzers[analyzers] and other xref:set-advanced-settings.adoc[advanced settings from the UI]:
+The `mapping` object contains a Search index's xref:customize-index.adoc#analyzers[analyzers] and other global index settings.
+Some of these settings map to xref:create-search-index-ui.adoc#configure-settings[Global Index Settings in the UI]:
 
 [source,json]
 ----
@@ -253,7 +254,7 @@ For more information about date/time parsers, see xref:customize-index.adoc#date
 |[[all-field]]default_field |String |Yes a|
 Set a name for the `all` field in the Search index.
 
-If you enable the <<include-in-all,include_in_all property>> for a child field, the contents of that child field can be searched without specifying a field name or by specifying the default field's name in your Search query. 
+If you enable the <<include-in-all,include_in_all property>> for a document field, the contents of that document field can be searched without specifying a field name or by specifying the default field's name in your Search query. 
 
 |default_mapping |Object |No a|
 
@@ -928,7 +929,7 @@ It can contain additional mappings as <<child-fields,>> under its <<properties,p
 A JSON object field object must: 
 
 * Be a child object of a `\{scope\}.\{collection\}` object.
-* Have a name that matches a JSON object child field in your documents.
+* Have a name that matches a JSON object field in your documents.
 * Use the same property structure as a `\{scope\}.\{collection\}` object.
 
 If your cluster is running Couchbase Server version 7.6.2 and later and you're adding Extended Attributes (XATTRs) from your document metadata to your Search index, your XATTRs mapping definition must: 
@@ -939,7 +940,7 @@ If your cluster is running Couchbase Server version 7.6.2 and later and you're a
 
 For example, the following JSON index definition snippet defines a `\{scope\}.\{collection\}` object for the `inventory.hotel` scope and collection. 
 It adds a dynamic mapping for any XATTRs metadata present on documents in the collection.
-It adds two nested JSON Object Field objects, `reviews` and `ratings`, that contain a single <<child-fields,child field object>> for the `Cleanliness` field:
+It adds two nested JSON Object Field objects, `reviews` and `ratings`, that contain a single <<child-fields,document field object>> for the `Cleanliness` field:
 
 [source,json]
 ----
@@ -981,7 +982,7 @@ For more information, see <<child-fields,>>.
 [#child-fields]
 === \{field_name\} Object
 
-The `\{field_name\}` object contains properties and an array for a child field in a type mapping.
+The `\{field_name\}` object contains properties and an array for a document field in a type mapping.
 You can have multiple `\{field_name\}` objects in a <<properties,properties object>>.
 
 [source,json]
@@ -1001,15 +1002,15 @@ A `\{field_name\}` object contains the following properties:
 
 |enabled |Boolean |Yes a|
 
-To add this child field to the Search index, set `enabled` to `true`.
+To add this document field to the Search index, set `enabled` to `true`.
 
-To remove this child field from the index, set `enabled` to `false`.
+To remove this document field from the index, set `enabled` to `false`.
 
 |dynamic |Boolean |No a|This field is included for legacy compatibility only. 
 
 |fields |Array |Yes a|
 
-An array that contains objects with settings for each child field to index in the type mapping.
+An array that contains objects with settings for each document field to index in the type mapping.
 
 For more information, see <<fields,>>. 
 
@@ -1018,7 +1019,7 @@ For more information, see <<fields,>>.
 [#fields]
 === Fields Array 
 
-The `fields` array contains objects with settings for each child field to index in the type mapping:
+The `fields` array contains objects with settings for each document field to index in the type mapping:
 
 [source,json]
 ----
@@ -1036,9 +1037,9 @@ It contains the following properties:
 
 |analyzer |String |Text Only a|
 
-If the child field's `type` is `text`, set the analyzer to use for the child field. 
+If the document field's `type` is `text`, set the analyzer to use for the document field. 
 
-NOTE: If you want to use the default analyzer for the content of this child field, you don't need to include an `analyzer` property.  
+NOTE: If you want to use the default analyzer for the content of this document field, you do not need to include an `analyzer` property.  
 
 |[[dims]]dims |Number |Vector Only a|
 
@@ -1070,11 +1071,11 @@ To disable term highlighting and reduce index size, set `include_term_vectors` t
 
 |index |Boolean |Yes a|
 
-To include the child field in the Search index, set `index` to `true`.
+To include the document field in the Search index, set `index` to `true`.
 
-To exclude the child field from the index, set `index` to `false`.
+To exclude the document field from the index, set `index` to `false`.
 
-|name |String |Yes |The child field's name.
+|name |String |Yes |The document field's name.
 
 |[[similarity]]similarity |String |Vector Only a|
 
@@ -1082,13 +1083,13 @@ include::partial$vector-search-field-descriptions.adoc[tag=similarity_metric]
 
 |store |Boolean |Yes a|
 
-To include the content of the child field in the Search index and allow its content to be viewed in search results, set `store` to `true`.
+To include the content of the document field in the Search index and allow its content to be viewed in search results, set `store` to `true`.
 
-To exclude the content of the child field from the index, set `store` to `false`.
+To exclude the content of the document field from the index, set `store` to `false`.
 
 |type |String |Yes a|
 
-The child field's type. Can be one of:
+The document field's type. Can be one of:
 
 * `text`
 * `number`

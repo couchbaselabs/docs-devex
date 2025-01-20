@@ -1,66 +1,138 @@
-= Create a Type Mapping in Advanced Mode
-:page-topic-type: reference
+= Create a New Mapping or Type Mapping
+:page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
-:description: Add a type mapping to your Search index using the Couchbase {page-ui-name}'s Advanced Mode to control what documents are added to your index. 
+:page-aliases: create-xattrs-mapping.adoc, create-child-field.adoc, create-child-mapping.adoc
+:description: Create a type mapping with the Couchbase {page-ui-name} to control what documents are included or excluded from a Search index.
+:page-toclevels: 3
 
 [abstract]
 {description}
 
-For more information about type mappings, see xref:customize-index.adoc#type-mappings[Search Index Features].
+You can create xref:customize-index.adoc#static[static type mappings], which include only specific fields from your documents, or xref:customize-index.adoc#dynamic[dynamic type mappings], which include all available fields.
+For more information about type mappings and mappings in the Search Service, see xref:customize-index.adoc#type-mappings[Type Mappings and Mappings].
+
+Some mappings are only available in Advanced Mode.
 
 == Prerequisites
 
-* You have the Search Service enabled on a node in your cluster.
-For more information about how to change Services on your cluster, see xref:cloud:clusters:modify-database.adoc[].
+* You have the Search Service enabled on a node in your operational cluster.
+For more information about how to change Services on your operational cluster, see xref:cloud:clusters:modify-database.adoc[].
 
-* You have started to create or already created a Search index in xref:create-search-index-ui.adoc[Advanced Mode].
+* You have a bucket with scopes and collections in your operational cluster. 
+For more information, see xref:cloud:clusters:data-service/manage-buckets.adoc[].
+
+* You have created a basic Search index with the {page-ui-name}.
+For more information, see xref:create-search-index-ui.adoc[].
 
 * You have logged in to the Couchbase {page-ui-name}.
 
 == Procedure
 
-To create a type mapping with the {page-ui-name}:
+To use the {page-ui-name} to create a new type mapping or mapping on a Search index: 
 
-. On the *Operational Clusters* page, select the cluster that has the Search index you want to edit.
+. On the *Operational Clusters* page, select the operational cluster where you created your Search index. 
 . Go to menu:Data Tools[Search].
-. Click the index where you want to create a type mapping.
-. Under *Type Mappings*, in the Bucket list, select the bucket where you want to create a type mapping.
-. In the *Scope* list, select the scope where you want to create a type mapping.
-. Click btn:[Add Mapping].
-. In the *Collection* list, select the collection to use for the type mapping.
-. (Optional) Do any of the following:
-.. To use a specific analyzer for documents added from this type mapping, in the *Analyzer* list, select an analyzer.
-+
-By default, the mapping inherits the default analyzer you set for the Search index. 
-For more information about analyzers, see xref:customize-index.adoc#analyzers[Search Index Features].
-.. To switch from a xref:customize-index.adoc#type-mappings[dynamic type mapping to a static type mapping], select *Only index specified fields*.
-.. To only include documents of a specific type from a collection, in the *Name* field, add the document type to the end of the collection.
-+
-For example, `collection.document_type`.
-For more information, see xref:set-type-identifier.adoc[].
-. Click btn:[Submit].
-. (Optional) To remove all documents that match the type mapping from your Search index, clear the checkbox for that type mapping. 
-+
-By leaving the checkbox selected, all matching documents will be included in the Search index.
+. Click the name of the index where you want to create a new type mapping.
+. If you have not already, create at least 1 <<collection,collection type mapping>>.
+. Do one of the following: 
+.. To index all documents from an additional collection, create a <<collection,collection type mapping>>.
+.. (Advanced Mode Only) To index Extended Attributes (XATTRs) data from your documents, create an <<xattrs,XATTRs mapping>>.
+.. To index an entire JSON object from your document schema, create a <<object,JSON object mapping>>.
+.. To index a single document field from your document schema, create a <<field,field mapping>>.
+.. (Advanced Mode Only) Index <<future,a field or object that does not yet exist in your document schema>>.
+. (Optional) To remove all documents that match a type mapping or mapping from your Search index, <<disable-mapping,turn off the mapping>>.
+. Click btn:[Update Index].
+
+[#collection]
+=== Add a Collection Type Mapping 
+
+Add a collection type mapping to index all documents from a specific collection in your chosen bucket and scope.
+
+To add an entire collection as a new type mapping: 
+
+. In the *Choose a Collection or Document Field* panel, click a collection name.
+. xref:type-mapping-options.adoc#collection[Configure your type mapping options].
+. Click btn:[Add To Index].
+
+[#xattrs]
+=== Add an XATTRs Mapping
+
+NOTE: XATTRs mappings can only be created with *Advanced Mode*. 
+
+Add an XATTRs mapping to index document metadata from a specific collection. 
+
+To add Extended Attributes (XATTRs) document metadata as a new mapping: 
+
+. If you have not already, <<collection,create a collection type mapping>> for the collection that has documents with XATTRs data. 
+. Under your *Configured Type Mappings*, next to your collection type mapping, click btn:[Add XATTRs]. 
+. xref:type-mapping-options.adoc#xattrs[Configure your mapping options].
+. Click btn:[Add To Index].
+
+[#object]
+=== Add a JSON Object Mapping 
+
+Add a JSON object mapping to index a JSON object from your document schema.
+You can choose to index the fields inside the JSON object as <<field,field mappings>>, or keep your JSON object mapping as a xref:customize-index.adoc#dynamic[dynamic mapping].
+
+To add an entire JSON object from your documents as a new mapping: 
+
+. In the *Choose a Collection or Document Field* panel, expand a collection. 
+. Inside your displayed document schema, click the name of a JSON object in your documents.
+. xref:type-mapping-options.adoc#object[Configure your mapping options].
+. Click btn:[Add To Index].
+
+[#field]
+=== Add a Single Document Field Mapping 
+
+Add a single document field mapping to index a single document field from your document schema.
+Adding document field mappings turns any parent mappings into xref:customize-index.adoc#static[static type mappings].
+
+To add only a single field from your documents as a new mapping:
+
+. In the *Choose a Collection or Document Field* panel, expand a collection.
+. Inside your displayed document schema, click the name of a document field.
+. xref:type-mapping-options.adoc#field[configure your type mapping options].
+. Click btn:[Add To Index].
+
+[#future]
+=== Add a Mapping or Type Mapping for a Future Object or Field 
+
+NOTE: Mappings for objects that do not yet exist in your documents can only be created in *Advanced Mode*.
+
+You can choose to add a mapping or type mapping for a JSON object or field that does not yet exist in your document schema.
+If you know the name of the object or field, the Search Service can search these fields after they have been added to the documents in your Search index.
+
+To add a mapping or type mapping for a future object or field: 
+
+. Select *Enable Advanced Options*.
+. <<collection,Create a collection type mapping>> for the collection that will hold the documents with your future field.
+. Under your *Configured Type Mappings*, next to your collection type mapping, do one of the following:
+.. To create a new JSON Object, click btn:[Add Object].
+.. To create a new field, click btn:[Add Field].
+. In the *Property Name* field, enter the name of the JSON object or field.
+. Configure your xref:type-mapping-options.adoc#object[object mapping] or xref:type-mapping-options.adoc#field[field type mapping] options. 
+. Click btn:[Add To Index].
+
+[#disable-mapping]
+=== Turn a Mapping On or Off 
+
+You can turn off a type mapping or mapping to remove any documents that match that type mapping from your Search index.
+These documents will not appear in search results when you run a query on the index. 
+Turning off mappings is useful for troubleshooting Search index configurations, without losing configuration settings. 
+
+To turn off a mapping or type mapping in your Search index: 
+
+. Under *Configured Type Mappings*, find the type mapping or mapping you want to turn off. 
+. Clear the checkbox for the type mapping or mapping.
+
+You can select a type mapping or mapping again at any time to add it back to your Search index and search results. 
 
 == Next Steps
 
-After you create a static type mapping, you can xref:create-child-field.adoc[] to add or remove specific document fields from your Search index.
+Your Search index will contain any documents, objects, or fields that you specify in your type mappings and mappings. 
 
-To add an extra filter to the documents selected by your type mapping, you can also xref:set-type-identifier.adoc[].
+You can keep adding additional features to your Search index to improve performance and search results.
+For more information, see xref:customize-index.adoc[].
 
-If you have a document field that contains a JSON object, xref:create-child-mapping.adoc[] for that field.
-
-To continue customizing your Search index, you can:
-
-* xref:set-advanced-settings.adoc[]
-* xref:set-type-identifier.adoc[]
-* xref:create-custom-analyzer.adoc[]
-* xref:create-custom-character-filter.adoc[]
-* xref:create-custom-token-filter.adoc[]
-* xref:create-custom-tokenizer.adoc[] 
-* xref:create-custom-wordlist.adoc[]
-
-
-To run a search and test the contents of your Search index, see xref:simple-search-ui.adoc[].
+For more information about how to run a search, see xref:simple-search-ui.adoc[].
