@@ -121,4 +121,5 @@ ax.set_zlabel('Z-axis')
 ax.set_title('Dot Product')
 
 # Show plot
-plt.show()
+# plt.show()
+plt.savefig('dot-product-example.svg')  # Save as an image
