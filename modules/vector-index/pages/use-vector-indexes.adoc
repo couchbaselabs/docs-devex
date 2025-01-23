@@ -57,11 +57,13 @@ By searching your database for similar vectors, you can identify data that's sem
 Embedding is the process of generating vectors that represent a piece of complex unstructured data.
 You use a model that's specific to the data's type to generate its vector.
 
-For example, to generate vectors from text, you can use a use models such as https://en.wikipedia.org/wiki/Word2vec[Word2Vec^] or https://en.wikipedia.org/wiki/GloVe[Global Vectors for Word Representation (GloVe)^].
+For example, to generate vectors from text, you can use a use models such as https://en.wikipedia.org/wiki/Word2vec[Word2Vec^], https://en.wikipedia.org/wiki/GloVe[Global Vectors for Word Representation (GloVe)^], or https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2[all-MiniLM-L6-v2^].
 The models take into account the context around each potion of the text when generating a vector.
 This context is what captures the semantic meaning of the text and embeds it in the vector's dimensions. 
 
-To generate vectors from images, you use different embedding models such as a https://en.wikipedia.org/wiki/Residual_neural_network[Residual Neural Network (ResNet)^].
+To generate vectors from images, you use different embedding models such as a https://en.wikipedia.org/wiki/Residual_neural_network[Residual Neural Network (ResNet)^]. Audio can be embedded using a model such as OpenL3.
+
+image::embedding-vectors.svg["Diagram showing text, image, and audio data being transformed by embedding models into a string of floating point numbers that represent vectors."]
 
 Behind the scenes, embedding models use neural networks that mimic how the brain recognizes patterns to distill complex data into an array of floating point values.
 Beyond choosing an embedding model that's appropriate for your data, you generally do not worry about the details of how the model transforms data into a vector.
@@ -88,7 +90,7 @@ It's also sensitive to the scale of the vectors, where the length of one vector 
 Use this method when the proximity of the vectors and their magnitudes are important.
 A common use case is image similarity searches, as vectors for similar images form clusters within vector space.
 +
-image::euclidean-distance-example.svg["Three-dimensional plot showing two vectors with points along each vector joined by dotted lines, indicating the summing of corresponding points."]
+image::euclidean-distance-example.svg["Three-dimensional plot showing two vectors with points along each vector joined by dotted lines, indicating the summing of corresponding points."] 
 
 Dot Product::
 Finds related vectors by comparing the magnitude and alignment of the vectors. 
@@ -160,9 +162,11 @@ You should only use it for small data sets or for testing.
 
 Inverted File (IVF)::
 This method partitions the vector space to limit the number of vectors that a search must compare.
-When creating the index, you perform a training step where it locates clusters of similar vectors in the dataset. 
+When creating the index, you train the  locates clusters of similar vectors in the dataset. 
 It then chooses representative vectors (called centroids) from these clusters.
 Finally, it associates all vectors with their closest centroid in a structure called an inverted list.
++
+image::ivf-diagram-with-vectors.svg["A plot showing clusters of points in a 3D graph being labvelled and assigned centroid vectors. The centroids them point to multiple vectors."]
 +
 A search of an IVF index first locates the centroids that are most relevant to the vector value you're searching for.
 It then searches just the vectors associated to those centroids in the inverted list.
@@ -171,31 +175,39 @@ By limiting the number of vector comparisons to just the vectors close to the re
 A drawback of this method is the risk that some relevant vectors won't be searched if they are associated with a centroid that isn't relevant to the search vector.
 This risk increases if you add and delete data after you train the index.
 The centroids chosen during the initial training may no longer accurately represent clusters in current dataset.
-See {{index-training}} for more information about index accuracy.
+See <<#index-training>> for more information about index accuracy.
 +
 Use this method if you want a balance between precision and search speed.
-+
-image::ivf-diagram-with-vectors.svg["A plot showing clusters of points in a 3D graph being labvelled and assigned centroid vectors. The centroids them point to multiple vectors."]
+
 
 
 Product Quantization (PQ)::
-Product Quantization is similar to IVF, but adds additionals step to its training. 
-First, it groups the vector's dimensions into chunks called subvectors.
+Product Quantization is similar to IVF, but adds additional steps to its training:
++
+--
+1. It groups the vector's dimensions into chunks called subvectors.
 For example, if the vectors contain 1024 dimensions, the PQ may break the vectors into 8 subvectors, each containing 128 dimensions.
-It then finds groups of centroids in each subvector space and adds them to a data structure called a codebook.
+2. It finds groups of centroids in each subvector space and adds them to a data structure called a codebook.
 The codebook assigns each centroid an index number. 
-PQ then quantizes the vectors by replacing each subvector's dimensions with the index of the closest centroid in the codebook.
+3. PQ then reduces the size of the vectors (called quantizing) by replacing each subvector's dimensions with the index of the closest centroid in the codebook.
+--
++
+image::pq-diagram.svg["Three-dimensional plot showing two vectors that are of equal length, with the angle between them labeled as theta."]
++
 The quantized vectors reduce a vector that's 1024 64-bit floating point values to 128 8 bit or 16 bit integer values.
 This reduction improves performance because integer operations are less intensive than floating point operations. 
-It also reduces memory use. 
+It also reduces memory use because each vector requires less data to store (for example, from 64KB to 128 bytes). 
 +
 Once it quantizes the vectors, PQ finds centroids in the dataset the same way IVF does.
-The index stores the centroids and their related vectors in quantized format.
+The index stores the centroids and their related vectors in the inverted list using the quantized format.
 +
-A search of the index performs the same steps on the vector you're searching for. 
-It breaks the search vector into subvectors and quantizes it using the codebook.
-It then locates centroids that are related to the quantized query vector.
-Finally, it searches the vectors related to the matching centroids for vectors that relate to the search vector.
+A search of the PQ index performs the same steps on the vector you're searching for:
++
+-- 
+1. It breaks the search vector into subvectors and quantizes it using the codebook.
+2. It then locates closest centroids to the quantized query vector.
+3. It searches the vectors related to the matching centroids for vectors that relate to the search vector.
+--
 +
 PQ sacrifices some accuracy as it compares quantized vectors instead of their original raw values.
 Also, the process of quantization in addition to finding centroids makes training the index more computationally expensive than the other methods.
@@ -205,8 +217,8 @@ It's the best indexing method choose when:
 * Your vectors contain a large number of dimensions.
 * You want to limit memory use.
 * Your dataset is large (millions to billions of vectors).
-+
-image::pq-diagram.svg["Three-dimensional plot showing two vectors that are of equal length, with the angle between them labeled as theta."]
+
+
 
 Scalar Quantization (SQ)::
 Scalar Quantization partitions each dimension in the vector into equal segments (called bins) over the range of the dimension's values.
@@ -215,6 +227,8 @@ SQ then quantizes the vectors by replacing their dimensional values with the ind
 This quantization reduces the dimensions from 32 or 64 bit floating point values to 8 or 16 bit integers.
 It lowers a search's memory and computational overhead.
 It also makes search faster because integer operations are computationally less expensive than floating point operations.
++
+image::sq-diagram.svg["Diagram showing each floating point dimension of a vector being converted to an 8-bit integer by looking up which bucket it falls into."]
 +
 Because this method quantizes the vectors, it loses precision.
 It's less precise than the PQ method because it assumes that each dimension can be evenly divided. 
@@ -226,11 +240,10 @@ It's better suited for data that's more evenly distributed and does not have hig
 For example, SQ may be a good fit for an IoT sensor dataset where the measured values (such as temperature) are evenly distributed over the range of measurements.
 +
 Use this method if you want to gain some of the memory efficiency offered by vector quantization, but you do not want the processing overhead of training a PQ index. 
-+
-image::sq-diagram.svg["Diagram showing each floating point dimension of a vector being converted to an 8-bit integer by looking up which bucket it falls into."]
 
 
-{#index-training}
+
+[#index-training]
 === The Importance of Index Training
 
 Three of the four indexing methods rely on training the index on existing data. 
@@ -247,7 +260,7 @@ The centroids identified by PQ and IVF may no longer adequately reflect the data
 New clusters of vectors may have developed, and old ones may have dissipated.
 
 To resolve these accuracy issues, retrain your indexes. 
-You can choose to retrain indexes periodically, or when 
+You can retrain indexes periodically, or after you have made significant changes to your dataset.
 
 == Uses for Vectors in Couchbase {product-name} Indexes
 
