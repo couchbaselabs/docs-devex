@@ -159,44 +159,52 @@ However, it does not scale well.
 You should only use it for small data sets or for testing. 
 
 Inverted File (IVF)::
-This method performs a training phase where it locates clusters of similar vectors in the dataset. 
+This method partitions the vector space to limit the number of vectors that a search must compare.
+When creating the index, you perform a training step where it locates clusters of similar vectors in the dataset. 
 It then chooses representative vectors (called centroids) from these clusters.
 Finally, it associates all vectors with their closest centroid in a structure called an inverted list.
-During a vector search, Couchbase {product-name} locates the closest centroids for the vector you're searching for. 
-A search of an IVF index locates the centroids that are most relevant for the vector value you are searching for.
-It just searches the vectors associated to those centroids in the inverted list.
-This technique partitions the vector space to limit the number of vectors that the search must compare.
-However, it does lose some precision because it maps vectors to representative centroids.
-It provides a balance between precision and speed.
++
+A search of an IVF index first locates the centroids that are most relevant to the vector value you're searching for.
+It then searches just the vectors associated to those centroids in the inverted list.
+By limiting the number of vector comparisons to just the vectors close to the relevant centroids, IVF makes vector search faster.
++
+A drawback of this method is the risk that some relevant vectors won't be searched if they are associated with a centroid that isn't relevant to the search vector.
+This risk increases if you add and delete data after you train the index.
+The centroids chosen during the initial training may no longer accurately represent clusters in current dataset.
+See {{index-training}} for more information about index accuracy.
++
+Use this method if you want a balance between precision and search speed.
 +
 image::ivf-diagram-with-vectors.svg["A plot showing clusters of points in a 3D graph being labvelled and assigned centroid vectors. The centroids them point to multiple vectors."]
 
 
 Product Quantization (PQ)::
-Product Quantization also has a training phase where it groups the vector's dimensions into chunks called subvectors.
+Product Quantization is similar to IVF, but adds additionals step to its training. 
+First, it groups the vector's dimensions into chunks called subvectors.
 For example, if the vectors contain 1024 dimensions, the PQ may break the vectors into 8 subvectors, each containing 128 dimensions.
 It then finds groups of centroids in each subvector space and adds them to a data structure called a codebook.
 The codebook assigns each centroid an index number. 
-PQ then quantizes the vectors by replacing each subvector's dimensions with a reference to the closest centroid in the codebook.
+PQ then quantizes the vectors by replacing each subvector's dimensions with the index of the closest centroid in the codebook.
 The quantized vectors reduce a vector that's 1024 64-bit floating point values to 128 8 bit or 16 bit integer values.
-This reduction improves performance and reduces memory use. 
+This reduction improves performance because integer operations are less intensive than floating point operations. 
+It also reduces memory use. 
 +
-Once it quantizes the vectors, PQ finds centroids in a similar manner as IVF.
+Once it quantizes the vectors, PQ finds centroids in the dataset the same way IVF does.
 The index stores the centroids and their related vectors in quantized format.
 +
 A search of the index performs the same steps on the vector you're searching for. 
 It breaks the search vector into subvectors and quantizes it using the codebook.
-It then locates centroids that are related to the query vector.
+It then locates centroids that are related to the quantized query vector.
 Finally, it searches the vectors related to the matching centroids for vectors that relate to the search vector.
 +
 PQ sacrifices some accuracy as it compares quantized vectors instead of their original raw values.
-Also, the process of quantization in addition to finding centroids makes training the index to computationally expensive than the other methods.
+Also, the process of quantization in addition to finding centroids makes training the index more computationally expensive than the other methods.
 However, PQ reduces the amount of memory and processing time necessary when searching for related vectors in a large dataset.
 It's the best indexing method choose when:
 +
 * Your vectors contain a large number of dimensions.
 * You want to limit memory use.
-* Your dataset is large (millions of documents).
+* Your dataset is large (millions to billions of vectors).
 +
 image::pq-diagram.svg["Three-dimensional plot showing two vectors that are of equal length, with the angle between them labeled as theta."]
 
@@ -215,9 +223,14 @@ However, the gain in performance is often worth the tradeoff.
 It has a lower training overhead compared to the PQ and IVF methods because it does not search for clusters of vectors.
 Its training just determines the range of values for each dimension.
 It's better suited for data that's more evenly distributed and does not have high correlations.
+For example, SQ may be a good fit for an IoT sensor dataset where the measured values (such as temperature) are evenly distributed over the range of measurements.
 +
 Use this method if you want to gain some of the memory efficiency offered by vector quantization, but you do not want the processing overhead of training a PQ index. 
++
+image::sq-diagram.svg["Diagram showing each floating point dimension of a vector being converted to an 8-bit integer by looking up which bucket it falls into."]
 
+
+{#index-training}
 === The Importance of Index Training
 
 Three of the four indexing methods rely on training the index on existing data. 
