@@ -20,7 +20,7 @@ Similar data, such as text about the same topic or images of a similar subject, 
 Similar vectors are close together the multi-dimensional space formed by all of the vectors in the dataset.
 Vectors for dissimilar data (for example, articles discussing two different topics) have vectors that are further apart in this multi-dimensional space.
 
-
+=== Finding Semantically Similar Text Data
 
 By comparing two vectors, you can find the similarity between two pieces of data.
 This similarity goes beyond just finding parts of the data that's identical (finding similar words in two pieces of text, for example).
@@ -48,6 +48,8 @@ These diagrams are a simplification.
 The vectors used in AI applications have hundreds to thousands of dimensions. 
 They are easy for computers to handle, but rather difficult for humans to visualize.
 So, when viewing these diagrams, remember that they only scratch the surface of the data encoded in a vector.
+
+=== Using Vectors to Find Similar Complex Data
 
 Vectors also let you search for similarity in data that's hard to search using traditional  techniques.
 Image data, for example, is just a string of raw binary values. 
@@ -105,7 +107,8 @@ Use this method when the proximity of the vectors and their magnitudes are impor
 +
 image::euclidean-distance-example.svg["Three-dimensional plot showing two vectors with points along each vector joined by dotted lines, indicating the summing of corresponding points."]
 +
-Euclidean Distance is useful for tasks such as image similarity searches. Vectors for similar images form clusters within vector space.
+Euclidean Distance is useful for tasks such as image similarity searches.
+Vectors for similar images tend to form clusters within vector space.
 
 Dot Product::
 Finds related vectors by comparing the magnitude and alignment of the vectors. 
@@ -155,14 +158,14 @@ Use GSI indexes with a vector column when you want to perform hybrid searches of
 They work well for cases where your queries are highly selective---returning a small number of results from a large dataset.
 They consume a moderate amount of memory and can index billions of documents.
 
-* A Search index used for Full-Text Search can have an added vector attribute,
+* A Search index used for full-text and geospacial search can have an added vector attribute,
 The search results combine keyword matching of Full-Text Search with the semantic meaning matching of vectors to give you hybrid results.
 Use Search indexes with a vector attribute when you want to query based on keywords, geospacial data, and a vector value.
 These indexes can index millions of documents.
 
 === Indexing Algorithms
 
-When you add a vector column to an index, you specify an algorithm that Couchbase {product-name} uses to process the vector values in the index.
+When you add a vector column to an index, you specify one or more algorithms that Couchbase {product-name} uses to process the vector values.
 These algorithms organize and consolidate vector data in the index to make it more efficient to search.
 
 Couchbase {product-name} supports the following methods:
@@ -172,25 +175,25 @@ This algorithm just stores the full vector value in the index without performing
 Searches using this index use a brute-force method to find similar vectors.
 Adding new vectors to a flat index is fast, and the index does not need training.
 It also offers high precision, because search compares the full vector values. 
-However, it does not scale well. 
 However, searching a flat index is inefficient, because the search must compare every vector in the index to find matchers.
 You should only use it for small data sets or for testing. 
 
 Inverted File (IVF)::
-This method partitions the vector space to limit the number of vectors that a search must compare.
-After creating the index, you must train it before using it.
-This training locates clusters of similar vectors in the dataset. 
-It then chooses representative vectors (called centroids) from these clusters.
-Finally, it associates all vectors with their closest centroid in a structure called an inverted list.
+This algorithm partitions the vector space to limit the number of vectors that a search must compare.
+An IVF index trains itself during creation using a set of parameters you pass to it:
 +
-image::ivf-diagram-with-vectors.svg["A plot showing clusters of points in a 3D graph being labvelled and assigned centroid vectors. The centroids them point to multiple vectors."]
+. It samples vectors in the dataset to locate clusters of similar vectors. 
+. For each cluster it finds, it chooses a representative vector (called a centroid).
+. It creates a data structure called an inverted list that associates all vectors with their closest centroid.
++
+image::ivf-diagram-with-vectors.svg["A plot showing clusters of points in a 3D graph being labelled and assigned centroid vectors. The centroids them point to multiple vectors."]
 +
 When you search an IVF index, it first locates the centroids that are most relevant to the vector value you're searching for.
 It then searches just the vectors associated to those centroids in the inverted list.
 By limiting the number of vector comparisons to just the vectors close to the relevant centroids, IVF makes vector search faster.
 +
-A drawback of this method is the risk that the search will miss some relevant vectors.
-These vectors can be missed if they're associated with a centroid that is not relevant to the search vector.
+A drawback of this method is the possibility that the search could miss some relevant vectors.
+Vectors can be missed if they're associated with a centroid that's not relevant to the search vector.
 This risk increases as you add and delete data after you train the index.
 The centroids chosen during the initial training may no longer accurately represent clusters in current dataset.
 See <<#index-training>> for more information about index accuracy.
@@ -198,26 +201,29 @@ See <<#index-training>> for more information about index accuracy.
 Use this method if you want a balance between precision and search speed.
 
 Product Quantization (PQ)::
-Product Quantization is similar to IVF, but adds additional steps to its training:
+Product Quantization simplifies vector data to reduce its storage and processing requirements.
+Quantization is similar to using a lossy image compression format, such as JPEG, on an picture to reduce its data size.
+It trades off some detail and accuracy for a smaller, more manageable data size.
++
+PQ processes vectors using the following steps:
 +
 --
 . It groups the vector's dimensions into chunks called subvectors.
 For example, suppose the vectors contain 1024 dimensions.
-Then PQ may break the vectors into 8 subvectors, each containing 128 dimensions.
+Then PQ may break the vectors into 128 subvectors, each containing 8 dimensions.
 . It finds groups of centroids in each subvector space and adds them to a data structure called a codebook.
 The codebook assigns each centroid an index number. 
-. PQ then reduces the size of the vectors in a process called quantizing.
-Quantization replaces each subvector's dimensions with the index of the closest centroid in the codebook.
+. PQ then reduces the size of the vectors by replacing each subvector's dimensions with the index of the closest centroid in the codebook.
 --
 +
 image::pq-diagram.svg["Three-dimensional plot showing two vectors that are of equal length, with the angle between them labeled as theta."]
 +
-The quantized vectors reduce a vector that's 1024 64-bit floating point values to 128 8 bit or 16 bit integer values.
-This reduction improves performance because integer operations are less intensive than floating point operations. 
+PQ could quantize the vector in the previous example from 1024 64-bit floating point values to 128 8 bit or 16 bit integer values.
+This data size reduction improves performance because integer operations are less intensive than floating point operations. 
 It also reduces memory use because each vector requires less data to store (for example, from 64KB to 128 bytes). 
 +
-Once it quantizes the vectors, PQ finds centroids in the dataset the same way IVF does.
-The index stores the centroids and their related vectors in the inverted list using the quantized format.
+You often use PQ in addition to IVF---after quantization, the training process finds centroids in the dataset.
+It stores the centroids and their related vectors in the inverted list using the quantized format.
 +
 A search of the PQ index performs the same steps on the vector you're searching for:
 +
@@ -228,25 +234,30 @@ A search of the PQ index performs the same steps on the vector you're searching 
 --
 +
 PQ sacrifices some accuracy because it compares quantized vectors instead of their original raw values.
-The process of quantization in addition to finding centroids makes training the index more computationally expensive than the other methods.
+The process of quantization adds additional processing requirements to training.
+This overhead makes training a PQ index more computationally expensive than the other methods.
 However, PQ reduces the amount of memory and processing time necessary when searching for related vectors in a large dataset.
-It's the best indexing method choose when:
+Using this indexing algorithm when:
 +
 * Your vectors contain a large number of dimensions.
-* You are willing to trade higher processing requirements during training for lower memory use during searches.
+* You're willing to trade higher processing requirements during training for lower memory use during searches.
 * Your dataset is large (millions to billions of vectors).
 
 Scalar Quantization (SQ)::
-Scalar Quantization partitions each dimension in the vector into equal segments (called bins) over the range of the dimension's values.
-In the diagram, the first dimension's values range from 0 to 1, while the second dimension's range from 0.1 to 0.9.
-It assigns each bin an index value that's 8 or 16 bits. 
+Scalar Quantization is a simpler form of quantization than PQ. 
+During training, SQ determines the maximum and minimum values for each dimension in the dataset.
+It then partitions each dimension in the vector into equal segments (called bins) over the range of the dimension's values.
+For example, in the diagram, the first dimension's values range from 0 to 1, while the second dimension's range from 0.1 to 0.9.
+SQ assigns each bin an index value that's an 8 or 16 bit integer value. 
+It stores the centroid value associated with the bin in the index as a 16 or 32 bit floating point number.
 SQ then quantizes the vectors by replacing their dimensional values with the index of the bin the value falls into.
 +
 image::sq-diagram.svg["Diagram showing each floating point dimension of a vector being converted to an 8-bit integer by looking up which bucket it falls into."]
 +
-This quantization reduces the dimensions from 32 or 64 bit floating point values to 8 or 16 bit integers.
-It lowers the memory needed to perform the search.
+This quantization reduces the dimensions from 32 or 64 bit floating point values to 8 or 16 bits, reducing the memory needed for search.
 It also makes search faster because integer operations are computationally less expensive than floating point operations.
++
+A search reassembles each vector to be compared by taking the integer bin number stored as the dimension's value and replacing it with the floating point centroid associated with the bin.
 +
 Because this method quantizes the vectors, it loses precision.
 It's less precise than the PQ method (which also quantizes vectors) because it assumes that each dimension can be evenly divided. 
@@ -258,12 +269,12 @@ Its training just determines the range of values for each dimension.
 It's best suited for data that's more evenly distributed and does not have high correlations.
 For example, SQ may be a good fit for an IoT sensor dataset where the measured values (such as temperature) are evenly distributed over the range of measurements.
 +
-Use this method if you want to gain some of the memory efficiency offered by vector quantization, but want the processing overhead of training a PQ index. 
+Use this method if you want to gain some of the memory efficiency offered by vector quantization, but do not want the processing overhead of training a PQ index. 
 
 [#index-training]
 === The Importance of Index Training
 
-Three of the four indexing methods rely on training the index on existing data. 
+Three of the four indexing algorithms rely on training the index on existing data. 
 For example, both PQ and IVF locate centroids that represent clusters of vectors in vector space.
 This training reflects the content of dataset at training time.
 For this training to give you accurate search results, the data in your dataset must represent the full range of data you expect to search.
