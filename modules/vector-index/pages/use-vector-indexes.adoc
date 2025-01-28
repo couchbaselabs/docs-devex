@@ -32,26 +32,28 @@ A text search for the term "cat" could return all three articles at the top of i
 However, that does not mean that the articles are semantically related (about the same topic). 
 
 By generating vectors for the articles and comparing them, you can determine any semantic relationship between them. 
-Vectors can be similar in a variety of ways:
+Vectors can be similar in a variety of ways. They may:
 
-* Their vectors may point in similar directions.
-* They may be close to each other in the vector space made up of all the dimensions in the vectors. 
-* They may have a similar magnitude (length). 
+* Point in similar directions.
+* Be close to each other in the vector space made up of all the dimensions in the vectors. 
+* Have a similar magnitude (length). 
 
 Because the first two articles are about cats, their vectors point in a similar direction and are in a similar location in space. 
 The third article, despite using the word "cat" as frequently as the two other articles, has a vector that  has significant differences from the other two.
 
 image::vector-space-example.svg["Three-dimensional plot showing two vectors that are close by and parallel and a third vector that's away and points in another direction"]
 
-NOTE: Many of the diagrams in this document (and in many other discussion available on the web) show vectors in three dimensions. 
+NOTE: Many diagrams in this document (and in other discussions available on the web) show vectors in three dimensions. 
 These diagrams are a simplification. 
 The vectors used in AI applications have hundreds to thousands of dimensions. 
-They are easy for computers to handle, but rather difficult for humans to visualize.
-So, when viewing these diagrams, remember that they only scratch the surface of the data encoded in a vector.
+They're easy for computers to handle, but rather difficult for humans to visualize.
+Also, vector dimension values in the diagrams show only 4 decimal places to conserve space.
+The floating point dimensional values of actual vectors often use 6 or 7 decimal places.
+When viewing these diagrams, remember that they only scratch the surface of the data encoded in a vector.
 
 === Using Vectors to Find Similar Complex Data
 
-Vectors also let you search for similarity in data that's hard to search using traditional  techniques.
+Vectors let you search for similarity in data that's hard to search using traditional techniques.
 Image data, for example, is just a string of raw binary values. 
 Matching portions of this data within two image files does not mean they're of the same subject, or even have any resemblance.
 Also, comparing megabytes of raw image data is computationally expensive.
@@ -59,10 +61,9 @@ Generating vectors of the images distills features of the image into a smaller, 
 It also emphasizes features of the images that viewers find important, such as shapes and textures.
 Comparing the vectors is more manageable, and actually results in finding similar images.
 
-In Couchbase {product-name}, you can use vectors to find documents that are similar to an existing document or query value.
-By searching your database for similar vectors, you can identify data that's semantically similar to a value.
 
-=== Embedding Vectors
+
+== Embedding Vectors
 
 Embedding is the process of generating vectors that represent a piece of complex unstructured data.
 You use an embedding model that's specific to the data's type to generate a vector to represent it.
@@ -89,7 +90,7 @@ You must use external embedding models to generate them and then store the resul
 A common method of embedding vectors in your database is to call an https://openai.com/index/introducing-text-and-code-embeddings/[OpenAI Embedding API^] to generate vectors for your data.   
 You then store the vector as an attribute in your document.
 
-=== Vector Similarity
+== Vector Similarity
 
 Once you have embedded vectors in your database, you find documents with a similar meaning by finding similar vectors. 
 Several algorithms exist that you can use to find similar vectors (often referred to as the distance function).
@@ -223,7 +224,7 @@ This data size reduction improves performance because integer operations are les
 It also reduces memory use because each vector requires less data to store (for example, from 64KB to 128 bytes). 
 +
 You often use PQ in addition to IVF---after quantization, the training process finds centroids in the dataset.
-It stores the centroids and their related vectors in the inverted list using the quantized format.
+The index stores the centroids the their related vectors in the inverted list using the quantized format.
 +
 A search of the PQ index performs the same steps on the vector you're searching for:
 +
@@ -254,10 +255,15 @@ SQ then quantizes the vectors by replacing their dimensional values with the ind
 +
 image::sq-diagram.svg["Diagram showing each floating point dimension of a vector being converted to an 8-bit integer by looking up which bucket it falls into."]
 +
-This quantization reduces the dimensions from 32 or 64 bit floating point values to 8 or 16 bits, reducing the memory needed for search.
+This quantization reduces the dimensions from 32 or 64 bit floating point values to 8 or 16 bit integers, reducing the memory needed for search.
 It also makes search faster because integer operations are computationally less expensive than floating point operations.
 +
-A search reassembles each vector to be compared by taking the integer bin number stored as the dimension's value and replacing it with the floating point centroid associated with the bin.
+A search on an SQ index reassembles vectors before comparing them. 
+For each of the vector's dimensions, the integer bin number is replaced with the floating point centroid associated with the bin.
+This recreation results in an approximation of the original vector, which the search compares to the search vector.
++
+Like the PQ algorithm, you often combine SQ and IVF. 
+This combination limits the number of vectors that a search has to compare and reduces its memory and processing requirements.
 +
 Because this method quantizes the vectors, it loses precision.
 It's less precise than the PQ method (which also quantizes vectors) because it assumes that each dimension can be evenly divided. 
