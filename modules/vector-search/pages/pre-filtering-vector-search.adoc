@@ -1,7 +1,7 @@
 = Pre-filtering Vector Searches
 :page-topic-type: guide
 :page-ui-name: {ui-name}
-:description: You can specify filters as part of a vector search statement which will restrict the documents searched during the query.
+:description: You can specify filters as part of a Vector Search query object to restrict the documents searched in a Search index.
 
 [abstract]
 {description}
@@ -18,56 +18,44 @@ Reduce the search space before executing queries to improve query execution time
 
 == Prerequisites
 
-* You have the Search Service enabled on a node in your database.
-For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+* You have the Search Service enabled on a node in your operational cluster.
+For more information about how to change Services on your operational cluster, see xref:cloud:clusters:modify-database.adoc[].
 
-* You have a bucket with scopes and collections in your database.
-For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[].
-
-* Your user account has the *Search Admin* or *Search Reader* role.
-
-* You installed the Couchbase command-line tool (CLI).
-
-* You have the hostname or IP address for the node in your database where you're running the Search Service.
-For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
+* You have a bucket with scopes and collections in your operational cluster. 
+For more information, see xref:cloud:clusters:data-service/manage-buckets.adoc[].
 
 * You have created a Vector Search index.
 +
-For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
+For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[].
 +
 [TIP]
 --
 include::partial$download-sample-partial.adoc[]
 
-For the best results, consider using the sample Vector Search index from xref:create-vector-search-index-ui.adoc#example[Create a Vector Search Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create a Vector Search Index with the REST API and curl/HTTP].
+For the best results, consider using the sample Vector Search index from xref:create-vector-search-index-ui.adoc#example[Create a Vector Search Index with the {page-ui-name}].
 --
 
 == Procedure
 
-To run a pre-filtered vector search with the REST API:
+To add pre-filtering to a Vector Search query: 
 
-. In your command-line tool, enter a `curl` command with the `XPOST` verb.
-. Set your header content to include `"Content-Type: application/json"`.
-. Add your `username`, `password`, and the Search Service endpoint on port `8094`.
-. Add the `index name` you want to query to the endpoint.
+. On the *Operational Clusters* page, select the operational cluster where you created your Search index. 
+. Go to menu:Data Tools[Search]. 
+. Next to your Vector Search index, click btn:[Search].
+. In the *Search* field, enter a search query that includes a `filter` object with your `knn` object.
++
+For more information about the `filter` object, see xref:search:search-request-params.adoc#filter[filter].
+. Press kbd:[Enter] or click btn:[Search].
+. (Optional) To view a document and its source collection, click a document name in the search results list. 
 
-[source, console]
+=== Example: Pre-Filter A Vector Search Query For The Color "Navy"
+
+For example, the following Vector Search query tries to find matches to a color with an RGB value of `[176, 0, 176]` with a minimum brightness of `70` and a maximum of `80`.
+A pre-filter on the query will narrow the documents searched inside the Vector Search index to documents that have a `color` field value that closely matches `navy`:
+
+[source, json]
 ----
-curl -XPOST -H "Content-Type: application/json" \
-  -u ${CB_USERNAME}:${CB_PASSWORD} http://${CB_HOSTNAME}:8094/api/bucket/vector-sample/scope/color/index/{INDEX_NAME}/query \
--d \
-----
-
-=== Example
-
-In the following example, you will extend a search query
-to find matches in `color-index`.
-  A pre-filter on the query will narrow the documents in the index searched to those with a `color` field value
-  that closely matches `navy`.
-
-[source, console]
-----
-include::example$run-pre-filtered-vector-search-rest-api.sh[]
+include::example$run-pre-filtered-vector-search-ui.json[]
 ----
 
 
