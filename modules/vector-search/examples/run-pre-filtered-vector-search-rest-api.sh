@@ -15,7 +15,7 @@ curl -XPOST -H "Content-Type: application/json" \
           "field": "colorvect_l2",
           "vector": [ 176, 0, 176 ],
           "filter": {
-            "field:  "color",
+            "field":  "color",
             "match": "navy"
           }
         }
