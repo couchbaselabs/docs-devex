@@ -1,7 +1,7 @@
 = Pre-filtering Vector Searches
 :page-topic-type: guide
 :page-ui-name: {ui-name}
-:description: You can specify filters as part of a vector search statement which will restrict the documents searched during the query.
+:description: You can specify filters as part of a Vector Search query object to restrict the documents searched in a Search index.
 
 [abstract]
 {description}
@@ -42,26 +42,28 @@ For the best results, consider using the sample Vector Search index from xref:cr
 
 == Procedure
 
-To run a pre-filtered vector search with the REST API:
+To add pre-filtering to a Vector Search with the REST API:
 
 . In your command-line tool, enter a `curl` command with the `XPOST` verb.
 . Set your header content to include `"Content-Type: application/json"`.
 . Add your `username`, `password`, and the Search Service endpoint on port `8094`.
 . Add the `index name` you want to query to the endpoint.
-
++
 [source, console]
 ----
 curl -XPOST -H "Content-Type: application/json" \
   -u ${CB_USERNAME}:${CB_PASSWORD} http://${CB_HOSTNAME}:8094/api/bucket/vector-sample/scope/color/index/{INDEX_NAME}/query \
 -d \
 ----
+. Enter a search query that includes a `filter` object with your `knn` object.
++
+For more information about the `filter` object, see xref:search:search-request-params.adoc#filter[filter].
 
-=== Example
 
-In the following example, you will extend a search query
-to find matches in `color-index`.
-  A pre-filter on the query will narrow the documents in the index searched to those with a `color` field value
-  that closely matches `navy`.
+=== Example: Pre-Filter A Vector Search Query For The Color "Navy"
+
+For example, the following Vector Search query tries to find matches to a color with an RGB value of `[176, 0, 176]` with a minimum brightness of `70` and a maximum of `80`.
+A pre-filter on the query will narrow the documents searched inside the Vector Search index to documents that have a `color` field value that closely matches `navy`:
 
 [source, console]
 ----
