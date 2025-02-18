@@ -2,20 +2,24 @@ import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
-
+import com.couchbase.client.java.ClusterOptions;
 import java.time.Duration;
 
 public class ConnectStudent {
 
     public static void main(String[] args) {
 
-        // Calls `Cluster.connect` to create a channel to the named server 
-        // (in this case, `localhost` is running on your local machine)
-        // and supplies your username and password to authenticate the connection.
-        Cluster cluster = Cluster.connect("localhost",
-                "username", "password"); 
+        String endpoint = "<<connection-string>>"; // Replace this with Connection String
+		String username = "<<username>>"; // Replace this with username from cluster access credentials
+		String password = "<<password>>"; // Replace this with password from cluster access credentials
+       
+		// Connecting to the cluster
+		Cluster cluster = Cluster.connect(endpoint, ClusterOptions.clusterOptions(username, password)
+		// Use the pre-configured profile below to avoid latency issues with your connection.
+						.environment(env -> env.applyProfile("wan-development"))
+		);
 
-        // The `cluster.bucket` retrieves the bucket you set up when you installed Couchbase Server.
+        // The `cluster.bucket` retrieves the bucket you set up for the student cluster.
         Bucket bucket = cluster.bucket("student-bucket");  
 
         // Most of the Couchbase APIs are non-blocking. 
