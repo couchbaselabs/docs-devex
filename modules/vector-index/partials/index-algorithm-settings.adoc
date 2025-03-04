@@ -1,0 +1,126 @@
+[#algo_settings]
+== Index Algorithm Settings
+
+When creating an index that includes a vector field, you choose settings that affect how the index processes vectors. 
+The parameter named `description` is the primary setting that controls the indexing algorithms that Couchbase {product-name} to create the index.
+Using it, you control how the index subdivides the dataset to improve performance and how it quantizes vectors to reduce memory and processing requirements.
+
+The `description` parameter is a string in the following format:
+
+[source,sqlpp]
+----
+'IVF[<number_of_centroids>],{PQ|SQ}<quantization_setting>'
+----
+
+The following sections describe the settings for centroids and quantization.
+
+=== Number of Centroids
+
+{index-name-plural} always use the xref:vector-index:use-vector-indexes.adoc#IVF[Inverted File (IVF)] algorithm to subdivides the dataset.
+Using this algorithm reduces the number of vector comparisons a vector search of the index must perform.
+The key setting for IVF is the number of centroids it allocates for the index. 
+The number of centroids affects the performance of your index in two ways:
+
+* If the index has fewer centroids, each centroid has more vectors associated with it.
+In this case, a vector search has to perform more comparisons which makes the search slower.
+Having fewer centroids decreases the processing overhead for training the index.  
+
+* A greater number of centroids results in a greater processing cost for training.
+This increase is due to the training process having to search for more data cluster to identify  more centroids. 
+However, it reduces the number of vectors associated with each centroid.
+This reduction makes search faster by limiting the number of vector comparisons during a search.
+
+You can have Couchbase {product-name} choose a number of centroids for you by not providing a value after the `IVF` in your `description` parameter. 
+It chooses the number of centroids based on the number of vectors in the dataset:
+
+* If the number of vectors in the dataset is less than 1 million (1,000,000),  Couchbase {product-name} sets the number of centroids to stem:["number of vectors" / 1000].
+
+* If the number of vectors in greater than 1 million, Couchbase {product-name} sets the number of centroids to stem:[sqrt("number of vectors")].
+
+You can manually set the number of centroids for the index by adding an integer value after the `IVF` in the `description` parameter.
+The number of centroids you set manually must be less than the number of vectors in the dataset.
+
+=== Quantization Setting
+
+{index-name} always uses quantization to reduce the size of vectors stored in the index. 
+You must choose whether the index uses xref:vector-index:use-vector-indexes.adoc#sq[Scalar Quantization (SQ)] or xref:vector-index:use-vector-indexes.adoc#pq[Product Quantization (PQ)]. 
+
+You select the quantization by adding a comma followed by either `PQ` or `SQ` to the `description` parameter after the IVF setting in the `description` value.
+
+
+Each quantization method has additional settings explained in the following sections.
+
+==== SQ Settings
+
+For SQ, you set the number of bits the SQ algorithm uses for the bin index value or the number of bits it uses to store the centroid for each bin.
+The values for SQ that Couchbase {product-name} supports are:
+
+[%autowidth]
+|===
+| Setting | Effect
+
+| `SQ4`
+| SQ uses a 4-bit index value splitting each vector dimension into 16 subspaces.
+
+| `SQ6`
+|  SQ uses a 6-bit index value splitting each vector dimension into 64 subspaces.
+
+| `SQ8`
+|  SQ uses an 8-bit index value splitting each vector dimension into 256 subspaces.
+
+| `SQfp16`
+|  SQ uses an 8-bit index value splitting each vector dimension into 256 subspaces. 
+However, it stores the centroid value as a 16-bit floating point number instead of a 32-bit floating point number.
+This cuts the memory used to store the centroids in half. 
+
+|===
+
+==== PQ Settings
+
+If you choose to use PQ in your index, you must set two values:
+
+* The number of subquantizers (number of subspaces SQ splits the vector's dimensions into) to use. 
+This value must a divisor of the number of dimensions in the vector.
+For example, if your vector has 99 dimensions you can only use the values 3, 9, 11, 33, and 99 for the subquantizers. 
+Using any other value returns an error. 
+
+* The number of bits in the centroid's index value. 
+This value sets the number centroids to find in each subspace.
+For example, setting this value to 8 has PQ store the index for the centroids in a byte.
+This results in SQ using 256 centroids per subspace.
++
+The number of centroids you set using this value must be less than the number of vectors in the dataset.
+For example, if you choose 32 for the centroid index size, your dataset must have at least 4,294,967,296 vectors in it.
+
+The larger you set either of these values, the more accurate the index's search results are.
+The trade-off is that your index is larger, as it has to store data for more centroids.
+A smaller value results in a smaller index that returns less accurate results.
+
+The format for the PQ settings is:
+
+[source,sqlpp]
+----
+PQ<subquantizers>x<number of bits>
+----
+
+For example, `PQ32x8` has PQ break the vector's dimensions into 32 subspaces, each of which has 256 centroids. 
+
+=== Algorithm Settings Examples
+
+The following table shows several `description` values along with an explanation.
+
+[%autowidth]
+|===
+| Setting | Effect
+
+| `IVF,SQ8`
+| Couchbase {product-name} chooses the number of centroids the IVF algorithm uses. 
+The index uses Scalar Quantization with an 8-bit index, meaning each dimension of the vector is broken into 256 bins.
+
+| `IVF1024,PQ8x8`
+| IVF uses 1024 centroids to divide the dataset. 
+The index uses Product Quantization.
+PQ breaks the vector space into 8 subspaces, each of which uses 8-bits to represent centroids in the subspace.
+This settings means each subspace has 256 centroids.
+
+|===

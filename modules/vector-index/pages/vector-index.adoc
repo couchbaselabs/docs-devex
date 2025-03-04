@@ -1,0 +1,166 @@
+= Pure Vector Searches Using Vector Indexes
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Vector indexes are are optimized to index a single vector column. They offer the highest performance of any index when it comes to vector data.
+:stem: 
+:page-toclevels: 3
+:index-name: Vector index
+:index-name-plural: Vector indexes
+
+{description}
+Vector indexes can scale up to a billion documents containing vectors each of which have a large number of dimensions.
+
+Because they provide the best performance, consider testing a Vector index for your application before resorting to the other types of indexes.
+If you find that the Vector index's performance does not meet your needs, then test using a GSI with vector column or a Search index.
+
+
+== How the Vector Index Works 
+
+The Vector index primarily relies on data stored in an optimized format on disk. 
+By relying on disk storage, Vector indexes have lesser memory requirements than other index types. 
+
+You add a single vector column to a Vector index. 
+The vector value can be an array of floating point values.
+This array can be nested, as long as you use an xref:n1ql:n1ql-language-reference/unnest.adoc[`UNNEST` clause] to extract the vector array from the containing array. 
+The vector can also be stored in a BASE64 string. 
+
+
+=== Filter Vector Index Scans with Scalar Columns
+
+The Vector index contains just the single vector column.
+However, you can use non-vector values in your query to limit the number of vector comparisons.
+The query uses columns you add to an `INCLUDE` clause to filter out index entries before performing the vector index scan. 
+See <<#filter-using-scalars-example>> for more information.
+
+
+[#full-vector-persist]
+=== Persisting the Full Vector Value
+
+The Vector index always quantizes the vectors it contains. 
+See xref:vectors-and-indexes-overview.adoc#quantization[Quantization] for more information about quantizing vectors.
+You choose which type of quantization the Vector index uses when you create it.
+It uses these quantized values when it scans for similar vectors.
+
+By default, Vector indexes also store a copy of the original vector value.
+It uses the full value when ranking the search results to make the rankings more accurate.
+You can choose to turn off this feature if the cost of storing and comparing full vector values during ranking causes performance issues.
+
+== Prerequisites
+
+Vector indexes have the following requirements:
+
+* You must have the Index Service enabled on at least one node in your cluster. 
+For more information about how to deploy a new node and Services on your database, see xref:manage:manage-nodes/node-management-overview.adoc[].
+
+* You must have a bucket with scopes and collections in your database. 
+For more information about how to create a bucket, see xref:manage:manage-buckets/create-bucket.adoc[].
+
+* Your account must have the xref:learn:security:roles.adoc#query-manage-index[Query Manage Index] role to be able to create an index.
+
+* You have documents in a collection that contain one or more vector embeddings.
+You can add a single vector to a GSI index.
+If your documents contain multiple embedded vectors, you can create multiple indexes---one for each vector attribute.
++
+Embeddings can be an array of floating point numbers or a base64 encoded string.
+Couchbase {product-name} does not embed vectors itself. 
+You must use an external embedding model to embed vectors into your data and add them to your documents.
+
+* The vectors you add to an index must contain the same number of dimensions. 
+Also the values in the vector must be 32-bit floating point numbers.
+If a vector does not meet both of these requirements, the vector index treats it as a NULL value and the document is not added to the index. 
+
+* You must know the number of dimensions the vector contains. 
+The embedding model you use to embed the vectors may determine this value for you.  
+For example,  OpenAI API's `text-embedding-ada-002` embedding model creates vectors that have 1536 dimensions.
+
+* You must decide what algorithms you want your index to use. 
+These algorithms affect how much memory your index uses and the amount of processing Couchbase {product-name} must perform to train and search them.
+See xref:vector-index:vectors-and-indexes-overview.adoc#index-algorithms[Indexing Algorithms]
+
+include::partial$index-algorithm-settings.adoc[]
+
+== Create a Vector Index
+Use the `CREATE VECTOR INDEX` statement to create a Vector index.
+This statement is similar to the `CREATE INDEX` statement that you use to create Global Secondary Indexes (GSI). 
+See xref:guides:create-index.adoc[] for an overview of creating indexes.
+
+You must also use the `WITH` clause to specify some additional information for the vector column in the index. 
+The format for this clause with the most commonly used parameters is:
+
+[source,sqlpp]
+----
+WITH {  "dimension":<dimensions> , "similarity":<similarity-function>, "description":<algorithm-settings>}; 
+----
+
+* `dimensions` is an integer value that sets the number of dimensions in the vector.
+This value is set by the embedded model you used to embed the vectors.
+* `similarity-function` is a string that sets the distance function to use when comparing vectors during index creation.
+Couchbase {product-name} uses the following strings to represent the proximity functions:
++
+--
+** `COSINE`: xref:use-vector-indexes.adoc#cosine[Cosine Similarity]
+** `DOT`: xref:use-vector-indexes.adoc#dot[Dot Product]
+** `L2`, `L2_SQUARED`, `EUCLIDEAN`, or `EUCLIDEAN_SQUARED`: xref:use-vector-indexes.adoc#euclidean[Euclidean Distance]  
+--
++
+For the greatest accuracy, use the distance function you plan to use when querying vector data.
+* `algorithm-settings` is a string containing the settings for the indexing algorithms. 
+See <<#algo_settings>> earlier in this page.
+
+For a full list of the parameters that affect a vector column in a GSI, see *FIXME:TDB*.
+
+[#examples]
+=== Create Vector Index Examples
+
+TBD
+
+
+
+
+
+[#prevent-vector-persistence]
+=== Prevent Full Vector Persistence
+
+As mentioned in <<#full-vector-persist>>, by default the Vector index stores the full vector value in addition to its quantized form.
+It uses the full vector during result ranking. 
+You can prevent the Vector index persisting the full vector by setting the `persist_full_vector` attribute in the `WITH` clause to false:
+
+[source,sqlpp]
+----
+WITH {  "dimension":<dimensions> , 
+        "similarity":<similarity-function>, 
+        "description":<algorithm-settings>, 
+        "persist_full_vector":false
+     }; 
+----
+
+
+== Query with a Vector Index
+
+You query embedded vector attribute that you have indexed in a Vector index to find similar vectors and therefore similar semantic content.
+To find the most similar vectors, use a `GROUP BY` clause in your query to return the most relevant vectors first. 
+In this clause, call the `APPROX_VECTOR_DISTANCE` function that performs the vector search.
+
+
+NOTE: You can also call the function `VECTOR_DISTANCE` to find similar vectors. 
+However, this function does not use the Vector index to perform the vector search. 
+Instead, it performs a brute-force search for similar vectors.
+
+
+You should also use a `LIMIT` clause to return just the number of vectors you need. 
+The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the requested number of matches.
+
+=== Query Vector Index Examples
+
+**TBD**
+
+[#filter-using-scalars-example]
+=== Filter Vector Index Searches Using Scalars
+
+The Vector index only allows a single vector column.
+You may have queries where you'd like to use non-vector scalar columns to filter out vectors before performing an index scan.
+You can add these columns to the query using an `INCLUDE` clause. 
+The query pushes the columns you name in the `INCLUDE` clause into the Vector index scan, helping to limit the number of vector comparisons needed to locate matching vectors.
+
+**Example TBD**
