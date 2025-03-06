@@ -1,0 +1,83 @@
+[#extract-sql-data]
+== Extract your Course data from MySQL
+
+The first stage of your migration is to extract the data a file format that the `cbimport` utility can work with.
+`cbimport` can work with comma-separated value files or JSON-formatted files.
+Because we already know that we will be embedding our `enrollment` records into the record for each student,
+makes sense to use the more versatile JSON structure. 
+
+Fortunately, MySQL has a number of SQL functions that make working with JSON data fairly straightforward,
+so we'll start by migrating the `course` table into a JSON file:
+
+[source, mysql]
+.Extract the `course` table
+----
+SELECT JSON_OBJECT(
+       'course-id', course.`course-id`,
+       'course-name', course.`course-name`,
+       'faculty', course.faculty,
+       'credit-points', course.`credit-points`
+       ) FROM course
+INTO OUTFILE '/var/lib/mysql-files/courses.json'
+----
+
+Using the `JSON_OBJECT` function, the command will `SELECT` every record in the table and output it to a file.
+Each line of the file will correspond to a single record:
+
+[source,jsonlines]
+----
+{"faculty": "Art", "course-id": 1, "course-name": "Art History", "credit-points": 50}
+{"faculty": "Art", "course-id": 2, "course-name": "Fine Art", "credit-points": 30}
+{"faculty": "Design", "course-id": 3, "course-name": "Graphic Design", "credit-points": 70}
+{"faculty": "English", "course-id": 4, "course-name": "Creative Writing", "credit-points": 70}
+----
+
+NOTE: Strictly speaking, the JSON output is not a well-formed JSON document because it isn't structured as an array.
+Nevertheless, `cbimport` will read each line as a separate record.
+
+== Extract your Student data from MySQL
+
+This case is slightly different because we want to include the enrollment details with each student record 
+
+
+We can handle this JSON structure by using a more involved SELECT: 
+as well as extracting the student records, we can simultaneously pull in the enrollments for each student:
+
+[source,mysql]
+.Extract `students` and their `enrollments`.
+----
+SELECT JSON_OBJECT(
+               'student-id', student.`student-id`,
+               'student-name', student.name,
+               'date-of-birth', student.`date-of-birth`,
+               'enrollments', IF (COUNT(enrollment.`course-id`) = 0, JSON_ARRAY(), JSON_ARRAYAGG(
+                       JSON_OBJECT(
+                               'course-id', enrollment.`course-id`,
+                               'date-enrolled', enrollment.`date-enrolled`,
+                               'date-completed', enrollment.`date-completed`,
+                               'final-score', enrollment.`score`
+                       )
+                              ))
+       )
+FROM student
+         LEFT OUTER JOIN enrollment ON enrollment.`student-id` = student.`student-id`
+GROUP BY student.`student-id`
+INTO OUTFILE '/var/lib/mysql-files/students.json';
+----
+
+In addition to the `JSON_OBJECT` function call that extracts the student details, 
+we are also using the `JSON_ARRAYAGG` function to build an array within each student record.
+The data for this list is retrieved through the `LEFT OUTER JOIN` 
+which provides the foreign key link between the student and the enrollment record.
+
+We also use the ``IF (COUNT(enrollment.`course-id`) = 0`` statement
+to ensure that there are existing enrollment records attached to the current student.
+If there are no enrollment records, then that portion of the query uses `JSON_ARRAY()` to return an empty list.
+
+[source, jsonlines]
+----
+{"student-id": 1, "enrollments": [{"course-id": 3, "final-score": 0, "date-enrolled": "2025-03-10", "date-completed": null}, {"course-id": 1, "final-score": 0, "date-enrolled": "2025-03-10", "date-completed": null}], "student-name": "Hilary Wells", "date-of-birth": "1990-08-09"}
+{"student-id": 2, "enrollments": [{"course-id": 2, "final-score": 0, "date-enrolled": "2025-03-10", "date-completed": null}], "student-name": "Ashley Matthews", "date-of-birth": "1987-07-01"}
+{"student-id": 3, "enrollments": [{"course-id": 1, "final-score": 0, "date-enrolled": "2025-03-10", "date-completed": null}], "student-name": "Boregard Johnson", "date-of-birth": "1985-03-23"}
+{"student-id": 4, "enrollments": [], "student-name": "Toni Jones", "date-of-birth": "1984-10-02"}
+----
