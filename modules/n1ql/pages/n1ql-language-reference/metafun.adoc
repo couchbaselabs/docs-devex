@@ -703,6 +703,73 @@ FROM system:completed_requests;
 ----
 ====
 
+== HASHBYTES(`input`, [ `options` ])
+
+=== Description
+
+This function returns a binary hash value for a given input using a specified hashing algorithm. It accepts both binary and JSON data as inputs and supports various hashing algorithms. 
+
+=== Arguments
+
+input:: A binary object to hash. 
++
+For non-binary data, you must provide the JSON marshalled value.   
+
+options:: An object that includes a string that specifies the algorithm to use.
++
+Supported algorithms are: `crc32`, `md4`, `md5`, `sha224`, `sha256`, `sha384`, `sha512`, `sha512/224`, and `sha512/256`. 
++
+Depending on the algorithm you choose, you can have additional fields. 
++
+For example, with `crc32`, you need to add an additional `polynomial` field which can have one of the following values:
+* "ieee" (the default if not specified)
+* "castagnoli"
+* "koopman" 
+* A valid 32-bit integer, provided either as JSON number (limited to decimal) or as a string that can be parsed as the numeric value (hexadecimal can be used with a "0x" prefix)
+
+=== Return Value
+
+A binary hash value. 
+
+=== Examples
+====
+Example 1: Use the `sha256` algorithm to hash.
+
+[source,sqlpp]
+----
+SELECT HASHBYTES('Hello World', {"algorithm":"sha256"});
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+  }
+]
+----
+====
+
+====
+Example 2: Use the `crc32` algorithm to hash.
+
+[source,sqlpp]
+----
+SELECT HASHBYTES("hello world", {"algorithm":"crc32", "polynomial":"koopman"});
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": "df373d3c"
+  }
+]
+----
+====
+
 [[len,LEN()]]
 == LEN(`expression`)
 
