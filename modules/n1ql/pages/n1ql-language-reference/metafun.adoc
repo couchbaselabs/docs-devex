@@ -703,43 +703,53 @@ FROM system:completed_requests;
 ----
 ====
 
+[[hashbytes,HASHBYTES()]]
+
 == HASHBYTES(`input`, [ `options` ])
 
 === Description
 
-This function returns a binary hash value for a given input using a specified hashing algorithm. It accepts both binary and JSON data as inputs and supports various hashing algorithms. 
+This function returns a binary hash value for a given input using a specified hashing algorithm. 
+By using this function, you can protect your data by masking its original form while still allowing verification or comparison. 
 
 === Arguments
 
-input:: A binary object to hash. 
+input:: The data to be hashed, represented as a binary object.
 +
-For non-binary data, you must provide the JSON marshalled value.   
+If the data is not in the binary form, you must convert it to a JSON marshalled value (JSON string) before it can be hashed. 
+You can use the ENCODE_JSON() function to do this conversion. 
+For more information, see xref:n1ql-language-reference/jsonfun.adoc[JSON Functions].     
 
-options:: An object that includes a string that specifies the algorithm to use.
+options:: An object that specifies the hashing algorithm (string) to be used.
 +
 Supported algorithms are: `crc32`, `md4`, `md5`, `sha224`, `sha256`, `sha384`, `sha512`, `sha512/224`, and `sha512/256`. 
 +
-Depending on the algorithm you choose, you can have additional fields. 
-+
-For example, with `crc32`, you need to add an additional `polynomial` field which can have one of the following values:
-* "ieee" (the default if not specified)
-* "castagnoli"
-* "koopman" 
-* A valid 32-bit integer, provided either as JSON number (limited to decimal) or as a string that can be parsed as the numeric value (hexadecimal can be used with a "0x" prefix)
+Some of the algorithms require additional configuration fields. 
+For example, for `crc32`, you need to add a `polynomial` field which can have one of the following values: 
++ 
+--
+* `ieee` (the default value)
+* `castagnoli`
+* `koopman`
+* A valid 32-bit integer, provided either as a JSON number (decimal) or a string that can be parsed as a numeric value (supports hexadecimal with a "0x" prefix)
+--
 
 === Return Value
 
 A binary hash value. 
+The size or length of the value depends on the algorithm you choose. 
 
 === Examples
-====
-Example 1: Use the `sha256` algorithm to hash.
 
+[[hashbytes-ex1,HASHBYTES() Example 1]]
+
+.Find the hash value using the `sha256` algorithm 
+====
+.Query
 [source,sqlpp]
 ----
 SELECT HASHBYTES('Hello World', {"algorithm":"sha256"});
 ----
-
 .Results
 [source,json]
 ----
@@ -751,14 +761,15 @@ SELECT HASHBYTES('Hello World', {"algorithm":"sha256"});
 ----
 ====
 
-====
-Example 2: Use the `crc32` algorithm to hash.
+[[hashbytes-ex2,HASHBYTES() Example 2]]
 
+.Find the hash value using the `crc32` algorithm
+====
+.Query
 [source,sqlpp]
 ----
 SELECT HASHBYTES("hello world", {"algorithm":"crc32", "polynomial":"koopman"});
 ----
-
 .Results
 [source,json]
 ----
