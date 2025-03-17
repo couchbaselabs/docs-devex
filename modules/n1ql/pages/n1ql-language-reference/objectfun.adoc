@@ -1355,6 +1355,97 @@ LIMIT 1;
 ----
 ====
 
+[[fn-obj-type,OBJECT_TYPES()]]
+== OBJECT_TYPES(`expression`)
+
+=== Description
+
+This function returns an object with all field values replaced by their types as would be reported by the TYPE() function.
+
+=== Arguments
+
+expression:: An expression representing an object.
+
+=== Return Value
+
+An object with the same fields as the input object with all values listed as the type.
+
+=== Example
+
+[[obj-type-ex,OBJECT_TYPES() Example]]
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_TYPES({"field1":1,"field2":"two","field3":NULL,"field4":{"sub1":TRUE}}) 
+    AS object_types;
+----
+
+.Results
+[source,json]
+----
+[
+    {
+        "object_types":{
+            "field1":"number",
+            "field2":"string",
+            "field3":"null",
+            "field4":"object"
+        }
+    }
+]
+----
+====
+
+[[fn-obj-types-nested,OBJECT_TYPES_NESTED()]]
+== OBJECT_TYPES_NESTED(`expression`)
+
+=== Description
+
+This function returns the object with all non-composite field values replaced by their types as would be reported by the TYPE() function.  All composite type (ARRAYs and OBJECTs) fields are recursively processed with the same value replacement.
+
+=== Arguments
+
+expression:: An expression representing an object.
+
+=== Return Value
+
+An object with the same fields as the input object with all non-composite values listed as the type.
+
+=== Example
+
+[[obj-type-nested-ex,OBJECT_TYPES_NESTED() Example]]
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_TYPES_NESTED({"field1":1,"field2":[1,2,true],"field3":null,"field4":{"sub1":true}}) 
+    AS object_types_nested;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "object_types_nested": {
+      "field1": "number",
+      "field2": [
+        "number",
+        "number",
+        "boolean"
+      ],
+      "field3": "null",
+      "field4": {
+        "sub1": "boolean"
+      }
+    }
+  }
+]
+----
+====
+
+
 [[fn-obj-unwrap,OBJECT_UNWRAP()]]
 == OBJECT_UNWRAP(`expression`)
 
