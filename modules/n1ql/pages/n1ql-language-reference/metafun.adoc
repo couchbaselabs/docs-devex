@@ -710,7 +710,7 @@ FROM system:completed_requests;
 === Description
 
 This function returns a binary hash value for a given input using a specified hashing algorithm. 
-By using this function, you can protect your data by masking its original form while still allowing verification or comparison. 
+By using this function, you can verify or compare data quickly, or protect your data by masking its original form while still allowing verification or comparison. 
 
 === Arguments
 
@@ -720,19 +720,37 @@ If the data is not in the binary form, you must convert it to a JSON marshalled 
 You can use the ENCODE_JSON() function to do this conversion. 
 For more information, see xref:n1ql-language-reference/jsonfun.adoc[JSON Functions].     
 
-options:: An object that specifies the hashing algorithm (string) to be used.
-+
+options::  [Optional]
+An object that specifies the hashing algorithm and other options for the function.
+If omitted, the default hashing algorithm is `sha256`.
+
+=== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **algorithm** +
+__required__
+| Specifies the hashing algorithm to be used.
+
 Supported algorithms are: `crc32`, `md4`, `md5`, `sha224`, `sha256`, `sha384`, `sha512`, `sha512/224`, and `sha512/256`. 
-+
-Some of the algorithms require additional configuration fields. 
-For example, for `crc32`, you need to add a `polynomial` field which can have one of the following values: 
-+ 
---
+| String
+
+| **polynomial** +
+__optional__
+| The polynomial to use.
+This only applies if the algorithm is `crc32`.
+This property may have one of the following values:
+
 * `ieee` (the default value)
 * `castagnoli`
 * `koopman`
 * A valid 32-bit integer, provided either as a JSON number (decimal) or a string that can be parsed as a numeric value (supports hexadecimal with a "0x" prefix)
---
+
+*Default:* `ieee`
+| String or integer
+|===
 
 === Return Value
 
