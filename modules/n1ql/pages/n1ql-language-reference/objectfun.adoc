@@ -1360,7 +1360,7 @@ LIMIT 1;
 
 === Description
 
-This function returns an object with all field values replaced by their types as would be reported by the TYPE() function.
+This function takes an object and returns a new one where all the values are replaced with their data types as reported by the TYPE() function.
 
 === Arguments
 
@@ -1368,7 +1368,7 @@ expression:: An expression representing an object.
 
 === Return Value
 
-An object with the same fields as the input object with all values listed as the type.
+An object with the same fields as the input object, but with all values replaced by their corresponding data types. 
 
 === Example
 
@@ -1377,7 +1377,7 @@ An object with the same fields as the input object with all values listed as the
 .Query
 [source,sqlpp]
 ----
-SELECT OBJECT_TYPES({"field1":1,"field2":"two","field3":NULL,"field4":{"sub1":TRUE}}) 
+SELECT OBJECT_TYPES({"flight":"AI444","duration":180,"gate":NULL,"aircraft":{"model":"Boeing 737"}}) 
     AS object_types;
 ----
 
@@ -1387,10 +1387,10 @@ SELECT OBJECT_TYPES({"field1":1,"field2":"two","field3":NULL,"field4":{"sub1":TR
 [
     {
         "object_types":{
-            "field1":"number",
-            "field2":"string",
-            "field3":"null",
-            "field4":"object"
+            "flight":"string",
+            "duration":"number",
+            "gate":"null",
+            "aircraft":"object"
         }
     }
 ]
@@ -1402,7 +1402,8 @@ SELECT OBJECT_TYPES({"field1":1,"field2":"two","field3":NULL,"field4":{"sub1":TR
 
 === Description
 
-This function returns the object with all non-composite field values replaced by their types as would be reported by the TYPE() function.  All composite type (ARRAYs and OBJECTs) fields are recursively processed with the same value replacement.
+This function takes an object and returns a new one where all non-composite field values replaced with their data types as reported by the TYPE() function. 
+Additionally, all composite type fields (ARRAYs and OBJECTs) are recursively processed in the same way, ensuring that all nested values are also replaced with their types. 
 
 === Arguments
 
@@ -1410,7 +1411,7 @@ expression:: An expression representing an object.
 
 === Return Value
 
-An object with the same fields as the input object with all non-composite values listed as the type.
+An object with the same fields as the input object, but with all values replaced by their corresponding non-composite data types. 
 
 === Example
 
@@ -1419,7 +1420,7 @@ An object with the same fields as the input object with all non-composite values
 .Query
 [source,sqlpp]
 ----
-SELECT OBJECT_TYPES_NESTED({"field1":1,"field2":[1,2,true],"field3":null,"field4":{"sub1":true}}) 
+SELECT OBJECT_TYPES_NESTED({"flight":"AI444","crewMembers":["Alice Bobson","John Flo",true],"gate":NULL,"aircraft":{"model":"Boeing 737", "capacity":200}}) 
     AS object_types_nested;
 ----
 
@@ -1429,15 +1430,16 @@ SELECT OBJECT_TYPES_NESTED({"field1":1,"field2":[1,2,true],"field3":null,"field4
 [
   {
     "object_types_nested": {
-      "field1": "number",
-      "field2": [
-        "number",
-        "number",
+      "flight": "string",
+      "crewMembers": [
+        "string",
+        "string",
         "boolean"
       ],
-      "field3": "null",
-      "field4": {
-        "sub1": "boolean"
+      "gate": "null",
+      "aircraft": {
+        "model": "string",
+        "capacity":"number"
       }
     }
   }
