@@ -540,9 +540,9 @@ SELECT OBJECT_NAMES(special_flights[*]) AS names;
 ====
 
 [[fn-obj-pairs,OBJECT_PAIRS()]]
-== OBJECT_PAIRS(`expression`, [ `options` ])
+== OBJECT_PAIRS(`expression` [, `options` ])
 
-_Alias_: *OBJECT_OUTER_PAIRS(`expression`, [ `options` ])*
+_Alias_: *OBJECT_OUTER_PAIRS(`expression` [, `options` ])*
 
 === Description
 
@@ -570,7 +570,7 @@ A JSON object specifying options for the function.
 
 | **types** +
 __required__
-| Determines whether the function returns attribute types or values.
+| Determines whether to return attribute types or values.
 
 If TRUE, the function returns the name and type of each attribute.
 
@@ -588,9 +588,9 @@ name:: The name of an attribute in the source object.
 
 val:: The value of an attribute in the source object; or an array, containing the collated values of similarly-named attributes in the source objects.
 
-type:: The type of an attribute in the source object. Returned only when the 'types' parameter is set to 'TRUE'. 
+type:: The type of an attribute in the source object. Returned only when the `types` parameter is set to `TRUE`. 
 
-NOTE: Each returned object will have either **val** or **type** (depending on the input parameters), but not both. 
+NOTE: Each returned object will have either **val** or **type** (depending on the specified options), and not both. 
 Also, the objects in the array are sorted by attribute name, in {sqlpp} collation order.
 
 === Examples
@@ -727,38 +727,70 @@ SELECT OBJECT_PAIRS(special_flights[*]) AS outer_pairs;
 
 === Description
 
-Similar to <<fn-obj-pairs>>, this function returns an array of objects, containing the names and values of each field in the input object.
-A field in this context may be any attribute or element, nested at any level within the object.
+Similar to <<fn-obj-pairs>>, this function returns an array of objects, containing the names and values of each field in the input object. 
+It also provides an option to return field types instead of values. 
+A field in this context may be any attribute or element, nested at any level within the object. 
 
 This function may be useful when iterating over multiple objects in an array, as it collates and unnests the values from similarly-named fields across all objects in the input array.
-In this case, the function returns a null entry from any object which does not contain the shared field name, rather like an OUTER JOIN.
+However, if an object does not contain a shared field name, it returns a null entry, similar to an OUTER JOIN.
+
 For an illustration, refer to the examples below.
 
 === Arguments
 
 object:: An expression representing an object.
 
-options:: [Optional] An object containing the following possible parameters:
+options:: [Optional] A JSON object specifying options for the function. 
 
-composites;; A boolean.
-If `true`, every level of every nested field is displayed; if `false`, only the deepest possible nested fields are returned.
-Default `false`.
+=== Options
 
-pattern;; A regular expression used to filter the returned paths.
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **composites** +
+__optional__
+| If TRUE, every level of every nested field is displayed.
+
+If FALSE, only the deepest possible nested fields are returned.
+
+*Default:* `FALSE`
+| Boolean
+
+| **pattern** +
+__optional__
+| A regular expression used to filter the returned paths.
 The pattern is matched against the composite path names, not the individual field names.
+
+| String
+
+| **types** +
+__optional__
+| Determines whether to return field types or values.
+
+If TRUE, the function returns the name and type of each field.
+
+If FALSE, the function returns the name and value of each field.
+
+*Default:* `FALSE`
+| Boolean
+|===
 
 === Return Value
 
-An array of objects, each containing two attributes:
+An array of objects, each containing the following attributes:
 
 name:: The full path to every possible field within the source object, subject to the specified options.
 +
 The result uses xref:n1ql-language-reference/nestedops.adoc[nested operators] to specify the path to all nested attributes or elements.
 If any attribute names within a field path contain special characters, they are escaped using backticks (`{backtick}{backtick}`).
 
-val:: The value of an attribute in the source object; or an array, containing the collated values of similarly-named attributes in the source objects.
+val:: The value of a field in the source object; or an array, containing the collated values of similarly-named fields in the source objects.
 
-The objects in the array are sorted by attribute name, in {sqlpp} collation order.
+type:: The type of a field in the source object. Returned only when the 'types' parameter is set to 'TRUE'. 
+
+NOTE: Each returned object will have either **val** or **type** (depending on the specified options), and not both. 
+Also, the objects in the array are sorted by field name, in {sqlpp} collation order.
 
 === Examples
 
@@ -769,11 +801,12 @@ The objects in the array are sorted by attribute name, in {sqlpp} collation orde
 [source,sqlpp]
 ----
 WITH input AS ({
- "attribute": {"first-part": 1, "second-part": 2}
-})
+    "attribute": {"flight-name": "AI444", "flight-number": 737}
+  })
 SELECT OBJECT_PAIRS_NESTED(input) AS nested_pairs,
        OBJECT_PAIRS_NESTED(input, {"composites": true}) AS nested_pairs_comp,
-       OBJECT_PAIRS_NESTED(input, {"pattern": "first"}) AS nested_pairs_pattern;
+       OBJECT_PAIRS_NESTED(input, {"pattern": "name"}) AS nested_pairs_pattern,
+       OBJECT_PAIRS_NESTED(input, {"types": true}) AS nested_pairs_types;
 ----
 
 .Results
@@ -783,35 +816,45 @@ SELECT OBJECT_PAIRS_NESTED(input) AS nested_pairs,
   {
     "nested_pairs": [
       {
-        "name": "attribute.first-part",
-        "val": 1
+        "name": "attribute.flight-name",
+        "val": "AI444"
       },
       {
-        "name": "attribute.second-part",
-        "val": 2
+        "name": "attribute.flight-number",
+        "val": 737
       }
     ],
     "nested_pairs_comp": [
       {
         "name": "attribute",
         "val": {
-          "first-part": 1,
-          "second-part": 2
+          "flight-name": "AI444",
+          "flight-number": 737
         }
       },
       {
-        "name": "attribute.first-part",
-        "val": 1
+        "name": "attribute.flight-name",
+        "val": "AI444"
       },
       {
-        "name": "attribute.second-part",
-        "val": 2
+        "name": "attribute.flight-number",
+        "val": 737
       }
     ],
     "nested_pairs_pattern": [
       {
-        "name": "attribute.first-part",
-        "val": 1
+        "name": "attribute.flight-name",
+        "val": "AI444"
+      }
+    ],
+    "nested_pairs_types": [
+      {
+        "name": "attribute.flight-name",
+        "type": "string"
+      },
+      {
+        "name": "attribute.flight-number",
+        "type": "number"
       }
     ]
   }
@@ -925,7 +968,7 @@ SELECT OBJECT_PAIRS_NESTED(special_flights[*], {"composites": true}) AS nested_p
 ]
 ----
 
-Compare this example with <<obj-pairs-ex2>>.
+Compare this example with <<obj-pairs-ex3>>.
 ====
 
 [[fn-obj-paths,OBJECT_PATHS()]]
