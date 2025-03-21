@@ -1,0 +1,89 @@
+= Default Date/Time Parsers
+:page-topic-type: reference
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Use a date/time parser to tell the Search Service how to interpret date and time data in your documents.
+
+[abstract]
+{description}
+
+You can use one of the default date/time parsers, or xref:create-custom-date-time-parser.adoc[create your own].
+
+Set the default date/time parser for your Search index from the {page-ui-name}'s' xref:set-advanced-settings.adoc[Advanced Settings] or your xref:search-index-params.adoc#default-date-time-parser[JSON Search index definition].
+
+You can also set a date/time parser when using xref:search-request-params.adoc#date[Date Range facets] or a xref:search-request-params.adoc#date-range-queries[date range query].
+
+The following default date/time parsers are available:
+
+|====
+| Date/Time Parser | Description
+
+| [[datetimeoptional]]dateTimeOptional
+a| The `dateTimeOptional` date/time parser uses 6 layouts, in xref:date-time-parser-layout-styles.adoc#percent[percentStyle] format, to parse date and time strings.
+
+See <<datetimeoptional-layouts,>>.
+
+| unix_micro
+| The `unix_micro` date/time parser expects a date and time string represented as the number of microseconds since the Unix epoch (1970-01-01T00:00:00Z).
+
+| unix_milli
+| The `unix_milli` date/time parser expects a date and time string represented as the number of milliseconds since the Unix epoch (1970-01-01T00:00:00Z).
+
+| unix_nano
+| The `unix_nano` date/time parser expects a date and time string represented as the number of nanoseconds since the Unix epoch (1970-01-01T00:00:00Z).
+
+| unix_sec
+| The `unix_sec` date/time parser expects a date and time string represented as the number of seconds since the Unix epoch (1970-01-01T00:00:00Z).
+
+|====
+
+[#datetimeoptional-layouts]
+== dateTimeOptional Layouts 
+
+The following layouts are included in the `dateTimeOptional` date/time parser: 
+
+|====
+| Layout | Example Date/Time String
+
+| `%Y-%m-%dT%H:%M:%S.%N%z:M`
+| 2023-09-15T14:24:50.1567+05:30
+
+| `%Y-%m-%dT%H:%M:%S%z:M`
+| 2023-09-15T14:24:50+05:30
+
+| `%Y-%m-%dT%H:%M:%S`
+| 2023-09-15T14:24:50
+
+| `%Y-%m-%d %H:%M:%S`
+| 2023-09-15 14:24:50
+
+| `%Y-%m-%d %H:%M:%S %z`
+| 2023-09-15 14:24:50 +0530
+
+| `%Y-%m-%d`
+| 2023-09-15
+|====
+
+[#missing-values]
+== Defaults for Missing Date/Time Values
+
+If a date/time string is missing a value, the Search Service uses the following default values to make a complete date/time string: 
+
+|====
+| Value | Default
+
+| Month | 01/January
+| Day | 01
+| Hour | 00
+| Minute | 00
+| Second | 00
+| Timezone | UTC
+| Timezone Offset from UTC | +00:00
+| Fraction of a second | nil
+|====
+
+== See Also
+
+* xref:date-time-parser-layout-styles.adoc[]
+* xref:create-custom-date-time-parser.adoc[]
+* xref:set-advanced-settings.adoc[]
