@@ -213,6 +213,7 @@ An object that contains the following child objects:
 * <<token_filters,>> 
 * <<token_maps,>>
 * <<date_time_parsers,>>
+* <<synonyms,>>
 
 |default_analyzer |String |Yes a|
 
@@ -810,6 +811,68 @@ It contains the following properties:
 |Property |Type |Required? |Description
 
 |type |String |Yes |The `type` is always `"flexiblego"`.
+
+|layouts |Array |Yes a|
+
+An array of strings that contains layouts for date and time fields. 
+
+Use a layout from the https://pkg.go.dev/time#pkg-constants[Go Programming Language Time Package's Layout Constant^].
+
+|====
+
+[#synonyms]
+== synonym_sources Object 
+
+The `synonym_sources` object contains a list of all collections that the Search index should use to find synonyms for words used in a Search query. 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=synonym_sources]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `synonym_sources` object is a child object of the <<analysis,analysis object>>. 
+It contains any number of <<synonym-name,{synonym_collection_name} objects>>:
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|\{synonym_collection_name\} |Object |Yes a|
+
+Set the name of this object to the name you want to use to describe a synonym collection.
+
+Add a synonym collection to your Search index to return search results for words that have similar meanings to an initial search string, instead of strictly exact matches. 
+
+You can reference the `\{synonym_collection_name\}` object elsewhere in your Search index definition to use the synonym collection. 
+
+For more information about the properties in an `\{synonym_collection_name\}` object, see <<synonym-name,>>. 
+
+|====
+
+[#synonym-name]
+=== \{synonym_collection_name\} Object
+
+The `\{synonym_name\}` object defines a synonym collection for a Search index:
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=synonym_collection]
+----
+
+A `\{synonym_collection_name\}` object is a child object of the <<synonyms,>>. 
+It contains the following properties:
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|collection |String |Yes a|
+
+Set the `collection` property to the name of a collection in the same bucket and scope where you created your Search index.
+
+This collection should contain documents that are not added to your Search index as <<child-fields,>>, but contain synonym definitions for words that might appear in those fields.
 
 |layouts |Array |Yes a|
 
