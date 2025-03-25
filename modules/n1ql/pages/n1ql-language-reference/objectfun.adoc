@@ -109,6 +109,62 @@ SELECT OBJECT_CONCAT({"abc": 1}, {"def": 2}, {"ghi": 3}, {"ghi": 4}, {"ghi": [5,
 ----
 ====
 
+[[fn-obj-concat2,OBJECT_CONCAT2()]]
+== OBJECT_CONCAT2(`expr`, `expr` ...)
+
+=== Description
+
+This function concatenates multiple input objects into a single new object, and requires at least two input objects to work. 
+Unlike <<fn-obj-concat>>, this function supports both plain objects and arrays of objects as arguments. 
+
+
+=== Arguments
+
+expr:: An expression representing an object or an array of objects. 
+The first argument must be a plain object and cannot be an array. 
+
+=== Return Value
+
+An object constructed by concatenating all the input objects.
+If any of the input objects contain the same attribute name, the attribute from the last relevant object in the input list is copied to the output; similarly-named attributes from earlier objects in the input list are ignored.
+
+=== Examples
+
+[[obj-concat2-ex,OBJECT_CONCAT2() Example]]
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_CONCAT2({"abc": 1}, {"def": 2}, {"ghi": 3}, {"ghi": 4}, {"ghi": [5, 6, 7]},{"jkl": [{"mno": 8}, {"pqr": 9}]} );
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": {
+      "abc": 1,
+      "def": 2,
+      "ghi": [
+        5,
+        6,
+        7
+      ],
+      "jkl": [
+        {
+          "mno": 8
+        },
+        {
+          "pqr": 9
+        }
+      ]
+    }
+  }
+]
+----
+====
+
 [[fn-obj-field,OBJECT_FIELD()]]
 == OBJECT_FIELD(`object`, `field`)
 
