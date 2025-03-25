@@ -11,11 +11,11 @@ public class InsertCourses {
 
     public static void main(String[] args) {
         
-        String endpoint = "<<connection-string>>"; // Replace this with Connection String
+        String connectionString = "<<connection-string>>"; // Replace this with Connection String
         String username = "<<username>>"; // Replace this with username from cluster access credentials
         String password = "<<password>>"; // Replace this with password from cluster access credentials
         
-        Cluster cluster = Cluster.connect(endpoint, ClusterOptions.clusterOptions(username, password)
+        Cluster cluster = Cluster.connect(connectionString, ClusterOptions.clusterOptions(username, password)
                     .environment(env -> env.applyProfile("wan-development"))
         );
 
