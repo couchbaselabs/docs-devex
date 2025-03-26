@@ -8,7 +8,8 @@
 {description}
 
 == Introduction
-Couchbase is a schema-less JSON document database designed for high performance, scalability, and fast development. This tutorial teaches you about the key concepts behind Couchbase and how they differ from traditional SQL database systems like MySQL and Oracle.
+Couchbase is a schema-less JSON document database designed for high performance, scalability, and fast development. 
+This tutorial teaches you about the key concepts behind Couchbase and how they differ from traditional SQL database systems like MySQL and Oracle.
 
 IMPORTANT: This tutorial is designed for use with Capella Operational cloud services.
 If you wish to use a standalone or Docker installation of Couchbase, see the xref:server:tutorials:couchbase-tutorial-student-records.adoc[Server Developer Tutorial]. 
@@ -20,12 +21,17 @@ The model consists of three record types:
 
 [horizontal]
 *student*:: Information about individual students, like name and date of birth.
-*course*:: Courses the students can take. Includes course name, faculty, and the number of credit points associated with the course. Students can take more than one course at a time.
-*enrollment*:: Information related to courses the students are taking. In a relational database, this is usually a link record that creates a relationship between a student and a course.
+
+*course*:: Courses the students can take. Includes course name, faculty, and the number of credit points associated with the course. 
+Students can take more than one course at a time.
+
+*enrollment*:: Information related to courses the students are taking. 
+In a relational database, this is usually a link record that creates a relationship between a student and a course.
 
 === Relational Model
 
-In a relational model, the database contains a list of students and a list of courses. Each student can enroll in multiple courses.
+In a relational model, the database contains a list of students and a list of courses. 
+Each student can enroll in multiple courses.
 
 A student’s enrollment record is stored in a separate table called `enrollment`, which links that record to the courses they are enrolling in.
 
@@ -34,24 +40,27 @@ A student’s enrollment record is stored in a separate table called `enrollment
 include::partial$diagrams/student-record-erd.puml[]
 ....
 
-The `enrollment` table highlights a challenge with the relational model: each table is based on a fixed schema that only supports a single data object type, which means you cannot store a student in the same table as their enrollment record.
+The `enrollment` table highlights a challenge with the relational model, each table is based on a fixed schema that only supports a single data object type, which means you cannot store a student in the same table as their enrollment record.
 
 === Document Model
 
-Couchbase uses a document model that stores each record as a JSON document. The document model:
+Couchbase uses a document model that stores each record as a JSON document. 
+The document model:
 
 - Contains simple scalar types and complex types, like nested records and arrays
 
 - Lets you store complex types without decomposing them to a second table
 
-In this tutorial, the document model stores the list of enrollment records with the student records. Each enrollment record contains a reference to the course that it relates to.
+In this tutorial, the document model stores the list of enrollment records with the student records. 
+Each enrollment record contains a reference to the course that it relates to.
 
 [plantuml,student-document-database-design,svg]
 ....
 include::partial$diagrams/student-document-database-design.puml[]
 ....
 
-With JSON, you can change the structure of the document without having to rebuild schemas. For example, you can add a new field to store students' email addresses without migrating existing data to a new schema.
+With JSON, you can change the structure of the document without having to rebuild schemas. 
+For example, you can add a new field to store students' email addresses without migrating existing data to a new schema.
 
 In a document database, a student’s record and their course records can look similar to this:
 
@@ -97,9 +106,11 @@ In a document database, a student’s record and their course records can look s
 }
 ----
 
-Hilary’s enrollment is stored in the same document as her student details, which means child information is stored with its parent. This structure lets you access and retrieve all of Hilary’s details with one search and without the need for complex table joins.
+Hilary’s enrollment is stored in the same document as her student details, which means child information is stored with its parent. 
+This structure lets you access and retrieve all of Hilary’s details with one search and without the need for complex table joins.
 
-NOTE: You should not store a student with their course record as it can lead to data duplication and make it difficult to maintain your data. For example, you would need to access every single student record in your cluster to change the `credit-points`.
+NOTE: You should not store a student with their course record as it can lead to data duplication and make it difficult to maintain your data. 
+For example, you would need to access every single student record in your cluster to change the `credit-points`.
 
 == Next Steps
 
