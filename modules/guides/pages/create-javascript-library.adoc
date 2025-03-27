@@ -1,5 +1,5 @@
-= Create a JavaScript Library
-:description: Create an external library to store JavaScript functions and call them from {sqlpp}.
+= Create a User-Defined Function Library
+:description: Create an user-defined function (UDF) library to store and organize your JavaScript functions.
 :page-pagination:
 :page-topic-type: guide
 :page-toclevels: 2
@@ -9,86 +9,71 @@
 [abstract]
 {description}
 
-include::ROOT:partial$component-signpost.adoc[]
+To create a UDF library that you can use to xref:create-user-defined-functions.adoc[]:
 
-When you create a new library you can add a new JavaScript function to the library at the same time.
+. <<creating-the-library-and-adding-your-first-function,>>
+. <<add-functions-now,>>
 
-include::partial$before-you-begin.adoc[tag=body]
-include::partial$query-tools.adoc[tags=body;!thumbs]
+Or, you can <<add-functions-later,>>. 
 
 [#creating-the-library-and-adding-your-first-function]
-== Creating the Library and Adding JavaScript Code
+== Create a User-Defined Function (UDF) Library
 
-You can use the Query Workbench UI or the REST API to create a  library.
-The process for creating the library is as follows:
+To create a new UDF library from the Query Tab:
 
-include::partial$javascript-udfs/diagrams.adoc[tags=javascript-udf-library-creation-sequence]
-
-*(1) Create library*:: Create the library by creating the logical storage for the library.
-
-*(2) Add the JavaScript function to the library*:: Edit the library to add your JavaScript function.
-
-*(3) Create {sqlpp} User-Defined Function*:: The {sqlpp} User Defined Function is needed so that it can be called as part of {sqlpp} statements (such as `SELECT` and `EXECUTE FUNCTION`).
-Creating the {sqlpp} User-Defined Function is covered in xref:create-user-defined-function.adoc[].
-
-As shown in  xref:create-library-udf-sequence[xrefstyle=short], the library is created and the first function is added in the same step.
-
-[tabs] 
-====
-Query Workbench::
+. On the *Operational Clusters* page, select the operational cluster where you want to work with user-defined functions. 
+. Go to menu:Data Tools[Query].
+. In the Data Insights area, to the left of the query editor, find the *Functions* section. 
+. Next to the *Functions* section header, click menu:Create (+)[Library].
+. In the *Library Name* field, enter a name for your new UDF library. 
+. Choose the access level for your UDF library: 
+.. Choose *Global* to allow all buckets and scopes on this cluster to use functions in this library.
+.. Choose *Specific* to choose a specific bucket and scope on this cluster that can use this library.
 +
---
+Use this bucket and scope as the namespace for xref:create-user-defined-function.adoc[your user-defined function] to use this library and its functions later.
+. (Optional) Add functions to your UDF library.
+See <<add-functions-now,>>.
+. Click btn:[Create].
 
-. Select btn:[Query] to access the Query Workbench, then select btn:[UDF] Query Workbench menu.
+[#add-functions-now]
+== Add Functions to a New User-Defined Function (UDF) Library
+
+To add functions to your new UDF library while you create your library: 
+
+. Do one of the following: 
+.. To manually define functions for your library, on the *Define Functions* tab, enter the code for each function. 
+.. To import a `.js` file that contains function definitions, on the *Import Library* tab, drag and drop or choose your `.js` file.
 +
-image::javascript-udfs/navigate-to-udf-query.png[alt="route to the user-defined functions screen"]
+TIP: Each function should have an assigned name and follow the https://en.wikipedia.org/wiki/ECMAScript[ECMAScript] standard. 
 
-. Click on the *{plus} add function library* link in the `JavaScript Function Libraries` table to show the `Add Library` screen.
+[#add-functions-later]
+== Add Functions to an Existing User-Defined Function (UDF) Library
 
-. Select your `Namespace` from the drop-down lists.
-In this example, the namespace has been set to the `inventory` scope inside the `travel-sample` bucket. 
-You also have the option of leaving the Namespace unset, which will the library accessible at the cluster level.
+To add or edit functions in an existing UDF library: 
+
+. On the *Operational Clusters* page, select the operational cluster where you want to work with user-defined functions. 
+. Go to menu:Data Tools[Query].
+. In the Data Insights area, to the left of the query editor, find the *Functions* section. 
+. Next to the user-defined library where you want to add a function, click menu:More Options (&vellip;)[Edit].
+. Do one of the following: 
+.. To manually define functions for your library, on the *Create Functions* tab, enter or edit the code for each function. 
+.. To import a `.js` file that contains function definitions, on the *Import Library* tab, drag and drop or choose your `.js` file.
 +
-image::javascript-udfs/add-scoped-library.png[,500]
-+
-.A Note on Namespaces
-[sidebar]
-****
-The `Namespace` defines the `scope` of the library within the containing bucket.
-(You can read about scopes xref:clusters:data-service/scopes-collections.adoc[here].)
-Setting the namespace means that functions in the library can only be called users who have their context set to the same scope.
-****
+TIP: Each function should have an assigned name and follow the https://en.wikipedia.org/wiki/ECMAScript[ECMAScript] standard.
+. Click btn:[Update].
 
-. Enter a name for the library in the `Library Name` field.
+[#delete-udf]
+== Delete a User-Defined Function (UDF) Library
 
-. Add your own function to the library, for example:
-+
-[source, javascript]
-----
-include::example$javascript-udfs/get-business-days.js[]
-----
-. Save the library by pressing the btn:[Save] button.
-+
-TIP: You can, of course, create an empty library and add functions to it later.
---
+To delete an existing UDF library: 
 
+. On the *Operational Clusters* page, select the operational cluster where you want to delete a UDF library. 
+. Go to menu:Data Tools[Query].
+. In the Data Insights area, to the left of the query editor, find the *Functions* section. 
+. Next to the user-defined library where you want to add a function, click menu:More Options (&vellip;)[Delete].
+. Confirm that you want to delete your UDF library. 
+. Click btn:[Delete Library].
 
-REST API::
-+
---
-. Start a shell session.
-. Run a `curl` command to create a JavaScript library within a desired scope.
-+
-[source, console]
-----
-include::example$javascript-udfs/create-scoped-javascript-function-with-rest.sh[]
-----
-The parameters in the URL denote that the function should reside in the `travel-sample` bucket, under the `inventory` scope within that bucket.
---
-====
+== Next Steps
 
-When you have created an external library and added JavaScript code, you must create an {sqlpp} user-defined function to reference the JavaScript code in the library, so it can be called as part of any {sqlpp} statement.
-
-== Related Links
-
-include::partial$javascript-udfs/further-reading.adoc[tags="user-defined-functions-ui;rest-create-library-call"]
+To use your JavaScript functions from {sqlpp} after you have added them to a library, see xref:create-user-defined-function.adoc[]. 

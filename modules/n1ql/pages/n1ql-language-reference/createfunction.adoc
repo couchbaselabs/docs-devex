@@ -42,52 +42,13 @@ If you want to call a user-defined function outside of the current query context
 
 Finally, it is important to note that a global function is _not_ the same as a scoped function stored in the default scope in a bucket.
 
-ifdef::flag-devex-javascript-udfs[]
 include::javascript-udfs:partial$libraries-and-scopes.adoc[tags=extract]
-endif::flag-devex-javascript-udfs[]
 
 include::javascript-udfs:partial$sqlpp-managed-udfs.adoc[]
 
 == Prerequisites
 
-[cols="2,3"]
-|===
-| To manage ... | You must have ...
-
-| Global inline functions
-| *Manage Global Functions* role.
-
-| Scoped inline functions
-| *Manage Scope Functions* role, with permissions on the specified bucket and scope.
-
-| Global external functions
-| *Manage Global External Functions* role.
-
-| Scoped external functions
-| *Manage Scope External Functions* role, with permissions on the specified bucket and scope.
-|===
-
-Users with the *Manage Scope External Functions* role also have read-only access to any global external library.
-
-[cols="2,3"]
-|===
-| To execute ... | You must have ...
-
-| Global inline functions
-| *Execute Global Functions* role.
-
-| Scoped inline functions
-| *Execute Scope Functions* role, with permissions on the specified bucket and scope.
-
-| Global external functions
-| *Execute Global External Functions* role.
-
-| Scoped external functions
-| *Execute Scope External Functions* role, with permissions on the specified bucket and scope.
-|===
-
-For more details about user roles, see
-xref:server:learn:security/authorization-overview.adoc[Authorization].
+* To manage user-defined functions on your cluster, you must have the xref:projects:project-roles.adoc#project-owner-role[`Project Owner`] or the xref:projects:project-roles.adoc#project-cluster-data-reader-writer[`Cluster Data Reader/Writer`] role. 
 
 == Syntax
 
@@ -202,9 +163,7 @@ If you need to return multiple values, construct an array.
 :section: external
 === External Functions
 
-ifdef::flag-devex-javascript-udfs[]
 There are two alternative syntaxes for defining an external function: one where the function code is stored in an external library, and one for creating a {sqlpp} managed user-defined function.
-endif::flag-devex-javascript-udfs[]
 
 [source,ebnf]
 ----
@@ -231,31 +190,19 @@ include::createfunction.adoc[tag=arguments]
 
 [Optional] Use this parameter where the function code is stored in an external library.
 
-ifndef::flag-devex-javascript-udfs[]
-Note that Capella does not currently support a way to create or manage an external library.
-endif::flag-devex-javascript-udfs[]
-
-ifdef::flag-devex-javascript-udfs[]
 The name of the JavaScript function that you want to use for the user-defined function.
 This parameter is a string and must be wrapped in quotes.
-endif::flag-devex-javascript-udfs[]
 
 [[external-library]]
 ==== External Library
 
 [Optional] Use this parameter where the function code is stored in an external library.
 
-ifndef::flag-devex-javascript-udfs[]
-Note that Capella does not currently support a way to create or manage an external library.
-endif::flag-devex-javascript-udfs[]
-
-ifdef::flag-devex-javascript-udfs[]
 The name of the JavaScript library that contains the JavaScript function you want to use.
 This parameter is a string and must be wrapped in quotes.
 
 The name of a scoped external library must include the bucket name, the scope name, and the library name, separated by slashes.
 For example, to refer to a scoped library called `my-library` located in the `inventory` scope within the `travel-sample` bucket, you would specify the library name as `travel-sample/inventory/my-library`.
-endif::flag-devex-javascript-udfs[]
 
 [[javascript]]
 ==== Function Body
@@ -639,9 +586,7 @@ endif::flag-devex-javascript-udfs[]
 
 == Related Links
 
-ifdef::flag-devex-javascript-udfs[]
-* To manage external libraries and external functions, see xref:n1ql-rest-functions:index.adoc[].
-endif::flag-devex-javascript-udfs[]
+* To manage external libraries and external functions, see xref:guides:create-javascript-library.adoc[].
 * To execute a user-defined function, see xref:n1ql-language-reference/execfunction.adoc[].
 * To see the execution plan for a user-defined function, see xref:n1ql-language-reference/explainfunction.adoc[].
 * To include a user-defined function in an expression, see xref:n1ql-language-reference/userfun.adoc[].
