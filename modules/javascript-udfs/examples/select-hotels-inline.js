@@ -1,14 +1,14 @@
 function selectHotels() {
     
-    var q = SELECT * FROM `travel-sample`.`inventory`.`hotel`;    // <.>
+    var q = SELECT * FROM `travel-sample`.`inventory`.`hotel`;  
     var res = [];
 
-    for (const doc of q) {   // <.>
+    for (const doc of q) {  
         
-        res.push(doc);      // <.>
+        res.push(doc);     
         
     }
     
-    return res;    // <.>
+    return res;  
     
 }
