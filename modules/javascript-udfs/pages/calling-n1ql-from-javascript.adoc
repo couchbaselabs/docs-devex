@@ -1,14 +1,15 @@
 = Calling {sqlpp} from JavaScript
-:description: Executing {sqlpp} statements from JavaScript functions.
+:description: You can run {sqlpp} statements from inside the JavaScript code you use for a user-defined function. 
+:page-topic-type: guide
 :page-toclevels: 2
 :stem:
 
 [abstract]
 {description}
 
-== Introduction
+User-defined functions support calling JavaScript and executing {sqlpp} statements together. 
 
-As well as being able to call JavaScript functions from {sqlpp}, you can also call {sqlpp} statements from inside your JavaScript functions.
+For more information about user-defined functions in Capella, see xref:guides:javascript-udfs.adoc[].
 
 [#calling-statements-inline]
 == Calling {sqlpp} Statements Inline
@@ -22,53 +23,59 @@ include::example$add-airline-inline-call.js[]
 
 == Executing {sqlpp} Statements Using the N1QL() Call
 
-In addition, you can also execute a {sqlpp} statement by calling it from the `N1QL(…)` function.
+You can also execute a {sqlpp} statement by calling it from the `N1QL(…)` function.
+
 [source, javascript]
 ----
 include::example$add-airline-n1ql-call.js[]
 ----
 
-NOTE: Behind the scenes, the inline call method will generate the equivalent `{sqlpp}` call, so whichever you choose to use will come down to personal preference.
+NOTE: The `N1QL()` function generates the equivalent {sqlpp} call.
+You can choose to use either method and get the same results.
+The `N1QL()` function changes your available parameter support.
+See <<pass-parameters,>>.
 
 
 == Side Effects
 
-Functions executed as part of expressions cannot have side effects that will change data stored by the Couchbase engine.
-For example, this statement:
+If you choose to use a {sqlpp} statement inside a JavaScript function, that function cannot have side effects that change data stored by Capella. 
+
+For example, in this {sqlpp} statement, the `AddAirline()` function attempts to alter data, which may be an unintended side effect.
+The statement returns an error:
 
 [source, sqlpp]
 ----
 include::example$add-airline-with-side-effect.n1ql[]
 ----
 
-will generate an error because the `AddAirline()` function will attempt to alter data, which the caller may be unaware of.
-
 IMPORTANT: Functions that change data must be called using the `EXECUTE FUNCTION` statement.
 
 
 == Returning Values from {sqlpp} Statements
 
-As shown in the <<calling-statements-inline, examples above>>, embedded {sqlpp} statements  return values which can be used later on in your code.
+An embedded {sqlpp} statement can return values that you can use later in your JavaScript code for a user-defined function.
 
-The values returned from the statement calls are JavaScript https://www.w3schools.com/js/js_object_iterables.asp[iterators^]: lists of values or documents returned from the database. 
-In the next example, you're going to retrieve a list of the hotels stored in the `travel-sample` database:
+The values returned from statement calls are JavaScript https://www.w3schools.com/js/js_object_iterables.asp[iterators^]. 
+Iterators are lists of values or documents returned from your cluster. 
+
+In the following example, the function `selectHotels()` retrieves a list of hotels stored in the `travel-sample`.`inventory`.`hotel` collection.
+It returns the list of hotels as an iterator.
+The iterator is stored in the variable, `q`.
+The function then iterates through each item in `q` to create and return a new result array, `res`: 
 
 [source, javascript]
 ----
 include::example$select-hotels-inline.js[]
 ----
 
-<.> The {sqlpp} statement returns an iterator containing the items retrieved by the query.
-<.> Using the standard JavaScript iterator pattern to loop through the items returned in `q`.
-<.> Add the current document from the iterator to the result array `res`.
-<.> Once all the items have been retrieved, return the result array.
-
 [IMPORTANT]
 ====
-If an inline statement/{sqlpp} call does not return a value, then the associated {sqlpp} statement is executed as part of a synchronous operation. i.e. the runtime will wait until the statement completes before moving on to the next line of JavaScript.
+If an inline statement or {sqlpp} call does not return a value, then the associated {sqlpp} statement is executed as part of a synchronous operation.
+This means the runtime will wait until the statement completes before moving on to the next line of JavaScript.
 
-If the inline statement/{sqlpp} call returns a value then it is executed _asynchronously_: execution continues before the iterator is returned.
-Each document is fetched from the bucket as it requested by the iterator.
+If the inline statement or {sqlpp} call returns a value, then it's executed asynchronously.
+Execution of the JavaScript continues before the iterator is returned.
+Each document is fetched from the bucket as it's requested by the iterator.
 
 [plantuml,inline-call-sequence,svg,subs=attributes]
 ....
@@ -76,12 +83,14 @@ include::partial$diagrams/inline-call-sequence.puml[]
 ....
 ====
 
+[#pass-parameters]
 == Passing Parameters to {sqlpp} Statements
 
-You can pass parameters from your JavaScript to your {sqlpp} statements.
-Parameters can either be _positional_ or _named_.
+You can pass parameters from your JavaScript code to your {sqlpp} statements.
+Parameters can either be *positional* or *named*.
 
 Positional:: The parameters are applied to the statement in the order they appear in the list.
+For example, in the following `addAirlineWithPositionalParameters` function, the `id` would be set as `1600`, type as `airline`, `name` to the supplied value of the `name` variable, and so on:
 +
 [source, javascript]
 ----
@@ -89,42 +98,41 @@ include::example$add-airline-positional-pararamers.js[]
 ----
 
 Named:: The parameters are given a mnemonic name attached to the value, so they can be included directly in the {sqlpp} statement.
+For example, in the following `addAirlineWithNamedParameters` function, the names of the parameters passed into the JavaScript function are used in the {sqlpp} statement, without needing to assign the parameters in a separate step.
+The parameters are assigned by prefixing the parameter names with a `$`:
 +
 [source, javascript]
 ----
 include::example$add-airline-named-parameters.js[]
 ----
-+
-NOTE: The names of the parameters passed into the JavaScript function are used in the {sqlpp} statement without any need to assign the parameters in a separate step.
 
-[sidebar]
-****
-{sqlpp} calls support both _named_ and _positional_ parameters.
-Inline calls only support named parameters.
+Calling {sqlpp} from the `N1QL()` function supports both *named* and *positional* parameters.
+Calling a {sqlpp} statement or expression inline supports only *named* parameters.
 
 [cols="^,^,^"]
 
 |===
 |Call |Named Parameters |Positional Parameters
 
-|{sqlpp} calls
+|Calling {sqlpp} using `N1QL()`
 | ✔️
-| ✔
+| ✔️
 
 |Inline Calls
 | ✔️
 | ❌
 |===
 
-****
 
 == Transactions
 
 Transactions are supported from {sqlpp} statements called from JavaScript functions.
 
-* The function can run statements in a transaction that was started before the function was executed. 
-* The function can run a statement that starts the transaction.
-* The function can run a statement that rolls back a transaction.
+Functions can: 
+
+* Run statements in a transaction that was started before the function was executed. 
+* Run a statement that starts the transaction.
+* Run a statement that rolls back a transaction.
 
 [NOTE]
 ====
@@ -137,47 +145,56 @@ include::partial$diagrams/transactions-and-iterators.puml[]
 ....
 ====
 
-== Role-Based Access Control
+== Role-Based Access Control and Functions
 
-In order to execute {sqlpp} statements as part of a JavaScript function, the user executing the function must have the appropriate privileges to perform the action on any objects referenced in the {sqlpp} statement.
+To execute a {sqlpp} statement from a JavaScript function, you must have the correct permissions on your account to perform actions on any objects referenced in the {sqlpp} statement.
 
-== Executing {sqlpp} Statements that Call Functions
+For more information about roles that control data access in Capella, see xref:projects:project-roles.adoc[].
 
-It is often the case that JavaScript function will call a {sqlpp} statement that may itself call another JavaScript function.
-However, it is important to be aware that each JavaScript function call executed from a parent call will use a new JavaScript worker process to run. 
-The deeper the calls are nested, the fewer JavaScript workers are available to run, so the calling chain will eventually fail and throw an error.
-This can be demonstrated using a recursive call sequence as shown below:
+== Executing {sqlpp} Statements That Call Functions
+
+You can also create a JavaScript function that calls a {sqlpp} statement, which then calls another JavaScript function. 
+
+Be careful when nesting calls to multiple JavaScript functions. 
+Each function call executed from a parent call uses a new JavaScript worker process to run.
+The deeper you nest your calls, the fewer JavaScript workers you will have available to execute those calls. 
+Your calling chain will eventually fail and throw an error. 
+
+For example, if you used the following user-defined function, `doRecursion()`:
 
 [source, javascript]
 ----
 include::example$do-recursion.js[]
 ----
 
-Then executing the function:
+Executing the function with the `EXECUTE FUNCTION` call would start an infinite recursion: 
  
 [source, sqlpp]
 ----
 include::example$execute-do-recursion.n1ql[]
 ----
 
-returns the following result:
+The function call would eventually return the following result, stopping the call after too many nested function calls exhausted the JavaScript workers: 
 
 :number-of-calls: 10
 [source, json, subs="+attributes"]
 ----
 include::example$do-recursion-response.jsonc[]
 ----
-<.> The call failed after {number-of-calls} nested call, which exhausted the number of JavaScript workers available during the call sequence. 
 
 [NOTE]
 ====
-The JavaScript workers are created when the Couchbase server is started up.
+JavaScript workers are created on your Capella cluster based on the following formula: 
 
 asciimath:["Number of JavaScript Workers" = 4 xx "Number of CPUs"]
 
-The service will automatically prevent recursive calls if there are fewer than 50% JavaScript workers available.
+Capella will automatically prevent recursive calls if there are fewer than 50% of the total JavaScript workers available.
 ====
 
-== Further Reading
+== See Also
 
-include::guides:partial$javascript-udfs/further-reading.adoc[tags="select;execute-function;transactions;rbac"]
+* xref:calling-javascript-from-n1ql.adoc[]
+* xref:handling-errors-javascript-udf.adoc[]
+* xref:n1ql:n1ql-language-reference/execfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/index.adoc[]
+* xref:guides:transactions.adoc[]

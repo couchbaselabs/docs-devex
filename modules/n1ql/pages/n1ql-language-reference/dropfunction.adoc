@@ -62,12 +62,12 @@ footnote:context[That is, you are dropping a global function, and the function d
 
 == Usage
 
-When you drop a user-defined function whose definition is stored in an external library, the external library and function on which the user-defined function depended are not deleted.
-This enables you to create a new user-defined function with a different name, or a different number of parameters, using the same JavaScript library and function.
+When you drop a user-defined function whose definition is stored in a UDF library, the library and function on which the user-defined function depended are not deleted.
+This enables you to create a new user-defined function with a different name, or a different number of parameters, using the same UDF library and JavaScript function.
 
-To change or delete an external library or the external function code, see xref:guides:create-javascript-library.adoc#delete-udf[Delete a User-Defined Function Library].
+To change or delete a UDF library or the JavaScript function code, see xref:guides:create-javascript-library.adoc#delete-udf[Delete a User-Defined Function Library].
 
-When you drop a {sqlpp} managed user-defined function, the associated external function code is deleted also.
+When you drop an inline {sqlpp} user-defined function, the associated JavaScript function code is deleted also.
 
 == Examples
 
@@ -90,7 +90,7 @@ SELECT * FROM system:functions;
 
 .Drop a {sqlpp} managed user-defined function
 ====
-This statement deletes a {sqlpp} managed user-defined function called `add100`.
+This statement deletes an inline {sqlpp} user-defined function called `add100`.
 
 [source,sqlpp]
 ----
@@ -105,10 +105,9 @@ SELECT * FROM system:functions;
 ----
 ====
 
-ifdef::flag-devex-javascript-udfs[]
-.Drop an external function
+.Drop a UDF library function
 ====
-These statements delete two external functions:
+These statements delete two UDF library functions:
 
 . A function called `geohash`, which depends on the JavaScript `encodeGeoHash` function in the `geohash-js` library;
 . A function called `adjacent`, which depends on the JavaScript `calculateAdjacent` function in the `geohash-js` library.
@@ -120,7 +119,8 @@ DROP FUNCTION geohash;
 DROP FUNCTION adjacent;
 ----
 
-You can run the following command to check that the JavaScript `geohash-js` library and the `encodeGeoHash` and `calculateAdjacent` functions are still available.
+////
+You can run the following command to check that the `geohash-js` library and the `encodeGeoHash` and `calculateAdjacent` functions are still available.
 
 [source,sh]
 ----
@@ -128,12 +128,12 @@ curl -v -X GET \
 http://localhost:8093/evaluator/v1/libraries/geohash-js \
 -u Administrator:password
 ----
-====
-endif::flag-devex-javascript-udfs[]
+==== 
+////
 
 == Related Links
 
-* To create user-defined functions, refer to xref:n1ql-language-reference/createfunction.adoc[].
+* To create user-defined functions, see xref:n1ql-language-reference/createfunction.adoc[].
 * To manage external libraries and external functions, see xref:guides:create-javascript-library.adoc[].
 * To execute a user-defined function, see xref:n1ql-language-reference/execfunction.adoc[].
 * To see the execution plan for a user-defined function, see xref:n1ql-language-reference/explainfunction.adoc[].
