@@ -1465,7 +1465,7 @@ LIMIT 1;
 
 === Description
 
-This function takes an object and returns a new one where all the values are replaced with their data types as reported by the TYPE() function.
+This function returns the data type of every field in the supplied object, as reported by the xref:n1ql-language-reference/typefun.adoc#fn-type-type[TYPE()] function.
 
 === Arguments
 
@@ -1482,7 +1482,10 @@ An object with the same fields as the input object, but with all values replaced
 .Query
 [source,sqlpp]
 ----
-SELECT OBJECT_TYPES({"flight":"AI444","duration":180,"gate":NULL,"aircraft":{"model":"Boeing 737"}}) 
+SELECT OBJECT_TYPES({"flight": "AI444",
+                     "duration": 180,
+                     "gate": NULL,
+                     "aircraft": {"model": "Boeing 737"}}) 
     AS object_types;
 ----
 
@@ -1507,8 +1510,8 @@ SELECT OBJECT_TYPES({"flight":"AI444","duration":180,"gate":NULL,"aircraft":{"mo
 
 === Description
 
-This function takes an object and returns a new one where all non-composite field values replaced with their data types as reported by the TYPE() function. 
-Additionally, all composite type fields (ARRAYs and OBJECTs) are recursively processed in the same way, ensuring that all nested values are also replaced with their types. 
+This function returns the data type of every non-composite field in the supplied object, as reported by the xref:n1ql-language-reference/typefun.adoc#fn-type-type[TYPE()] function.
+Additionally, all composite type fields (ARRAYs and OBJECTs) are recursively processed in the same way, returning the data types of all nested values. 
 
 === Arguments
 
@@ -1525,7 +1528,13 @@ An object with the same fields as the input object, but with all values replaced
 .Query
 [source,sqlpp]
 ----
-SELECT OBJECT_TYPES_NESTED({"flight":"AI444","crewMembers":["Alice Bobson","John Flo",true],"gate":NULL,"aircraft":{"model":"Boeing 737", "capacity":200}}) 
+SELECT OBJECT_TYPES_NESTED({"flight":"AI444",
+                            "crewMembers": ["Alice Bobson",
+                                            "John Flo",
+                                            true],
+                            "gate": NULL,
+                            "aircraft": {"model": "Boeing 737",
+                                         "capacity":200}}) 
     AS object_types_nested;
 ----
 
