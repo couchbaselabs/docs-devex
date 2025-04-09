@@ -48,6 +48,8 @@ a| [%hardbreaks]
 <<querying-keyspaces,system:keyspaces>>
 <<querying-indexes,system:indexes>>
 <<querying-dual,system:dual>>
+<<querying-groups, system:group_info>>
+<<querying-bucket-info, system:bucket_info>>
 
 a| [%hardbreaks]
 xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#vitals[system:vitals]
@@ -449,6 +451,85 @@ SELECT 2+5 FROM system:dual
 ----
 
 The query returns the result of the expression, 7 in this case.
+
+[#querying-groups]
+== Query Groups
+
+You can query group information using the `system:group_info` keyspace as follows:
+
+[source,sqlpp]
+----
+SELECT * FROM system:group_info;
+----
+
+This catalog contains the following attributes:
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**description** +
+__required__
+|User-defined description associated with the group.
+|String
+
+|**id** +
+__required__
+|ID of the group.
+|String
+
+|**ldap_group_ref** +
+__optional__
+|LDAP mapping associated with the group.  
+|String
+
+|**roles** +
+__required__
+|List of RBAC roles for the group.
+|Array of <<roles,roles>> objects
+|===
+
+[[roles]]
+**Roles**
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**bucket_name** +
+__optional__
+|Name of the bucket to which the role applies.
+|String
+
+|**collection_name** +
+__optional__
+|Name of the collection to which the role applies.
+|String
+
+|**role** +
+__required__
+|Specifies the RBAC role.
+|String
+
+|**scope_name** +
+__optional__
+|Name of the scope to which the role applies.
+|String
+|===
+
+[#querying-bucket-info]
+== Query Bucket Information
+
+The `system:bucket_info` (alias: `system:database_info`) keyspace provides comprehensive information about all buckets, including their metadata, configuration settings, memory usage, and other details.
+
+You can query the keyspace as follows:
+
+[source,sqlpp]
+----
+SELECT * FROM system:bucket_info;
+----
+
+The query returns the same data as the xref:server:rest-api:rest-buckets-summary.adoc[pools/default/buckets] REST API.
+However, the `vBucketServerMap.vBucketMap` field is returned in a more compact format as a pipe-delimited string, rather than an array of arrays.
 
 [#sys_my-user-info]
 == Monitor Your User Info
