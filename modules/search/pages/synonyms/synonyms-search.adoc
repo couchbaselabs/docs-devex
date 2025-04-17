@@ -1,0 +1,83 @@
+= Add Synonyms to a Search Index
+:page-topic-type: concept
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Add synonyms to a Search index to return matches for synonyms when running a Search with the Search Service.
+
+[abstract]
+{description}
+A synonym is a word or phrase that has an exact or near similar definition to another word or phrase in the same language.
+
+As of Couchbase Server version 8.0 and later, the Search Service supports a user-defined thesaurus on each Search index, divided into synonym collections with synonym documents.
+You can use this thesaurus to define what words function as synonyms inside your documents.
+
+For example, you could create a synonym document that defines `cat` as a synonym for `feline`. 
+A Search query that contains the term `cat` would also return matches for `feline`.
+Based on your specific synonym document configuration, a Search query for `feline` could also return results for `cat`.
+
+== Defining Synonyms 
+
+You can define synonyms for multiple languages in a single thesaurus, divided by a synonym collection. 
+
+The Search Service distributes synonym collections across the partitions in your Search index. 
+The synonym collections are gathered together to create a unified set, which the Search Service uses in the Search query.
+
+NOTE: To use synonyms in a Search index, your synonym documents and collections must not be included as fields in your Search index definition.
+Synonym documents and indexed fields must use the same analyzer to get the best results.
+Synonym documents also must follow the correct syntax.
+For more information, see xref:create-synonym-collection-docs.adoc[].
+
+== Running a Search for Synonyms 
+
+Synonym searches do not run recursively. 
+If you run a Search query for a single term, the Search Service will not run cascading searches for synonyms of that term's synonyms.
+
+For example, if you defined `fast` with the synonyms `quick` and `swift`, a search for `fast` returns results for `quick` and `swift`.
+It does not return results for synonyms of `quick` or `swift`, like `speedy` or `rapid`.
+
+You cannot use synonyms in a xref:vector-search:vector-search.adoc[Vector Search] query.
+Any synonyms in a Search index do not affect or contribute to the results of a Vector Search query.
+Synonyms cannot be used in xref:
+
+If you run a hybrid Search query, the Search Service executes your Vector Search query and accumulates synonyms, before combining the results.
+For more information about the process for scoring results with the Search Service, see xref:run-searches.adoc#scoring[Scoring for Search Queries].
+
+For xref:search-request-params.adoc#fuzziness[fuzzy queries], xref:search-request-params.adoc#prefix[prefix queries], and xref:search-request-params.adoc#wildcard[wildcard queries], the Search Service:
+
+. Collects synonyms 
+. Generates the terms to search for in your Search index
+. Runs the search
+
+Exact matches to Search query terms will always score higher than synonym term matches.
+
+// The title for the diagram
+// .Covering index
+
+// Specifies the diagram language, an optional anchor,
+// the name for the generated file, and the file type
+//[plantuml#optional_anchor,file-name,svg]
+
+// Indicates the start of the diagram
+//....
+//@startuml
+
+// The content of the diagram goes here
+// See https://plantuml.com/ for syntax help.
+
+// Indicates the end of the diagram
+//@enduml
+//....
+
+// To include a diagram as a partial, use the above syntax and save the file as .puml
+
+
+// To add another image:
+
+// image::filename.png["Enter some alt text that visually describes the content of the image", width, height, align=]
+
+// Omit the second colon to display an image inline.
+
+== See Also
+
+* xref:create-synonym-collection-docs.adoc[]
+* xref:add-synonym-source.adoc[]
