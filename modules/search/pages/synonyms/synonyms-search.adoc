@@ -1,0 +1,74 @@
+= Add Synonyms to a Search Index
+:page-topic-type: concept
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Add synonyms to a Search index to return matches for synonyms when running a Search with the Search Service.
+:stem:
+
+[abstract]
+{description}
+A synonym is a word or phrase that has an exact or near similar definition to another word or phrase in the same language.
+
+As of Couchbase Server version 8.0 and later, the Search Service supports a user-defined thesaurus on each Search index, divided into synonym collections with synonym documents.
+You can use this thesaurus to define what words function as synonyms inside your documents.
+
+For example, you could create a synonym document that defines `cat` as a synonym for `feline`. 
+A Search query that contains the term `cat` would also return matches for `feline`.
+Based on your specific synonym document configuration, a Search query for `feline` could also return results for `cat`.
+
+== Defining Synonyms 
+
+You can define synonyms for multiple languages in a single thesaurus, divided by a synonym collection.
+For example, you could have a separate synonym collection for English words, Spanish words, and German words.
+
+If your Search index is partitioned, the Search Service distributes synonym collections across your index partitions. 
+The synonym collections are gathered together to create a single thesaurus, which the Search Service uses in Search queries.
+
+NOTE: To use synonyms in a Search index, your synonym documents and collections must not be included as fields in your Search index definition.
+Synonym documents and indexed fields must use the same analyzer to get the best results.
+Synonym documents also must follow the correct syntax.
+For more information, see xref:create-synonym-collection-docs.adoc[].
+
+== Running a Search for Synonyms 
+
+Synonym searches do not run recursively. 
+If you run a Search query for a single term, the Search Service will not run cascading searches for synonyms of that term's synonyms.
+
+For example, if you defined `fast` with the synonyms `quick` and `swift`, a search for `fast` returns results for `quick` and `swift`.
+It does not return results for synonyms of `quick` or `swift`, like `speedy` or `rapid`.
+
+Exact matches to Search query terms will always score higher than synonym term matches.
+For fuzzy queries specifically: 
+
+* Exact term matches have a full score of stem:[x]
+* Synonyms for the exact term have a score of stem:[x/2]
+* Fuzzy match terms have the score stem:[x * (1/(1+fuzz\i\n\ess))]
+* Synonyms of a fuzzy term have the score stem:[x/2 * (1/(1+fuzz\i\n\ess))]
+
+You cannot use synonyms in a xref:vector-search:vector-search.adoc[Vector Search] query.
+Any synonyms in a Search index do not affect or contribute to the results of a Vector Search query.
+Synonyms cannot be used in xref:vector-search:pre-filtering-vector-search.adoc[pre-filtered Vector Search queries].
+
+You can return results from a synonym search when running a Search query through {sqlpp}.
+For example, if a Search index had a defined thesaurus with entries for `quality`, the following search would return any documents that contain the word `quality` or its synonyms: 
+
+[source, sqlpp]
+----
+select meta().id from `travel-sample`.`inventory`.`landmark` as t WHERE SEARCH(t, "quality"); 
+----
+
+=== Search Processing 
+
+If you run a hybrid Search query, the Search Service executes your Vector Search query and accumulates synonyms before combining the results.
+For more information about the process for scoring results with the Search Service, see xref:run-searches.adoc#scoring[Scoring for Search Queries].
+
+For xref:search-request-params.adoc#fuzziness[fuzzy queries], xref:search-request-params.adoc#prefix[prefix queries], and xref:search-request-params.adoc#wildcard[wildcard queries], the Search Service:
+
+. Collects synonyms to form the thesaurus
+. Generates the terms to search for in your Search index by consulting the appropriate dictionary
+. Runs the search
+
+== See Also
+
+* xref:synonyms/create-synonym-collection-docs.adoc[]
+* xref:synonyms/add-synonym-source.adoc[]
