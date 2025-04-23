@@ -87,7 +87,12 @@ If any of the input objects contain the same attribute name, the attribute from 
 .Query
 [source,sqlpp]
 ----
-SELECT OBJECT_CONCAT({"abc": 1}, {"def": 2}, {"ghi": 3}, {"ghi": 4}, {"ghi": [5, 6, 7]});
+SELECT OBJECT_CONCAT({"flight": "AF198"}, 
+    {"utc": "4:44:44"},
+    {"code": "green"}, 
+    {"code": "yellow"},
+    {"passengers": ["Corrine Hill", "Vallie Ryan"]}
+);       
 ----
 
 .Results
@@ -96,12 +101,12 @@ SELECT OBJECT_CONCAT({"abc": 1}, {"def": 2}, {"ghi": 3}, {"ghi": 4}, {"ghi": [5,
 [
   {
     "$1": {
-      "abc": 1,
-      "def": 2,
-      "ghi": [
-        5,
-        6,
-        7
+      "flight": "AF198",
+      "utc": "4:44:44",
+      "code": "yellow",
+      "passengers": [
+        "Corrine Hill",
+        "Vallie Ryan"
       ]
     }
   }
@@ -135,12 +140,13 @@ If any of the input objects contain the same attribute name, the attribute from 
 .Query
 [source,sqlpp]
 ----
-SELECT OBJECT_CONCAT2({"employee_id":1}, 
-            [ {"name": "John Doe"}, 
-              {"department": "Engineering"}, 
-              {"location": "New York"},
-              {"location":"California"}
-            ]
+SELECT OBJECT_CONCAT2(
+    {"flight": "AF198"},
+    [ {"utc": "4:44:44"},
+      {"code": "green"},
+      {"airline": "Air France"},
+      {"airline": "Delta"}
+    ]
 );
 ----
 
@@ -150,10 +156,10 @@ SELECT OBJECT_CONCAT2({"employee_id":1},
 [
   {
     "$1": {
-      "department": "Engineering",
-      "employee_id": 1,
-      "location": "California",
-      "name": "John Doe"
+      "flight": "AF198",
+      "utc": "4:44:44",
+      "code": "green",
+      "airline": "Delta"
     }
   }
 ]
