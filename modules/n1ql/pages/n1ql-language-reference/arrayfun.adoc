@@ -1157,10 +1157,26 @@ val1, val2, …:: [At least 1 is required] The input value or multiple values to
 
 Output Values::
 A new array with all occurrences of the specified [.var]`val` or multiple [.var]`val` fields removed from the array [.var]`expr`.
-
++
 If any of the arguments are `MISSING`, then it returns `MISSING`.
-
++
 If the first argument is not an array, then it returns `NULL`.
++
+[NOTE]
+====
+This function cannot be used to remove NULL values from an array as it uses an equality predicate when evaluating the array elements to remove. 
+Since NULL does not equal NULL, such values are not matched and remain in the array.  
+
+To remove NULL values, use the xref:n1ql-language-reference/collectionops.adoc#array[Array Collection Operator] instead. 
+For example:
+
+[source,sqlpp]
+----
+SELECT ARRAY name FOR name IN ["Ryan", NULL, "Corrine"] 
+WHEN name IS NOT NULL 
+END AS filtered_names;
+----
+====
 
 === Example
 ====
