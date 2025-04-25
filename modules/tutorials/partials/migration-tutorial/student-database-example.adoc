@@ -1,0 +1,33 @@
+[#student-record-sql-database-section]
+== Student Record database
+
+The database we will convert will consist of a relational structure with three tables:
+
+[plantuml,student-record-erd]
+.Student records SQL database
+....
+include::partial$diagrams/student-record-erd.puml[]
+....
+
+We will convert this table structure to a document model suitable for storage in our Couchbase bucket:
+
+[#document-model]
+[plantuml,student-document-database-design]
+.Student document model
+....
+include::partial$diagrams/student-document-database-design.puml[]
+....
+
+You will see that our document model is not an exact mapping of the SQL database:
+we have taken the `enrollments` records and added them directly as a list of sub-documents
+within each student record:
+
+[source, json]
+----
+[
+{"student-id": 1, 
+"enrollments": [{"course-id": 3, "final-score": null, "date-enrolled": "2024-04-18", "date-completed": null}, {"course-id": 1, "final-score": null, "date-enrolled": "2025-03-05", "date-completed": null}], "student-name": "Harriet Hill", "date-of-birth": "1970-03-06"},
+{"student-id": 2, "enrollments": [{"course-id": 1, "final-score": null, "date-enrolled": "2025-03-01", "date-completed": null}], "student-name": "Steven Morris", "date-of-birth": "1984-03-05"},
+{"student-id": 3, "enrollments": [{"course-id": null, "final-score": null, "date-enrolled": null, "date-completed": null}], "student-name": "Jenny Mills", "date-of-birth": "1969-11-06"}                    
+]
+----
