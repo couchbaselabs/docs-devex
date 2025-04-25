@@ -1,0 +1,236 @@
+= Migrating your Data from MySQL to Capella
+:description: Using MySQL as a starting point, this guide demonstrates \
+how to migrate your existing data from SQL tables to a Couchbase Capella instance.
+:page-topic-type: tutorial
+:page-pagination: full
+
+[abstract]
+{description}
+
+== Introduction
+
+In this tutorial, 
+you will make use of  `cbimport` to migrate an example test database from MySQL to Couchbase Capella.
+
+== Prerequisites
+
+Before you make a start, you will need a Capella instance to run the tutorial.
+If you do not currently have an instance, 
+then you can create a Capella trial here =>{nbsp}https://www.couchbase.com/downloads/?family=capella[Capella Trial]
+
+You will also need to download and install the Server Development Tools package, 
+which includes the `cbimport` command line application.
+You will find installation instructions for the Server Development Tools package here =>{nbsp}xref:cli:cli-intro.adoc#server-developer-tools-package[Server Development Tools package]
+
+If you're running through the examples, 
+then you will also need an existing MySQL installation with the preexisting table structure 
+defined in xref:student-record-sql-database-section[the following section].
+
+IMPORTANT: This tutorial makes use of the MySQL JSON functions that were introduced in version `5.7.22`.
+Make sure you have installed MySQL version `5.7.22` or later.
+
+include::server:tutorials:partial$migration-tutorial/student-database-example.adoc[]
+
+include::server:tutorials:partial$migration-tutorial/extract-sql-data.adoc[]
+
+
+== Create your cluster, bucket, scope, and collections
+
+Working on your Capella instance, you must first create the cluster (or use an existing cluster if you have one available). 
+We will assume that you are creating a cluster from scratch.
+You will also need to create the bucket, scope, and collections to accept the student data.
+
+'''
+.Create the cluster.
+
+. Sign in to your Capella instance. 
+You will be presented showing the operational clusters along with the project that the cluster is attached to.
+
+. Press the btn:[Create Cluster] button.
+
+. Now create a new project with a name of your choice. 
+
+. You will now be given the opportunity to create a new cluster which will be attached to your project.
+For this exercise, we're going to create a new project for our data migration, 
+so click on the link to take you to the Project list.
++
+image::tutorials:select-project.png[,60%]
++
+. Press the btn:[Create Project] button on the top right of the list. 
+This will take you to a dialog from where you can fill in the name of your new project.
++
+image::tutorials:create-project.png[,60%]
++
+. Enter a name for your project, then press btn:[Create Project]
+. Capella will create a new project for you and then switch back to the Project List. 
+You can navigate to your project by clicking on the link in the top left of the screen. 
++
+TIP: You can also navigate to your project by finding it in the Project List and clicking on its link.
++
+. On your project page, click on btn:[Create Cluster]
++
+image::tutorials:create-cluster.png[,60%]
++
+. Select your cluster options (you may use the _free_ option if it's available), then press btn:[Create Cluster]. +
+After a short interval, your new cluster will be provisioned.
++
+image::tutorials:new-cluster.png[,60%]
+
+'''
+
+.Create a bucket, scope, and collection for each cluster
+
+Now that we have created the cluster, we need to add a location to hold the migrated data.
+
+. Click on the name of your cluster from the Operational Clusters page.
+This will take you to the Cluster details page.
++
+image::tutorials:cluster-details.png[,60%]
+. From here, click on the btn:[Import Data] button. 
+This will take you to the menu:Data Tools[] page.
++
+image::tutorials:data-tools.png[,60%]
++
+. Select btn:[Load with cbimport] in the central panel.
+. Click on the btn:[+Create] button in the panel on the left. 
+You will now be presented with a dialog for creating a bucket.
++
+image::tutorials:create-bucket.png[,60%]
++
+. Fill in `student-bucket` for the name of your bucket.
+. Fill in `art-school-scope` for the scope.
+. Fill in `student-record-collection` for the collection inside the scope.
+. Click on btn:[Create]
+. We still need to create another collection to hold the course records, so press btn:[+Create] again.
++
+image::tutorials:add-course-record-collection.png[,60%]
++
+. Make sure that you are adding to an _existing_ bucket (`student-bucket`) and scope (`art-school-scope`). 
+Now add another collection: `course-record-collectiomn`.
+
+'''
+
+[#allow-ip-address]
+.Allow your IP Address
+
+Before running `cbimport` from your local machine, 
+you need to add your machine's IP address to Capella's allowed list.
+Navigate to your cluster's security settings and add your IP to the "Allowed IP addresses" list.
+
+. Click on menu:Settings[] from the top level menu.
++
+image::tutorials:settings-menu.png[,60%]
++
+. From the left-hand menu, select menu:Networking[Allowed IP Addresses]
+. Click the btn:[+ Add Allowed IP] button.
+. From the menu:Allowed IP[] screen, click on btn:[Add Current IP address], then click btn:[Add Allowed IP]
++
+image::tutorials:capella-add-allowed-ip-address.png[,60%]
+
+'''
+
+[#set-up-cluster-access-credentials]
+.Set up cluster access credentials
+
+When running `cbimport`, authentication credentials are required, which you can set up
+from menu:Security[] in Capella.
+
+. From the menu:Settings[] page, select menu:Security[Cluster Access]
+. Click on the btn:[+ Create Cluster Access] button.
++
+image::tutorials:new-cluster-access.png[]
++
+. Type `import` into the `Cluster Access Name` field with.
+. Add a password.
+. In the `Bucket Level Access` section, select `student-bucket` for the bucket, 
+`All Scopes` for the scope, and `Read/Write` for Access:
++
+image::tutorials:completed-access-page.png[,60%]
++
+. Click on btn:[Create Cluster Access] when you're done.
+
+'''
+[#download-security-certificate]
+.Download your security certificate
+To run `cbimport`, you will need to supply the security certificate for your Capella instance,
+which you can download from the menu:settings[] page.
+
+. From the top menu, click on menu:Settings[]
++
+image::tutorials:settings-menu.png[,60%]
++
+. Now, from the menu:Cluster Settings[] screen, click on menu:Security[Security Certificates] in the left-hand menu.
++
+image::tutorials:access-security-certificate.png[,60%]
++
+. On the menu:Security Certificate[] page, click on btn:[Download] to download your security certificate for the local machine.
++
+TIP: Make a note of the location where you stored it.
++
+. Return to the menu:Data Tools[] page by clicking on the link in the top level menu.
+
+== Generate and execute your `cbimport` command.
+
+The data tooling page can generate a correctly formatted `cbimport` command line based on your import data. 
+All you need to do is copy the command to your command line environment 
+and fill in details such as your access password and the location of your security certificate.
+
+'''
+
+.Create the `cbimport` command.
+
+. From the menu:Data Tools[] page, click on btn:[Load with cbimport] in the central panel.
++
+image::tutorials:select-cbimport.png[,60%]
++
+. Locate the `courses` JSON file you created in the xref:extract-sql-data[] section,
+then drag it into the `Upload Sample File` section in the central panel.
++
+TIP: Alternatively, you can click on `Choose a file` and load the file directly from the file chooser.
++
+. In the `Choose your target` section, select the `student-bucket`, `art-school-scope`, and the `course-record-collection`.
+. For `Document keys`, select `Field`, then pick the `course-id` field from the dropdown list.
+
+'''
+The `Copy generated command` field will contain the `cbimport` statement you will need to execute the import:
+
+[source, shell]
+.`cbimport` command
+----
+cbimport json --format lines --cluster couchbases://cb.wrrmzje92urkkyn.customsubdomain.nonprod-project-avengers.com --username <<username>> --password '<<password>>' --bucket "student-bucket" --scope-collection-exp "art-school-scope.course-record-collection" --dataset 'file://<<path>>/courses.json' --generate-key '%`course-id`%' --cacert <<path to downloaded cert file>> 
+----
+
+Before you can run the command, you will need to fill in the placeholders with information from your cluster:
+
+* Username and password. These are the details you created in the xref:set-up-cluster-access-credentials[] section.
+* the full path to your input source (`courses.json`)
+* the full path to your downloaded security certificate,
+which you downloaded in the xref:download-security-certificate[] section.
+
+Your command should resemble the following:
+
+[source,shell]
+----
+./cbimport json --format lines \
+--cluster couchbases://cb.wrrmzje92urkkyn.customsubdomain.nonprod-project-avengers.com \
+--username import --password 'Password' \
+--bucket "student-bucket" --scope-collection-exp "art-school-scope.course-record-collection" \
+--dataset 'file:///Users/test/courses.json' \
+--generate-key '%`course-id`%' \
+--cacert /Users/test/Cluster-1-root-certificate.txt
+----
+
+You can repeat the same process to generate and run a `cbimport` command for the `students.json` file.
+Remember to:
+
+. Change the `--scope-collection-exp` parameter to point to `art-school-scope.student-record-collection`.
+. Set the `--dataset` parameter to point to the `students.json` file.
+. Set the `--generate-key` parameter to `pass:v['%`course-id`%']`
+
+
+== Check your data
+
+You can use Capella's menu:Data Tools[] to check your data has been imported correctly.
+
+image::tutorials:view-data.png[]
+
