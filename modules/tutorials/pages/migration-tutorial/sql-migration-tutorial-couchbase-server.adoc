@@ -1,0 +1,150 @@
+= Migrating your Data from MySQL to Couchbase Server
+:description: Using MySQL as a starting point, this guide demonstrates \
+how to migrate your existing data from SQL tables to documents stored in a Couchbase bucket.
+:page-topic-type: tutorial
+:page-pagination: next
+
+[abstract]
+{description}
+
+== Introduction
+
+Couchbase offers a number of strategies for migrating your existing data; 
+in this example, we will begin with a sample student record database stored in MySQL, 
+and use the Couchbase server tool `cbimport` to copy the data into a Couchbase cluster.
+
+== Prerequisites
+
+Before you begin this exercise, you should have installed and set up a Couchbase cluster on your local machine.
+You will find instructions for creating a fresh cluster here =>{nbsp}xref:getting-started:do-a-quick-install.adoc[Couchbase Server Installation]
+
+To use `cbimport`, you will need to install the Couchbase `CLI` package. 
+You will find the location of the package and instructions for installing it, here =>{nbsp}xref:cli:cli-intro.adoc[]
+
+If you're running through the examples, 
+then you will also need an existing MySQL installation with the preexisting table structure 
+defined in xref:student-record-sql-database-section[the following section].
+
+IMPORTANT: This tutorial makes use of the MySQL JSON functions that were introduced in version `5.7.22`.
+Make sure you have installed MySQL version `5.7.22` or later.
+
+include::partial$/migration-tutorial/student-database-example.adoc[]
+
+include::partial$/migration-tutorial/extract-sql-data.adoc[]
+
+
+== Create your bucket, scope, and collections.
+
+You will need to create the bucket, scope, and collections to hold the data on your Couchbase cluster.
+
+For information on creating buckets, scopes, and collections,
+read the sections on xref:manage:manage-buckets/bucket-management-overview.adoc[Managing Buckets]
+and xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc[Managing Scopes and Collections]
+
+'''
+
+.Set up your cluster
+
+. Using the Couchbase admin console, the command line tool, or the REST API,
+create a new bucket on your cluster called `student-bucket`.
+
+. Create a new scope called `art-school-scope` within `student-bucket`.
+
+. Create two new collections (`student-record-collection` and `course-record-collection`) inside `art-school-scope`.
+
+
+== Import your data
+
+In this step, you will use `cbimport` to load your two JSON files into your cluster.
+
+'''
+
+.Import the course data
+
+Use the following command to import `courses.json` into your cluster.
+
+[source,console]
+----
+./cbimport json --cluster 127.0.0.1:8091 \
+ --username Administrator --password password \
+ --bucket student-bucket \
+ --dataset file:///var/lib/mysql-files/courses.json \
+ --format lines \
+ --generate-key %course-id% \
+ --scope-collection-exp art-school-scope.course-record-collection 
+----
+
+The parameters used are as follows:
+
+[horizontal,labelwith=25,itemwidth=75]
+`--cluster`::
+The address and port of the Couchbase cluster receiving the imported data.
+
+`--username`::
+A valid admin-level user to log on to the cluster
+
+`--bucket`:: 
+The name of the destination bucket for the imported data.
+
+`--dataset`::
+The full path of the JSON file where the import data can be found.
++
+IMPORTANT: Remember to include the `file:://` prefix.
+
+`--format`::
+This is the of the JSON data that `cbimport` is importing.
+The value can be `lines` or `lists`.
+For this exercise, the value should be set to `lines`.
++
+For a detailed explanation of the `--format`, see xref:tools:cbimport-json.adoc#DATASET_FORMATS[Dataset formats]. 
+
+`--generate-key`::
+This tells `cbimport` how to generate the key for the imported data. 
+You can use any combination of fields in the data to generate the key.
+In this exercise, we simply set the key to match the `course-id` field in the imported data.
+
+`--scope-collection-exp`::
+This defines an expression that tells `cbimport` which scope and collection the data will be imported to. 
+The expression can be a static value (as we have used above), or a combination of field identifiers from the import data.
++
+For more information, see the section on the xref:tools:cbimport-json.adoc#SCOPE_COLLECTION_PARSER[Scope/Collection Parser]
+
+
+'''
+
+.Import the student data
+
+The student JSON file can be imported in much the same way:
+
+[source, console]
+----
+./cbimport json --cluster 127.0.0.1:8091 \
+--username Administrator \
+--password password \
+--bucket student-bucket \
+--dataset file:///var/lib/mysql-files/students.json \
+--format lines \
+--generate-key %student-id% \
+--scope-collection-exp art-school-scope.student-record-collection
+----
+
+== Check your data
+
+Use the web admin console to examine your imported records to make sure they are correct.
+
+image::tutorials:cbimported-data.png[]
+
+== Further reading
+
+For more information about `cbimport`, read the xref:tools:cbimport.adoc[cbimport guide].
+
+If you would like to know more about MySQL JSON functions, 
+then you will find a comprehensive reference https://dev.mysql.com/doc/refman/9.2/en/json-function-reference.html[here].
+
+
+
+
+
+
+
+
