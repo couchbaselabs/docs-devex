@@ -8,6 +8,62 @@
 NOTE: If any arguments to any of the following functions are [.out]`MISSING` then the result is also [.out]`MISSING` -- that is, no result is returned.
 Similarly, if any of the arguments passed to the functions are `NULL` or are of the wrong type, such as an integer instead of a string, then `NULL` is returned as the result.
 
+[[fn-str-compress,COMPRESS()]]
+== COMPRESS(`input_string`)
+
+=== Description
+
+This function compresses a string using `zlib` compression and encodes the compressed data into `base64` format. 
+It returns an encoded string that can be easily transmitted or stored. 
+
+TIP: To convert a compressed string to the original format, use the xref:n1ql:n1ql-language-reference/stringfun.adoc#fn-str-uncompress[UNCOMPRESS()] function. 
+
+=== Arguments
+input_string:: A string or a valid expression which evaluates to string. 
+
+=== Return Value
+A base64-encoded string.
+
+=== Examples
+
+.Example 1: Using a string argument
+====
+.Query
+[source,sqlpp]
+----
+SELECT COMPRESS("This is the string to compress");
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "$1": "eJwKycgsVsgsVijJSFUoLinKzEtXKMlXSM7PLShKLS4GBAAA//+ouQs8"
+  }
+]
+----
+====
+
+.Example 2: Using an expression that evaluates to a string as the argument
+====
+.Query
+[source,sqlpp]
+----
+SELECT COMPRESS(REPEAT("Hell0",10));
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "$1": "eJzySM3JMSCJAAQAAP//tSYREw=="
+  }
+]
+----
+====
+
 [[fn-str-concat,CONCAT()]]
 == CONCAT([.var]`string1`, [.var]`string2`, …)
 
@@ -1581,5 +1637,87 @@ SELECT URLENCODE("SELECT name FROM `travel-sample`.inventory.hotel LIMIT 1;") AS
     "encoded": "SELECT%20name%20FROM%20%60travel-sample%60.inventory.hotel%20LIMIT%201%3B"
   }
 ]
+----
+====
+
+[[fn-str-uncompress,UNCOMPRESS()]]
+== UNCOMPRESS(`compressed_string`)
+
+=== Description
+
+This function takes a `base64` encoded compressed string and returns the original uncompressed string. 
+
+TIP: To compress and encode a string to `base64` format, use the xref:n1ql:n1ql-language-reference/stringfun.adoc#fn-str-compress[COMPRESS()] function. 
+
+=== Arguments
+
+compressed_string:: A string that can be one of the following: 
+
+* `zlib` compressed string that is `base64` encoded.
+* `gzip` compressed string that is `base64` encoded.
+*  `base64` encoded and compressed execution plan strings stored in the `pln` array of AWR documents. 
+//TODO: Add link to the AWR documentation. 
+
+=== Return Value
+A string.
+
+=== Examples
+
+.Example 1: Uncompressing a string
+====
+.Query
+[source,sqlpp]
+----
+SELECT UNCOMPRESS("eJwKycgsVsgsVijJSFVIzs8tKEotLk5NUSguKcrMSwcEAAD//5/2CwI=");
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "$1": "This is the compressed string"
+  }
+]
+----
+====
+
+.Example 2: Uncompressing execution plan strings in AWR documents
+====
+Consider a workload document with `pln` array as follows: 
+
+[source,json]
+----
+"pln": [
+                "0NM7AjQyYjVjNDMwZjIwNTFmNmIAX2RlZmF1bHQAE3RyYXZlbC1zYW1wbGUAJTA9AA==",
+                "0NM7AjQyYjVjNDMwZjIwNTFmNmIAX2RlZmF1bHQAE3RyYXZlbC1zYW1wbGUAJTA9AA=="
+      ]
+----
+
+.Query
+[source,sqlpp]
+----
+SELECT UNCOMPRESS("0NM7AjQyYjVjNDMwZjIwNTFmNmIAX2RlZmF1bHQAE3RyYXZlbC1zYW1wbGUAJTA9AA==");
+----
+.Result
+[source,json]
+----
+{
+    "$1": 
+      "{ \"#operator\": \"Sequence\", 
+        \"~children\": [
+          { \"#operator\": \"PrimaryScan3\", 
+            \"index_id\": \"42b5c430f2051f6b\", 
+            \"keyspace\": \"_default\" 
+          }, 
+          { \"#operator\": \"Fetch\", 
+            \"keyspace\": \"travel-sample\" 
+          }, 
+          { \"#operator\": \"InitialProject\" }, 
+          { \"#operator\": \"Limit\" }, 
+          { \"#operator\": \"Stream\" } 
+        ] 
+      }"
+}
 ----
 ====
