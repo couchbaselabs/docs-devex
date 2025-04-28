@@ -1,0 +1,298 @@
+= Automatic Workload Reporting
+:description: Monitor and optimize query performance and workload using Automatic Workload Reporting (AWR). 
+
+[abstract]
+{description}
+
+== Overview
+
+Automatic Workload Reporting (AWR) is a feature that captures and maintains performance statistics for queries executed on your Couchbase cluster.
+It continuously collects query-level metrics at regular intervals, providing insights into query behavior, resource consumption, and workload trends.  
+
+For instance, some queries may run quickly with minimal overhead, while others may consume more CPU or take longer to complete. 
+Using AWR, you can easily identify these differences, understand your workload, and determine areas for optimization. 
+
+When enabled, AWR automatically gathers detailed metrics from the Query service for every query that you run. 
+These metrics are captured at set intervals and stored as snapshots.
+Each snapshot can be considered as a point-in-time capture of the query performance and includes key metrics such as total elapsed time (minimum, maximum, and average), CPU usage, and number of queries executed. 
+
+All snapshots are stored in a user-defined keyspace (bucket, scope, collection), which acts as a central repository for AWR. 
+Once the data is stored, you can query the snapshots directly or generate detailed performance reports. 
+These reports help you analyze historical trends, compare performance across queries, and detect potential issues or bottlenecks. 
+
+For example, AWR can help with: 
+
+* **Troubleshooting Real-Time Issues**:
+Quickly identify slow running queries or instances of high resource usage. 
+By using the SQL IDs from the AWR data, you can trace the problematic queries and their sources and resolve issues faster. 
+
+* **Performance Analysis**: 
+When rolling out changes, such as introducing new microservices, AWR lets you compare query performance before and after the update. This helps you identify 
+affected queries and optimize their performance accordingly. 
+
+* **Upgrade Impact Analysis**:
+Assess query performance before and after a cluster upgrade to identify queries impacted by the new version. 
+
+== Enable and Configure AWR
+
+AWR uses the `system:awr` catalog to store and manage its configuration settings. This catalog controls how AWR operates including the location where it stores data, how often it collects statistics, and which queries to include in the report. 
+
+NOTE: Only admins or users with the `query_manage_system_catalog` role can modify settings in `system:awr` to customize the AWR configuration. 
+For more information, see xref:n1ql:n1ql-intro/sysinfo.adoc#authentication-and-client-privileges[Get System Information > Authentication and Client Privileges].
+
+
+=== View Configuration
+
+To view the current settings of AWR, you can query the `system:awr` keyspace as follows:
+
+[source,sqlpp]
+----
+SELECT * FROM system:awr;
+----
+
+The catalog consists of the following attributes: 
+
+[cols="1a,4a,1a"]
+|===
+| Name | Description | Schema
+
+|**enabled** +
+| Indicates whether AWR is enabled or disabled. 
+| Boolean
+
+| **location** +
+| The target keyspace (bucket, scope, collection) where the data is stored. 
+
+AWR remains in a quiescent (inactive) state until this specified location becomes available. 
+Once it is available, AWR transitions to an active state and begins collecting data. 
+If the location becomes unavailable at any point, AWR returns to the quiescent state and will become active only once the location is accessible again. 
+
+AWR checks the availability of the location only once per interval. 
+
+| String
+
+|**interval** +
+|The duration of the reporting interval.
+That is, the time between each snapshot or data collection.
+If the interval is set to 10 minutes, AWR captures a data every 10 minutes. 
+
+The interval must be at least 1 minute.  
+
+**Example**: `“1m30s”`
+
+|String
+
+|**threshold** +
+|The minimum time a statement must take to complete for it be in included in the AWR report.
+
+Statements that exceed the threshold are excluded from the report. 
+The threshold must be at least 0 seconds. 
+
+**Example**: `“1m30s”`
+|String
+
+| **num_statements** +
+| The maximum number of unique statements for which aggregate data is collected during each interval.
+
+Once the specified limit is reached, any additional statements are not included in the AWR report. 
+
+| Positive integer
+
+| **queue_len** +
+| Length of the processing queue. It is recommended not to change this value. 
+| Positive integer
+|===
+
+
+=== Enable AWR
+
+Before you can start using AWR, you need to enable it, as it is not enabled by default. 
+
+To enable AWR, use the following query:
+
+[source,sqlpp]
+----
+UPDATE system:awr SET enabled = true;
+----
+
+=== Update AWR Settings
+
+Once you enable AWR, you may want to configure the settings to suit your monitoring needs. 
+
+For example, you can update the target location, threshold, and interval by using the following query.
+
+[source,sqlpp]
+----
+UPDATE system:awr SET location = "default.s1.awr", interval = "1m", threshold = "0s";
+----
+
+=== Monitor AWR
+
+The current status of AWR is logged in the `query.log` and can be viewed in the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#vitals[`system:vitals`] output by using the following query: 
+
+[source,sqlpp]
+----
+SELECT awr FROM system:vitals;
+----
+
+== View AWR Data and Reports
+
+The primary method to view AWR data is to generate a report using the `cbqueryreportgen` tool. 
+// TODO: Add link to the CLI Reference section.  
+
+Alternatively, you can also query the data directly from the target keyspace. 
+When doing so, it is important to understand the data format, which is optimized to minimize the storage size. 
+
+The following section explains how to query the AWR data and the fields within the data. 
+
+=== Querying AWR Data
+
+To query the AWR data, you need to access the target keyspace where the snapshots are stored. 
+Each snapshot is represented as a document, and the document key (ID) includes the timestamp of the interval during which the data was collected. 
+This enables time-based filtering without requiring indexes (as sequential scans can support range-based key patterns). 
+However, you can define and add indexes, if needed. 
+
+Each document contains the following fields: 
+
+[cols="1a,4a,1a"]
+|===
+| Name | Description | Schema
+
+| **cnt** +
+| The number of times the statement was executed. 
+| Number
+
+| **from** +
+| The start time of the interval, represented as an Epoch timestamp in milliseconds.
+| Number
+
+| **to** +
+|The end time of the interval, represented as an Epoch timestamp in milliseconds.
+| Number
+
+| **pln** +
+|An array containing the encoded, compressed outlines of the execution plan for both the minimum and maximum execution times of the statement.  
+
+You can use the `uncompress` function to decompress this the value into a string, which can then be passed to xref:n1ql:n1ql-language-reference/jsonfun.adoc[DECODE_JSON()] for formatting, if needed.  
+// TODO: Add link to the uncompress function. 
+
+
+**Note**: This is just the outline of the plan listing operators and significant objects used.  
+For full execution details, configure the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-completed-config[completed_requests] system keyspace to capture the execution time of the statement.
+
+| Array of strings
+
+| **qc** +
+| The query context value.
+| String
+
+| **sqlID** +
+| The unique hash identifier of the statement.
+
+This can be used to aggregate information across different reporting periods for the same statement. 
+It is also included in the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-completed-req[completed_requests] entries (collected independently of AWR).
+| String
+
+| **sts** +
+| An array of 51 entries representing 17 statistics, each containing three values: **total**, **min**, and **max**.
+
+The statistics (and values) have fixed array positions and appear in the following sequence:  
+
+ * total time
+ * cpu time
+ * memory usage (quota)
+ * result count
+ * result size
+ * error count
+ * run time
+ * fetch time
+ * primary scan time
+ * sequential scan time
+ * primary scan count
+ * sequential scan count
+ * index scan count
+ * fetch count
+ * order count (items sorted in the Query service)
+ * primary scan ops
+ * sequential scan ops
+
+ | Array of numbers
+
+|**txt** +
+| The statement text, possibly in a compressed format. 
+
+Typically, this field is accessed using the `uncompress` function, and the function returns the raw text if it isn’t compressed. 
+// TODO: Add link to the uncompress function. 
+
+| String
+
+|**ver** +
+| The version of the data record. 
+
+For this release, the value is always 1. 
+
+| Number
+
+|===
+
+=== Example
+====
+The following example fetches AWR data for a specific SQL ID, including the statement text, max execution plan, statement count, total time, and max CPU usage. 
+
+.Query
+[source,sqlpp]
+----
+SELECT 
+    text,
+    max_plan,
+    the_count,
+    avg_total_time,
+    max_cpu
+FROM 
+    default.s1.awr
+LET 
+    text = uncompress(txt)
+WHERE 
+    sqlID = 'fcff011269f93c3b7903d746c2914dab'
+GROUP BY 
+    sqlID, text
+LETTING 
+    the_count = SUM(cnt),
+    max_plan = json_decode(uncompress(MAX(pln[1]))),
+    avg_total_time = duration_to_str(SUM(sts[0])/SUM(cnt)),
+    max_cpu = duration_to_str(MAX(sts[5]));
+----
+
+.Result
+[source,json]
+----
+[
+    {
+        "text": "select awr from system:vitals;",
+        "max_plan": {
+            "#operator": "Sequence",
+            "~children": [
+                {
+                    "#operator": "PrimaryScan",
+                    "index_id": "#primary",
+                    "keyspace": "vitals"
+                },
+                {
+                    "#operator": "Fetch",
+                    "keyspace": "vitals"
+                },
+                {
+                    "#operator": "InitialProject"
+                },
+                {
+                    "#operator": "Stream"
+                }
+            ]
+        },
+        "the_count": 2,
+        "avg_total_time": "38.844257ms",
+        "max_cpu": "193.409µs"
+    }
+]
+----
+====
