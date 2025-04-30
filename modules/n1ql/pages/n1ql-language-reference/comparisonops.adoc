@@ -141,13 +141,23 @@ image::n1ql-language-reference/is-expr.png["Syntax diagram", align=left]
 
 | IS VALUED
 | Value for field found.
-Value is neither missing nor NULL
+Value is neither missing nor NULL.
 | TRUE or FALSE
 
 | IS NOT VALUED
 | Value for field not found.
 Value is NULL.
 | TRUE or FALSE
+
+| IS UNKNOWN
+| Value for field is unknown, NULL, or missing. +
+Equivalent to IS NOT VALUED/IS NOT KNOWN. 
+| TRUE OR FALSE
+
+| IS NOT UNKNOWN
+| Value for field is known. Value is neither NULL nor missing. +
+Equivalent to IS VALUED/IS KNOWN. 
+| TRUE OR FALSE
 |===
 
 .IS NULL
@@ -196,6 +206,37 @@ Value is NULL.
       "fname": "Jane"
     }
   ]
+}
+----
+====
+
+.IS UNKNOWN
+====
+.Query
+[source,sqlpp]
+----
+SELECT NULL IS UNKNOWN, 
+       NULL IS NOT UNKNOWN,
+       missing IS UNKNOWN, 
+       missing IS NOT UNKNOWN,
+       "Harry" IS UNKNOWN, 
+       "Harry" IS NOT UNKNOWN
+----
+
+.Returns
+[source,json]
+----
+{
+  "results": [
+    {
+    "$1": true,
+    "$2": false,
+    "$3": true,
+    "$4": false,
+    "$5": false,
+    "$6": true
+  }
+ ]
 }
 ----
 ====
