@@ -2,15 +2,18 @@
 :page-topic-type: concept
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
-:description: Add synonyms to a Search index to return matches for synonyms when running a Search with the Search Service.
+:description: Add synonyms to a Search index to return matches for words with similar meanings when running a Search with the Search Service.
 :stem:
+:page-partial:
 
 [abstract]
 {description}
+// tag::page-content[]
 A synonym is a word or phrase that has an exact or near similar definition to another word or phrase in the same language.
 
-As of Couchbase Server version 8.0 and later, the Search Service supports a user-defined thesaurus on each Search index, divided into synonym collections with synonym documents.
-You can use this thesaurus to define what words function as synonyms inside your documents.
+As of Couchbase Server version 8.0 and later, the Search Service supports a user-defined thesaurus on each Search index. 
+A thesaurus is divided into synonym collections that contain synonym documents.
+You can use a thesaurus to define what words function as synonyms inside your documents.
 
 For example, you could create a synonym document that defines `cat` as a synonym for `feline`. 
 A Search query that contains the term `cat` would also return matches for `feline`.
@@ -18,14 +21,14 @@ Based on your specific synonym document configuration, a Search query for `felin
 
 == Defining Synonyms 
 
-You can define synonyms for multiple languages in a single thesaurus, divided by a synonym collection.
+You can define synonyms for multiple languages in a single thesaurus, divided by synonym collections.
 For example, you could have a separate synonym collection for English words, Spanish words, and German words.
 
 If your Search index is partitioned, the Search Service distributes synonym collections across your index partitions. 
 The synonym collections are gathered together to create a single thesaurus, which the Search Service uses in Search queries.
 
 NOTE: To use synonyms in a Search index, your synonym documents and collections must not be included as fields in your Search index definition.
-Synonym documents and indexed fields must use the same analyzer to get the best results.
+Synonym documents and indexed fields in a Search index must use the same analyzer to get the best results.
 Synonym documents also must follow the correct syntax.
 For more information, see xref:create-synonym-collection-docs.adoc[].
 
@@ -57,7 +60,7 @@ For example, if a Search index had a defined thesaurus with entries for `quality
 select meta().id from `travel-sample`.`inventory`.`landmark` as t WHERE SEARCH(t, "quality"); 
 ----
 
-=== Search Processing 
+=== Synonym Search Processing 
 
 If you run a hybrid Search query, the Search Service executes your Vector Search query and accumulates synonyms before combining the results.
 For more information about the process for scoring results with the Search Service, see xref:run-searches.adoc#scoring[Scoring for Search Queries].
@@ -69,6 +72,6 @@ For xref:search-request-params.adoc#fuzziness[fuzzy queries], xref:search-reques
 . Runs the search
 
 == See Also
-
+// end::page-content[]
 * xref:synonyms/create-synonym-collection-docs.adoc[]
 * xref:synonyms/add-synonym-source.adoc[]

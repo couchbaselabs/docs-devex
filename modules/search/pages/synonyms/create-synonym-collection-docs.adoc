@@ -1,29 +1,100 @@
 = Create a Synonym Collection and Documents
 :page-topic-type: guide
-:description: Enter a quick description of the goal of the task for this page. Try to keep it to 1-2 sentences.
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Create a synonym collection and documents to define synonym mappings for search terms in a Search index.
+:page-toclevels: 3
+:page-partial:
 
+// tag::page-content[]
 [abstract]
 {description}
-// Use the description you provided as a quick introduction to the page.
 
 == Prerequisites
 
-// Provide an unordered list, with items in past tense, to explain what a user needs to do/must have done before they can proceed with the tasks in your procedure. There will almost always be something you can tell the user to do.
+* You have created a bucket and scope where you want to store your Search index and its synonym collections.
+For more information, see xref:manage:manage-buckets/create-bucket.adoc[].
 
-// You MUST add any required user permissions for a task to the Prerequisites section.
+* Your user account has permissions for:
++
+** Creating and managing collections.
+** Creating documents.
 
-// Provide links wherever you can.
++
+For example, the `Full Admin`, `Cluster Admin`, or `Bucket Admin` roles allow you to create and manage buckets, scopes, and collections.
+For more information, see xref:learn:security/roles.adoc[]. 
 
-// For example:
+== Procedure
 
-// * You've foo'd the bar in your database. For more information, see xref:[].
-// * Your user account has the foo permission. For more information, see xref:[].
+To define the synonym mappings for a Search index, you must: 
 
-* 
-* 
+. <<create-collection,>>
+. <<create-documents,>>
 
-== Create Synonym Documents
+[#create-collection]
+=== Create a Synonym Collection
 
-Synonym 
+You can create a synonym collection like any other collection in Couchbase Server.
+Create synonym collections to divide your synonyms based on language or another sort criteria.
+
+NOTE: You must create your synonym collections in the same bucket and scope where you want to create your Search index.
+
+For more information about how to create a new collection, see xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc[].
+
+[#create-documents]
+=== Create Synonym Documents
+
+You can create the following types of synonym documents for use with the Search Service:
+
+* <<uni,Unidirectional synonym documents>>
+* <<bi,Bidirectional synonym documents>>
+
+[#uni]
+==== Create a Unidirectional Synonym Document 
+
+Unidirectional synonym documents define a one-way synonym relationship.
+
+A unidirectional synonym document contains an `input` array and a `synonyms` array.
+Any search for a term in `input` can return any term in `synonyms`.
+
+For example, a unidirectional synonym document for synonyms of the terms `happy`, `joyful`, and `cheerful` can be defined as: 
+
+[source,json]
+----
+include::example$synonyms/unidirectional-synonym.jsonc[]
+----
+
+A search for `happy` could return results for `content`, `delighted`, `elated`, `glad`, or `pleased`.
+A search for `cheerful` would not return results for `happy`. 
+
+NOTE: You can only include a single `input` and `synonyms` array per unidirectional synonym document.
+
+To insert a new document into your cluster with a command line tool or SDK, see xref:guides:creating-data.adoc[].
+
+To import multiple documents into your cluster at one time with the Couchbase {page-ui-name}, command line tools, or an SDK, see xref:guides:load.adoc[].
+
+[#bi]
+==== Create a Bidirectional Synonym Document
+
+Bidirectional synonym documents define a two-way synonym relationship.
+All terms are contained in a single `synonyms` array. 
+Any search for a term in the `synonyms` array can return any other term in the array.
+
+For example, a bidirectional synonym document for synonyms of the word `happy` could be defined as:
+
+[source,json]
+----
+include::example$synonyms/bidirectional-synonym.jsonc[]
+----
+
+A search for `cheerful`, `happy`, or 1 of the other terms in the array could return results for any other term.
+
+NOTE: You can only include a single `synonyms` array per bidirectional synonym document.
+
+To insert a new document into your cluster with a command line tool or SDK, see xref:guides:creating-data.adoc[].
+
+To import multiple documents into your cluster at one time with the Couchbase {page-ui-name}, command line tools, or an SDK, see xref:guides:load.adoc[].
 
 == Next Steps
+// end::page-content[]
+To use your defined synonyms in a Search index, see xref:synonyms/add-synonym-source.adoc[].
