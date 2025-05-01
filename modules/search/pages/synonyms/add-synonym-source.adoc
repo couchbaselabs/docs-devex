@@ -1,0 +1,87 @@
+= Add a Synonym Source Using the Web Console
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Add a Synonym Source to set the collection where your synonym documents are stored.
+
+[abstract]
+{description}
+After you have set the synonym source for your Search index and any child fields, you can run any type of text-based Search query to return results with synonyms. 
+
+== Prerequisites 
+
+* You have the Search Service enabled on a node in your database.
+For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+
+* You have created an index.
+For more information, see xref:create-search-index-ui.adoc[].
+
+* You have created a type mapping. 
+For more information about how to create a type mapping on an index, see xref:create-type-mapping.adoc[].
+
+* You have created a text child field where you want to run synonym searches.
+For more information about how to create a child field on an index, see xref:create-child-field.adoc[]. 
+
+* Your user account has the *Search Admin* role for the bucket where you want to edit the Search index. 
+
+* You have logged in to the Couchbase {page-ui-name}. 
+
+== Procedure
+
+To add a synonym source to a Search index with the Couchbase {page-ui-name}:
+
+. Go to *Search*.
+. Click the index where you want to add a new synonym source.
+. Click btn:[Edit].
+. Expand menu:Customize Index[Synonym Sources].
+. Click btn:[+ Add Synonym Source].
+. In the *Name* field, enter a name for your new synonym source.
+For example, you could call the source for a collection of English synonyms `synonyms_en`.
+. In the *Collection* list, select the collection where you stored your synonym documents for this specific synonym source.
+. In the *Analyzer* list, select the appropriate analyzer to use with your synonyms.
+Choose the same analyzer as the text fields where you want to use synonym searches.
++
+For more information about how to set the analyzer for a child field, see xref:child-field-options-reference.adoc[].
+. Click btn:[Save].
+. Point to the child field where you want to use your new synonym source and click btn:[Edit].
+. In the *Synonym Source* list, select the synonym source you added in the previous step. 
+. Click btn:[Update Index].
+
+== Example: Search Index Definition with Synonyms
+
+For example, the following index definition defines a Search index using the `travel-sample` sample dataset.
+It uses non-default scopes and collections to index the `name`, `description`, and `reviews.content` fields from the `inventory.hotel` collection.
+
+It uses synonyms from the `synonyms_en` synonym source for the `description` and `reviews.content` fields: 
+
+[source,json]
+----
+include::examples$synonyms/synonym-index.json[]
+----
+
+TIP: To use this index definition on your own cluster, remove the `uuid` parameter and replace the `sourceUUID` parameter with the appropriate UUID for your own `travel-sample` bucket.
+
+For this example, the `synonyms` collection inside the `travel-sample` bucket has the following 2 synonym documents: 
+
+[source,json]
+----
+include::example$synonyms/synonym-document-cheap.json[]
+----
+
+[source,json]
+----
+include::example$synonyms/synonym-document-comfy.json[]
+----
+
+With the define synonym documents and Search index definition, you could run the following Search query with the {page-ui-name}: 
+
+[source,json]
+----
+include::example$synonyms/synonym-query-example.json[]
+----
+
+The query would return results for hotels that include both `cheap` and `comfortable`, or one of their defined synonyms, like `affordable` in the `description` field. 
+
+== Next Steps
+
+For more information about other features you can add to your Search index, see xref:customize-index.adoc[].
