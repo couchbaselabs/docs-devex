@@ -16,13 +16,13 @@ Similarly, if any of the arguments passed to the functions are `NULL` or are of 
 This function compresses a string using `zlib` compression and encodes the compressed data into `base64` format. 
 It returns an encoded string that can be easily transmitted or stored. 
 
-TIP: To convert a compressed string to the original format, use the xref:n1ql:n1ql-language-reference/stringfun.adoc#fn-str-uncompress[UNCOMPRESS()] function. 
+NOTE: To convert a compressed string back to its original format, use the xref:n1ql:n1ql-language-reference/stringfun.adoc#fn-str-uncompress[UNCOMPRESS()] function. 
 
 === Arguments
-input_string:: A string or a valid expression which evaluates to string. 
+input_string:: A string or a valid expression that evaluates to a string. 
 
 === Return Value
-A base64-encoded string.
+A `base64` encoded string.
 
 === Examples
 
@@ -1641,34 +1641,54 @@ SELECT URLENCODE("SELECT name FROM `travel-sample`.inventory.hotel LIMIT 1;") AS
 ====
 
 [[fn-str-uncompress,UNCOMPRESS()]]
-== UNCOMPRESS(`compressed_string`)
+== UNCOMPRESS(`input_string`)
 
 === Description
 
-This function takes a `base64` encoded compressed string and returns the original uncompressed string. 
+This function takes a `base64` encoded, compressed string as input and returns the original uncompressed string. 
 
-TIP: To compress and encode a string to `base64` format, use the xref:n1ql:n1ql-language-reference/stringfun.adoc#fn-str-compress[COMPRESS()] function. 
+NOTE: This function is often used together with the xref:n1ql:n1ql-language-reference/stringfun.adoc#fn-str-compress[COMPRESS()] function, which compresses and encodes strings to `base64` format. 
 
 === Arguments
 
-compressed_string:: A string that can be one of the following: 
+input_string:: A `base64` encoded string that represents the compressed data. 
+It supports the following formats: 
 
-* `zlib` compressed string that is `base64` encoded.
-* `gzip` compressed string that is `base64` encoded.
-*  `base64` encoded and compressed execution plan strings stored in the `pln` array of AWR documents. 
-//TODO: Add link to the AWR documentation. 
+* `zlib` compressed and `base64` encoded strings.
+* `gzip` compressed and `base64` encoded strings.
+* Execution plan strings stored in the `pln` array of AWR documents that are compressed and `base64` encoded.
+//TODO: Add link to the AWR documentation, when it is ready.  
 
 === Return Value
-A string.
+A string that represents the decoded and uncompressed data.
 
 === Examples
 
-.Example 1: Uncompressing a string
+.Example 1: Uncompressing a `base64` encoded string
 ====
 .Query
 [source,sqlpp]
 ----
 SELECT UNCOMPRESS("eJwKycgsVsgsVijJSFVIzs8tKEotLk5NUSguKcrMSwcEAAD//5/2CwI=");
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "$1": "This is the compressed string"
+  }
+]
+----
+====
+
+.Example 2: Using UNCOMPRESS() and COMPRESS() together
+====
+.Query
+[source,sqlpp]
+----
+SELECT UNCOMPRESS(COMPRESS("This is the compressed string"));
 ----
 
 .Result
