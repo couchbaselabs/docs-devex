@@ -222,6 +222,7 @@ An object that contains the following child objects:
 * <<token_filters,>> 
 * <<token_maps,>>
 * <<date_time_parsers,>>
+* <<synonym_sources,>>
 
 |default_analyzer |String |Yes a|
 
@@ -837,6 +838,75 @@ For more information about how to format a date/time layout for a date/time pars
 
 |====
 
+[#synonym_sources]
+== Synonym_sources Object
+
+The `synonym_sources` object contains any synonym collections defined for a Search index: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=synonym_sources]
+----
+
+TIP: To view the entire JSON payload, click btn:[View]. 
+
+For more information about synonym searches, see xref:synonyms/synonyms-search.adoc[].
+
+The `synonym_sources` object is a child object of the <<analysis,analysis object>>. 
+It contains any number of <<synonym_name,{synonym_collection_name} objects>>: 
+
+[cols="2,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|\{synonym_collection_name\} |Object |Yes a|
+
+Set the name of this object to the name you want to use to identify your synonym collection in your Search index. 
+
+Reference the `\{synynom_collection_name\}` object in a text field definition to use synonym searches with that text field. 
+
+For more information about the properties in an `\{synonym_collection_name\}` object, see <<synonym_name,>>. 
+
+|====
+
+[#synonym_name]
+=== \{synonym_collection_name\} Object
+
+The `\{synonym_collection_name\}` object defines a synonym collection on a Search index:
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=synonym_name]
+----
+
+For more information about synonym searches, see xref:synonyms/synonyms-search.adoc[].
+
+A `\{synonym_collection_name\}` object is a child object of the <<synonym_sources,>>. 
+It contains the following properties:
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|analyzer |String |Yes a|
+
+Enter the name of the analyzer to use for the synonym documents stored in this collection. 
+
+Set the analyzer for a synonym collection to the same analyzer you set in the <<fields,>> for a text field.
+You cannot use synonym searches on a field unless the <<synonym_source_field,synonym_source>> is set and the analyzers match.
+
+|collection |String |Yes a|
+
+Enter the name of the collection where your synonym documents are stored on your cluster.
+The synonym collection must be in the same bucket and scope as where you want to define your Search index.
+
+Synonym documents must have the proper syntax to be used by the Search Service.
+For more information, see xref:synonyms/create-synonym-collection-docs.adoc[].
+
+Do not add your synonym collections as a <<scope-collection,{scope\}.\{collection\} object>> in your Search index.
+
+|====
+
 [#default-mapping]
 == Default_mapping Object  
 
@@ -1077,6 +1147,17 @@ include::partial$vector-search-field-descriptions.adoc[tag=similarity_metric]
 To include the content of the child field in the Search index and allow its content to be viewed in search results, set `store` to `true`.
 
 To exclude the content of the child field from the index, set `store` to `false`.
+
+|[[synonym_source_field]]synonym_source |String |No a|
+
+Enter the name of the <<synonym_name,>> you want to use for synonym searches on this field.
+The Search Service uses any synonym documents stored in this synonym collection for synonym searches on this field.
+
+You can only use synonym searches on a field with a `type` of `text`.
+
+The `analyzer` set on this field must match the `analyzer` set on the \{synonym_collection_name\} object.
+
+For more information about synonym searches, see xref:synonyms/synonyms-search.adoc[].
 
 |type |String |Yes a|
 
