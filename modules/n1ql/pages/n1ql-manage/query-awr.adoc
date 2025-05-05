@@ -200,9 +200,9 @@ These values have fixed array positions and appear in the sequence specified in 
 
 For example, the second statistic in the list is the CPU time. Therefore, +
 --
-* `sts[3]` represents the total CPU time
-* `sts[4]` represents minimum CPU time
-* `sts[5]` represents the maximum CPU time
+* `sts[3]` represents the total CPU time.
+* `sts[4]` represents minimum CPU time.
+* `sts[5]` represents the maximum CPU time.
 --
  |<<Stats, Statistics>> array
 
@@ -232,37 +232,39 @@ For this release, the value is always 1.
 | **total time** +
 | The total time taken for the request, that is the time from when the request was received until the results were returned. 
 
-It is analogous to `elapsedTime` in the xref:n1ql-rest-query:index.adoc[Query Service API] response.
+It is analogous to `elapsedTime` in the xref:n1ql-rest-query:index.adoc#Metrics[Query Service API] response.
 
 | Number
 
 | **cpu time** +
 | The amount of time the operators in the execution plan spent executing operator code.
 
-It is analogous to `cpuTime` in the xref:n1ql-rest-query:index.adoc[Query Service API] response when profiling is enabled.
+It is analogous to `cpuTime` in the xref:n1ql-rest-query:index.adoc#Metrics[Query Service API] response, when xref:n1ql-rest-query:index.adoc#Profile[profiling] is enabled.
 
 | Number
 
 | **memory usage (quota)** +
 
-|The amount of document memory used to execute the request. 
-A request will only return its document memory usage if memory quota was set for the query, or if node quota and node-quota-val-percent was set.
+|The amount of document memory used to execute the request. +
+It is analogous to `usedMemory` in the xref:n1ql-rest-query:index.adoc#Metrics[Query Service API] response. 
 
-It is analogous to `usedMemory` in the xref:n1ql-rest-query:index.adoc[Query Service API] response. 
+A request will return its document memory usage only if `memory-quota` is set for the query, or if both `node-quota` and `node-quota-val-percent` are set.
+For more information about these settings, see xref:n1ql:n1ql-manage/query-settings.adoc[].
+
 | Number
 
 
 | **result count** +
 | The total number of objects in the results.
 
-It is analogous to `resultCount` in the xref:n1ql-rest-query:index.adoc[Query Service API] response.
+It is analogous to `resultCount` in the xref:n1ql-rest-query:index.adoc#Metrics[Query Service API] response.
 | Number
 
 
 | **result size** +
 |The total number of bytes in the results.
 
-It is analogous to `resultSize` in the xref:n1ql-rest-query:index.adoc[Query Service API] response.
+It is analogous to `resultSize` in the xref:n1ql-rest-query:index.adoc#Metrics[Query Service API] response.
 | Number
 
 
@@ -318,7 +320,7 @@ It includes the time spent executing the primary scan operator code and waiting 
 | The total number of documents fetched from the Data service and processed by the Query engine.
 | Number
 
-| **order count** (items sorted in the Query service) +
+| **order count** +
 | The number of items that were sorted.
 | Number
 
@@ -406,6 +408,5 @@ LETTING
 
 == Limitations
 
-For transaction use cases, AWR collects performance statistics for all statements (such as SELECT, INSERT, UPDATE, DELETE) separately as expected. 
-In the report, you may notice that COMMIT statement often shows the highest elapsed time. 
+When working with Couchbase transactions, AWR collects performance statistics for all individual statements (such as SELECT, INSERT, UPDATE), and you may notice that the COMMIT statement often shows the highest elapsed time.  
 However, from the report alone, you will not be able to gather insights on why the COMMIT statement took long to execute. 
