@@ -1,0 +1,390 @@
+= Auto Update Statistics
+:description: Auto Update Statistics is a solution to keep optimizer statistics up to date. 
+
+[abstract]
+{description}
+
+== Overview
+
+Optimizer statistics are generated when the UPDATE STATISTICS statement is executed and in 7.6.0 onwards, when an index is built. These statistics are used by the optimizer to generate optimal query plans. However, data can change over time and as a consequence, these statistics can become out of date which can cause sub-optimal plan generation. It is beneficial to routinely update optimizer statistics.
+
+Auto Update Statistics is a solution to keep optimizer statistics up to date. The statistics are automatically updated during a configured schedule. The system uses expiration policies to identify statistics that are stale and refreshes them by executing the required UPDATE STATISTICS statements.
+
+NOTE: The AUS system does not create optimizer statistics for expressions that do not already have statistics. It only maintains and updates statistics that have already been collected.
+AUS only maintains statistics for expressions on index keys.  It does not maintain statistics for expressions on non-indexed fields.
+
+== Prerequisites
+
+* The AUS task can only be performed on 8.0 Query nodes.
+
+* AUS can only be enabled in a cluster that has been fully migrated to 8.0. Or in a cluster that has 7.6.x nodes and 8.0 Query nodes. However, in such a cluster, the 7.6.x Query nodes will not perform any AUS tasks.
+
+* For Couchbase clusters that are migrating from pre-7.6.x versions to a cluster configuration like that above, the AUS task can only be enabled once the automatic migration of optimizer statistics has been migrated to the _query collection in the _system scope of the buckets.
+
+== How AUS Works
+
+* AUS is an opt-in feature that users can choose to enable. Users must explicitly opt-in and configure a schedule for when AUS should run. This allows users to schedule this “maintenance window” at a time that best suits their workloads.
+
+* The AUS system uses expiration policies to determine when statistics are out of date and require an update.
+
+* Every Query node in the cluster participates in the AUS task according to the same schedule.
+
+* The AUS task comprises two phases, the Evaluation phase and the Update Phase.
+
+* The Evaluation phase evaluates which statistics are stale based on the expiration policies.
+
+* The Update phase executes the appropriate UPDATE STATISTICS statements to refresh the statistics deemed as stale by the Evaluation phase. The AUS system maintains the original resolution at which the statistics were collected.
+
+--
+NOTE: In a Query node, the following occurs during the AUS scheduled window:
+* The Query node chooses the collections to perform AUS operations on. No other Query node will perform AUS on these collections during this window.
+* For each collection the Evaluation and Update phases are performed on the statistics gathered on expressions on fields in the collection.
+--
+
+=== Expiration Policy
+
+The AUS system uses expiration policies to determine when statistics are out of date and require an update.
+
+“Change Percentage" is the expiration policy used. It determines the threshold for how much data in an index must change before the statistics are determined as out of date and requiring an update. 
+
+It is the percentage of changes to the items in an index that must be exceeded to trigger a statistic to be refreshed.
+
+If the percentage of change to the items in an index since the last time the statistic was collected exceeds the defined threshold, the statistic is flagged as stale by the AUS system. The AUS operation then will update those stale statistics.
+
+=== Evaluation Phase
+
+The Evaluation phase evaluates whether the existing statistics are stale based on the expiration policy.
+
+During the Evaluation phase, for every index, AUS calculates how much the items/data in the index have changed since the last time the optimizer statistics of the index key expressions were updated. If the percentage of change exceeds the configured threshold ( the "change_percentage"), the statistics for the index key expressions for that index, are marked as stale and requiring an update.
+
+=== Update Phase
+
+Once the Evaluation of a collection is completed, the Update phase will be executed.
+
+This phase will update the statistics flagged as stale in the previous phase by executing the appropriate UPDATE STATISTICS statements.
+
+The statistics update performed by AUS maintains the original resolution at which the statistic was collected.
+
+Once the AUS operation has been performed on all the statistics in all the buckets, the query node should schedule the next AUS run.
+
+If the scheduled window has ended but the AUS task is still not over, the task is aborted and the next AUS run is scheduled.
+
+
+IMPORTANT: When AUS is enabled, the first scheduled task run can result in all the existing optimizer statistics being updated, regardless of the expiration policy evaluation. This is because the index change information might not have been recorded till the first scheduled run.
+
+== Managing AUS
+
+To enable AUS for the cluster, the user must explicitly opt-in and set a schedule.
+
+The AUS system provides the system:aus catalog that stores the global configurations. Users can opt-in and set a schedule for AUS by appropriately modifying the configurations set in the system:aus catalog.
+
+=== system:aus
+
+The system:aus catalog stores a single document that contains the global configurations of AUS.
+Users can update this document to change these configurations.
+
+Only SELECT and UPDATE DMLs are allowed on this keyspace.
+
+NOTE: To execute SELECT on system:aus, the query_system_catalog is required.
+To execute UPDATE on system:aus, the query_manage_system_catalog is required
+
+In the document, each attribute represents a particular global configuration. 
+The attribute names and the corresponding configuration that they represent are as follows:
+
+[cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **enable** +
+__required__
+| Whether AUS is enabled for the cluster or not.
+Set the value to “true” to enable AUS.
+If the attribute is set to true the schedule attribute must be set.
+
+*Default:* `false`
+
+| Boolean
+
+| **schedule** +
+__optional__
+
+|The schedule according to which AUS will be performed.
+
+If AUS is enabled i.e. the “enable” attribute set to “true”, then the schedule attribute is required.
+Otherwise, it is not.
+
+| <<aus_schedule, Schedule>> object
+
+| **change_percentage** +
+__optional__
+
+| The percentage of changes to the items in an index that must be exceeded to trigger a statistic to be refreshed. 
+Integer between 0 and 100.
+
+*Default:* `10`
+
+*Example:* `30`
+
+| Interger 
+
+| **all_buckets** + 
+__required__
+
+
+| Whether AUS should be performed on all buckets or only those buckets whose metadata information is “loaded” on the Query node.
+
+*Default:* `false`
+
+| Boolean
+
+|===
+
+
+[[aus_schedule]]
+==== Schedule  
+[cols="1a,4a,1a"]
+|===
+| Name | Description | Schema
+
+| **start_time** +
+__required__
+
+| The start time of the AUS schedule. String representing the time in “HH:MM” format.
+The schedule’s `start_time` attribute must be earlier than the schedule’s `end_time` attribute by at least 30 minutes.
+
+*Example:* `“01:30”`
+
+| String
+
+| **end_time** +
+__required__
+
+| The end time of the AUS schedule. String representing the time in “HH:MM” format. 
+
+The schedule’s `end_time` attribute must be later than the schedule’s `start_time` attribute by at least 30 minutes.
+
+*Example:* `“01:30”`
+| String
+
+| **days** +
+__required__
+
+| The days of the week the AUS schedule should run. 
+Valid Values in the array: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
+
+*Example:* `[“Saturday”, “Sunday”]`
+
+| String array
+
+| **timezone** +
+__optional__
+
+| The timezone to consider the start and end times. String representing of the timezone in an IANA timezone representation.
+
+*Default:* `“UTC”`
+
+*Example:* `“Asia/Calcutta”`
+
+| String
+
+|===
+
+When changing these global configurations, it is important to note the following: 
+
+* *Enabling AUS*: If AUS was previously not enabled, and now enabled, then the next AUS task is scheduled.
+* *Re-scheduling AUS*: Cancel any scheduled AUS task. Schedule a new AUS task accordingly. No running AUS tasks will be cancelled. 
+* *Other Setting Changes*: If the other global settings i.e. all_buckets, change_percentage is changed, From the next scheduled AUS run, the new values of the settings will be used.
+
+==== Example
+====
+Using UPDATE Statement to enable AUS and set a schedule with some customizations:
+
+.Query
+[source,sqlpp]
+----
+UPDATE system:aus SET enable = true, change_percentage = 20,
+schedule = { "start_time": "01:30", 
+             "end_time": "04:30", 
+             "timezone": "Asia/Calcutta", 
+             "days": ["Monday", "Friday"] 
+        };
+----
+====
+
+=== system:aus_settings
+
+The system also provides mechanisms to customize certain AUS configurations at the bucket, scope and collection level. The system:aus_settings maintains these more granular configurations.
+
+The document id of a document in this keyspace must be the full path of the bucket/ scope/ collection name. 
+
+All SQL++ DMLs are allowed on this keyspace.
+
+NOTE: To execute SELECT on system:aus_settings, the query_system_catalog is required.
+To execute UPDATE, DELETE, INSERT, UPSERT  on system:aus_settings, the query_manage_system_catalog is required.
+
+By default, this keyspace has no documents. The configurations of AUS for all keyspaces by default are what is set at the global level.
+
+A settings document must be explicitly inserted to customize AUS for the keyspace.
+
+In the settings document, each attribute represents a particular granular configuration. The attribute names and the corresponding configuration that they represent are as follows:
+
+[cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **enable** +
+__optional__
+| Whether AUS is enabled for the bucket/scope/collection or not.
+Set to “false” to explicitly disable. 
+
+If AUS is disabled at the global/ cluster level, then it cannot be enabled at the bucket/scope/collection level.
+If AUS is disabled at a higher level, it cannot be overridden at a more granular level.
+But, if AUS is enabled at a higher level, it can be overridden at a more granular level.
+
+Example to illustrate this:
+
+If AUS is disabled for a bucket - it is disabled for all scopes and collections within it.  It cannot be overridden at the scope or collection level.
+If AUS is enabled for a bucket - it can be overridden at the scope and collection level.
+
+| Boolean
+
+| **change_percentage** +
+__optional__
+
+| The percentage of changes to the items in an index that must be exceeded to trigger a   statistic to be refreshed.
+Integer between 0 and 100.
+
+If set at a bucket-level, this is the change percentage value considered for all scopes and collections within the bucket, unless overridden at a lower level.
+If set at a scope-level, this is the change percentage value considered for all collections within the scope unless overridden at a lower level.
+
+*Example:* `30`
+
+| Integer
+
+| **update_statistics_timeout** +
+__optional__
+
+| A number representing a duration in seconds. 
+The command times out when this timeout period is reached. If omitted, a default timeout value is calculated based on the number of samples used.
+
+If set for a keyspace, this would be set as the timeout for every UPDATE STATISTICS statement executed by AUS for that keyspace. 
+
+If set at a bucket-level, this is the update_statistics_timeout value considered for all scopes and collections within the bucket, unless overridden at a lower level.
+
+If set at a scope-level, this is the update_statistics_timeout value considered for all collections within the scope unless overridden at a lower level.
+
+| Number
+
+|===
+
+==== Example
+==== 
+A sample query to add a scope-level setting. These settings would apply to all collections within the scope unless overridden at a collection level. particular collection would look like this:
+
+.Query
+[source,sqlpp]
+----
+INSERT INTO system:aus_settings ( KEY, VALUE ) 
+    VALUES ({ "default:bucket1.scope1", {"change_percentage": 20 } )
+----
+====
+
+== Scheduling AUS Tasks
+When AUS is enabled and a schedule set, every Query node in the cluster participates in AUS. As a result, each Query node will have its own AUS task assigned, and this task will perform AUS operations on that specific node. 
+
+The system:tasks_cache catalog keeps a record of recent tasks including the AUS tasks across all Query nodes.
+
+== Viewing AUS Tasks
+The system:tasks_cache catalog maintains the list of recent tasks. For every AUS task, each Query node will have an entry in the system:tasks_cache. View all recent AUS tasks by querying the system:tasks_cache keyspace.
+
+The AUS task entries have the “class” field set to “auto_update_statistics”. 
+
+View all recent AUS tasks:
+[source,sqlpp]
+----
+SELECT * FROM system:tasks_cache WHERE class = "auto_update_statistics";
+----
+ 
+To find the next scheduled AUS tasks:
+[source,sqlpp]
+----
+SELECT * FROM system:tasks_cache WHERE class = "auto_update_statistics" AND state = "scheduled";
+----
+ 
+To view the recent AUS tasks on a particular node, filter by the ”node” attribute:
+[source,sqlpp]
+----
+SELECT * FROM system:tasks_cache WHERE class = "auto_update_statistics" AND state = "scheduled" and node = "127.0.0.1:8091";
+----
+
+The entries for completed AUS tasks will have information about the AUS task, which keyspaces had their statistics updated, if any errors occurred, etc.
+
+=== Example
+====
+Sample task entry for a successful AUS task on a query node:
+
+.Query
+[source,sqlpp]
+----
+{
+    "tasks_cache": {
+        "class": "auto_update_statistics",
+        "delay": "21.707164s",
+        "id": "4b90bb39-ca1b-55f1-84f0-4d3137c88bf8",
+        "name": "bc1ab6e9-9f33-4a8f-86ad-40d74c50af5f",
+        "queryContext": "",
+        "results": {
+            "configuration": {
+                "all_buckets": true,
+                "change_percentage": 20,
+                "end_time": "2024-11-19 20:00:00 +0530 IST",
+                "internal_version": 1,
+                "start_time": "2024-11-19 19:16:00 +0530 IST"
+            },
+
+            "keyspaces_updated": [
+                "default:bucket1.scope1.customers"
+            ]
+        },
+
+        "startTime": "2024-11-19T19:16:00.001+05:30",
+        "state": "completed",
+        "stopTime": "2024-11-19T19:16:03.154+05:30",
+        "subClass": "",
+        "submitTime": "2024-11-19T19:15:38.292+05:30"
+    }
+}
+----
+====
+
+Attributes: --> Should this be added to the system:tasks_cache doc? 
+* keyspaces_updated: A list of keyspaces that had statistics that had to be updated.
+* configuration: the task configuration with which this task was executed.
+
+For more information about system:tasks_cache and its attributes, see xref:n1ql:n1ql-intro/sysinfo.adoc#sys-tasks-cache[].
+
+== Aborting a Running AUS Task
+To cancel the execution of a running AUS task, execute an appropriate DELETE statement against the system:tasks_cache.
+
+To cancel all running AUS tasks:
+
+[source,sqlpp]
+----
+DELETE FROM system:tasks_cache WHERE class = "auto_update_statistics" AND state = "running";
+----
+ 
+Use appropriate filters in the WHERE clause to be selective of which tasks to cancel or delete. To cancel the running AUS task only only on a particular node:
+
+[source,sqlpp]
+----
+DELETE FROM system:tasks_cache WHERE class = "auto_update_statistics" AND state = "running" AND node = "127.0.0.1:8091";
+----
+
+When the DELETE statement affects an AUS task entry in the “scheduled” or “running” state, the scheduled/ running task is cancelled and the next AUS task is automatically scheduled.
+
+Remember to add appropriate filters in the DELETE statement so that the statement affects the intended task entry. Otherwise inadvertently other tasks can get cancelled or the task history gets deleted.
+
+== AUS Load
+When the AUS task is executing, it can cause an increased load on the Query node. This is because of all the activity of evaluating the statistics and executing statistics refresh. That is why it is important that the schedule for AUS is set to best suit the workloads of the cluster.
+
+Additionally, an attempt is made to ensure that during the scheduled window, the AUS task is not started when the load of the Query node is too high. If the load is too high, the task is not started and the next AUS task is scheduled.
