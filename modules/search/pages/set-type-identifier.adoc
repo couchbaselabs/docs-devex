@@ -9,6 +9,21 @@
 [abstract]
 {description}
 
+For example, if you added a filter to your type mapping that checked if the value of a field was `true`, only documents with the value `true` for that field would be included in your Search index under that type mapping.
+Based on your settings, xref:create-child-field.adoc[child fields] or xref:create-child-mapping.adoc[child mappings] that you define for documents that pass the filter on this type mapping will be returned in search results. 
+
+You can filter based on the value of a field, or part of the value of your document IDs. 
+
+As of Couchbase Server version 8.0, you can filter documents with custom filters based on the value of: 
+
+* xref:search-index-params.adoc#boolean_filter[A boolean field].
+* xref:search-index-params.adoc#date_range_filter[A date field, within a specific range].
+* xref:search-index-params.adoc#numeric_range_filter[A numeric field, within a specific range].
+* xref:search-index-params.adoc#term_filter[A term in a text field].
+* A xref:search-index-params.adoc#conjunct_filter[conjunct] or xref:search-index-params.adoc#disjunct_filter[disjunct] object that combines 2 or more of the available filters.
+
+You can add up to a maximum of 100 custom document filters on a single Search index.
+
 For more information about type identifiers and type mappings, see xref:customize-index.adoc#type-identifiers[Customize a Search Index with the Web Console].
 
 == Prerequisites 
@@ -35,11 +50,16 @@ To set a type identifier for a Search index with the Couchbase {page-ui-name}:
 
 . Go to *Search*.
 . Click the index where you want to set a type identifier.
-. Click btn:[Edit]. 
+. Click btn:[Edit].
+. Expand *Type Identifier*. 
 . Do one of the following: 
 .. <<json-type,>>
 .. <<doc-id-sep,>>
 .. <<doc-id-regex,>>
+.. (Couchbase Server version 8.0 and later) <<custom,>>
+
+WARNING: You cannot use custom document filters with another type of type identifier on your Search index. 
+If you select an option other than *Custom* after you have defined custom document filters, you'll lose any defined custom filters on your Search index.
 
 [#json-type]
 === Create a JSON Type Field Type Identifier 
@@ -51,12 +71,12 @@ To only add documents to your Search index that contain a specific field with a 
 +
 For example, if your documents include a `type` field, you could enter `type` in the *JSON Type Field* field. 
 +
-NOTE: You can't use a field as a type identifier if the field name contains a period (.).  
+NOTE: You cannot use a field as a type identifier if the field name contains a period (.).  
 . Under *Type Mappings*, next to the type mapping where you want to add the type identifier, click btn:[Edit]. 
 . In the *#* field, add a period (.) to the end of the current type mapping name. 
 . After the period, add the exact string from the document field that you want to use as a filter. 
 +
-For example, if you wanted your Search index to only return documents that had a `type` value of `hotel`, you could enter `scope.collection.hotel` in the type mapping *#* field.
+For example, if you wanted your type mapping to only include documents that had a value of `hotel` in the `type` field, you could enter `scope.collection.hotel` in the type mapping *#* field.
 . Click btn:[OK].
 . Click btn:[Update Index].
 
@@ -73,7 +93,7 @@ For example, if you know all of your document ID values are prefixed by a string
 . In the *#* field, add a period (.) to the end of the current type mapping name. 
 . After the period, add the exact prefix from the document's ID value that you want to use as a filter. 
 +
-For example, if you wanted your Search index to only return documents that have an prefix of `landmark_`, you could enter `scope.collection.landmark` in the type mapping *#* field.
+For example, if you wanted your type mapping to only include documents that have an prefix of `landmark_` in their ID values, you could enter `scope.collection.landmark` in the type mapping *#* field.
 . Click btn:[OK].
 . Click btn:[Update Index].
 
@@ -90,10 +110,40 @@ For example, if you wanted only documents with ID values that contained `\_40`, 
 . In the *#* field, add a period (.) to the end of the current type mapping name. 
 . After the period, add a match for the regular expression from the document's ID value that you want to use as a filter. 
 +
-For example, if you wanted your Search index to only return documents with ID values that contained `_40`, you could enter `scope.collection._40` in the type mapping *#* field.
+For example, if you wanted your type mapping to only include documents with ID values that contained `_40`, you could enter `scope.collection._40` in the type mapping *#* field.
 . Click btn:[OK].
 . Click btn:[Update Index].
 
+[#custom]
+=== Create a Custom Document Filter Type Identifier
+
+[.status]#Couchbase Server 8.0#
+
+To create a new custom document filter on a Search index with the Couchbase {page-ui-name}:
+
+. Select *Custom*. 
+. Click btn:[+ Add Document Filter].
+. In the *Type* field, enter a name for your new document filter.
+. In the *Filter* code editor, enter a JSON object to define your document filter.
++
+For more information about the properties for each document filter type, see: 
++
+* xref:search-index-params.adoc#boolean_filter[Boolean Document Filters]
+* xref:search-index-params.adoc#date_range_filter[Date Range Document Filters]
+* xref:search-index-params.adoc#numeric_range_filter[Numeric Range Document Filters]
+* xref:search-index-params.adoc#term_filter[Term Document Filters]
+* xref:search-index-params.adoc#conjunct_filter[Conjunct Document Filters]
+* xref:search-index-params.adoc#disjunct_filter[Disjunct Document Filters]
+
++
+. Click btn:[Save].
+. Under *Type Mappings*, next to the type mapping where you want to add the type identifier, click btn:[Edit].
+. In the *#* field, add a period (.) to the end of the current type mapping name. 
+. After the period, enter the name of the custom document filter that you want to use to filter documents on this type mapping.
++
+For example, if you defined a custom document filter named `free_breakfast_true`, enter `scope.collection.free_breakfast_true` in the type mapping *#* field.
+. Click btn:[OK].
+. Click btn:[Update Index].
 
 == Next Steps
 
