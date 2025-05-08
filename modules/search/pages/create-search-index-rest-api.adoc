@@ -55,7 +55,7 @@ Do not include the xref:search-index-params.adoc#uuid[uuid] or xref:search-index
 TIP: If you remove the xref:search-index-params.adoc#uuid[uuid] and xref:search-index-params.adoc#sourceuuid[sourceUUID] parameters, you can copy the Search index definition JSON payload from the Couchbase {page-ui-name} to use in your REST API call.
 For more information about how to create an index with the UI, see xref:create-search-index-ui.adoc[]. 
 
-=== Example
+=== Example: Simple Search Index with XATTRs
 
 In the following example, the JSON payload creates a simple index named `landmark-content-index` on the `travel-sample` bucket.
 It creates a type mapping for the `inventory.landmark` collection, with a child field, `content`, and adds a dynamic Extended Attributes (XATTRs) mapping for any available document metadata fields in the collection:
@@ -74,6 +74,33 @@ If the REST API call is successful, the Search Service returns a `200 OK` and th
 [source,json]
 ----
 include::example$create-search-index-response.json[]
+----
+
+The `"uuid"` is randomly generated for each Search index you create. 
+Your own UUID might not match the value shown in the example.
+
+=== Example: Search Index with Custom Document Filter
+
+IMPORTANT: Custom document filters are only available in Couchbase Server version 8.0 and later. 
+
+In the following example, the JSON payload creates a Search index named `travel-sample-filter` on the `travel-sample` bucket.
+It has a custom document filter, `cleanliness_AND_free_breakfast`, which uses a xref:search-index-params.adoc#conjunct_filter[conjunct filter] to restrict the documents in the index.
+Only documents with a cleanliness rating between 3 and 5 and `free_breakfast` set to `true` are included from the `inventory.hotel` collection. 
+
+For documents that pass the filter, the index includes the `description`, `free_breakfast`, `name`, `reviews.content`, and `reviews.ratings.Cleanliness` fields:
+
+[source,console]
+----
+include::example$create-search-index-payload-filters.sh[]
+----
+
+For more information about the available JSON properties for a Search index, see xref:search-index-params.adoc[].
+
+If the REST API call is successful, the Search Service returns a `200 OK` and the following JSON response:
+
+[source,json]
+----
+include::example$create-search-index-response-filters.json[]
 ----
 
 The `"uuid"` is randomly generated for each Search index you create. 
