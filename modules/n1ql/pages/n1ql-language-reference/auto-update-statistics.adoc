@@ -6,6 +6,26 @@
 
 == Overview
 
+Auto Update Statistics (AUS) is a feature that enables you to keep the optimizer statistics up to date by automatically updating them at scheduled intervals. 
+
+Optimizer statistics are used by the Cost Based Optimizer to generate optimal query plans. 
+They are created when you run the UPDATE STATISTICS statement or when an index is built (available from 7.6.0 onwards). 
+However, over time, as your data changes, these statistics can become outdated. 
+When that happens, the Cost Based Optimizer may produce suboptimal query plans, which can negatively impact the query performance. 
+
+AUS ensures that statistics remain current and checks for outdated statistics regularly. 
+The statistics are automatically updated during a configured schedule.
+
+AUS uses expiration policies to identify the outdated statistics and refreshes them by using UPDATE STATISTICS.
+
+NOTE:
++
+* AUS only updates statistics that already exist. It does not create new ones. 
+* Also, it focuses on maintaining statistics for expressions based on index keys. 
+It does not maintain statistics for expressions on non-indexed fields. 
+
+
+
 Optimizer statistics are generated when the UPDATE STATISTICS statement is executed and in 7.6.0 onwards, when an index is built. These statistics are used by the optimizer to generate optimal query plans. However, data can change over time and as a consequence, these statistics can become out of date which can cause sub-optimal plan generation. It is beneficial to routinely update optimizer statistics.
 
 Auto Update Statistics is a solution to keep optimizer statistics up to date. The statistics are automatically updated during a configured schedule. The system uses expiration policies to identify statistics that are stale and refreshes them by executing the required UPDATE STATISTICS statements.
