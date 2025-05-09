@@ -331,6 +331,95 @@ SELECT DS_VERSION() as server_version;
 ----
 ====
 
+[[evaluate,EVALUATE()]]
+== EVALUATE(`statement` [ ,`params` ])
+
+=== Description
+
+This function enables you to execute a SQL++ statement provided as a string and returns the result as an array. 
+It can be used as a part of larger query or request, or wherever arrays are permitted within a statement.
+
+The function evaluates the statement dynamically using the same permissions as the invoking statement. 
+The statement must be read-only. If it tries to modify data (like with UPDATE or INSERT), the function fails with `error 5010, "not a readonly request”`. 
+
+NOTE: The results are materialized in memory, so large result sets may require a lot of memory. 
+To limit memory usage, you can use quotas (the evaluated statement operates within the invoking statement's quota). 
+
+=== Arguments
+
+statement:: A string containing the statement to evaluate.
+
+params:: Can be one of the following:
++
+--
+* An object containing named parameters. 
+* An array containing positional parameters. 
+--
+
+=== Return Value
+
+An array of objects representing the rows returned by the evaluated statement.
+
+=== Examples
+
+[[evaluate-ex1,EVALUATE() Example 1]]
+.Example 1: Using named parameters
+====
+.Query
+[source,sqlpp]
+----
+SELECT EVALUATE("SELECT $named_param AS example",
+        {"named_param":"This is the named parameter's value"}) 
+        eval_result;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "eval_result": [
+      {
+        "example": "This is the named parameter's value"
+      }
+    ]
+  }
+]
+----
+====
+
+[[evaluate-ex2,EVALUATE() Example 2]]
+.Example 2: Using EVALUATE with INFER
+====
+.Query
+[source,sqlpp]
+----
+SELECT `Flavor` FROM EVALUATE("INFER `travel-sample`")[0] inf;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "Flavor": "`type` = \"airport\""
+  },
+  {
+    "Flavor": "`stops` = 0, `type` = \"route\""
+  },
+  {
+    "Flavor": "`type` = \"landmark\""
+  },
+  {
+    "Flavor": "`type` = \"hotel\""
+  },
+  {
+    "Flavor": "`type` = \"airline\""
+  }
+]
+----
+====
+
 [[finderr,FINDERR()]]
 == FINDERR(`expression`)
 
@@ -629,6 +718,10 @@ For examples, refer to xref:n1ql:n1ql-language-reference/indexing-arrays.adoc#ex
 
 [[formalize,FORMALIZE()]]
 == FORMALIZE(`statement` [ `,query_context` ])
+
+ifeval::['{page-component-version}' == '7.6'] 
+_(Introduced in Couchbase Server 7.6)_ 
+endif::[]
 
 === Description
 
