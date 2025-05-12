@@ -39,9 +39,10 @@ For more information about how to configure the objects inside a `knn` array, se
 
 |ctl |Object |No a|
 
-An object that contains properties for query consistency. 
+An object that contains properties for query consistency.
+Depending on your version of Couchbase Server, the `ctl` object can also validate Search queries or choose specific Search index partitions for a query.
 
-For more information about how to configure Search query consistency inside the `ctl` object, see <<ctl,>>.
+For more information about how to configure the `ctl` object, see <<ctl,>>.
 
 |[[size-limit]]size/limit |Integer |No a|
 
@@ -56,7 +57,6 @@ The Search Service returns the `size` number of results:
 * Starting backward from the key specified in the <<search_before,search_before property>>.
 
 The `size` property is added by default to all Search requests, if not otherwise specified, with a value of `10`.
-
 If you do not provide a `from`, `size`, or other pagination settings in your query, the Search Service defaults to a `size` value of `10` and a `from` value of `0`.
 This means the Search Service does not offset results, and returns the first `10` matches to your query.
 
@@ -67,10 +67,10 @@ Set an offset value to change where pagination starts for search results, based 
 For example, if you set a `size` value of `5` and a `from` value of `10`, the Search query returns results 11 through 15 on a page. 
 
 If you provide both the `from` and `offset` properties, the Search Service uses the `from` value.
-If you do not provide a `from`, `size`, or other pagination settings in your query, the Search Service defaults to a `size` value of `10` and a `from` value of `0`.
-This means the Search Service does not offset results, and returns the first `10` matches to your query.
 
 The `from` property is added by default to all Search requests, if not otherwise specified, with a value of `0`.
+If you do not provide a `from`, `size`, or other pagination settings in your query, the Search Service defaults to a `size` value of `10` and a `from` value of `0`.
+This means the Search Service does not offset results, and returns the first `10` matches to your query.
 
 |highlight |Object |No a|
 
@@ -132,7 +132,8 @@ To turn on document relevancy scoring in search results, remove the `score` prop
 
 |[[search_after]]search_after |Array |No a|
 
-NOTE: If you use `search_after` in a search request, you cannot use `search_before`. Both properties are included in the example code to show the correct syntax.
+NOTE: If you use `search_after` in a search request, you cannot use `search_before`.
+Both properties are included in the example code to show the correct syntax.
 
 Use `search_after` with `from/offset` and `sort` to control pagination in search results. 
 
@@ -150,7 +151,10 @@ Use `search_after` to make the memory requirements of deeper page searches more 
 To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your <<sort_arr,sort array>>. 
 Set the `search_after` property to include the values from the last result on your previous page of search results to effectively paginate. 
 
-NOTE: If you use `search_before` in a search request, you cannot use `search_after`. Both properties are included in the example code to show the correct syntax.
+|[[search_before]]search_before |Array |No a|
+
+NOTE: If you use `search_before` in a search request, you cannot use `search_after`.
+Both properties are included in the example code to show the correct syntax.
 
 Use `search_before` with `from/offset` and `sort` to control pagination in search results.
 
@@ -1920,7 +1924,8 @@ include::example$query-analytic.jsonc[tag=match_prefix_length]
 [#ctl]
 == Ctl Object 
 
-Use the `ctl` object to make sure that the Search Service runs your Search query against the latest version of the documents in your cluster. 
+Use the `ctl` object to make sure that the Search Service runs your Search query against the latest version of the documents in your database.
+As of Couchbase Server version 8.0 and later, you can also use it to control which replica partition the Search Service uses to find results for a query. 
 
 The `ctl` object and its properties cause the Search Service to run your query against the latest version of a document written to a xref:server:learn:buckets-memory-and-storage/vbuckets.adoc[vBucket].  
 The Search Service uses a consistency vector to synchronize the last document write to a vBucket from the Data Service with the Search index.
@@ -1962,6 +1967,24 @@ For example, the Search Service can tell you through the Web Console or the REST
 ----
 err: query_validate: field not indexed, field: ratings.Cleanliness, type: number
 ----
+
+|partition_selection |String |No a|
+
+[.status]#Couchbase Server 8.0#
+
+If your Search index is configured with partitions, add the `partition_selection` property to choose how the Search Service selects the partitions to search for your Search query: 
+
+* `""`: The Search Service targets only active partitions, or the partitions currently being used to serve Search requests.
+* `"local"`: The Search Service targets all available partitions. 
+If a partition for your Search index isn't available on the coordinator node, the Search Service looks for the partition within the node's xref:manage:manage-groups/manage-groups.adoc[Server Group].
+If the Search Service still cannot find the partition, then it chooses a random node.
+* `"local_only"`: The Search Service targets all available partitions.
+If a partition for your Search index isn't available on the coordinator node, the Search Service looks for the partition within the node's xref:manage:manage-groups/manage-groups.adoc[Server Group].
+If the Search Service still cannot find the partition, then the query returns partial results.
+* `"random"`: The Search Service chooses a random node for the Search query, whether active or a replica.
+* `"random_balanced"`: The Search Service tries to choose a node that is not already serving a Search request.
+If the Search Service cannot find a node, it defaults to a random node.
+This mode is designed to keep the number of query handling partitions per node the same. 
 
 |====
 
