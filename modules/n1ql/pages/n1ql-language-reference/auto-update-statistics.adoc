@@ -6,66 +6,62 @@
 
 == Overview
 
-Auto Update Statistics (AUS) is a feature that enables you to keep the optimizer statistics up to date by automatically updating them at scheduled intervals. 
+Auto Update Statistics (AUS) is a feature that helps keep the optimizer statistics up to date by automatically identifying and refreshing outdated statistics.
 
-Optimizer statistics are used by the Cost Based Optimizer to generate optimal query plans. 
-They are created when you run the UPDATE STATISTICS statement or when an index is built (available from 7.6.0 onwards). 
-However, over time, as your data changes, these statistics can become outdated. 
-When that happens, the Cost Based Optimizer may produce suboptimal query plans, which can negatively impact the query performance. 
+NOTE: AUS is only available in Couchbase Server 8.0 and later. For more information, see <<availability, Availability>>.
 
-AUS ensures that statistics remain current and checks for outdated statistics regularly. 
-The statistics are automatically updated during a configured schedule.
+Optimizer statistics are used by the xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc[Cost Based Optimizer] to generate optimal query plans.
+These statistics are created when you run the xref:n1ql:n1ql-language-reference/updatestatistics.adoc[] statement or build an index (available from 7.6.0 onwards). 
+However, as data changes over time, the statistics can become stale, leading to sub-optimal query plans and reduced query performance.
 
-AUS uses expiration policies to identify the outdated statistics and refreshes them by using UPDATE STATISTICS.
+AUS addresses this challenge by running a scheduled task on the Query nodes.
+The task regularly checks for outdated statistics using expiration policies and refreshes them by executing UPDATE STATISTICS. 
+This way, AUS ensures that the optimizer statistics are always up to date and the CBO has the current information. 
 
-NOTE:
-+
-* AUS only updates statistics that already exist. It does not create new ones. 
-* Also, it focuses on maintaining statistics for expressions based on index keys. 
-It does not maintain statistics for expressions on non-indexed fields. 
+Some important points to note about AUS:
 
+* **Updates, not creates**: AUS only updates existing statistics; it does not create new ones.
+* **Index-key focussed**: AUS primarily maintains statistics for expressions based on index keys, and not for expressions on non-indexed fields. 
 
+[#availability]
+== Availability
 
-Optimizer statistics are generated when the UPDATE STATISTICS statement is executed and in 7.6.0 onwards, when an index is built. These statistics are used by the optimizer to generate optimal query plans. However, data can change over time and as a consequence, these statistics can become out of date which can cause sub-optimal plan generation. It is beneficial to routinely update optimizer statistics.
+AUS is only available on Query nodes running version 8.0 and later.
 
-Auto Update Statistics is a solution to keep optimizer statistics up to date. The statistics are automatically updated during a configured schedule. The system uses expiration policies to identify statistics that are stale and refreshes them by executing the required UPDATE STATISTICS statements.
+* You can enable AUS in a cluster that has been fully migrated to 8.0, or in a cluster that includes both 7.6.x and 8.0 Query nodes. 
+In such mixed clusters, the 7.6.x Query nodes will not perform any AUS tasks.   
 
-NOTE: The AUS system does not create optimizer statistics for expressions that do not already have statistics. It only maintains and updates statistics that have already been collected.
-AUS only maintains statistics for expressions on index keys.  It does not maintain statistics for expressions on non-indexed fields.
-
-== Prerequisites
-
-* The AUS task can only be performed on 8.0 Query nodes.
-
-* AUS can only be enabled in a cluster that has been fully migrated to 8.0. Or in a cluster that has 7.6.x nodes and 8.0 Query nodes. However, in such a cluster, the 7.6.x Query nodes will not perform any AUS tasks.
-
-* For Couchbase clusters that are migrating from pre-7.6.x versions to a cluster configuration like that above, the AUS task can only be enabled once the automatic migration of optimizer statistics has been migrated to the _query collection in the _system scope of the buckets.
+* For clusters migrating from pre-7.6.x versions (to a cluster configuration described above), the AUS task can only be enabled once the automatic migration of optimizer statistics to the `_query` collection in the `_system` scope of the buckets has been completed. 
 
 == How AUS Works
 
-* AUS is an opt-in feature that users can choose to enable. Users must explicitly opt-in and configure a schedule for when AUS should run. This allows users to schedule this “maintenance window” at a time that best suits their workloads.
+AUS is an opt-in feature. 
+You must explicitly enable it and configure a schedule for when it should run. 
+This allows you to align the AUS task with your cluster's workload patterns and run it at a time that minimizes the impact on performance.
 
-* The AUS system uses expiration policies to determine when statistics are out of date and require an update.
+The AUS task consists of two phases: 
 
-* Every Query node in the cluster participates in the AUS task according to the same schedule.
+. **Evaluation Phase**: 
+In this phase, AUS evaluates which statistics are out of date based on the expiration policies.
 
-* The AUS task comprises two phases, the Evaluation phase and the Update Phase.
+. **Update phase**: 
+After the evaluation, this phase executes the necessary UPDATE STATISTICS statements to refresh the statistics identified as stale. 
+The AUS system ensures that the refreshed statistics maintains the same level of details as the original statistics.
 
-* The Evaluation phase evaluates which statistics are stale based on the expiration policies.
+Every Query node in the cluster participates in the AUS task following the same configured schedule.
+During the scheduled AUS window, each Query node performs the following: 
 
-* The Update phase executes the appropriate UPDATE STATISTICS statements to refresh the statistics deemed as stale by the Evaluation phase. The AUS system maintains the original resolution at which the statistics were collected.
+* The Query node selects the specific collections to perform AUS operations on. 
+This ensures that no other Query node processes the same collection during this window. 
 
---
-NOTE: In a Query node, the following occurs during the AUS scheduled window:
-* The Query node chooses the collections to perform AUS operations on. No other Query node will perform AUS on these collections during this window.
-* For each collection the Evaluation and Update phases are performed on the statistics gathered on expressions on fields in the collection.
---
+* For each selected collection, the Evaluation and Update phases are executed on the statistics gathered on expressions based on fields within that collection.
 
 === Expiration Policy
 
-The AUS system uses expiration policies to determine when statistics are out of date and require an update.
+AUS uses expiration policies to determine when statistics are out of date and require an update.
 
-“Change Percentage" is the expiration policy used. It determines the threshold for how much data in an index must change before the statistics are determined as out of date and requiring an update. 
+“Change Percentage" is the expiration policy used. It determines the threshold for how much data in an index must change before the statistics are determined as out of date and requiring an update.   
+
 
 It is the percentage of changes to the items in an index that must be exceeded to trigger a statistic to be refreshed.
 
@@ -92,7 +88,7 @@ If the scheduled window has ended but the AUS task is still not over, the task i
 
 IMPORTANT: When AUS is enabled, the first scheduled task run can result in all the existing optimizer statistics being updated, regardless of the expiration policy evaluation. This is because the index change information might not have been recorded till the first scheduled run.
 
-== Managing AUS
+== Enabling and Scheduling AUS
 
 To enable AUS for the cluster, the user must explicitly opt-in and set a schedule.
 
@@ -404,7 +400,33 @@ When the DELETE statement affects an AUS task entry in the “scheduled” or �
 
 Remember to add appropriate filters in the DELETE statement so that the statement affects the intended task entry. Otherwise inadvertently other tasks can get cancelled or the task history gets deleted.
 
-== AUS Load
-When the AUS task is executing, it can cause an increased load on the Query node. This is because of all the activity of evaluating the statistics and executing statistics refresh. That is why it is important that the schedule for AUS is set to best suit the workloads of the cluster.
+== Manage AUS Load
 
-Additionally, an attempt is made to ensure that during the scheduled window, the AUS task is not started when the load of the Query node is too high. If the load is too high, the task is not started and the next AUS task is scheduled.
+When the AUS task is executing, it can cause an increased load on the Query node. 
+This is because of all the activity of evaluating the statistics and executing statistics refresh. 
+That is why it is important that the schedule for AUS is set to best suit the workloads of the cluster.
+
+Additionally, an attempt is made to ensure that during the scheduled window, the AUS task is not started when the load of the Query node is too high. 
+If the load is too high, the task is not started and the next AUS task is scheduled.
+
+
+
+
+
+
+
+== Understanding How AUS Works
+
+AUS is an opt-in feature that you can choose to enable or disable. 
+You must explicitly enable it and schedule it to run at a time that best suits the workloads of the cluster.
+
+Once enabled, AUS operates as follows:
+* During the scheduled window, each Query node in the cluster evaluates the statistics for the collections assigned to it.   
+All Query nodes in the cluster participate in the AUS task according to the same schedule.
+* Each AUS task comprises two phases:
+** Evaluation phase 
+*** Evaluates which statistics are stale based on the expiration policies.
+** Update phase
+*** Executes the appropriate UPDATE STATISTICS statements to refresh the statistics deemed as stale by the Evaluation phase. 
+The AUS system maintains the original resolution at which the statistics were collected.
+
