@@ -27,7 +27,7 @@ A Search request can contain the following properties:
 An object that contains the properties for one of the supported query types.
 
 The `query` object is required if you want to run a regular search, or a xref:vector-search:vector-search.adoc[FTS Vector Index Search] query.
-If your database is running Couchbase Server version 7.6.2 and later, you do not need to include the `query` object for a pure Vector Search query. 
+If your cluster is running Couchbase Server version 7.6.2 and later, you do not need to include the `query` object for a pure Vector Search query. 
 
 For more information about how to configure the `query` object, see <<query-object,>>.
 
@@ -136,36 +136,47 @@ NOTE: If you use `search_after` in a search request, you cannot use `search_befo
 
 Use `search_after` with `from/offset` and `sort` to control pagination in search results. 
 
-Give a value for each string or JSON object in the <<sort_arr,sort array>> to the `search_after` array.
-You must provide the values in the same order that they appear in the <<sort_arr,sort array>>.
-Values in the `search_after` array must be strings.
-You cannot use `search_after` with numbers or other field data types - if your `sort` array includes fields with a `date` or `number` type, you cannot use `search_after`. 
-Only result relevancy score values can be entered as strings in the array. 
+Give a value for each string or JSON object in the <<sort_arr,sort array>> to the `search_after` array. 
+You must provide the values in the same order that they appear in the `sort` array. 
+Your `sort` array must force a total order on your search results. 
+
+Values in the `search_after` array must be strings. 
+You cannot use `search_after` with numbers or other field data types - if your `sort` array includes fields with a date or number type, you cannot use `search_after`. 
+Only result relevancy score values can be entered as strings in the array.
 
 The Search Service starts search result pagination after the document with the values you provide in the array.
 
-Use `search_after` to make the memory requirements of deeper page searches more manageable, when compared to using only `from/offset`.
-`search_after` lets you start your search results from a specific result, rather than needing to process a number of search results to skip.
+For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_after` set to `8`, documents 9-10 appear on the same page.
 
-To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your <<sort_arr,sort array>>. 
-Set the `search_after` property to include the values from the last result on your previous page of search results to effectively paginate. 
+To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array. 
+Set the `search_after` property to include the values from the last result on your previous page of search results to effectively paginate.
+
+Use `search_after` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`. 
+`search_after` lets you start your search results from a specific result, rather than needing to process a number of search results to skip. 
+
+|[[search_before]]search_before |Array |No a|
 
 NOTE: If you use `search_before` in a search request, you cannot use `search_after`. Both properties are included in the example code to show the correct syntax.
 
 Use `search_before` with `from/offset` and `sort` to control pagination in search results.
 
-Give a value for each string or JSON object in the `sort` array to the `search_before` array.
+Give a value for each string or JSON object in the <<sort_arr,sort array>> to the `search_before` array. 
 You must provide the values in the same order that they appear in the `sort` array.
+Your `sort` array must force a total order on your search results. 
+
 Values in the `search_before` array must be strings.
-You cannot use `search_before` with numbers or other field data types - if your `sort` array includes fields with a `date` or `number` type, you cannot use `search_before`. 
+You cannot use `search_before` with numbers or other field data types - if your `sort` array includes fields with a date or number type, you cannot use `search_before`.
 Only result relevancy score values can be entered as strings in the array.
 
-The Search Service starts search result pagination before the document with the values you provide in the array.   
+The Search Service starts search result pagination before the document with the values you provide in the array.
 
 For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_before` set to `8`, documents 2-6 appear on the same page.
 
-To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your <<sort_arr,sort array>>. 
-Set the `search_before` property to include the values from the last result on your previous page of search results to effectively paginate. 
+To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array.
+Set the `search_before` property to include the values from the last result on your previous page of search results to effectively paginate.
+
+Use `search_before` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`.
+`search_before` lets you start your search results back from a specific result, rather than needing to process a number of search results to skip.
 
 |[[collections]]collections |Array |No |Contains an array of strings that specify the collections where you want to run the query. 
 
@@ -183,7 +194,7 @@ Add the `knn` array with at least one object to run a Vector Search query:
 include::example$run-search-full-request.jsonc[tag=knn]
 ----
 
-NOTE: If your database is running Couchbase Server version 7.6.2 and later, to return only results from your Vector Search query, do not include a `query` object with your Search request.
+NOTE: If your cluster is running Couchbase Server version 7.6.2 and later, to return only results from your Vector Search query, do not include a `query` object with your Search request.
 To run a FTS Vector Index query that uses regular Search Service parameters together with Vector Search to return results, see the <<query-object,Query Object>> section. 
 
 An object in the `knn` array can contain the following properties: 
@@ -2231,10 +2242,10 @@ The following `sort` object orders search results by the values in `field1`, the
 include::example$run-search-full-request.jsonc[tag=sort]
 ----
 
-TIP: For the best results with sorting and page navigation in search results, always include your document ID values (`_id` or `-_id`) as the final sort criteria in your `sort` object.
-
 This means that if 2 documents have the same value in `field1`, then the Search Service will sort them again based on their `field2` values.
-If they have the same value in `field2`, then sorting will happen again based on each document's score, and then finally the documents' ID values. 
+If they have the same value in `field2`, then sorting will happen again based on each document's score, and then finally the documents' ID values.
+
+TIP: For the best results with sorting and page navigation in search results, always include your document ID values (`_id` or `-_id`) as the final sort criteria in your `sort` object.
 
 The `sort` object can contain the following string values: 
 
