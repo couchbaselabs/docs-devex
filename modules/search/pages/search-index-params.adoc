@@ -250,6 +250,14 @@ This type mapping is included for compatibility only.
 
 For more information about the properties inside the `default_mapping` object, see <<default-mapping,>>.
 
+|default_synonym_source |String |No a| 
+
+The name of the default synonym source to use for the Search index.
+
+The value of `default_synonym_source` must match a defined <<synonym_name,>> in your Search index definition.
+
+For more information about using synonyms with the Search Service, see xref:synonyms/synonyms-search.adoc[].
+
 |default_type |String |No |This setting is included for compatibility with earlier indexes only. 
 
 |docvalues_dynamic |Boolean |Yes a|
@@ -1020,8 +1028,10 @@ For more information, see xref:manage:manage-documents/manage-documents.adoc[].
 |dynamic |Boolean |Yes a|
 
 To index all fields under the specified scope and collection, JSON object, or all fields inside XATTRs, set `dynamic` to `true`.
+This creates a xref:customize-index.adoc#type-mappings[dynamic type mapping].
 
-To only index the fields you specify and enable the `properties` block, set `dynamic` to `false`. 
+To only index the fields you specify and enable the `properties` block, set `dynamic` to `false`.
+This creates a xref:customize-index.adoc#type-mappings[static type mapping].
 
 |enabled |Boolean |Yes a| 
 
@@ -1029,9 +1039,33 @@ To enable the mapping and include any documents that match it in the Search inde
 
 To remove any documents that match this mapping from the Search index, set `enabled` to `false`.
 
+|default_analyzer |String |No a|
+
+The name of the default analyzer to use for any text field defined under this type mapping. 
+
+If the type mapping is dynamic, this analyzer applies to every text field for documents that match the type mapping.
+
+If the type mapping is static, this analyzer only applies to the text fields you add in the `properties` object that do not have a defined analyzer.
+
+The value of `default_analyzer` must match a defined <<analyzer-name,>> in your Search index definition, or xref:default-analyzers-reference.adoc[a default analyzer].
+
+For more information about analyzers, see xref:customize-index.adoc#analyzers[Analyzers].
+
+|default_synonym_source |String |No a|
+
+The name of the default synonym source to use for any text fields defined under this type mapping.
+
+If the type mapping is dynamic, this synonym source applies to every text field for documents that match the type mapping.
+
+If the type mapping is static, this synonym source only applies to the text fields you add in the `properties` object that do not have a defined synonym source.
+
+The value of `default_synonym_source` must match a defined <<synonym_name,>> in your Search index definition.
+
+For more information about using synonyms with the Search Service, see xref:synonyms/synonyms-search.adoc[].
+
 |[[properties]]properties |Object |No a|
 
-The `properties` object is only enabled if `dynamic` is set to `false`. 
+The `properties` object is only enabled if `dynamic` is set to `false`.
 
 Specifies properties for the fields to index in the mapping.
 Contains any number of `\{field_name\}` objects. 
