@@ -70,6 +70,34 @@ This ensures that no other query node processes the same collection during this 
 IMPORTANT: When AUS is enabled, the very first scheduled task run might update all existing optimizer statistics, regardless of the expiration policy evaluation.
 This is because the index change information might not have been recorded prior to this initial run.
 
+[plantuml#fig-aus-process,aus-process,svg]
+....
+@startuml
+
+skinparam defaultTextAlignment center
+
+() " " as start
+() " " as end
+
+rectangle "Query\nNode" {
+    rectangle "Scheduled\nTask" as ScheduledTask
+    rectangle "Evaluation\nPhase" as EvaluationPhase
+    rectangle "Update\nPhase" as UpdatePhase
+}
+
+database "Statistics\nCatalog" as StatisticsCatalog
+
+start ..r..> ScheduledTask
+ScheduledTask -> EvaluationPhase
+EvaluationPhase -> UpdatePhase
+EvaluationPhase --> StatisticsCatalog : "Check for\nstale statistics\n(based on expiration policy)"
+UpdatePhase --> StatisticsCatalog : "Update stale\nstatistics"
+UpdatePhase ..r..> end
+
+@enduml
+....
+
+
 __Add a flowchart here to illustrate the AUS process__
 
 [#expiration_policy]
@@ -424,35 +452,77 @@ To cancel all running AUS tasks, use the following DELETE statement:
 DELETE FROM system:tasks_cache WHERE class = "auto_update_statistics" AND state = "running";
 ----
 
-CAUTION: Use appropriate filters in the WHERE clause to be selective of which tasks to cancel or delete.
-Remember to add appropriate filters in the DELETE statement so that the statement affects the intended task entry. Otherwise inadvertently other tasks can get cancelled or the task history gets deleted.
-
-
 To cancel a running AUS task on a specific node, include the node's address in the WHERE clause:
 
 [source,sqlpp]
 ----
-DELETE FROM system:tasks_cache WHERE class = "auto_update_statistics" 
-       AND state = "running" 
-       AND node = "127.0.0.1:8091"; // Replace with the actual node address
+DELETE FROM system:tasks_cache 
+        WHERE class = "auto_update_statistics" 
+        AND state = "running" 
+        AND node = "127.0.0.1:8091"; // Replace with the actual node address
 ----
 
-When you delete an AUS task that is in a `scheduled` or `running` state, the task is cancelled. 
+When you delete an AUS task that is in the `scheduled` or `running` state, AUS cancels the task and schedules the next one automatically.
 
-
- and the next AUS task is automatically scheduled.
-When the DELETE statement affects an AUS task entry in the “scheduled” or “running” state, the scheduled/ running task is cancelled and the next AUS task is automatically scheduled.
-
-
+CAUTION: It is important to include appropriate WHERE clauses to specify exactly which tasks you want to cancel. 
+Make sure your filters target only the intended tasks, otherwise they might inadvertently cancel other tasks or delete task history.
 
 == Manage AUS Load
 
-When the AUS task is executing, it can cause an increased load on the Query node. 
-This is because of all the activity of evaluating the statistics and executing statistics refresh. 
-That is why it is important that the schedule for AUS is set to best suit the workloads of the cluster.
+When an AUS task runs, it can increase the load on the query node due to the evaluation and refresh of statistics.
+Therefore, it is important to schedule AUS to best suit the workloads of the cluster.
 
-Additionally, an attempt is made to ensure that during the scheduled window, the AUS task is not started when the load of the Query node is too high. 
-If the load is too high, the task is not started and the next AUS task is scheduled.
+To prevent excessive load, the AUS task will not start if the query node's load is too high during the scheduled window.
+In such cases, the task is skipped, and the next AUS task is scheduled. 
+
+== Related Links
+
+* xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc[Cost Based Optimizer]
+* xref:n1ql:n1ql-language-reference/updatestatistics.adoc[]
+* xref:n1ql:n1ql-intro/sysinfo.adoc[System Catalogs and Information]
 
 
+////
 
+.Default filters, order, and pagination
+[plantuml#fig-uncovered,uncovered-query,svg]
+....
+@startuml
+
+skinparam defaultTextAlignment center
+
+() " " as start
+() " " as end
+
+rectangle "Index\nService"{
+  rectangle "Index Scan" as IndexScan
+}
+
+rectangle "Query\nService"{
+  rectangle Fetch
+  rectangle Filter
+  rectangle Order
+  rectangle Offset
+  rectangle Limit
+}
+
+note bottom of Filter
+  Filters, order, and pagination
+  performed after fetch
+end note
+
+database "Data\nService" as Data
+
+start ..r..> IndexScan
+IndexScan -> Fetch
+Fetch -> Filter
+Filter -> Order
+Order -> Offset
+Offset -> Limit
+Fetch --> Data
+Fetch <-- Data
+Limit ..r..> end
+
+@enduml
+....
+////
