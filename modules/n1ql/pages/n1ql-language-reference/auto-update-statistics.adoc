@@ -70,6 +70,7 @@ This ensures that no other query node processes the same collection during this 
 IMPORTANT: When AUS is enabled, the very first scheduled task run might update all existing optimizer statistics, regardless of the expiration policy evaluation.
 This is because the index change information might not have been recorded prior to this initial run.
 
+.AUS process flow showing the evaluation and update phases
 [plantuml#fig-aus-process,aus-process,svg]
 ....
 @startuml
@@ -79,26 +80,33 @@ skinparam defaultTextAlignment center
 () " " as start
 () " " as end
 
+rectangle "AUS\nEnabled?" as AusEnabled
+
 rectangle "Query\nNode" {
-    rectangle "Scheduled\nTask" as ScheduledTask
+    rectangle "Scheduled\nAUS Task" as ScheduledTask
+    rectangle "Collection\nSelection" as CollectionSelection
     rectangle "Evaluation\nPhase" as EvaluationPhase
     rectangle "Update\nPhase" as UpdatePhase
 }
 
-database "Statistics\nCatalog" as StatisticsCatalog
+database "Optimizer\nStatistics" as OptimizerStatistics
 
-start ..r..> ScheduledTask
-ScheduledTask -> EvaluationPhase
+note bottom of CollectionSelection
+  Selects collections for AUS
+end note
+
+
+start ..r..> AusEnabled : "Start \nAUS Process"
+AusEnabled -> ScheduledTask : "Yes"
+ScheduledTask -> CollectionSelection
+CollectionSelection -> EvaluationPhase 
 EvaluationPhase -> UpdatePhase
-EvaluationPhase --> StatisticsCatalog : "Check for\nstale statistics\n(based on expiration policy)"
-UpdatePhase --> StatisticsCatalog : "Update stale\nstatistics"
+EvaluationPhase --> OptimizerStatistics : "Check for\nstale statistics\nbased on expiration policy"
+UpdatePhase --> OptimizerStatistics : "Update stale\nstatistics"
 UpdatePhase ..r..> end
 
 @enduml
 ....
-
-
-__Add a flowchart here to illustrate the AUS process__
 
 [#expiration_policy]
 === Expiration Policy
@@ -480,49 +488,3 @@ In such cases, the task is skipped, and the next AUS task is scheduled.
 * xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc[Cost Based Optimizer]
 * xref:n1ql:n1ql-language-reference/updatestatistics.adoc[]
 * xref:n1ql:n1ql-intro/sysinfo.adoc[System Catalogs and Information]
-
-
-////
-
-.Default filters, order, and pagination
-[plantuml#fig-uncovered,uncovered-query,svg]
-....
-@startuml
-
-skinparam defaultTextAlignment center
-
-() " " as start
-() " " as end
-
-rectangle "Index\nService"{
-  rectangle "Index Scan" as IndexScan
-}
-
-rectangle "Query\nService"{
-  rectangle Fetch
-  rectangle Filter
-  rectangle Order
-  rectangle Offset
-  rectangle Limit
-}
-
-note bottom of Filter
-  Filters, order, and pagination
-  performed after fetch
-end note
-
-database "Data\nService" as Data
-
-start ..r..> IndexScan
-IndexScan -> Fetch
-Fetch -> Filter
-Filter -> Order
-Order -> Offset
-Offset -> Limit
-Fetch --> Data
-Fetch <-- Data
-Limit ..r..> end
-
-@enduml
-....
-////
