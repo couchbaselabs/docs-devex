@@ -139,20 +139,36 @@ SELECT awr FROM system:vitals;
 
 == View AWR Data and Reports
 
-The primary method to view AWR data is to generate a report using the `cbqueryreportgen` tool (__link to be added__). 
+You can view AWR data and reports using the `cbqueryreportgen` tool or by querying the data directly from the target keyspace.
+
+=== Using the `cbqueryreportgen` Tool 
+
+This is the primary way to generate AWR reports, as it provides a comprehensive and user-friendly report formats. 
+
+The `cbqueryreportgen` tool executes SQL++ queries to generate the workload reports based on the AWR data collected. 
+To optimize query performance, it is recommended to create an index on the document key (META().id) in your configured AWR location.
+If this index is not created, the `cbqueryreportgen` tool will use sequential scans, which can impact performance.
+
+For example, if your AWR data is stored in the `default:bucket1.scope1.awr` keyspace, you can create the recommended index as follows:
+
+[source,sqlpp]
+----
+CREATE INDEX idx_awr ON default:bucket1.scope1.awr(META().id);
+----
+
+This index will be used by the `cbqueryreportgen` tool to efficiently query and retrieve the AWR data for generating reports.
+For more information about the tool and how to use it, see (__link to be added__).
 // TODO: Add link to the CLI Reference section.  
 
-Alternatively, you can also query the data directly from the target keyspace. 
-When doing so, it is important to understand the data format, which is optimized to minimize the storage size. 
+=== Querying AWR Data Directly
 
-The following section explains how to query the AWR data and the fields within the data. 
+You can also query AWR data directly from the target keyspace using SQL++ queries.
+When doing so, it is important to understand the data format, which is optimized to minimize the storage size.
 
-=== Querying AWR Data
-
-To query the AWR data, you need to access the target keyspace where the snapshots are stored. 
-Each snapshot is represented as a document, and the document key (ID) includes the timestamp of the interval during which the data was collected. 
-This enables time-based filtering without requiring indexes (as sequential scans can support range-based key patterns). 
-However, you can define and add indexes, if needed. 
+To query AWR data, access the specific target keyspace where the snapshots are stored. 
+Each snapshot is saved as a document, and its document key (ID) includes the timestamp of the interval during which the data was collected. 
+This enables time-based filtering without requiring indexes, as sequential scans can support range-based key patterns. 
+However, you can define and add indexes if needed. 
 
 Each document contains the following fields: 
 
