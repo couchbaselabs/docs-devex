@@ -40,8 +40,20 @@ AWR stores and manages these settings in the `system:awr` catalog.
 This catalog determines how AWR functions including where it stores data, how often it collects statistics, and which queries to include in the report. 
 
 NOTE: Only admins or users with the `query_manage_system_catalog` role can modify settings in `system:awr` to customize the AWR configuration. 
-For more information, see xref:n1ql:n1ql-intro/sysinfo.adoc#authentication-and-client-privileges[Get System Information > Authentication and Client Privileges].
+For more information, see xref:n1ql:n1ql-intro/sysinfo.adoc#authentication-and-client-privileges[Authentication and Client Privileges].
 
+=== Enable AWR
+
+AWR is not enabled by default, so you must explicitly enable it to use the feature.
+
+To enable AWR, use the following query:
+
+[source,sqlpp]
+----
+UPDATE system:awr SET enabled = true;
+----
+
+Upon executing this query, AWR will begin collecting performance statistics for all queries executed on the cluster.
 
 === View Configuration
 
@@ -105,23 +117,11 @@ Once the specified limit is reached, any additional statements are not included 
 | Positive integer
 |===
 
-
-=== Enable AWR
-
-Before you can start using AWR, you need to enable it, as it is not enabled by default. 
-
-To enable AWR, use the following query:
-
-[source,sqlpp]
-----
-UPDATE system:awr SET enabled = true;
-----
-
 === Update AWR Settings
 
-Once you enable AWR, you may want to configure the settings to suit your monitoring needs. 
+You can adjust the AWR settings at any time to align with your monitoring needs. 
 
-For example, you can update the target location, threshold, and interval by using the following query.
+For example, you can modify the target location, reporting interval, and threshold by using the following query (make sure to replace the values with your desired settings).
 
 [source,sqlpp]
 ----
@@ -130,7 +130,8 @@ UPDATE system:awr SET location = "default.s1.awr", interval = "1m", threshold = 
 
 === Monitor AWR
 
-The current status of AWR is logged in the `query.log` and can be viewed in the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#vitals[`system:vitals`] output by using the following query: 
+The current status of AWR is recorded in the `query.log`. 
+You can view this information in the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#vitals[`system:vitals`] output by using the following query: 
 
 [source,sqlpp]
 ----
@@ -139,15 +140,15 @@ SELECT awr FROM system:vitals;
 
 == View AWR Data and Reports
 
-You can view AWR data and reports using the `cbqueryreportgen` tool or by querying the data directly from the target keyspace.
+You can view AWR data and reports using the AWR report generation tool (`cbqueryreportgen`) or by querying the data directly from the target keyspace.
 
-=== Using the `cbqueryreportgen` Tool 
+=== Using the Report Generation Tool 
 
-This is the primary way to generate AWR reports, as it provides a comprehensive and user-friendly report formats. 
+The primary way to generate AWR reports is to use the `cbqueryreportgen` tool, as it provides comprehensive and user-friendly report formats.
 
 The `cbqueryreportgen` tool executes SQL++ queries to generate the workload reports based on the AWR data collected. 
-To optimize query performance, it is recommended to create an index on the document key (META().id) in your configured AWR location.
-If this index is not created, the `cbqueryreportgen` tool will use sequential scans, which can impact performance.
+To optimize query performance, it is recommended to create an index on the document key (`META().id`) in your configured AWR location.
+If this index is not created, the tool will use sequential scans, which can impact performance.
 
 For example, if your AWR data is stored in the `default:bucket1.scope1.awr` keyspace, you can create the recommended index as follows:
 
@@ -191,9 +192,7 @@ Each document contains the following fields:
 | **pln** +
 |An array containing the encoded, compressed outlines of the execution plan for both the minimum and maximum execution times of the statement.  
 
-You can use the `uncompress` function to decompress this the value into a string, which can then be passed to xref:n1ql:n1ql-language-reference/jsonfun.adoc[DECODE_JSON()] for formatting, if needed.  
-// TODO: Add link to the uncompress function. 
-
+You can use the xref:n1ql:n1ql-language-reference/stringfun.adoc#fn-str-uncompress[UNCOMPRESS()] function to decompress this the value into a string, which can then be passed to xref:n1ql:n1ql-language-reference/jsonfun.adoc[DECODE_JSON()] for formatting, if needed.  
 
 **Note**: This is just the outline of the plan listing operators and significant objects used.  
 For full execution details, configure the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-completed-config[completed_requests] system keyspace to capture the execution time of the statement.
@@ -227,8 +226,7 @@ For example, the second statistic in the list is the CPU time. Therefore, +
 |**txt** +
 | The statement text, possibly in a compressed format. 
 
-Typically, this field is accessed using the `uncompress` function, and the function returns the raw text if it isn’t compressed. 
-// TODO: Add link to the uncompress function. 
+Typically, this field is accessed using the xref:n1ql:n1ql-language-reference/stringfun.adoc#fn-str-uncompress[UNCOMPRESS()] function, and the function returns the raw text if it isn’t compressed. 
 
 | String
 
