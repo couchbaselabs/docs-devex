@@ -169,12 +169,13 @@ Couchbase Server supports two formats for the index, which controls how the inde
 Flat Index::
 This algorithm just stores the full vector value in the index without performing any sort of optimization. 
 Searches using this index use a brute-force method to find similar vectors.
-Adding new vectors to a flat index is fast, and the index does not need training.
-It also offers high precision, because search compares the full vector values. 
-However, searching a flat index is inefficient, because the search must compare every vector in the index to find matchers.
+Adding new vectors to a flat index is fast and the index does not need training.
+It also offers high precision because search compares the full vector values. 
+However, searching a flat index is inefficient.
+The search must compare every vector in the index to find matches.
 You should only use it for small data sets or for testing. 
 +
-NOTE: Only Search Indexes support using a flat index.
+NOTE: Only Search indexes support using a flat index.
 Vector indexes and GSI with a vector field only support the next algorithm, IVF.
 
 [#IVF]
@@ -188,12 +189,12 @@ An IVF index trains itself during creation using a set of parameters you pass to
 +
 image::ivf-diagram-with-vectors.svg["A plot showing clusters of points in a 3D graph being labelled and assigned centroid vectors. The centroids them point to multiple vectors."]
 +
-When you search an IVF index, it first locates the centroids that are most relevant to the vector value you're searching for.
-It then searches just the vectors associated to those centroids in the inverted list.
+When you search using an IVF index, it first locates the centroids that are most relevant to the vector value you're searching for.
+It then searches just the vectors associated with those centroids in the inverted list.
 By limiting the number of vector comparisons to just the vectors close to the relevant centroids, IVF makes vector search faster.
 +
 A drawback of this method is the possibility that the search could miss some relevant vectors.
-Vectors can be missed if they're associated with a centroid that's not relevant to the search vector.
+A search can miss vectors if they're associated with a centroid that's not relevant to the search vector.
 This risk increases as you add and delete data after you train the index.
 The centroids chosen during the initial training may no longer accurately represent clusters in current dataset.
 See <<#index-training>> for more information about index accuracy.
