@@ -16,17 +16,17 @@ The following sections describe the settings for centroids and quantization.
 
 === Number of Centroids
 
-{index-name-plural} always use the xref:vector-index:use-vector-indexes.adoc#IVF[Inverted File (IVF)] algorithm to subdivides the dataset.
-Using this algorithm reduces the number of vector comparisons a vector search of the index must perform.
+{index-name-plural} always use the xref:vector-index:use-vector-indexes.adoc#IVF[Inverted File (IVF)] algorithm to subdivide the dataset.
+Using this algorithm reduces the number of vector comparisons a vector search of the index performs.
 The key setting for IVF is the number of centroids it allocates for the index. 
-The number of centroids affects the performance of your index in two ways:
+This number affects the performance of your index in two ways:
 
 * If the index has fewer centroids, each centroid has more vectors associated with it.
-In this case, a vector search has to perform more comparisons which makes the search slower.
-Having fewer centroids decreases the processing overhead for training the index.  
+In this case, a vector search has to perform more comparisons, making the search slower.
+However, having fewer centroids decreases the processing required to training the index.  
 
 * A greater number of centroids results in a greater processing cost for training.
-This increase is due to the training process having to search for more data cluster to identify  more centroids. 
+This increase is due to the training process having to search for more data cluster to identify more centroids. 
 However, it reduces the number of vectors associated with each centroid.
 This reduction makes search faster by limiting the number of vector comparisons during a search.
 
@@ -46,7 +46,6 @@ The number of centroids you set manually must be less than the number of vectors
 You must choose whether the index uses xref:vector-index:use-vector-indexes.adoc#sq[Scalar Quantization (SQ)] or xref:vector-index:use-vector-indexes.adoc#pq[Product Quantization (PQ)]. 
 
 You select the quantization by adding a comma followed by either `PQ` or `SQ` to the `description` parameter after the IVF setting in the `description` value.
-
 
 Each quantization method has additional settings explained in the following sections.
 
@@ -75,13 +74,15 @@ This cuts the memory used to store the centroids in half.
 
 |===
 
+See xref:vector-index:vectors-and-indexes-overview.adoc#sq[Scalar Quantization] for more information about how SQ works.
+
 ==== PQ Settings
 
 If you choose to use PQ in your index, you must set two values:
 
-* The number of subquantizers (number of subspaces SQ splits the vector's dimensions into) to use. 
-This value must a divisor of the number of dimensions in the vector.
-For example, if your vector has 99 dimensions you can only use the values 3, 9, 11, 33, and 99 for the subquantizers. 
+* The number of subquantizers (number of subspaces PQ splits the vector's dimensions into) to use. 
+This value must be a divisor of the number of dimensions in the vector.
+For example, if your vector has 99 dimensions, you can only use the values 3, 9, 11, 33, and 99 for the subquantizers. 
 Using any other value returns an error. 
 
 * The number of bits in the centroid's index value. 
@@ -124,3 +125,5 @@ PQ breaks the vector space into 8 subspaces, each of which uses 8-bits to repres
 This settings means each subspace has 256 centroids.
 
 |===
+
+See xref:vector-index:vectors-and-indexes-overview.adoc#pq[Product Quantization ] for more information about how PQ works.
