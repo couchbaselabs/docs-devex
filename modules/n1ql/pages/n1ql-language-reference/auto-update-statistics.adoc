@@ -442,7 +442,19 @@ NOTE: You can also retrieve the AUS task history from the `query.log`.
 
 == Cancel AUS Tasks
 
-You can cancel a running AUS task by deleting its entry from the `system:tasks_cache` catalog.
+You can cancel AUS tasks that are currently running or scheduled to run.
+
+* <<cancel_running_aus_tasks, Cancel Running AUS Tasks>>
+* <<cancel_next_scheduled_aus_tasks, Cancel Next Scheduled AUS Tasks>>
+
+CAUTION: When cancelling AUS tasks, it is important to include appropriate WHERE clauses to specify exactly which tasks you want to cancel. 
+Make sure your filters target only the intended tasks, otherwise they might inadvertently cancel other tasks or delete task history.
+
+[#cancel_running_aus_tasks]
+=== Cancel Running AUS Tasks
+
+To cancel a running AUS task, delete its entry from the `system:tasks_cache` catalog.
+When you delete a task that is in the `scheduled` or `running` state, AUS cancels the task and schedules the next one automatically.
 
 To cancel all running AUS tasks, use the following DELETE statement:
 
@@ -461,10 +473,44 @@ DELETE FROM system:tasks_cache
         AND node = "127.0.0.1:8091"; // Replace with the actual node address
 ----
 
-When you delete an AUS task that is in the `scheduled` or `running` state, AUS cancels the task and schedules the next one automatically.
+=== Cancel Next Scheduled AUS Tasks
 
-CAUTION: It is important to include appropriate WHERE clauses to specify exactly which tasks you want to cancel. 
-Make sure your filters target only the intended tasks, otherwise they might inadvertently cancel other tasks or delete task history.
+To cancel the next scheduled AUS task, temporarily modify the schedule in the `system:aus` catalog using an UPDATE statement. 
+This way you can skip a specific AUS run without changing the overall configuration.
+
+==== Temporarily Update the Schedule
+
+First, identify the scheduled AUS task you want to skip or cancel.
+Then, update the schedule to temporarily exclude the day or time. 
+
+For example, if your AUS tasks run on Monday, Wednesday, and Friday, and you want to cancel the upcoming Monday run: 
+
+[source,sqlpp]
+----
+UPDATE system:aus SET schedule.days = ["Wednesday", "Friday"];
+----
+
+==== Revert the Schedule
+
+After the day and time that the cancelled task would have run has passed, you can revert the schedule to its original settings. 
+This allows your AUS tasks resume their regular schedule for all subsequent runs.
+
+For example, to restore the Monday, Wednesday, and Friday schedule after the skipped Monday run: 
+
+[source,sqlpp]
+----
+UPDATE system:aus SET schedule.days = ["Monday", "Wednesday", "Friday"];
+----
+
+
+
+
+
+
+
+
+
+
 
 == Manage AUS Load
 
