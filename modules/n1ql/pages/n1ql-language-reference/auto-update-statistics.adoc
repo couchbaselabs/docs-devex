@@ -33,36 +33,18 @@ In such mixed clusters, the 7.6.x query nodes will not perform any AUS tasks.
 == How AUS Works
 
 AUS is an opt-in feature that you must explicitly enable and schedule. 
+Once it is enabled and a schedule is set, all query nodes in the cluster participate in AUS, according to the same schedule.
 
-Once AUS is enabled and a schedule is set, every query node in the cluster participates in AUS.
-Each query node gets its own AUS task, which consists of two phases: 
+=== AUS Task Execution
 
-. **Evaluation Phase**: 
-In this phase, AUS evaluates whether exisiting statistics are stale based on the <<expiration_policy, expiration policy>>. 
-For each index, AUS assess how much data has changed since the last update of the optimizer statistics for the index's key expressions.
-If the percentage of change exceeds the defined threshold in the <<expiration_policy, expiration policy>>, the statistics are marked as stale.
+Each node receives its own AUS task, which performs the following actions during its scheduled window:
 
-+
-Additionally, if configured to do so, this phase also identifies any indexed expressions that currently lack statistics and flags them for creation. 
-You can control this setting using the `create_missing_statistics` attribute in the <<system_aus, system:aus>> catalog.
+* The query node first selects specific collections for AUS processing, ensuring that no other query node updates the same collection during this period. 
 
-. **Update Phase**:
-After the evaluation, AUS executes xref:n1ql:n1ql-language-reference/updatestatistics.adoc[] statements to refresh the statistics identified as stale. 
-When updating the exisitng statistics, AUS ensures that the refreshed statistics maintain the original xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#resolution[resolution] at which they were collected.
-+
-Also, if the `create_missing_statistics` option is set to `true`, AUS creates new optimizer statistics for indexed expressions that were flagged as missing during the evaluation phase.
-The new statistics are created with the default xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#resolution[resolution]. 
+* Each selected collection then goes through two phases: <<evaluation_phase, Evaluation>> and <<update_phase, Update>>. 
+These phases process statistics gathered from expressions based on fields within that collection. 
 
-IMPORTANT: When AUS is first enabled, the initial task run might update all existing optimizer statistics, regardless of the expiration policy evaluation.
-This is because the index change information might not have been recorded prior to this first run. 
-
-During the scheduled AUS window, each query node performs the following: 
-
-* It selects the specific collections for AUS processing, ensuring that no other query node updates the same collection during this window. 
-
-* For each selected collection, the evaluation and update phases are executed on the statistics gathered from expressions based on fields within that collection.
-
-* Once AUS completes processing all statistics in all buckets, the query node schedules the next AUS run.
+* After AUS completes processing all statistics in all buckets, the query node schedules the next AUS run.
 
 * If the scheduled window ends before the AUS task finishes, the task is aborted and the next AUS run is scheduled.
 
@@ -98,6 +80,26 @@ UpdatePhase ..r..> end
 
 @enduml
 ....
+
+=== Evaluation Phase
+
+In this phase, AUS evaluates whether exisiting statistics are stale based on the <<expiration_policy, expiration policy>>. 
+For each index, AUS assess how much data has changed since the last update of the optimizer statistics for the index's key expressions.
+If the percentage of change exceeds the defined threshold in the <<expiration_policy, expiration policy>>, the statistics are marked as stale.
+
+Additionally, if configured to do so, this phase also identifies any indexed expressions that currently lack statistics and flags them for creation. 
+You can control this setting using the `create_missing_statistics` attribute in the <<system_aus, system:aus>> catalog.
+
+=== Update Phase
+
+After the evaluation, AUS executes xref:n1ql:n1ql-language-reference/updatestatistics.adoc[] statements to refresh the statistics identified as stale. 
+When updating the exisitng statistics, AUS ensures that the refreshed statistics maintain the original xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#resolution[resolution] at which they were collected.
+
+Also, if the `create_missing_statistics` option is set to `true`, AUS creates new optimizer statistics for indexed expressions that were flagged as missing during the evaluation phase.
+The new statistics are created with the default xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#resolution[resolution]. 
+
+IMPORTANT: When AUS is first enabled, the initial task run might update all existing optimizer statistics, regardless of the expiration policy evaluation.
+This is because the index change information might not have been recorded prior to this first run. 
 
 [#expiration_policy]
 === Expiration Policy
