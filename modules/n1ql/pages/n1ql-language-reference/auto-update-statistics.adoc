@@ -14,13 +14,11 @@ However, as data changes over time, the statistics can become stale, leading to 
 
 To handle this, AUS executes a scheduled task on each query node in the cluster. 
 This task evaluates statistics based on expiration policies to identify outdated ones and then refreshes them by running the xref:n1ql:n1ql-language-reference/updatestatistics.adoc[] statement.
+It primarily maintains statistics for expressions based on index keys, and not for expressions on non-indexed fields.
 
-[NOTE]
-====
-* AUS is only available in Couchbase Server 8.0 and later. For more information, see <<availability, Availability>>.
-* AUS only updates existing statistics; it does not create new ones.
-* AUS primarily maintains statistics for expressions based on index keys, and not for expressions on non-indexed fields.
-====
+Optionally, AUS can also create optimizer statistics for indexed expressions that do not already have them.
+
+NOTE: AUS is only available in Couchbase Server 8.0 and later. For more information, see <<availability, Availability>>.
 
 [#availability]
 == Availability
@@ -42,11 +40,18 @@ Each query node gets its own AUS task, which consists of two phases:
 . **Evaluation Phase**: 
 In this phase, AUS evaluates whether exisiting statistics are stale based on the <<expiration_policy, expiration policy>>. 
 For each index, AUS assess how much data has changed since the last update of the optimizer statistics for the index's key expressions.
-If the percentage of change exceeds the defined threshold in the <<expiration_policy, expiration policy>>, the statistics are marked as stale. 
+If the percentage of change exceeds the defined threshold in the <<expiration_policy, expiration policy>>, the statistics are marked as stale.
+
++
+Additionally, if configured to do so, this phase also identifies any indexed expressions that currently lack statistics and flags them for creation. 
+You can control this setting using the `create_missing_statistics` attribute in the <<system_aus, system:aus>> catalog.
 
 . **Update Phase**:
 After the evaluation, AUS executes xref:n1ql:n1ql-language-reference/updatestatistics.adoc[] statements to refresh the statistics identified as stale. 
-It ensures that the refreshed statistics provide the same level of detail as the original statistics.
+When updating the exisitng statistics, AUS ensures that the refreshed statistics maintain the original xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#resolution[resolution] at which they were collected.
++
+Also, if the `create_missing_statistics` option is set to `true`, AUS creates new optimizer statistics for indexed expressions that were flagged as missing during the evaluation phase.
+The new statistics are created with the default xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#resolution[resolution]. 
 
 IMPORTANT: When AUS is first enabled, the initial task run might update all existing optimizer statistics, regardless of the expiration policy evaluation.
 This is because the index change information might not have been recorded prior to this first run. 
@@ -87,8 +92,8 @@ AusEnabled -> ScheduledTask : "Yes"
 ScheduledTask -> CollectionSelection
 CollectionSelection -> EvaluationPhase 
 EvaluationPhase -> UpdatePhase
-EvaluationPhase --> OptimizerStatistics : "Checks for\nstale statistics\nbased on expiration policy"
-UpdatePhase --> OptimizerStatistics : "Updates stale\nstatistics"
+EvaluationPhase --> OptimizerStatistics 
+UpdatePhase --> OptimizerStatistics
 UpdatePhase ..r..> end
 
 @enduml
@@ -142,8 +147,8 @@ The following are the attribute names and the configurations they represent:
 __required__
 | Indicates whether AUS is enabled for the cluster or not.
 
-Set this attribute to `true` to enable AUS. +
-If set to `true`, then the `schedule` attribute must be set.
+To enable AUS, set this attribute to `true`. +
+If set to `true`, then the `schedule` attribute must also be set.
 
 *Default:* `false`
 
@@ -176,6 +181,18 @@ For example, a value of `30` means that if 30% or more of the items in an index 
 __required__
 
 | Indicates whether AUS should be performed on all buckets or only those buckets whose metadata information is loaded on the query node.
+
+*Default:* `false`
+
+| Boolean
+
+| **create_missing_statistics** +
+__required__
+
+| Indicates whether AUS should create statistics that are missing. 
+
+If set to `true`, AUS creates statistics for indexed expressions that do not have any existing statistics.
+The statistics will be created using the default value for the xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#resolution[resolution] property.
 
 *Default:* `false`
 
