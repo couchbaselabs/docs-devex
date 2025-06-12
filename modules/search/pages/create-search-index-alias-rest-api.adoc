@@ -1,0 +1,114 @@
+= Create a Search Index Alias with the REST API
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Use the REST API to create a Search index alias. Use a Search index alias to run a Search query across multiple buckets, scopes, or Search indexes. 
+
+[abstract]
+{description}
+
+== Prerequisites
+
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+
+* You have created at least one Search index.
+For more information, see xref:create-search-index-ui.adoc[] or xref:create-search-index-rest-api.adoc[].
+
+* Your user account has the *Search Admin* role for the bucket where you want to create the alias. 
+
+* You have installed the Couchbase command-line tool (CLI).
+
+* You have the hostname or IP address for the node in your cluster where you're running the Search Service.
+For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
+
+== Procedure
+
+To create a Search index alias with the REST API: 
+
+. In your command-line tool, enter a `curl` command with the `XPUT` verb. 
+. Set your header content to include `"Content-Type: application/json"`.
+. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the index you want to create.
++
+If your alias's target Search indexes are all in the same bucket and scope, use the scoped index creation endpoint: 
++
+.Scoped Index Creation Endpoint
+[source,console]
+----
+include::example$create-search-alias-header-scoped.sh[]
+----
++
+If your target Search indexes are in different buckets or scopes, use the global index creation endpoint: 
++
+.Global Index Creation Endpoint
+[source,console]
+----
+include::example$create-search-alias-header-global.sh[]
+----
++
+To use SSL, use the `https` protocol in the Search Service endpoint URL and port `18094`.
++
+[NOTE]
+====
+Your alias name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
+
+For Couchbase Server version 7.6 and later, if you're using the scoped endpoint, your alias name must be unique inside your selected bucket and scope.
+You cannot have 2 aliases with the same name globally or inside the same bucket and scope.
+====
+
+. Enter the JSON payload for your Search index alias. 
+Your Search index alias only requires the properties from xref:search-index-params.adoc#initial[the start of a Search index JSON payload], except where otherwise noted.
+
+== Example: Create an Alias With Targets in the Same Bucket and Scope
+
+In the following example, the JSON payload creates an index alias named `travel-sample-alias`, which contains the `landmark-content`, `hotel-reviews`, and `routes` Search indexes: 
+
+[source,console]
+----
+include::example$create-search-alias-payload-scoped.sh[]
+----
+
+All the Search indexes in the `targets` object are in the same bucket and scope, so the REST API call uses the scoped endpoint to create a scoped alias.
+
+If the REST API call is successful, the Search Service returns a `200 OK` and the following JSON response:
+
+[source,json]
+----
+include::example$create-search-alias-response-scoped.json[]
+----
+
+The `"uuid"` is randomly generated for each Search index alias you create. 
+Your own UUID might not match the value shown in the example.
+
+== Example: Create an Alias With Targets in Different Buckets
+
+In the following example, the JSON payload creates an index alias named `travel-color-alias`, which contains the `landmark-content` and `color-index` Search indexes, which are in different buckets on the cluster: 
+
+[source,console]
+----
+include::example$create-search-alias-payload-global.sh[]
+----
+
+The REST API call uses the global endpoint to create a global alias.
+
+If the REST API call is successful, the Search Service returns a `200 OK` and the following JSON response:
+
+[source,json]
+----
+include::example$create-search-alias-response-global.json[]
+----
+
+The `"uuid"` is randomly generated for each Search index alias you create. 
+Your own UUID might not match the value shown in the example.
+
+== Next Steps
+
+After you create a Search index alias, you can xref:simple-search-rest-api.adoc[] to test your alias and Search indexes. 
+
+If you want to edit your alias with another REST API call, include the xref:search-index-params.adoc#uuid[uuid] parameter with your alias UUID.
+
+You can get the UUID from the response to your first call.
+You can also view the UUID from the Couchbase {page-ui-name} by selecting the alias, and clicking btn:[Edit Index].
+The UUID displays in the Index Definition Preview on the Edit Index page. 
+
+You can also use the xref:rest-api:rest-fts-indexing.adoc[Index Definition] endpoints provided by the Search REST API.
