@@ -1250,10 +1250,11 @@ A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which
 If this argument is not a valid date string then `null` is returned.
 
 input-fmt::
-A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> that the `date1` argument is in.
+The format of the input string, `date1`.
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string. 
 +
 *Optional argument*.
-Only required if the desired output format does not match the input format and `date1` isn't in a standard format.
+Only required if `date1` is not in a standard format or if the input and output formats are different.
 
 fmt::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
@@ -1772,7 +1773,8 @@ This function accepts the components `millennium`, `century`, `decade`, `year`, 
 If an invalid part is specified, then `null` is returned.
 
 fmt::
-A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> that the `date1` argument is in.
+The format of the input string, `date1`.
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string. 
 +
 *Optional argument*.
 Only required if `date1` is not in a standard format.
@@ -2546,7 +2548,7 @@ AS Milliseconds;
 ====
 
 [#fn-date-str-to-utc]
-== STR_TO_UTC(date1)
+== STR_TO_UTC(date1 [, [input-fmt,] fmt])
 
 === Description
 
@@ -2561,6 +2563,20 @@ This is the date to convert to UTC.
 +
 If this argument is not a valid date format, then `null` is returned.
 
+input-fmt::
+The format of the input string, `date1`. 
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string. 
++
+*Optional argument*.
+Only required if `date1` is not in a standard format or if the input and output formats are different. 
+
+fmt::
+The format of the resulting UTC date. 
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, and must be a <<date-string,supported date format>>.
++
+*Optional argument*.
+If not specified, the output date format follows the date format of the input string, `date1`.
+
 === Return Value
 
 A single date string representing the date string converted to UTC.
@@ -2571,7 +2587,8 @@ A single date string representing the date string converted to UTC.
 [source,sqlpp]
 ----
 SELECT STR_TO_UTC('1111-11-11T00:00:00+08:00') as full_date,
-STR_TO_UTC('1111-11-11') as short_date;
+       STR_TO_UTC('1111-11-11') as short_date,
+       STR_TO_UTC('1111-11-11', 'YYYY-MM-DD', 'YYYY-MM-DD HH:MI:SS') as utc_date;
 ----
 
 .Results
@@ -2580,14 +2597,15 @@ STR_TO_UTC('1111-11-11') as short_date;
 [
   {
     "full_date": "1111-11-10T16:00:00Z",
-    "short_date": "1111-11-11"
+    "short_date": "1111-11-11",
+    "utc_date": "1111-11-11 12:00:00"
   }
 ]
 ----
 ====
 
 [#fn-date-str-to-tz]
-== STR_TO_TZ(date1, tz)
+== STR_TO_TZ(date1, tz [, [input-fmt,] fmt]) 
 
 === Description
 
@@ -2607,6 +2625,20 @@ A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which
 +
 If this argument is not a valid timezone, then `null` is returned.
 
+input-fmt::
+The format of the input string, `date1`. 
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string. 
++
+*Optional argument*.
+Only required if `date1` is not in a standard format or if the input and output formats are different.
+
+fmt::
+The format of the output date. 
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, and must be a <<date-string,supported date format>>.
++
+*Optional argument*.
+If not specified, the output date format follows the date format of the input string, `date1`.
+
 === Return Value
 
 A single date string representing the date string converted to the specified timezone.
@@ -2618,7 +2650,8 @@ A single date string representing the date string converted to the specified tim
 ----
 SELECT STR_TO_TZ('1111-11-11T00:00:00+08:00', 'America/New_York') as est,
     STR_TO_TZ('1111-11-11T00:00:00+08:00', 'UTC') as utc,
-    STR_TO_TZ('1111-11-11', 'UTC') as utc_short;
+    STR_TO_TZ('1111-11-11', 'UTC') as utc_short,
+    STR_TO_TZ('1111-11-11', 'UTC', 'YYYY-MM-DD', 'YYYY-MM-DD HH:MI:SS') as utc_datetime;
 ----
 
 .Results
@@ -2626,9 +2659,10 @@ SELECT STR_TO_TZ('1111-11-11T00:00:00+08:00', 'America/New_York') as est,
 ----
 [
   {
-    "est": "1111-11-10T11:00:00-05:00",
+    "est": "1111-11-10T11:03:58-04:56",
     "utc": "1111-11-10T16:00:00Z",
-    "utc_short": "1111-11-11"
+    "utc_short": "1111-11-11",
+    "utc_datetime": "1111-11-11 12:00:00"
   }
 ]
 ----
