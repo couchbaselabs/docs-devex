@@ -1236,7 +1236,7 @@ WHERE reviews[0].date BETWEEN "2013-01-01 %" AND "2014-01-01 %";
 NOTE: When querying between two dates, you must specify the full date (with time and time zone) or use the wildcard character (%).
 
 [#fn-date-format-str]
-== DATE_FORMAT_STR(date1, fmt)
+== DATE_FORMAT_STR(date1, [input-fmt,] fmt)
 
 === Description
 
@@ -1248,6 +1248,12 @@ date1::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a date in a <<date-string,supported date format>>.
 +
 If this argument is not a valid date string then `null` is returned.
+
+input-fmt::
+A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> that the `date1` argument is in.
++
+*Optional argument*.
+Only required if the desired output format does not match the input format and `date1` isn't in a standard format.
 
 fmt::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
@@ -1265,7 +1271,8 @@ A date string in the format specified.
 ----
 SELECT DATE_FORMAT_STR('2016-05-15T00:00:23+00:00', '1111-11-11') as full_to_short,
        DATE_FORMAT_STR('2016-05-15', '1111-11-11T00:00:00+00:00') as short_to_full,
-       DATE_FORMAT_STR('01:10:05', '1111-11-11T01:01:01Z') as time_to_full;
+       DATE_FORMAT_STR('01:10:05', '1111-11-11T01:01:01Z') as time_to_full,
+       DATE_FORMAT_STR('15-MAY-2016', 'DD-MON-YYYY', 'YYYY-MM-DD') as month_to_numeric;
 ----
 
 .Results
@@ -1274,8 +1281,9 @@ SELECT DATE_FORMAT_STR('2016-05-15T00:00:23+00:00', '1111-11-11') as full_to_sho
 [
   {
     "full_to_short": "2016-05-15",
-    "short_to_full": "2016-05-15T00:00:00-07:00",
-    "time_to_full": "0000-01-01T01:10:05-08:00"
+    "short_to_full": "2016-05-15T00:00:00Z",
+    "time_to_full": "0000-01-01T01:10:05Z",
+    "month_to_numeric": "2016-05-15"
   }
 ]
 ----
