@@ -1751,7 +1751,7 @@ SELECT DATE_TRUNC_MILLIS(1463284740000, 'day') as day,
 ====
 
 [#fn-date-trunc-str]
-== DATE_TRUNC_STR(date1, part)
+== DATE_TRUNC_STR(date1, part [,fmt])
 
 === Description
 
@@ -1771,6 +1771,12 @@ This function accepts the components `millennium`, `century`, `decade`, `year`, 
 +
 If an invalid part is specified, then `null` is returned.
 
+fmt::
+A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> that the `date1` argument is in.
++
+*Optional argument*.
+Only required if `date1` is not in a standard format.
+
 === Return Value
 
 A date string representing the truncated date.
@@ -1782,7 +1788,8 @@ A date string representing the truncated date.
 ----
 SELECT DATE_TRUNC_STR('2016-05-18T03:59:00Z', 'day') as day,
        DATE_TRUNC_STR('2016-05-18T03:59:00Z', 'month') as month,
-       DATE_TRUNC_STR('2016-05-18T03:59:00Z', 'year') as year;
+       DATE_TRUNC_STR('2016-05-18T03:59:00Z', 'year') as year,
+       DATE_TRUNC_STR('05/18/2016 03:59:00', 'month', 'MM/DD/YYYY HH24:MI:SS') as month_custom;
 ----
 
 .Results
@@ -1792,7 +1799,8 @@ SELECT DATE_TRUNC_STR('2016-05-18T03:59:00Z', 'day') as day,
   {
     "day": "2016-05-18T00:00:00Z",
     "month": "2016-05-01T00:00:00Z",
-    "year": "2016-01-01T00:00:00Z"
+    "year": "2016-01-01T00:00:00Z",
+    "month_custom": "05/01/2016 00:00:00"
   }
 ]
 ----
