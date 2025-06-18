@@ -1,0 +1,233 @@
+= Generate SQL++ Queries Using Natural Language Requests
+:description: You can use natural language requests to generate SQL++ queries and results. 
+
+[abstract]
+{description}
+
+Using the SQL++ statement `USING AI`,
+you can input queries in natural language through SQL++ interfaces such as CBQ shell, REST APIs, and SDKs.
+The statement passes the natural language input to Large Language Models (LLMs) to generate the corresponding SQL++ queries and results.
+
+//Starting with Couchbase Server 8.0.0, you can input queries in natural language through the SQL++ interfaces such as CBQ shell, REST APIs, and SDKs. 
+
+//You can input queries in natural language through the SQL++ interfaces such as CBQ shell, REST APIs, and SDKs. 
+//You can issue such queries using a new SQL++ statement called `USING AI`, 
+//which passes the natural language input to Large Language Models (LLMs) to generate the corresponding SQL++ queries and results.
+
+== Usage
+
+To issue an `USING AI` statement, use the following syntax: 
+
+[source, sqlpp]
+----
+USING AI [WITH {...}] natural-language-request
+----
+
+* `USING AI`: Indicates that the statment is a natural language query. 
+By default, the request makes use of the `natural_orgId`, `natural_cred` and `natural_context` request parameters. 
+
+* `WITH {...}`: Optional clause to specify additional parameters for the request. 
+If provided, the parameters in the `WITH` clause override the default request parameters.
+
+* `natural-language-request`: The natural language input you want to convert into a SQL++ query.
+
+=== Object
+
+[cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **creds** +
+__optional__
+| Credentials to use for the request. 
+This can be a string matching the `natural_cred` specification or an object with the fields `user` and `pass`, similar to the xref:n1ql:n1ql-manage/query-settings.adoc#Credentials[`creds`] parameter.
+
+If specified, it overrides the default `natural_cred` parameter.
+
+| String or object
+
+| **keyspaces** +
+__optional__
+
+| Keyspaces to use for the request.
+This can be a string matching the `natural_context` specification or an array of comma-separated strings, which when joined provides the value. 
+
+If specified, it overrides the default `natural_context` parameter.
+
+| String or an array of strings 
+
+| **orgId** +
+__optional__
+
+| Organisation ID to use for the request.
+
+If specified, it overrides the default `natural_orgid` parameter.
+
+| String
+
+| **execute** +
+__optional__
+
+| Indicates if the generated statement should be executed immediately. 
+It provides the ability to suppress execution of the generated statement.
+
+If set to `TRUE`, the generated statement is executed immediately and the results are returned.
+If set to `FALSE`, the generated statement is returned as a string without execution.
+
+*Default:* `TRUE`
+
+| Boolean
+|===
+
+== Examples
+
+Here are some examples of how to use `USING AI` through CBQ shell and REST API.
+
+=== Using CBQ Shell
+
+.Overrides some natural language parameters
+====
+.Request
+[source, console]
+----
+cbq> \set -natural_cred "some.user@couchbase.com";
+Enter password for "natural_cred":
+cbq> \set -natural_orgId 7a99d00c-####-4b39-bc72-############;
+cbq> USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":false} How many airlines are based in Europe?;
+----
+
+.Response
+[source,json]
+----
+{
+    "requestID": "6f131413-c50d-4332-9fe9-2801b8f265c0",
+    "status": "success",
+    "generated_statement": "SELECT COUNT(*) AS number_of_airlines FROM travel-sample.inventory.airline AS a WHERE a.country = \"Europe\"",
+    "metrics": {
+        "elapsedTime": "2.918146266s",
+        "executionTime": "0s",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "naturalLanguageProcessingTime": "2.917855405s"
+    }
+}
+----
+====
+
+.Uses only the provided natural language parameters
+====
+.Request
+[source, console]
+----
+cbq> \set -natural_context travel-sample.inventory.hotel;
+cbq> \set -natural_cred "some.user@couchbase.com";
+Enter password for "natural_cred":
+cbq> \set -natural_orgId 7a99d00c-####-4b39-bc72-############;
+cbq> USING AI How many hotels provide free parking?;
+----
+.Response
+[source,json]
+----
+{
+    "requestID": "a62b067a-4b68-4f32-b38f-d0dd51b950a1",
+    "generated_statement": "SELECT COUNT(*) FROM travel-sample.inventory.hotel AS h WHERE h.free_parking = TRUE",
+    "signature": {
+        "$1": "number"
+    },
+    "results": [
+    {
+        "$1": 253
+    }
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "2.567615568s",
+        "executionTime": "59.487799ms",
+        "resultCount": 1,
+        "resultSize": 25,
+        "serviceLoad": 3,
+        "usedMemory": 28483,
+        "naturalLanguageProcessingTime": "2.507856641s"
+    }
+}
+----
+====
+
+.Provides all values in the statement
+====
+.Request
+[source, console]
+----
+cbq> USING AI WITH 
+        {"creds":{"user":"some.user@couchbase.com","pass":"<the password>"}
+                ,"orgId":"7a99d00c-####-4b39-bc72-############"
+                ,"keyspaces":[
+                         "travel-sample.inventory.hotel"
+                         ,"travel-sample.inventory.airport"
+                    ]
+                ,"execute":false
+    }
+    List the names of all hotels in the same city as an airport.;
+----
+.Response
+[source, json]
+----
+{
+    "requestID": "82755b05-7cc1-4e21-9daa-8bb928f37994",
+    "status": "success",
+    "generated_statement": "SELECT h.name FROM travel-sample.inventory.hotel AS h JOIN travel-sample.inventory.airport AS a ON h.city = a.city",
+    "metrics": {
+        "elapsedTime": "2.431431113s",
+        "executionTime": "0s",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "naturalLanguageProcessingTime": "2.430971411s"
+    }
+}
+----
+====
+
+=== Using REST API
+
+.Submitted directly to the REST endpoint
+====
+.Request
+[source, sh]
+----
+$ read -sp "Enter natural password:" p; echo; \
+> echo "natural_cred=some.user@couchbase.com:${p}"|\
+> curl -sd @- -d 'pretty=true&statement=USING AI WITH {"keyspaces":"travel-sample.inventory.landmark","orgId":"7a99d00c-####-4b39-bc72-############"} How many landmarks are in the western hemisphere?' \
+> http://user:password@localhost:8093/query/service
+Enter natural password:
+----
+.Response
+[source,json]
+----
+{
+    "requestID": "7893ef64-ae7a-49fb-b545-810d193570e4",
+    "generated_statement": "SELECT COUNT(*) AS `landmark_count` FROM `travel-sample`.`inventory`.`landmark` AS `l` WHERE `l`.`geo`.`lon` \u003c 0",
+    "signature": {
+        "landmark_count": "number"
+    },
+    "results": [
+    {
+        "landmark_count": 4033
+    }
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "2.445252554s",
+        "executionTime": "78.08608ms",
+        "resultCount": 1,
+        "resultSize": 38,
+        "serviceLoad": 3,
+        "naturalLanguageProcessingTime": "2.366931063s"
+    }
+}
+----
+====
+
+
+
