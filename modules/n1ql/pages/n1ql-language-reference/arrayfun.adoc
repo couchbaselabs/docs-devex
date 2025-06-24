@@ -1497,6 +1497,95 @@ SELECT array_star(children).age FROM contacts WHERE fname = "Dave"
 ----
 ====
 
+=== Empty Array Subscripts
+
+You can use an empty array subscript ([ ]) to return an array that includes only defined elements. 
+The rules governing its use are as follows: 
+
+* `field[]`: 
+** If `field` is an array, this is equivalent to `field` itself and returns the array as is.
+** If `field` is not an array, it returns `NULL`.
+* `field[].field2`:
+** Returns an array of `field2` values from each element in the `field` array. 
+** Elements in `field` that are not objects or do not contain `field2` are ignored.
+* `field[].field2[].field3`: 
+** Returns an array of `field3` values by traversing two levels of arrays.
+** First through each element of `field`, then through each element of `field2` within those elements, extracting `field3` from each valid object. 
+* `field[][].field2`: 
+** Returns `MISSING` if elements of `field[]` are not arrays.
+
+NOTE: If you use more that two empty array subscripts (for example, `field[][][]`), only the first two are considered.
+Any additional subscripts are ignored.
+
+==== Example
+
+====
+.Given the following sample document:
+[source,json]
+----
+{
+  "a": {
+    "airline": "AF",
+    "airlineid": "airline_003",
+    "destinationairport": "SFO",
+    "distance": 2481.617376098415,
+    "equipment": "320",
+    "id": 3,
+    "schedule": [
+      {
+        "day": 0,
+        "flight": "AF198",
+        "utc": "10:13:00"
+      },
+      {
+        "flight": "AF250",
+        "utc": "12:59:00"
+      },
+      {
+        "day": 2,
+        "flight": "AF223",
+        "special_flights": [
+          {
+            "a": "SA"
+          },
+          {
+            "b": [
+              [
+                {
+                  "c": "SC1"
+                },
+                {
+                  "c": "SC2"
+                }
+              ],
+              [
+                {
+                  "c": "SC3"
+                }
+              ]
+            ]
+          }
+        ],
+        "utc": "19:41:00"
+      }
+    ],
+    "sourceairport": "DFW"
+  }
+}
+----
+
+Here's how different array subscripts evaluate:
+
+* `a.airline[]`: Returns `NULL` (not an array).
+* `a.schedule[]`: Equivalent to `a.schedule`, returns the array.
+* `a.schedule[].day`: Returns `[0, 2]`. This is in contrast to `a.schedule[*].day`, which returns `[0, null, 2]`.
+* `a.schedule[].special_flights[].a`: Returns `["SA"]`.
+* `a.schedule[][].utc`: Returns `MISSING`.
+* `a.schedule[].special_flights[].b[][].c`: Returns `["SC1", "SC2", "SC3"]`.
+* `a.schedule[].special_flights[].b[].c`: Also returns `["SC1", "SC2", "SC3"]`, as the unnamed arrays are flattened. 
+
+====
+
 [[fn-array-sum,ARRAY_SUM()]]
 == ARRAY_SUM([.var]`expr`)
 
