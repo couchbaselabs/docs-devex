@@ -1,0 +1,293 @@
+= Vector Searches Using Hyperscale Vector Indexes
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Hyperscale Vector Indexes are optimized to index a single vector column. They offer the highest performance of any index when it comes to vector data.
+:stem: 
+:page-toclevels: 3
+:index-name: Hyperscale Vector index
+:index-name-plural: Hyperscale Vector indexes
+
+{description}
+They can scale up to a billion documents containing vectors with a large number of dimensions.
+
+Because they provide the best performance, consider testing a Hyperscale Vector index for your application before resorting to the other types of indexes.
+If you find theirs performance does not meet your needs, then test using a Composite Vector Index or a FTS Vector Index.
+
+
+== How the Hyperscale Vector Index Works 
+
+The Hyperscale Vector Index primarily relies on data stored in an optimized format on disk. 
+By relying on disk storage, they have lower memory requirements than other index types. 
+
+You add a single vector column to a Hyperscale Vector Index. 
+The vector value can be an array of floating point values.
+You can nest the array in another array as long as you use an xref:n1ql:n1ql-language-reference/unnest.adoc[`UNNEST` clause] to extract the it from the containing array. 
+You can also store the vector in a BASE64 string. 
+
+== Prerequisites
+
+Hyperscale Vector Indexes have the following requirements:
+
+* You must have the Index Service enabled on at least one node in your cluster. 
+For more information about how to deploy a new node and Services on your database, see xref:manage:manage-nodes/node-management-overview.adoc[].
+
+* You must have a bucket with scopes and collections in your database. 
+For more information about how to create a bucket, see xref:manage:manage-buckets/create-bucket.adoc[].
+
+* Your account must have the xref:learn:security:roles.adoc#query-manage-index[Query Manage Index] role, to be able to create an index.
+
+* You have documents in a collection that contain one or more vector embeddings.
+You can add a single vector to a Hyperscale Vector Index.
+If your documents contain multiple embedded vectors, you can create multiple indexes---one for each vector attribute.
++
+Embeddings can be an array of floating point numbers or a base64 encoded string.
+Couchbase {product-name} does not embed vectors itself. 
+You must use an external embedding model to embed vectors into your data and add them to your documents.
+
+* The vectors you add to an index must contain the same number of dimensions. 
+Also the values in the vector must be 32-bit floating point numbers.
+If a vector does not meet both of these requirements, the vector index treats it as a NULL value and the document is not added to the index. 
+
+* You must know the number of dimensions the vector contains. 
+The embedding model you use to embed the vectors may determine this value for you.  
+For example,  OpenAI API's `text-embedding-ada-002` embedding model creates vectors that have 1536 dimensions.
+
+* You must decide what algorithms you want your index to use. 
+These algorithms affect how much memory your index uses and the amount of processing Couchbase {product-name} must perform to train and search them.
+See xref:vector-index:vectors-and-indexes-overview.adoc#index-algorithms[Indexing Algorithms]
+
+== Create a Hyperscale Vector Index
+Use the `CREATE VECTOR INDEX` statement to create a Hyperscale Vector Index.
+This statement is similar to the `CREATE INDEX` statement that you use to create Global Secondary Indexes (GSI). 
+See xref:guides:create-index.adoc[] for an overview of creating indexes.
+You must also supply a `WITH` clause to set some additional information for the Hypsercale index needs about the vector column. 
+
+
+The syntax for the `CREATE VECTOR INDEX` with the most common parameters is:
+
+[source,sqlpp]
+----
+CREATE VECTOR INDEX `<index-name>`
+       ON `<collection>`(`<column-name>` VECTOR)
+       WITH {  "dimension":<dimensions> , 
+               "similarity":<similarity-function>, 
+               "description":<algorithm-settings>
+        }; 
+----
+
+* `index-name` is a string that sets the name of the index.
+* `collection` is the path of the collection to index.
+* `key-name` is the name of the key containing the vector that you want to index.
+The key value must be an array of floating point numbers or a base64 encoded string. 
+* `dimensions` is an integer value that sets the number of dimensions in the vector.
+The embedded model you use to embed the vectors determines the number of dimensions in the vector.
+* `similarity-function` is a string that sets the distance function to use when comparing vectors during index creation.
+Couchbase {product-name} uses the following strings to represent the proximity functions:
++
+--
+** `COSINE`: xref:use-vector-indexes.adoc#cosine[Cosine Similarity]
+** `DOT`: xref:use-vector-indexes.adoc#dot[Dot Product]
+** `L2`, `L2_SQUARED`, `EUCLIDEAN`, or `EUCLIDEAN_SQUARED`: xref:use-vector-indexes.adoc#euclidean[Euclidean Distance]  
+--
++
+For the greatest accuracy, use the distance function you plan to use to query the data.
+* `algorithm-settings` is a string containing the settings for the indexing algorithms. 
+See <<#algo_settings>> in the next section for more information.
+
+include::partial$index-algorithm-settings.adoc[]
+
+For a full list of the parameters that affect a vector column in a GSI, see *FIXME:TDB*.
+
+[#examples]
+=== Create Hyperscale Vector Index Examples
+
+The examples in this section use a dataset that contains information about colors, including a text description of the color.
+There's also a field named `couchbase_search_query.knn.vector` that contains an embedded vector for the color description.
+
+include::vector-search:partial$download-sample-partial.adoc[]
+
+The following query returns a sample document from the data in the `vector-sample.color.rgb`collection, truncating the embedded vector to 4 values to make the result readable:
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=rgb-entry]
+----
+
+The result of running the query is:
+
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=rgb-document]
+----
+
+The following example creates an Hyperscale vector index for the vector column named `embedding-vetor-dot`.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-rgb-idx]
+----
+
+The key pieces of this example are:
+
+* The `CREATE VECTOR INDEX` statement creates a Hyperscale Vector index. 
+This differs from the `CREATE INDEX` statement used to create a Global Secondary Index (GSI).
+* The `WITH` clause defines several settings specific to Hyperscale Vector indexes:
+** It uses the Euclidean distance (`l2`) similarity function when locating centroids.
+This function has high accuracy, which matters in a dataset with only 153 documents.
+** Also, because the dataset is so small, the example sets the `description` to `IVF8,SQ4`.
+This value has the xref:vector-index:vectors-and-indexes-overview.adoc#IVF[inverted file algorithm] use just 8 centroids.
+It also uses 4-bit xref:vector-index:vectors-and-indexes-overview.adoc#sq[scalar quantization]. 
+These settings limit the fragmentation of the small dataset.
+
+In most cases, you'll not use these settings in a production environment.
+
+== Query with a Hyperscale Vector Index
+
+To use your Hyperscale Vector index, use the `SELECT` statement with a `WHERE` clause that contains a vector value.
+A typical query looks like this:
+
+[source,sqlpp]
+----
+SELECT <fields>  
+       FROM <collection>> 
+       ORDER BY APPROX_VECTOR_DISTANCE(
+                <collection-vector-column>, 
+                <search-vector-value>, 
+                <distance-function>, 
+                [<centroids-to-probe>]
+        ) LIMIT <number-of-results>;
+----
+
+The `search-vector-value` is the vector Couchbase {product-name} will search for in the index. 
+It can be an array of floating point numbers or a base64 encoded string.
+
+To return the most relevant vectors, use a `ORDER BY` clause to order the results based on the similarity of the vectors. 
+In this clause, the call to the `APPROX_VECTOR_DISTANCE`  function (also known as `ANN`) performs the vector search.
+
+NOTE: You can also call the function `VECTOR_DISTANCE` to find similar vectors. 
+However, this function does not use the Hyperscale Vector index to perform the vector search. 
+Instead, it performs a brute-force search for similar vectors.
+
+Also use a `LIMIT` clause to return just the number of results you need. 
+The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the requested number of matches.
+
+=== Hyperscale Vector Index Query Example
+
+You must supply a vector value in your query that Couchbase {product-name} can compare to the vectors in the index.
+In actual use, your application  generates a vector for the query value using the same embedding model it used to embed the vectors in your documents.
+
+To avoid the complication of calling an embedding function, this example uses embedded vectors in the `rgb_questions.json` file that's included in `color_data_2vectors.zip`.
+The contents of this file are loaded into a collection named `vector-sample.color.rgb-questions`.
+This collection contains a `question` attribute containing a search prompt for a particular color. 
+The `couchbase_search_query.knn.vector` attribute contains the embedded vector for the `question` attribute.
+The following query lists several attributes from a document.
+It truncates the `couchbase_search_query.knn.vector` attribute to just the first 4 dimensions of the vector for readability:
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=query-rgb-questions]
+----
+
+The output of the query looks like this:
+
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=query-rgb-questions-output]
+----
+
+To use the embedded vector, you need to include the `couchbase_search_query.knn.vector` attribute in your query's the `SELECT` statement.
+You can either directly cut & paste the entire array into your query or use a subquery to retrieve it from the `vector-sample.color.rgb-questions` collection.
+The following example uses a subquery to get the vector, and also includes the `wanted_similar_color_from_search` attribute in the output which shows you the color that he query should return. 
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=query-rgb-with-subquery]
+----
+
+In this example, the `APPROX_VECTOR_DISTANCE` function compares the vector in the `couchbase_search_query.knn.vector` attribute to the vectors in the index.
+The parameters the example passes to this function are:
+
+* The  `embedding-vector-dot` is the name of the indexed vector key.
+* The vector value to compare to the vectors in the index, which is the result of the subquery that gets the `couchbase_search_query.knn[0].vector` from the `rgb-questions` collection.
+* `l2` is the distance function to use.
+* `4` is the number of centroids to probe for matching vectors. 
+This example sets this value to 4 because the dataset is small.
+In a small dataset, it's more likely that relevant vectors are not associated with the same centroid. 
+This parameter broadens the search beyond a single centroid to find more relevant vectors.
+If you re-run the query with the default value of 1, you'll see that the results are less relevant.
+
+The result of running the query is:
+
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=query-rgb-color]
+----
+
+The second result, `sky blue`, matches the `wanted_similar_color_from_search` attribute as the most relevant color to the question posed in the `question` attribute. 
+All of the results are still relevant to the question.
+
+
+== Filter Hyperscale Vector Index Scans with Scalar Columns
+
+The Hyperscale Vector index contains a single vector column.
+However, you can reference non-vector attributes in an `INCLUDE` clause when creating your index. 
+These attributes are not indexed in the Hyperscale Vector index, but you can use them to filter the results of a vector search.
+During the search, Couchbase {propduct-name} uses the attributes to filter the index entries before performing the vector index scan.
+
+The following example creates a new Hyperscale Vector index that indexes the `embedding-vector-dot` vector column and includes the `brightness` key `vector-sample.color.rgb` collection:
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-idx-brightness]
+----
+
+This example is identical to the earlier `CREATE VECTOR INDEX` example, except that it adds the `INCLUDE` clause to add the `brightness` key.
+
+When you query the vector key and add one of the included keys as a predicate, Couchbase {product-name} uses the  predicate to filter the results before performing the vector index scan.
+
+The following example performs the same query ast he previous example, but adds the `brightness` key as a predicate in the `WHERE` clause:
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=query-rgb-with-brightness]
+----
+
+The result of running the query is:
+
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=query-rgb-brightness]
+----
+
+[#prevent-vector-persistence]
+== Prevent Full Vector Persistence
+
+The Hyperscale Vector index always quantizes the vectors it contains. 
+See xref:vectors-and-indexes-overview.adoc#quantization[Quantization] for more information about quantizing vectors.
+You choose which type of quantization it uses when you create it.
+
+By default, a Hyperscale Vector index also stores a copy of the original vector value.
+It uses the full value when ranking the search results to make the rankings more accurate.
+
+You can choose to turn off this feature if the cost of storing and comparing full vector values during ranking causes performance issues.
+You can prevent persisting the full vector by setting the `persist_full_vector` attribute to false in the `WITH` clause when you create the index:
+
+[source,sqlpp]
+----
+WITH {  "dimension":<dimensions> , 
+        "similarity":<similarity-function>, 
+        "description":<algorithm-settings>, 
+        "persist_full_vector":false
+     }; 
+----
+
+The following example creates a Hyperscale Vector index that does not persist the full vector value:
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-rgb-no-persist]
+----
+
+The size of the resulting index is much smaller than the index that persists the full vector value  (269KiB verses 1.17MiB).
+

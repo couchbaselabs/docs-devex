@@ -1,0 +1,77 @@
+/* tag::create-rgb-idx[] */
+CREATE VECTOR INDEX `color_desc_hyperscale` 
+       ON `vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)
+       WITH { "dimension":1536, "similarity":"L2", "description":"IVF8,SQ4" }
+/* end::create-rgb-idx[] */
+
+/* tag::rgb-entry[] */
+SELECT 
+  d.id,
+  d.color,
+  d.brightness,
+  d.description,
+  ARRAY_CONCAT(
+    d.embedding_vector_dot[0:4], 
+    ["..."]
+  ) AS vector
+FROM `vector-sample`.`color`.`rgb` AS d
+WHERE d.id = "#87CEEB";
+/* end::rgb-entry[] */
+
+
+/* tag::query-rgb-questions[] */
+SELECT 
+  d.id,
+  d.question,
+  d.wanted_similar_color_from_search,
+  ARRAY_CONCAT(
+    d.couchbase_search_query.knn[0].vector[0:4], 
+    ["..."]
+  ) AS vector
+FROM `vector-sample`.`color`.`rgb-questions` AS d
+WHERE d.id = "#87CEEB";
+/* end::query-rgb-questions[] */
+
+/* tag::query-rgb-with-subquery[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector  
+        FROM `vector-sample`.`color`.`rgb-questions` 
+        WHERE meta().id = "#87CEEB"),
+    question_answer AS (
+        SELECT wanted_similar_color_from_search
+        FROM `vector-sample`.`color`.`rgb-questions` 
+        WHERE meta().id = "#87CEEB")
+SELECT b.color, b.description, q.wanted_similar_color_from_search  
+       FROM `vector-sample`.`color`.`rgb` AS b, question_answer as q
+       ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, 
+       question_vec[0], "l2", 4)  LIMIT 3;
+/* end::query-rgb-with-subquery[] */
+
+/* tag::create-idx-brightness[] */
+CREATE VECTOR INDEX `color_desc_hyperscale_brightness` 
+       ON `vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)
+       INCLUDE (`brightness`)
+       WITH { "dimension":1536, "similarity":"L2", "description":"IVF8,SQ4" }
+/* end::create-idx-brightness[] */
+
+/* tag::query-rgb-with-brightness[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector  
+        FROM `vector-sample`.`color`.`rgb-questions` 
+        WHERE meta().id = "#87CEEB"),
+    question_answer AS (
+        SELECT wanted_similar_color_from_search
+        FROM `vector-sample`.`color`.`rgb-questions` 
+        WHERE meta().id = "#87CEEB")
+SELECT b.color, b.description, b.brightness, q.wanted_similar_color_from_search  
+       FROM `vector-sample`.`color`.`rgb` AS b, question_answer as q
+       WHERE b.brightness > 170.0
+       ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, 
+       question_vec[0], "l2", 4)  LIMIT 3;
+/* end::query-rgb-with-brightness[] */
+
+/* tag::create-rgb-no-persist[] */
+CREATE VECTOR INDEX `color_desc_hyperscale_no_persist` 
+       ON `vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)
+       WITH { "dimension":1536, "similarity":"L2", "description":"IVF8,SQ4", "persist_full_vector": false};
+/* end::create-rgb-no-persist[] */
