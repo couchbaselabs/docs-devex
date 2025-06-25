@@ -7,7 +7,7 @@
 You can generate queries using natural language requests with the SQL++ statement, `USING AI`. 
 
 This statement allows you to input natural language prompts through SQL++ interfaces such as CBQ shell, REST APIs, and SDKs.
-When issued, the statement passes the input to Large Language Models (LLMs) which interpret the natural language and generate the equivalent SQL++ queries. 
+When executed, the statement passes the input to Large Language Models (LLMs) which interpret the natural language and generate the equivalent SQL++ queries. 
 
 For example, you can use prompts such as `How many airlines are based in Europe` or `List the names of all hotels in the same city as an airport`. 
 
@@ -81,11 +81,7 @@ If set to `FALSE`, the generated statement is returned as a string without execu
 
 == Examples
 
-Here are some examples of how to use `USING AI` through CBQ shell and REST API.
-
-=== Using CBQ Shell
-
-.Overrides some natural language parameters
+.Specify a custom keyspace to override the default context
 ====
 .Request
 [source, console]
@@ -102,7 +98,9 @@ cbq> USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":fa
 {
     "requestID": "6f131413-c50d-4332-9fe9-2801b8f265c0",
     "status": "success",
-    "generated_statement": "SELECT COUNT(*) AS number_of_airlines FROM travel-sample.inventory.airline AS a WHERE a.country = \"Europe\"",
+    "generated_statement": 
+                "SELECT COUNT(*) AS number_of_airlines FROM travel-sample.inventory.airline 
+                 AS a WHERE a.country = \"Europe\"",
     "metrics": {
         "elapsedTime": "2.918146266s",
         "executionTime": "0s",
@@ -115,7 +113,7 @@ cbq> USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":fa
 ----
 ====
 
-.Uses only the provided natural language parameters
+.Use a natural language prompt with the default parameters
 ====
 .Request
 [source, console]
@@ -131,7 +129,9 @@ cbq> USING AI How many hotels provide free parking?;
 ----
 {
     "requestID": "a62b067a-4b68-4f32-b38f-d0dd51b950a1",
-    "generated_statement": "SELECT COUNT(*) FROM travel-sample.inventory.hotel AS h WHERE h.free_parking = TRUE",
+    "generated_statement": 
+                "SELECT COUNT(*) FROM travel-sample.inventory.hotel 
+                 AS h WHERE h.free_parking = TRUE",
     "signature": {
         "$1": "number"
     },
@@ -154,7 +154,7 @@ cbq> USING AI How many hotels provide free parking?;
 ----
 ====
 
-.Provides all values in the statement
+.Specify all the parameters directly in the statement and override the default ones
 ====
 .Request
 [source, console]
@@ -176,7 +176,9 @@ cbq> USING AI WITH
 {
     "requestID": "82755b05-7cc1-4e21-9daa-8bb928f37994",
     "status": "success",
-    "generated_statement": "SELECT h.name FROM travel-sample.inventory.hotel AS h JOIN travel-sample.inventory.airport AS a ON h.city = a.city",
+    "generated_statement": 
+                "SELECT h.name FROM travel-sample.inventory.hotel
+                 AS h JOIN travel-sample.inventory.airport AS a ON h.city = a.city",
     "metrics": {
         "elapsedTime": "2.431431113s",
         "executionTime": "0s",
@@ -189,9 +191,7 @@ cbq> USING AI WITH
 ----
 ====
 
-=== Using REST API
-
-.Submitted directly to the REST endpoint
+.Submit the request directly to the REST API endpoint
 ====
 .Request
 [source, sh]
@@ -207,7 +207,9 @@ Enter natural password:
 ----
 {
     "requestID": "7893ef64-ae7a-49fb-b545-810d193570e4",
-    "generated_statement": "SELECT COUNT(*) AS `landmark_count` FROM `travel-sample`.`inventory`.`landmark` AS `l` WHERE `l`.`geo`.`lon` \u003c 0",
+    "generated_statement": 
+                "SELECT COUNT(*) AS `landmark_count` FROM `travel-sample`.`inventory`.`landmark` 
+                 AS `l` WHERE `l`.`geo`.`lon` \u003c 0",
     "signature": {
         "landmark_count": "number"
     },
@@ -228,6 +230,3 @@ Enter natural password:
 }
 ----
 ====
-
-
-
