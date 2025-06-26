@@ -8,6 +8,20 @@
 [abstract]
 {description}
 
+For example, if you added a filter to your type mapping that checked if the value of a field was `true`, only documents with the value `true` for that field would be included in your Search index under that type mapping.
+Based on your settings, xref:create-type-mapping.adoc#field[child fields] or xref:create-type-mapping.adoc#object[child mappings] that you define for documents that pass the filter on this type mapping will be returned in search results. 
+
+You can filter based on the value of a field, or part of the value of your document IDs. 
+
+As of Couchbase Server version 8.0, you can filter documents with custom filters based on the value of: 
+
+* xref:search-index-params.adoc#boolean_filter[A boolean field].
+* xref:search-index-params.adoc#date_range_filter[A date field, within a specific range].
+* xref:search-index-params.adoc#numeric_range_filter[A numeric field, within a specific range].
+* xref:search-index-params.adoc#term_filter[A term in a text field].
+* A xref:search-index-params.adoc#conjunct_filter[conjunct] or xref:search-index-params.adoc#disjunct_filter[disjunct] object that combines 2 or more of the available filters.
+You can add up to a maximum of 100 custom document filters on a single Search index.
+
 For more information about document filters and type mappings, see xref:customize-index.adoc#type-identifiers[Search Index Features].
 
 == Prerequisites 
@@ -21,7 +35,7 @@ For more information, see xref:cloud:clusters:data-service/manage-buckets.adoc[]
 * You have started to create or already created an index in xref:create-search-indexes.adoc#advanced-mode[Advanced Mode Editing].
 
 * You have created at least one type mapping in your Search index.
-For more information, see xref:create-search-index-ui.adoc[].
+For more information, see xref:create-type-mapping.adoc[].
 
 * You have logged in to the Couchbase {page-ui-name}. 
 
@@ -36,10 +50,14 @@ To set a document filter for a Search index with the {page-ui-name}:
 .. To create a new Search index, click btn:[Create Search Index].
 . Make sure to select *Enable Advanced Options*.
 . Expand *Global Index Settings*. 
-. Do one of the following:   
+. Do one of the following:
 .. <<json-type,>>
 .. <<doc-id-sep,>>
 .. <<doc-id-regex,>>
+.. <<custom,>>
+
+WARNING: You cannot use custom document filters with another type of type identifier on your Search index. 
+If you select an option other than *Custom* after you have defined custom document filters, you'll lose any defined custom filters on your Search index.
 
 [#json-type]
 === Create a JSON Type Field Document Filter 
@@ -51,12 +69,11 @@ To only add documents to your Search index that contain a specific field with a 
 +
 For example, if your documents include a `type` field, you could enter `type` in the *JSON Type Field* field. 
 +
-NOTE: You cannot use a field as a document filter if the field name contains a period (.).  
+NOTE: You cannot use a field as a document filter if the field name contains a period (.).
 . Under *Type Mappings*, next to the type mapping where you want to add the document filter, go to menu:More Options (&vellip;)[Edit].
-. In the *Name* field, add a period (.) to the end of the current type mapping name.
-. After the period, add the exact string from the document field that you want to use as a filter.
+. Next to *Configure Type Mapping: scope_name.collection_name*, enter the exact string from the document field that you want to use as a filter.
 +
-For example, if you wanted your Search index to only return documents that had a `type` value of `hotel`, you could enter `hotel`.
+For example, if you wanted your type mapping to only include documents that had a value of `hotel` in the `type` field, you could enter `hotel` in the filter field.
 . Click btn:[Submit].
 . Click btn:[Update Index].
 
@@ -70,10 +87,9 @@ To only add documents to your Search index that have IDs that match a specified 
 +
 For example, if you know all of your document ID values are prefixed by a string and an underscore (\_), enter `_`.
 . Under *Type Mappings*, next to the type mapping where you want to add the document filter, go to menu:More Options (&vellip;)[Edit].
-. In the *Name* field, add a period (.) to the end of the current type mapping name.
-. After the period, add the exact prefix from the document's ID value that you want to use as a filter. 
+. Next to *Configure Type Mapping: scope_name.collection_name*, enter the exact prefix from the document's ID value that you want to use as a filter. 
 +
-For example, if you wanted your Search index to only return documents that have an prefix of `landmark_`, you could enter `landmark`.
+For example, if you wanted your type mapping to only include documents that have an prefix of `landmark_` in their ID values, you could enter `landmark` in the filter field.
 . Click btn:[Submit].
 . Click btn:[Update Index].
 
@@ -87,10 +103,43 @@ To only add documents to your Search index that have IDs that match a specified 
 +
 For example, if you wanted documents with ID values that contained `\_40`, you could enter `_[3-5]0` as your regular expression.
 . Under *Type Mappings*, next to the type mapping where you want to add the document filter, go to menu:More Options (&vellip;)[Edit].
-. In the *Name* field, add a period (.) to the end of the current type mapping name.
-. After the period, add a match for the regular expression from the document's ID value that you want to use as a filter.
+. Next to *Configure Type Mapping: scope_name.collection_name*, enter a match for the regular expression from the document's ID value that you want to use as a filter.
 +
-For example, if you wanted your Search index to only return documents with ID values that contained `_40`, you could enter `_40`.
+For example, if you wanted your type mapping to only include documents with ID values that contained `_40`, you could enter `_40` in the filter field.
+. Click btn:[Submit].
+. Click btn:[Update Index].
+
+[#custom]
+=== Create a Custom Document Filter
+
+[.status]#Couchbase Server 8.0#
+
+To create a new custom document filter on a Search index with the Couchbase {page-ui-name}:
+
+. Under *Choose Document Filter*, click btn:[Custom].
+. Click btn:[Add Document Filter].
+. In the *Label* field, enter a name for your new document filter. 
+. In the *Filter* code editor, enter a JSON object to define your document filter.
++
+For more information about the properties for each document filter type, see: 
++
+* xref:search-index-params.adoc#boolean_filter[Boolean Document Filters]
+* xref:search-index-params.adoc#date_range_filter[Date Range Document Filters]
+* xref:search-index-params.adoc#numeric_range_filter[Numeric Range Document Filters]
+* xref:search-index-params.adoc#term_filter[Term Document Filters]
+* xref:search-index-params.adoc#conjunct_filter[Conjunct Document Filters]
+* xref:search-index-params.adoc#disjunct_filter[Disjunct Document Filters]
+
++
+TIP: Do not add the name of your document filter to your filter definition when defining a custom document filter through the {page-ui-name}.
+Define the document filter as an unnamed object with the specific properties you need for your document filter type.
+
++
+. Click btn:[Save].
+. Under *Type Mappings*, next to the type mapping where you want to add the document filter, go to menu:More Options (&vellip;)[Edit].
+. Next to *Configure Type Mapping: scope_name.collection_name*, enter the name of the custom document filter that you want to use to filter documents on this type mapping.
++
+For example, if you defined a custom document filter named `free_breakfast_true`, enter `free_breakfast_true` in the filter field.
 . Click btn:[Submit].
 . Click btn:[Update Index].
 
