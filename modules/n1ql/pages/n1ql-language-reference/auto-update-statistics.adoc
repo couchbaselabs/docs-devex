@@ -14,11 +14,11 @@ However, as data changes over time, the statistics can become stale, leading to 
 
 To handle this, AUS executes a scheduled task on each query node in the cluster. 
 This task evaluates statistics based on expiration policies to identify outdated ones and then refreshes them by running the xref:n1ql:n1ql-language-reference/updatestatistics.adoc[] statement.
-It primarily maintains statistics for expressions based on index keys, and not for expressions on non-indexed fields.
+AUS can also optionally generate statistics for indexed expressions that do not already have them. 
 
-Optionally, AUS can also create optimizer statistics for indexed expressions that do not already have them.
-
-NOTE: AUS is only available in Couchbase Server 8.0 and later. For more information, see <<availability, Availability>>.
+NOTE: AUS maintains statistics only for expressions on index keys, and only for those indexed using the Plasma storage engine.
+It does not support Memory-Optimized indexes. 
+For more information about these index storage types, see xref:indexes:storage-modes.adoc[]. 
 
 [#availability]
 == Availability
@@ -83,7 +83,7 @@ UpdatePhase ..r..> end
 
 === Evaluation Phase
 
-In this phase, AUS evaluates whether exisiting statistics are stale based on the <<expiration_policy, expiration policy>>. 
+In this phase, AUS evaluates whether existing statistics are stale based on the <<expiration_policy, expiration policy>>. 
 For each index, AUS assess how much data has changed since the last update of the optimizer statistics for the index's key expressions.
 If the percentage of change exceeds the defined threshold in the <<expiration_policy, expiration policy>>, the statistics are marked as stale.
 
@@ -93,7 +93,7 @@ You can control this setting using the `create_missing_statistics` attribute in 
 === Update Phase
 
 After the evaluation, AUS executes xref:n1ql:n1ql-language-reference/updatestatistics.adoc[] statements to refresh the statistics identified as stale. 
-When updating the exisitng statistics, AUS ensures that the refreshed statistics maintain the original xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#resolution[resolution] at which they were collected.
+When updating the existing statistics, AUS ensures that the refreshed statistics maintain the original xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#resolution[resolution] at which they were collected.
 
 Also, if the `create_missing_statistics` option is set to `true`, AUS creates new optimizer statistics for indexed expressions that were flagged as missing during the evaluation phase.
 The new statistics are created with the default xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#resolution[resolution]. 
@@ -120,7 +120,7 @@ You can configure AUS to run during off-peak hours or at specific times that ali
 AUS maintains its global configurations in the <<system_aus, system:aus>> catalog. 
 You can enable AUS and set its schedule by modifying the relevant configurations within this catalog.
 
-If you need more granluar control, use the <<system_aus_settings, system:aus_settings>> catalog to customize certain AUS configurations at the bucket, scope, and collection levels.
+If you need more granular control, use the <<system_aus_settings, system:aus_settings>> catalog to customize certain AUS configurations at the bucket, scope, and collection levels.
 
 For a historical record of recent AUS tasks across all query nodes, use the xref:n1ql:n1ql-intro/sysinfo.adoc#sys-tasks-cache[system:tasks_cache] catalog.
 For more information, see <<monitor_aus_tasks, Monitor AUS Tasks>>.
@@ -166,9 +166,9 @@ This attribute is required only if `enable` is set to `true`.
 | <<aus_schedule, Schedule>> object
 
 | **change_percentage** +
-__optional__
+__required__
 
-| The percentage of change to items within an index that must be exceeded for the statistics to be refereshed. 
+| The percentage of change to items within an index that must be exceeded for the statistics to be refreshed. 
 This is the threshold for determining whether the statistics are stale or not.
 
 The value must be an integer between `0` and `100`.
@@ -177,7 +177,7 @@ For example, a value of `30` means that if 30% or more of the items in an index 
 
 *Default:* `10`
 
-| Interger 
+| Integer 
 
 | **all_buckets** + 
 __required__
@@ -212,21 +212,21 @@ The statistics will be created using the default value for the xref:n1ql:n1ql-la
 | **start_time** +
 __required__
 
-| The start time of the AUS schedule in “HH:MM” format.
+| The start time of the AUS schedule in "HH:MM" format.
 The `start_time` must be at least 30 minutes earlier than the `end_time`.
 
-*Example:* `“01:30”`
+*Example:* `"01:30"`
 
 | String
 
 | **end_time** +
 __required__
 
-| The end time of the AUS schedule in “HH:MM” format. 
+| The end time of the AUS schedule in "HH:MM" format. 
 
 The `end_time` must be at least 30 minutes later than the `start_time`.
 
-*Example:* `“05:30”`
+*Example:* `"05:30"`
 | String
 
 | **days** +
@@ -236,7 +236,7 @@ __required__
 
 Valid values include: `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`. 
 
-*Example:* `[“Saturday”, “Sunday”]`
+*Example:* `["Saturday", "Sunday"]`
 
 | String array
 
@@ -246,9 +246,9 @@ __optional__
 | The timezone that applies to the schedule's start and end times. 
 The value must be a valid IANA timezone string.
 
-*Default:* `“UTC”`
+*Default:* `"UTC"`
 
-*Example:* `US/Pacific”`
+*Example:* `"US/Pacific"`
 
 | String
 
@@ -317,7 +317,7 @@ The setting cannot be overridden at the scope or collection level.
 | **change_percentage** +
 __optional__
 
-| The percentage of change to items within an index that must be exceeded for the statistics to be refereshed. 
+| The percentage of change to items within an index that must be exceeded for the statistics to be refreshed. 
 
 The value must be an integer between `0` and `100`.
 
@@ -362,8 +362,8 @@ A sample query to add a scope level setting that applies to all collections with
 .Query
 [source,sqlpp]
 ----
-INSERT INTO system:aus_settings ( KEY, VALUE ) 
-    VALUES ({ "default:bucket1.scope1", {"change_percentage": 20 } )
+INSERT INTO system:aus_settings ( KEY, VALUE )
+    VALUES ( "default:bucket1.scope1", {"change_percentage": 20} );
 ----
 ====
 
@@ -492,15 +492,16 @@ DELETE FROM system:tasks_cache
         AND node = "127.0.0.1:8091"; // Replace with the actual node address
 ----
 
+[#cancel_next_scheduled_aus_tasks]
 === Cancel Next Scheduled AUS Tasks
 
-To cancel the next scheduled AUS task, temporarily modify the schedule in the `system:aus` catalog using an UPDATE statement. 
-This way you can skip a specific AUS run without changing the overall configuration.
+To cancel an upcoming scheduled AUS task, you need to temporarily modify its schedule in the `system:aus` catalog. 
+After the scheduled time has passed, you can revert it to its original schedule.
 
 ==== Temporarily Update the Schedule
 
-First, identify the scheduled AUS task you want to skip or cancel.
-Then, update the schedule to temporarily exclude the day or time. 
+First, identify the specific AUS task you want to skip or cancel.
+Then, use an UPDATE statement to exclude the day or time from its schedule.
 
 For example, if your AUS tasks run on Monday, Wednesday, and Friday, and you want to cancel the upcoming Monday run: 
 
@@ -511,30 +512,20 @@ UPDATE system:aus SET schedule.days = ["Wednesday", "Friday"];
 
 ==== Revert the Schedule
 
-After the day and time that the cancelled task would have run has passed, you can revert the schedule to its original settings. 
-This allows your AUS tasks resume their regular schedule for all subsequent runs.
+After the day and time for the cancelled task have passed, you can revert the schedule to its original settings. 
+This allows your AUS tasks to resume their regular schedule for all subsequent runs.
 
-For example, to restore the Monday, Wednesday, and Friday schedule after the skipped Monday run: 
+For example, to restore the Monday, Wednesday, and Friday schedule after skipping the Monday run: 
 
 [source,sqlpp]
 ----
 UPDATE system:aus SET schedule.days = ["Monday", "Wednesday", "Friday"];
 ----
 
-
-
-
-
-
-
-
-
-
-
 == Manage AUS Load
 
-When an AUS task runs, it can increase the load on the query node due to the evaluation and updation of statistics.
-Therefore to minimize performance impact, it is important to schedule AUS to best suit the workloads of your cluster.
+When an AUS task runs, it can increase the load on the query node as it evaluates and updates statistics.
+Therefore, to minimize performance impact, it is important to schedule AUS to best suit the workloads of your cluster.
 
 To prevent excessive load, the AUS task will not start if the query node's load is too high during the scheduled window.
 In such cases, the task is skipped, and the next AUS task is scheduled. 
