@@ -7,7 +7,7 @@
 
 {description}
 
-You cam add vectors to Couchbase {product-name} indexes. 
+Couchbase {product-name} suports three types of vector indexes. 
 You store index values as attributes in your documents, and then index those attributes.
 You can then find relevant data by executing queries on the vector attributes, which use the index to find similar vectors.
 
@@ -18,7 +18,7 @@ Using indexes reduces the resources needed to perform vector searches.
 
 If you're unfamiliar with vectors and vector indexing, see xref:vectors-and-indexes-overview.adoc[] for an overview.
 
-You can include vectors in three types of Couchbase {product-name} indexes:
+The three types of Couchbase {product-name} indexes that support vector searches are:
 
 Hyperscale Vector Indexes::
 These indexes are specifically designed for vector searches. 
@@ -36,7 +36,7 @@ Composite Vector Indexes::
 Composite Vector indexes combine a standard GSI index with a single vector column. 
 This combination lets you perform a hybrid search using a single vector value with standard scalar attributes that are also indexed in the Composite Vector Index.
 The scalar attributes in a query reduce the number of vectors the Couchbase {product-name} has to compare when performing an index scan to find similar vectors.
-Use GSI indexes with a vector column when you want to perform hybrid searches of documents using both scalars and a vector.
+Use Composite VectorI indexes when you want to perform hybrid searches of documents using both scalars and a vector.
 They work well for cases where your queries are highly selective---returning a small number of results from a large dataset.
 They consume a moderate amount of memory and can index billions of documents.
 
@@ -106,22 +106,22 @@ Limited to approximately 100 million documents
 
 When choosing which type of index to use, consider the following:
 
-* If your dataset will not grow beyond 100 million documents, you can consider Composite Vector or FTS Vector indexes, especially if you need to perform hybrid searches.
+* If your dataset will not grow beyond 100 million documents, consider Composite Vector or FTS Vector indexes, especially if you need to perform hybrid searches.
 * If your dataset is larger than or may grow larger than 100 million documents, use a Hyperscale Vector index.
 * When in doubt, try using a Hyperscale Vector index.
 If you find that the performance is not what you need, you can try using one of the other index types.
 
 == Applications for Vector Indexes
 
-Each type of index is suited to different types of applications.
+Each type of index works best for different types of applications.
 The following sections explain several common applications for each type of vector index.
 They also describe the workflow your application follows when using each type of index.
 
 === Hyperscale Vector Index Applications
 
 Hyperscale Vector indexes contain a single vector column.
-They excel at huge dataset that can scale into the billions of documents.
-They are optimized for pure vector searches, such as content discovery or recommendations.
+They excel at indexing huge datasets that can scale into the billions of documents.
+They're optimized for pure vector searches, such as content discovery or recommendations.
 
 The Hyperscale Vector index works well for applications such as:
 
@@ -133,8 +133,10 @@ Chatbot context for workflows like retreival-augmented generation (RAG) requires
 The large dataset gives the chatbot a depth of knowledge that's not necessary in simpler applications.
 
 Anomaly detection::
-Anomaly detection applications such as those used in Internet of Things (IoT) sensor networks,   require huge datasets to find deviations from normally occurring patterns.
+Anomaly detection applications such as those used in Internet of Things (IoT) sensor networks, require huge datasets to find deviations from normally occurring patterns.
 Hyperscale Vector indexes can handle the large datasets and perform these vector searches fast.
+
+=== Hyperscale Vector Index Application Workflow
 
 When using a Hyperscale Vector index, your application follows the workflow shown in the following diagram:
 
@@ -145,6 +147,7 @@ include::vector-index:partial$hyperscale-vector-app-workflow.puml[]
 ....
 
 The steps shown in the diagram are:
+
 . When your application loads data with a complex data field it wants to search semantically, it calls an embedding model to generate a vector for it.
 . It sends the data, including the vector, to Couchbase {product-name} for storage.
 . The Data Service sends the embedded vector to the Indexing Service for inclusion in the Hyperscale Vector index.
@@ -173,6 +176,7 @@ Supply chain management::
 Supply chain management applications often need to query based on product type, supplier, or location.
 Vector similarity searches can be added to these searches to find similar demand patterns.
 
+=== Composite Vector Index Application Workflow
 
 When using a Composite Vector index, your application follows the workflow shown in the following diagram:
 
@@ -198,20 +202,20 @@ See xref:vector-index:composite-vector-index.adoc[] for more information about C
 [#fts]
 === FTS Vector Index Applications
 
-FTS Vector indexes contain a single vector column in addition to a full-text search index.
+FTS Vector indexes contain a single vector column in addition to a Full-Text Search index.
 Some of the applications for FTS Vector indexes include:
 
 E-Commerce product recommendations::
 E-Commerce applications can use scalar, text, and vector searches to find products that match a customer's search.
-For example, a customer could search for red sneakers (text) that cost less than $100 (scalar) that are similar to an uploaded image of a sneaker (vector).
+For example, a customer could search for red sneakers (text) that cost less than $100 (scalar) and are similar to an uploaded image of a sneaker (vector).
 
 Travel recommendations::
 Users often want to search for hotels using multiple criteria:
 
 +
 * Limiting searches to a specific area (for example, "walking distance to the Louvre") which relies on geospacial data. 
-* Specific keywords for features they want ("quiet", "romantic", "gym") which requires Full-Text search.
-* Semantic searches of descriptions and reviews for searches that do not rely on literal texzt matches ("modern beach resort with chic decor") which requires vector searches.
+* Specific keywords for features they want ("quiet", "romantic", "gym") which requires Full-Text Search.
+* Semantic searches of descriptions and reviews for searches that do not rely on literal text matches ("modern beach resort with chic decor") which requires vector searches.
 
 +
 An FTS vector index can combine geospacial, keyword, and semantic searches into a single index.
@@ -231,7 +235,7 @@ include::vector-index:partial$fts-vector-app-workflow.puml[]
 The steps shown in the diagram are:
 
 . When your application loads data it wants to search semantically, it calls an embedding model to generate a vector for it.
-. It sends the data and the vector, to Couchbase {product-name} for storage.
+. It sends the data and the vector to Couchbase {product-name} for storage.
 . The Data Service sends the embedded vector along with scalar fields to the Search Service for inclusion in the FTS Vector index.
 . When your application needs to perform a search that includes a vector, it uses the same embedding model to generate a vector for the search value.
 . It sends the search vector and text, geospacial, and other search values as part of a search request to the Couchbase {product-name} Search Service.

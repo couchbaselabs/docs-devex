@@ -1,0 +1,162 @@
+= Hyperscale and Composite Vector Index Best Practices
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: When creating and querying Hyperscale and Composite Vector indexes, you have several options to set that can affect the speed and accuracy of your results.
+:stem: 
+:page-toclevels: 3
+
+[abstract]
+{description}
+Couchbase has performed testing to determine how index creation and query options affect the performance of Hyperscale and Composite Vector indexes.
+The following sections describe the results of the testing and recommendations based on these results. 
+
+NOTE: Most of the tests were performed using the Hyperscale Vector index.
+However, many of the the results also apply to Composite Vector indexes where the two index types share the same settings.
+
+== Tuning Index Creation
+
+When you create a Hyperscale Vector index, you can set the parameters in the following list. 
+Each of them has the potential to affect the performance of box creating the index and the speed and accuracy of queries that use the index.
+
+nList::
+Sets the number of clusters (centroids) in the index. 
+You set the `nList` by supplying a value after the `IVF` in the `description` parameter when you create your index.
+This value affects the accuracy of the index and the speed of queries that use it.
+The default value for this value depends on the size of your dataset.
+For datasets with less than 1 million vectors, the default value is the number of vectors divided by 1000.
+For datasets with more than 1 million vectors, the default value is the square root of the number of vectors.
+
++ 
+Tests show that increasing `nList` beyond the default does not affect the build time of the index. 
+However, it does improve the queries per second (QPS) that the index can handle.
+It also lowers the latency of queries that use the index.
+
++
+*Recommendation:* if you find that your query throughput and latency is not meeting your needs, you can try rebuilding the index with a larger `nList` value.
+
+Trainlist::
+Sets the number of vectors that Couchbase {product-name} considers when searching for centroids in the dataset.
+You set it using the `trainlist` key in the `WITH` clause when you create your index.
+The default value is roughly 50 times the number of centroids in the index.
+
++ 
+Tests show that increasing the `trainlist` improves QPS and reduces latency, but slightly increases memory usage for the index.
+
++ 
+*Recommendation:* if you find that increasing the `nList` does not improve your query performance, you can try increasing the `trainlist` value.
+
+Partitions::
+Sets how the index is split among logical shards.
+This setting affects the scalability, memory distribution, and parallelism of the index.
+You set this value using the `PARTITION BY` clause in the `CREATE [VECTOR] INDEX` statement.
+
++
+Tests show that increasing the number of partitions linearly reduces both the time it takes to build and train the index and index's memory use.
+These changes do not affect the QPS or latency of queries that use the index.
+
++
+*Recommendation:* if the length of time it takes to build the index or the amount of memory the index uses is a concern, you can try increasing the number of partitions.
+
+Replicas::
+Sets the number of replicas for the index.
+This setting affects the fault tolerance, query throughput, and memory footprint of the index.
+You set this value using the `num_replicas` key in the `WITH` clause when you create or alter your index.
+
++
+Tests show that increasing the number of replicas learly increases the QPS and linerly reduces the latency of queries that use the index.
+However, it also linearly increased the memory footprint of the index.
+Adding replicas does not affect the time it takes to build the index.
+
++
+*Recommendation:* if you find that your query throughput or latency is not meeting your needs, you can try increasing the number of replicas for the index if you can afford the additional memory usage.
+
+Quantization::
+Sets the quantization method used by the index.
+Couchbase {product-name} supports two quantization methods: xref:vector-index:vectors-and-indexes-overview.adoc#sq[scalar quantization (SQ)] and xref:vector-index:vectors-and-indexes-overview.adoc#pq[product quantization (PQ)].
+You set the quantization method using the `description` parameter in the `WITH` clause when you create your index.
+
++
+Couchbase tested different quantization settings using datasets that differed in size and number of dimensions.  
+The results of these tests appear in the following table:
+
++
+[%autowidth, options="header"]
+|===
+| Dataset | Index Type | Quantization Setting | Build Time | Memory Use | Recall Accuracy | QPS | Latency
+
+| 100 million 128 dimensions
+| Hyperscale
+| SQ8
+| Lowest
+| Highest 
+| Best 
+| Best
+| Best 
+
+| 5 million, 1536 dimensions
+| Composite
+| PQ32x8
+| Slightly higher than SQ8
+| 75% less than SQ8 
+| lower than SQ8 
+| Lower than SQ8
+| Lower than SQ8
+
+|===
+
++
+NOTE: Couchbase also tested Hyperscale Vector indexes containing 1 billion vectors with 128 dimensions using SQ4 quantization. 
+The results showed acceptable recall accuracy and similar performance to SQ8 on smaller datasets.
+
++ 
+*Recommendations:* 
+
++
+--
+* SQ8 provides the best balance between memory use, recall, for lower dimensional datasets. 
+* If you have a low-dimensional dataset that's in the billion vector range, consider using SQ4 quantization.
+* Use PQ for higher-dimensional datasets where you want to reduce memory use with the tradeoff of less accurate recall, decreased QPS, and increased latency.
+--
+
+// Similarity Function::
+// Sets the function the index uses when determining the similarity of vectors when identifying centroids.
+// Couchbase {product-name} supports two similarity 
+// 
+// Holding off on simlarity because the best practice doc is mute on it, also lacks testing for dot?
+
+
+== Tuning Queries
+
+When querying a Hyperscale Vector index, you can set several parameters in the `APPROX_VECTOR_DISTANCE` (`ANN`) function that affect the performance of the query.
+The following list describes the parameters you can set in the function:
+
+nProbes::
+Sets the number of centroids in the Hyperscale Vector index to ton search for similar vectors.
+You optionally set this value as the fourth parameter in the `APPROX_VECTOR_DISTANCE` function call in your query.
+The default value for this value is 1, which only only searches for similar vectors in the centroid that's closest to the search vector.
+
++
+Tests found that increasing `nProbes` beyond the default improves the accuracy of results non-linearly (larger values show diminishing improvements). 
+However, it caused a linear decrease in QPS and increase in latency.
+
++
+*Recommendation:* if you find that your query recall is not meeting your needs, you can try increasing the `nProbes`` value.
+However, increasing this value reduces QPS and increases latency.
+
+[#reranking]
+Reranking::
+Sets whether a query of a Hyperscale Vector index performs a second ranking phase where it compares the full vector values of the results to the search vector.
+See xref:vector-index:hyperscale-reranking.adoc[] for more information about how reranking works.
+This setting is off by default. 
+You can enable it by passing `TRUE` as the fifth parameter in the `APPROX_VECTOR_DISTANCE` function call in your query.
+
++ 
+Testing has shown that enabling reranking improves the accuracy of recall in only a few cases and significantly decrease QPS.
+
++
+*Recommendation:* if you find recall accuracy is not meeting your needs and you're using SQ4 or PQ128x8 or below quantization, you can try enabling reranking.
+You must also have your index set to persist the full vector value, which increases memory use.
+If you do not enable reranking, consider preventing the persistence of the full vector value in the index to reduce memory and disk use.
+See xref:vector-index:hyperscale-reranking.adoc#prevent-vector-persistence[Preventing Vector Persistence] to learn how to turn off full vector persistence.
+

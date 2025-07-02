@@ -1,25 +1,24 @@
-= Hybrid Search Using GSI with a Vector Column
+= Hybrid Search Using Composite Vector Index
 :page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
-:description: A Composite Vector Index is a Global Secondary Index (GSI) with a single vector column that enables hybrid queries to find semantically-related content.
+:description: A Composite Vector index is a Global Secondary Index (GSI) with a single vector column that combines scalar queries with semantic search.
 :stem: 
 :page-toclevels: 3
-:index-name: Composite Vector Index
-:index-name-plural: Composite Vector Indexes
+:index-name: Composite Vector index
+:index-name-plural: Composite Vector indexes
 
 {description}
-The added vector column lets your application perform a hybrid query using both the index's scalar, array, and object index entries plus a vector value. 
-See xref:learn:services-and-indexes/indexes/indexes.adoc[] for an overview of GSI and other indexes.
+The added vector column lets your application perform a hybrid query using both the index's scalar, array, and object index entries plus a vector similarity search. 
 
 == How the Composite Vector Index's Vector Column Works 
 
-A Composite Vector Index has a single vector column that enables semantic and similarity searches within your {sqlpp} queries.
-When creating the index, you use a `VECTOR` key attribute to designate the field that contains the embedded vectors.
+The Composite Vector index's single vector column enables semantic and similarity searches within your {sqlpp} queries.
+When creating the index, you use a `VECTOR` key attribute to identify the key that contains the embedded vectors.
 
 When your query contains an embedded vector, the Query Service uses any non-vector predicates in the query to filter index entries.
-Then it performs an index scan on the remaining index entries, using the similarity function you specify in the query to locate similar vectors. 
-This behavior reduces the number of vector similarity comparisons the Query Service must do to find similar vectors.
+Then it performs a vector similarity search to locate semantically related vectors. 
+Handling the non-vector predicates first reduces the number of vector similarity comparisons the Query Service must do to find similar vectors.
 
 == Prerequisites
 
@@ -29,10 +28,10 @@ For more information about how to deploy a new node and Services on your databas
 * You must have a bucket with scopes and collections in your database. 
 For more information about how to create a bucket, see xref:manage:manage-buckets/create-bucket.adoc[].
 
-* Your account must have the xref:learn:security:roles.adoc#query-manage-index[Query Manage Index] role to be able to create an index.
+* Your account must have the xref:learn:security:roles.adoc#query-manage-index[Query Manage Index] or an administrator role to be able to create an index.
 
 * You have documents in a collection that contain one or more vector embeddings.
-You can add a single vector to a Composite Vector Index.
+You can add a single vector to a Composite Vector index.
 If your documents contain multiple embedded vectors, you can create multiple indexes---one for each vector attribute.
 +
 Embeddings can be an array of floating point numbers or a base64 encoded string.
@@ -57,16 +56,19 @@ include::partial$index-algorithm-settings.adoc[]
 
 == Create a Composite Vector Index
 
-Creating a Composite Vector Index is similar to creating a non-vector GSI index.
+Creating a Composite Vector index is similar to creating a non-vector GSI index.
 See xref:guides:create-index.adoc[] for an overview of creating indexes.
-In the `CREATE INDEX` statement to create the Composite Vector Index, add the `VECTOR` lead key attribute after the vector's column name to declare it as an embedded vector.
+In the `CREATE INDEX` statement to create the Composite Vector index, add the `VECTOR` lead key attribute after the vector's key name to declare it as an embedded vector.
 
 You must also use the `WITH` clause to specify some additional information for the vector column. 
 The format for this clause with the most commonly used parameters is:
 
 [source,sqlpp]
 ----
-WITH {  "dimension":<dimensions> , "similarity":<similarity-function>, "description":<algorithm-settings>}; 
+WITH {  "dimension":<dimensions> , 
+        "similarity":<similarity-function>, 
+        "description":<algorithm-settings>
+     }; 
 ----
 
 * `dimensions` is an integer value that sets the number of dimensions in the vector.
@@ -75,9 +77,9 @@ This value is set by the embedded model you used to embed the vectors.
 Couchbase {product-name} uses the following strings to represent the proximity functions:
 +
 --
-** `COSINE`: xref:use-vector-indexes.adoc#cosine[Cosine Similarity]
-** `DOT`: xref:use-vector-indexes.adoc#dot[Dot Product]
-** `L2`, `L2_SQUARED`, `EUCLIDEAN`, or `EUCLIDEAN_SQUARED`: xref:use-vector-indexes.adoc#euclidean[Euclidean Distance]  
+** `COSINE`: xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
+** `DOT`: xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
+** `L2`, `L2_SQUARED`, `EUCLIDEAN`, or `EUCLIDEAN_SQUARED`: xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
 --
 +
 For the greatest accuracy, use the distance function you plan to use when querying vector data.
@@ -89,46 +91,22 @@ For a full list of the parameters that affect a vector column in a GSI, see *FIX
 [#examples]
 === Examples
 
-The following examples show you how to create two Composite Vector Index with a vector column using sample data.
+The following examples show you how to create two Composite Vector index with a vector column using sample data.
 They both use the data from the `color_data_2vectors.zip` file mentioned earlier. 
-The data in `rgb.json` file looks like this:
+
+The following query gets a single document from the `rgb` collection in the `vector-sample` bucket's `color` scope.
+It truncates the `embedding_vector_dot` attribute to the first four values to improve readability.
+
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=get-sample-doc]
+----
+
+The result of running this query is:
 
 [source,json]
 ----
-[
-  {
-    "id": "#FFEFD5",
-    "color": "papaya whip",
-    "brightness": 240.82,
-    "colorvect_l2": [
-      255,
-      239,
-      213
-    ],
-    "wheel_pos": "other",
-    "verbs": [
-      "soften",
-      "mellow",
-      "lighten"
-    ],
-    "description": "Papaya whip is a soft and mellow color that can be described as a light shade of 
-    peach or coral. It has a calming and soothing effect, similar to the tropical fruit it is named 
-    after. This color is perfect for creating a warm and inviting atmosphere, and it pairs well with 
-    other pastel shades or neutral tones. Papaya whip is a versatile color that can be used in both 
-    fashion and interior design, adding a touch of elegance and sophistication to any space.",
-    "embedding_model": "text-embedding-ada-002-v2",
-    "embedding_vector_dot": [
-      -0.014644118957221508,
-      0.017003899440169334,
-      -0.013450744561851025,
-      0.0021356006618589163,
-      0.006283756345510483,
-      0.01162360142916441,
-    // . . . 
-    ]
- },
- // . . . 
-] 
+include::vector-index:example$composite-vector-data.json[tag=sample-doc]
 ----
 
 ==== Index the RGB Values
@@ -202,7 +180,7 @@ Depending on your system, this training can take several seconds.
 
 == Query with a Composite Vector Index Column
 
-You query embedded vector attributes that you have indexed in a Composite Vector Index to find similar vectors and therefore similar semantic content.
+You query embedded vector attributes that you have indexed in a Composite Vector index to find similar vectors and therefore similar semantic content.
 To find the most similar vectors, use a `GROUP BY` clause in your query to return the most relevant vectors first. 
 In this clause, call one of two functions that actually performs the vector comparisons: `APPROX_VECTOR_DISTANCE` or `VECTOR_DISTANCE`.
 The first of these functions is faster, but less precise.
@@ -349,45 +327,23 @@ In a production environment, your application calls the same embedding model it 
 
 For this example, you can use embedded vectors in the `rgb_questions.json` file that's in the `color_data_2vectors.zip` file.
 This file contains a `question` attribute containing a search prompt for a particular color. 
-The `couchbase_search_query.knn.vector` attribute contains the embedded vector for the `question` attribute:
+The following query gets a single document from the `rgb_questions` collection in the `vector-sample` bucket's `color` scope.
+It truncates the `couchbase_search_query.knn.vector` attribute to the first four values to improve readability.
+
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=get-sample-doc-question]
+----
+
+The result of the query shows the content of one of the documents:
+
 
 [source,json]
 ----
-[
-  {
-    "id": "#FFEFD5",
-    "question": "What is the name of the color that is reminiscent of a tropical fruit and has a calming
-     effect, often used in fashion and interior design?",
-    "wanted_similar_color_from_search": "papaya whip",
-    "embedding_model": "text-embedding-ada-002-v2",
-    "couchbase_search_query": {
-      "fields": [
-        "*"
-      ],
-      "knn": [
-        {
-          "field": "embedding_vector_dot",
-          "k": 3,
-          "vector": [
-            0.005115953739732504,
-            0.004331615287810564,
-            0.014279481954872608,
-            // ....
-          ]
-        }
-      ],
-      "query": {
-        "match_none": {}
-      },
-      "sort": [
-        "-_score"
-      ]
-    }
-  },
-  // ...
-]
+include::vector-index:example$composite-vector-data.json[tag=sample-doc-question]
 ----
 
+The `couchbase_search_query.knn.vector` attribute contains the embedded vector for the `question` attribute.
 
 This example queries the  `embedding_vector_dot` column. 
 It appears here with most of the 1536 vectors omitted:

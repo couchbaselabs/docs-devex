@@ -1,3 +1,25 @@
+/* tag::get-sample-doc[] */
+SELECT RAW OBJECT_PUT(d, "embedding_vector_dot",
+  ARRAY_CONCAT(d.embedding_vector_dot[0:4], ["..."])
+)
+FROM `vector-sample`.`color`.`rgb` AS d
+USE KEYS ["#FFEFD5"];
+/* end::get-sample-doc[] */
+
+/* tag::get-sample-doc-question[] */
+SELECT RAW OBJECT_PUT(d, "couchbase_search_query",
+  OBJECT_PUT(d.couchbase_search_query, "knn",
+    ARRAY OBJECT_PUT(k, "vector",
+      ARRAY_CONCAT(k.vector[0:4], ["..."])
+    )
+    FOR k IN d.couchbase_search_query.knn END
+  )
+)
+FROM `vector-sample`.`color`.`rgb-questions` AS d
+USE KEYS ["#FFEFD5"];
+/* end::get-sample-doc-question[] */
+
+
 /* tag::create-rgb-idx[] */
 CREATE INDEX `color_vectors_idx` ON `vector-sample`.`color`.`rgb`
        (`colorvect_l2` VECTOR, color, brightness)

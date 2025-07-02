@@ -13,7 +13,7 @@ SELECT
   ARRAY_CONCAT(
     d.embedding_vector_dot[0:4], 
     ["..."]
-  ) AS vector
+  ) AS embedding_vector_dot
 FROM `vector-sample`.`color`.`rgb` AS d
 WHERE d.id = "#87CEEB";
 /* end::rgb-entry[] */
@@ -58,13 +58,9 @@ CREATE VECTOR INDEX `color_desc_hyperscale_brightness`
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector  
         FROM `vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#87CEEB"),
-    question_answer AS (
-        SELECT wanted_similar_color_from_search
-        FROM `vector-sample`.`color`.`rgb-questions` 
         WHERE meta().id = "#87CEEB")
-SELECT b.color, b.description, b.brightness, q.wanted_similar_color_from_search  
-       FROM `vector-sample`.`color`.`rgb` AS b, question_answer as q
+SELECT b.color, b.description, b.brightness
+       FROM `vector-sample`.`color`.`rgb` AS b
        WHERE b.brightness > 170.0
        ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, 
        question_vec[0], "l2", 4)  LIMIT 3;
@@ -73,5 +69,28 @@ SELECT b.color, b.description, b.brightness, q.wanted_similar_color_from_search
 /* tag::create-rgb-no-persist[] */
 CREATE VECTOR INDEX `color_desc_hyperscale_no_persist` 
        ON `vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)
-       WITH { "dimension":1536, "similarity":"L2", "description":"IVF8,SQ4", "persist_full_vector": false};
+       WITH { "dimension":1536, "similarity":"L2", "description":"IVF8,SQ4", 
+              "persist_full_vector": false};
 /* end::create-rgb-no-persist[] */
+
+/* tag::rerank-before-example[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector  
+        FROM `vector-sample`.`color`.`rgb-questions` 
+        WHERE meta().id = "#FFFFE0")
+    SELECT b.color, b.description, b.id
+    FROM `vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4)
+    LIMIT 3;
+/* end::rerank-before-example[] */
+
+/* tag::rerank-after-example[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector  
+        FROM `vector-sample`.`color`.`rgb-questions` 
+        WHERE meta().id = "#FFFFE0")
+    SELECT b.color, b.description, b.id
+    FROM `vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4, TRUE)
+    LIMIT 3;
+/* end::rerank-after-example[] */
