@@ -7,13 +7,12 @@
 
 == Purpose
 
-You can use the `USING AI` statement to input natural language queries through {sqlpp} interfaces such as CBQ shell, REST APIs, and SDKs. 
-
+You can use the USING AI statement to input natural language queries through {sqlpp} interfaces such as CBQ shell, REST APIs, and SDKs. 
 When executed, the statement passes the input to Large Language Models (LLMs) which interpret the request and return the equivalent {sqlpp} query. 
 
 For example, you can input prompts such as `How many airlines are based in Europe` or `List the names of all hotels in the same city as an airport`, and the statement will generate the corresponding SQL++ queries. 
 
-NOTE: If the generated SQL++ query is a SELECT statement, the system automatically executes it and returns the results.
+If the generated {sqlpp} query is a SELECT statement, the system automatically executes it and returns the results.
 For others, the generated query is returned as a string without execution.
 
 == Syntax
@@ -29,15 +28,12 @@ natural-language-request:: A natural language prompt that you want to convert in
 
 options::
 
-[Optional] Additional configuration properties to guide the statement execution.
-If specified, these options in the `WITH` clause override the default parameters.
-By default, the statement makes use of the `natural_orgId`, `natural_cred` and `natural_context` request parameters. 
+[Optional] An object specifying additional <<optional-parameters,options>> to guide the statement execution.
+If specified, these options override the default `natural_orgId`, `natural_cred` and `natural_context` request parameters. 
 //TODO: Add links to `natural_orgId`, `natural_cred` and `natural_context` when they are available in the documentation.
 
 [[optional-parameters]]
 === Options
-
-An object with one or more of the following properties to guide the USING AI statement.
 
 [cols="1a,3a,1a"]
 |===
@@ -84,6 +80,26 @@ If set to `FALSE`, the generated statement is returned as a string without execu
 
 | Boolean
 |===
+
+=== Handling Passwords Securely
+
+Use `creds` and `natural_cred` parameters with caution to avoid exposing password information through history files or logs.
+When working with the cbq shell, avoid passing passwords directly on the command line. 
+Instead, use the `\set` command to specify only the username, and then enter the password at the terminal prompt.
+This ensures that the password is not recorded in the shell history.
+
+Similarly, if you are sending requests directly to a REST endpoint from a shell, be mindful of how you provide the password and whether it will be recorded in the shell history.
+Consider using a method like the following to prompt for the password:
+
+[source,sh]
+----
+read -sp "Enter natural password:" p
+echo
+echo "natural_cred=your.username@couchbase.com:${p}"|curl -sd @- -d 'natural_orgid="<<your-org-id>>'
+----
+
+If you choose to reuse the password by setting an evironment variable, note that it might be visible to other users on the system with sufficient privileges for process inspection (for example, through `/proc`).
+If security is a concern, consider using an HTTPS connection. 
 
 == Examples
 
