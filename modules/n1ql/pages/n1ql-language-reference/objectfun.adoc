@@ -281,6 +281,110 @@ LIMIT 1;
 ----
 ====
 
+
+[[fn-obj-filter,OBJECT_FILTER()]]
+== OBJECT_FILTER(`expression` [, `options`])
+
+=== Description
+This function extracts and returns nested fields from an input object that match a specified pattern, while retaining their original hierarchical path structure in the output. 
+The function is particularly useful when working with complex objects, as it allows you to filter fields based patterns using either regular expressions or exact matches.
+
+=== Arguments
+expression:: An expression representing an object.
+
+options:: [Optional] A JSON object specifying options for the function.
+
+=== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **pattern** +
+| The pattern to match. 
+This can be a regular expression or a simple string, depending on the `regex` parameter.
+| String
+
+| **regex** +
+| If `TRUE`, the pattern is treated as a regular expression.
+
+If `FALSE`, the pattern is treated as a simple string.
+
+*Default:* `TRUE`
+| Boolean
+
+| **arraysubscript** +
+| Specifies whether array subscripts are included in field names before applying the filter.
+
+If `TRUE`, array subscripts are included. 
+If `FALSE`, array subscripts are replaced by `*`.
+
+*Default:* `TRUE`
+
+| Boolean
+
+| **composites** +
+| Specifies whether the pattern should match field names that contain values requiring further processing, such as nested objects or arrays.
+
+If `TRUE`, the pattern is matched against every level of nested fields. 
+If `FALSE`, the pattern is matched only against the deepest level of nested fields. 
+
+*Default:* `TRUE`
+| Boolean
+
+| **patternspace** +
+| A string literal with two possible values. 
+
+"field":: The pattern is matched against individual field names.
+
+"path":: The pattern is matched against composite path names.
+
+*Default:* `"path"`
+| String
+|===
+
+=== Return Value
+An object containing only the fields that match the specified pattern.
+Non-matching fields are excluded from the output.
+
+=== Examples
+
+[[obj-filter-ex1,OBJECT_FILTER() Example 1]]  
+.Example 1
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_FILTER(t, {"pattern":"Business service"})  
+FROM `travel-sample`.`inventory`.`hotel` t 
+WHERE type = 'hotel' 
+LIMIT 2;
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": {
+      "reviews": [
+        {
+          "ratings": {
+            "Business service (e.g., internet access)": 4
+          }
+        }
+      ]
+    }
+  },
+  {
+    "$1": null
+  }
+]
+----
+====
+
+[[obj-filter-ex2,OBJECT_FILTER() Example 2]]
+
+
 [[fn-obj-inner-pairs,OBJECT_INNER_PAIRS()]]
 == OBJECT_INNER_PAIRS(`expression`)
 
