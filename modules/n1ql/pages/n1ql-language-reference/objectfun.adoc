@@ -287,7 +287,7 @@ LIMIT 1;
 
 === Description
 This function extracts and returns nested fields from an input object that match a specified pattern, while retaining their original hierarchical path structure in the output. 
-The function is particularly useful when working with complex objects, as it allows you to filter fields based patterns using either regular expressions or exact matches.
+This is particularly useful when working with complex objects, as it allows you to filter fields based patterns using either regular expressions or exact matches.
 
 === Arguments
 expression:: An expression representing an object.
@@ -317,6 +317,7 @@ If `FALSE`, the pattern is treated as a simple string.
 | Specifies whether array subscripts are included in field names before applying the filter.
 
 If `TRUE`, array subscripts are included. 
+
 If `FALSE`, array subscripts are replaced by `*`.
 
 *Default:* `TRUE`
@@ -327,6 +328,7 @@ If `FALSE`, array subscripts are replaced by `*`.
 | Specifies whether the pattern should match field names that contain values requiring further processing, such as nested objects or arrays.
 
 If `TRUE`, the pattern is matched against every level of nested fields. 
+
 If `FALSE`, the pattern is matched only against the deepest level of nested fields. 
 
 *Default:* `TRUE`
@@ -335,9 +337,9 @@ If `FALSE`, the pattern is matched only against the deepest level of nested fiel
 | **patternspace** +
 | A string literal with two possible values. 
 
-"field":: The pattern is matched against individual field names.
+`"field"`: The pattern is matched against individual field names. 
 
-"path":: The pattern is matched against composite path names.
+`"path"`: The pattern is matched against composite path names.
 
 *Default:* `"path"`
 | String
@@ -350,7 +352,7 @@ Non-matching fields are excluded from the output.
 === Examples
 
 [[obj-filter-ex1,OBJECT_FILTER() Example 1]]  
-.Example 1
+.Filtering by field name
 ====
 .Query
 [source,sqlpp]
@@ -383,6 +385,35 @@ LIMIT 2;
 ====
 
 [[obj-filter-ex2,OBJECT_FILTER() Example 2]]
+.Filtering by full path
+You can use <<fn-obj-paths,OBJECT_PATHS()>> to generate the full path to a field, and then use that path in the `pattern` parameter. 
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_FILTER(t, { "pattern": "reviews[1].ratings.Service", "regex": false }) 
+FROM `travel-sample`.`inventory`.`hotel` t 
+WHERE type = 'hotel' 
+LIMIT 1;
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": {
+      "reviews": [
+        {
+          "ratings": {
+            "Service": 3
+          }
+        }
+      ]
+    }
+  }
+]
+----
+====
 
 
 [[fn-obj-inner-pairs,OBJECT_INNER_PAIRS()]]
