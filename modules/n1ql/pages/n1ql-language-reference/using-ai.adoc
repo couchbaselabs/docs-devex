@@ -52,7 +52,7 @@ If specified, it overrides the default `natural_cred` parameter.
 __optional__
 
 | Keyspaces to use for the request.
-This can be a string matching the `natural_context` specification or an array of comma-separated strings, which when joined provides the value. 
+This can be a string matching the `natural_context` specification or an array of comma-separated strings, which when joined, provide the value. 
 
 If specified, it overrides the default `natural_context` parameter.
 
@@ -61,7 +61,7 @@ If specified, it overrides the default `natural_context` parameter.
 | **orgId** +
 __optional__
 
-| Organisation ID to use for the request.
+| Organization ID to use for the request.
 
 If specified, it overrides the default `natural_orgid` parameter.
 
@@ -71,7 +71,7 @@ If specified, it overrides the default `natural_orgid` parameter.
 __optional__
 
 | Indicates if the generated statement should be executed immediately. 
-It provides the ability to suppress execution of the generated statement.
+It provides the ability to suppress the execution of the generated statement.
 
 If set to `TRUE`, the generated statement is executed immediately and the results are returned.
 If set to `FALSE`, the generated statement is returned as a string without execution.
@@ -93,9 +93,12 @@ Consider using a method like the following to prompt for the password:
 
 [source,sh]
 ----
-read -sp "Enter natural password:" p
+echo -n "Enter your password: "
+read -s p
 echo
-echo "natural_cred=your.username@couchbase.com:${p}"|curl -sd @- -d 'natural_orgid="<<your-org-id>>'
+curl -s -d "natural_cred=<<your-username>>:${p}" \
+     -d "natural_orgid=<<your-org-ID>>" \
+     <url>
 ----
 
 If you choose to reuse the password by setting an evironment variable, note that it might be visible to other users on the system with sufficient privileges for process inspection (for example, through `/proc`).
@@ -103,45 +106,13 @@ If security is a concern, consider using an HTTPS connection.
 
 == Examples
 
-.Specify a custom keyspace to override the default context
-====
-.Request
-[source, console]
-----
-cbq> \set -natural_cred "some.user@couchbase.com";
-Enter password for "natural_cred":
-cbq> \set -natural_orgId 7a99d00c-####-4b39-bc72-############;
-cbq> USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":false} How many airlines are based in Europe?;
-----
-
-.Response
-[source,json]
-----
-{
-    "requestID": "6f131413-c50d-4332-9fe9-2801b8f265c0",
-    "status": "success",
-    "generated_statement": 
-                "SELECT COUNT(*) AS number_of_airlines FROM travel-sample.inventory.airline 
-                 AS a WHERE a.country = \"Europe\"",
-    "metrics": {
-        "elapsedTime": "2.918146266s",
-        "executionTime": "0s",
-        "resultCount": 0,
-        "resultSize": 0,
-        "serviceLoad": 0,
-        "naturalLanguageProcessingTime": "2.917855405s"
-    }
-}
-----
-====
-
-.Use a natural language prompt with the default parameters
+.Natural language prompt with the default parameters
 ====
 .Request
 [source, console]
 ----
 cbq> \set -natural_context travel-sample.inventory.hotel;
-cbq> \set -natural_cred "some.user@couchbase.com";
+cbq> \set -natural_cred "username@couchbase.com";
 Enter password for "natural_cred":
 cbq> \set -natural_orgId 7a99d00c-####-4b39-bc72-############;
 cbq> USING AI How many hotels provide free parking?;
@@ -150,10 +121,9 @@ cbq> USING AI How many hotels provide free parking?;
 [source,json]
 ----
 {
-    "requestID": "a62b067a-4b68-4f32-b38f-d0dd51b950a1",
-    "generated_statement": 
-                "SELECT COUNT(*) FROM travel-sample.inventory.hotel 
-                 AS h WHERE h.free_parking = TRUE",
+    "requestID": "097f9cbf-57f2-4832-986d-4f85041c91dc",
+    "generated_statement": "SELECT COUNT(*) FROM `travel-sample`.`inventory`.`hotel` 
+                        AS `h` WHERE `h`.`free_parking` = TRUE",
     "signature": {
         "$1": "number"
     },
@@ -164,90 +134,125 @@ cbq> USING AI How many hotels provide free parking?;
     ],
     "status": "success",
     "metrics": {
-        "elapsedTime": "2.567615568s",
-        "executionTime": "59.487799ms",
+        "elapsedTime": "2.244083167s",
+        "executionTime": "55.577625ms",
         "resultCount": 1,
         "resultSize": 25,
         "serviceLoad": 3,
-        "usedMemory": 28483,
-        "naturalLanguageProcessingTime": "2.507856641s"
+        "usedMemory": 16511,
+        "naturalLanguageProcessingTime": "2.188224375s"
     }
 }
 ----
 ====
 
-.Specify all the parameters directly in the statement and override the default ones
+.Natural language prompt with a custom keyspace 
 ====
 .Request
 [source, console]
 ----
-cbq> USING AI WITH 
-        {"creds":{"user":"some.user@couchbase.com","pass":"<the password>"}
-                ,"orgId":"7a99d00c-####-4b39-bc72-############"
-                ,"keyspaces":[
-                         "travel-sample.inventory.hotel"
-                         ,"travel-sample.inventory.airport"
-                    ]
-                ,"execute":false
+cbq> \set -natural_cred "username@couchbase.com";
+Enter password for "natural_cred":
+cbq> \set -natural_orgId 7a99d00c-####-4b39-bc72-############;
+cbq> USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":false} How many airlines are based in United Kingdom?;
+----
+
+.Response
+[source,json]
+----
+{
+    "requestID": "a6dfea34-6445-4e66-9127-9bdfbe5f7585",
+    "status": "success",
+    "generated_statement": "SELECT COUNT(*) AS `airlines_based_in_uk` FROM `travel-sample`.`inventory`.`airline` 
+                    AS `a` WHERE `a`.`country` = \"United Kingdom\"",
+    "metrics": {
+        "elapsedTime": "2.485615126s",
+        "executionTime": "0s",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "naturalLanguageProcessingTime": "2.484809668s"
     }
-    List the names of all hotels in the same city as an airport.;
+}
+----
+====
+
+.Natural language prompt with all parameters directly in the statement, overriding the default ones
+====
+.Request
+[source, console]
+----
+cbq> USING AI WITH {
+   >   "creds": {
+   >     "user": "username@couchbase.com",
+   >     "pass": "password"
+   >   },
+   >   "orgId": "7a99d00c-####-4b39-bc72-############",
+   >   "keyspaces": [
+   >     "travel-sample.inventory.hotel",
+   >     "travel-sample.inventory.airport"
+   >   ],
+   >   "execute": false
+   > }
+   > List the names of all hotels in the same city as an airport;
+
 ----
 .Response
 [source, json]
 ----
 {
-    "requestID": "82755b05-7cc1-4e21-9daa-8bb928f37994",
+    "requestID": "e154f6d5-0fa0-4de3-8824-3ebb73cb49f2",
     "status": "success",
-    "generated_statement": 
-                "SELECT h.name FROM travel-sample.inventory.hotel
-                 AS h JOIN travel-sample.inventory.airport AS a ON h.city = a.city",
+    "generated_statement": "SELECT `h`.`name` FROM `travel-sample`.`inventory`.`hotel` AS 
+              `h` JOIN `travel-sample`.`inventory`.`airport` AS `a` ON `h`.`city` = `a`.`city`",
     "metrics": {
-        "elapsedTime": "2.431431113s",
+        "elapsedTime": "4.032734417s",
         "executionTime": "0s",
         "resultCount": 0,
         "resultSize": 0,
         "serviceLoad": 0,
-        "naturalLanguageProcessingTime": "2.430971411s"
+        "naturalLanguageProcessingTime": "4.032041335s"
     }
 }
 ----
 ====
 
-.Submit the request directly to the REST API endpoint
+.Natural language prompt submitted directly to the REST API
 ====
 .Request
 [source, sh]
 ----
-$ read -sp "Enter natural password:" p; echo; \
-> echo "natural_cred=some.user@couchbase.com:${p}"|\
-> curl -sd @- -d 'pretty=true&statement=USING AI WITH {"keyspaces":"travel-sample.inventory.landmark","orgId":"7a99d00c-####-4b39-bc72-############"} How many landmarks are in the western hemisphere?' \
-> http://user:password@localhost:8093/query/service
-Enter natural password:
+echo -n "Enter your password: "
+read -s p
+echo
+curl -s -d "natural_cred=username@couhcbase.com:${p}" \
+     -d 'pretty=true&statement=USING AI WITH {"keyspaces":"travel-sample.inventory.landmark","orgId":"7a99d00c-####-4b39-bc72-############"} How many landmarks are in the western hemisphere?' \
+     http://user:password@localhost:8093/query/service
 ----
 .Response
 [source,json]
 ----
 {
-    "requestID": "7893ef64-ae7a-49fb-b545-810d193570e4",
-    "generated_statement": 
-                "SELECT COUNT(*) AS `landmark_count` FROM `travel-sample`.`inventory`.`landmark` 
-                 AS `l` WHERE `l`.`geo`.`lon` \u003c 0",
+    "requestID": "325457b8-9cf4-477b-aaf5-7609f2ae79bf",
+    "generated_statement": "SELECT COUNT(*) FROM `travel-sample`.`inventory`.`landmark` 
+                        AS `l` WHERE `l`.`geo`.`lon` \u003c 0",
     "signature": {
-        "landmark_count": "number"
+        "$1": "number"
     },
     "results": [
     {
-        "landmark_count": 4033
+        "$1": 4033
     }
     ],
     "status": "success",
     "metrics": {
-        "elapsedTime": "2.445252554s",
-        "executionTime": "78.08608ms",
+        "elapsedTime": "1.811586709s",
+        "executionTime": "73.500333ms",
         "resultCount": 1,
-        "resultSize": 38,
+        "resultSize": 26,
         "serviceLoad": 3,
-        "naturalLanguageProcessingTime": "2.366931063s"
+        "usedMemory": 659994,
+        "naturalLanguageProcessingTime": "1.736891542s"
     }
 }
 ----
