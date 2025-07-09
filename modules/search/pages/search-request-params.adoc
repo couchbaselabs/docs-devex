@@ -38,9 +38,10 @@ For more information about how to configure the objects inside a `knn` array, se
 
 |ctl |Object |No a|
 
-An object that contains properties for query consistency. 
+An object that contains properties for query consistency.
+Depending on your version of Couchbase Server, the `ctl` object can also validate Search queries or choose specific Search index partitions for a query.
 
-For more information about how to configure Search query consistency inside the `ctl` object, see <<ctl,>>.
+For more information about how to configure the `ctl` object, see <<ctl,>>.
 
 |[[size-limit]]size/limit |Integer |No a|
 
@@ -1910,7 +1911,8 @@ include::example$query-analytic.jsonc[tag=match_prefix_length]
 [#ctl]
 == Ctl Object 
 
-Use the `ctl` object to make sure that the Search Service runs your Search query against the latest version of the documents in your database. 
+Use the `ctl` object to make sure that the Search Service runs your Search query against the latest version of the documents in your cluster.
+As of Couchbase Server version 8.0 and later, you can also use it to control which replica partition the Search Service uses to find results for a query. 
 
 The `ctl` object and its properties cause the Search Service to run your query against the latest version of a document written to a xref:server:learn:buckets-memory-and-storage/vbuckets.adoc[vBucket].  
 The Search Service uses a consistency vector to synchronize the last document write to a vBucket from the Data Service with the Search index.
@@ -1952,6 +1954,27 @@ For example, the Search Service can tell you through the Web Console or the REST
 ----
 err: query_validate: field not indexed, field: ratings.Cleanliness, type: number
 ----
+
+|partition_selection |String |No a|
+
+[.status]#Couchbase Server 8.0#
+
+If your Search index is configured with xref:customize-index.adoc#replica[partitions and replicas], add the `partition_selection` property to choose how the Search Service selects the partitions to search for your Search query: 
+
+* `""`: The Search Service targets only active partitions or replicas.
+Active partitions are the partitions currently being used to serve Search requests.
+* `"local"`: The Search Service targets all active or replica partitions, local to the coordinator node. 
+If the required Search index partition for a query is not available on the coordinator node, the Search Service looks for the partition within the node's xref:clusters:databases.adoc#couchbase-services[Service Group].
+If the Search Service still cannot find the partition, then it chooses a random node in the cluster that's running the Search Service, that contains the correct active or replica partition.
+* `"local_only"`: The Search Service targets all active or replica partitions, local to the coordinator node.
+If the required Search index partition for a query is not available on the coordinator node, the Search Service looks for the partition within the node's xref:clusters:databases.adoc#couchbase-services[Service Group].
+If the Search Service still cannot find the partition, then the query returns partial results.
+* `"random"`: The Search Service chooses a random node that contains the required active or replica partition needed for the Search query.
+* `"random_balanced"`: The Search Service tries to choose a node that is not already serving a Search request.
+If the Search Service cannot find an available, it defaults to a random node with the correct partition or replica.
+This mode is designed to keep the number of query handling partitions per node the same. 
+
+For more information about how to configure partitions and replicas on your Search index, see xref:create-search-index-ui.adoc[] or xref:search-index-params.adoc#planparams[planParams Object].
 
 |====
 
