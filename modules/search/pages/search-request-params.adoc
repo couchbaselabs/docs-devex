@@ -1977,6 +1977,17 @@ This mode is designed to keep the number of query handling partitions per node t
 
 For more information about how to configure partitions and replicas on your Search index, see xref:create-search-index-ui.adoc[] or xref:search-index-params.adoc#planparams[planParams Object].
 
+|[[global_scoring]]global_scoring |Boolean |No a|
+
+[.status]#Couchbase Server 8.0#
+
+Add the `global_scoring` property with a value of `true` to ensure consistent and stable result ordering with the xref:run-searches.adoc#bm25[bm25 scoring algorithm], when you have a large, partitioned Search index.
+`global_scoring` aggregates document scoring across partitions to help maintain relative scoring, but uses more compute resources and increases search times.
+If you do not use `global_scoring`, result ordering can change based on your Search index's partition count.
+
+You can only use `global_scoring` if you're using the xref:run-searches.adoc#bm25[bm25 scoring algorithm].
+The setting has no effect if your `scoring_model` is set to `tfidf`.
+
 |====
 
 [#consistency]
