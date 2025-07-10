@@ -301,11 +301,14 @@ options:: [Optional] A JSON object specifying options for the function.
 | Name | Description | Schema
 
 | **pattern** +
+__optional__
+
 | The pattern to match. 
 This can be a regular expression or a simple string, depending on the `regex` parameter.
 | String
 
 | **regex** +
+__optional__
 | If `TRUE`, the pattern is treated as a regular expression.
 
 If `FALSE`, the pattern is treated as a simple string.
@@ -314,6 +317,7 @@ If `FALSE`, the pattern is treated as a simple string.
 | Boolean
 
 | **arraysubscript** +
+__optional__
 | Specifies whether array subscripts are included in field names before applying the filter.
 
 If `TRUE`, array subscripts are included. 
@@ -325,6 +329,7 @@ If `FALSE`, array subscripts are replaced by `*`.
 | Boolean
 
 | **composites** +
+__optional__
 | Specifies whether the pattern should match field names that contain values requiring further processing, such as nested objects or arrays.
 
 If `TRUE`, the pattern is matched against every level of nested fields. 
@@ -335,6 +340,7 @@ If `FALSE`, the pattern is matched only against the deepest level of nested fiel
 | Boolean
 
 | **patternspace** +
+__optional__
 | A string literal with two possible values. 
 
 `"field"`: The pattern is matched against individual field names. 
@@ -345,9 +351,23 @@ If `FALSE`, the pattern is matched only against the deepest level of nested fiel
 | String
 
 | **exact** +
-| Specifies whether the provided pattern must be an exact match for the field or path (determined by the `patternspace` parameter). 
+__optional__
+| Determines whether the provided pattern must be an exact match for the field or path (as determined by the `patternspace` parameter). 
 
-It is a short-cut for the regular expression start (^) and end ($) anchors, and you can use it even when `regex` is set to `false`.
+This is a short-cut for the regular expression start (^) and end ($) anchors, and can be used even when `regex` is set to `false`.
+
+If `TRUE`, the pattern must be an exact match.
+
+If `FALSE`, the pattern does not need to be an exact match.
+
+*Default:* `FALSE`
+| Boolean
+
+| **ignorecase** +
+__optional__
+| If `TRUE`, the pattern matching is case-sensitive.
+
+If `FALSE`, the pattern matching ignores case. 
 
 *Default:* `FALSE`
 | Boolean
@@ -1029,6 +1049,20 @@ If `FALSE`, the pattern matching ignores case.
 *Default:* `FALSE`
 | Boolean
 
+| **report** +
+__optional__
+
+| Controls the output of the `name` field, allowing selection between the full path or the final field name.
+
+Possible values are:
+
+`"field"`: Outputs only the final field name. 
+
+`"path"`: Outputs the full path to the field. 
+
+*Default:* `"path"`
+
+| String
 |===
 
 === Return Value
@@ -1074,8 +1108,9 @@ SELECT OBJECT_PAIRS_NESTED(input) AS nested_pairs,
        OBJECT_PAIRS_NESTED(input, {"composites": true}) AS nested_pairs_comp,
        OBJECT_PAIRS_NESTED(input, {"pattern": "name"}) AS nested_pairs_pattern,
        OBJECT_PAIRS_NESTED(input, {"types": true}) AS nested_pairs_types,
-       OBJECT_PAIRS_NESTED (input, {"pattern": "name", "patternspace":"field"}) as filtered_fields,
-       OBJECT_PAIRS_NESTED (input, {"pattern": "-name$", "patternspace":"field", "regex":true}) as filtered_fields_regex; 
+       OBJECT_PAIRS_NESTED(input, {"pattern": "number", "patternspace":"field"}) AS filtered_fields,
+       OBJECT_PAIRS_NESTED(input, {"pattern": "-name$", "patternspace":"field", "regex":true}) 
+                                   AS filtered_fields_regex;
 ----
 
 .Results
@@ -1128,8 +1163,8 @@ SELECT OBJECT_PAIRS_NESTED(input) AS nested_pairs,
     ],
     "filtered_fields": [
       {
-        "name": "attribute.flight-name",
-        "val": "AI444"
+        "name": "attribute.flight-number",
+        "val": 737
       }
     ],
     "filtered_fields_regex": [
@@ -1264,36 +1299,86 @@ A field in this context may be any attribute or element, nested at any level wit
 
 object:: An expression representing an object.
 
-options:: [Optional] An object containing the following possible parameters:
+options:: [Optional] An object containing the following possible parameters. 
 
-composites;; A boolean.
-If `true`, every level of every nested field is displayed; if `false`, only the deepest possible nested fields are returned.
-Default `true`.
+=== Options
 
-arraysubscript;; A boolean.
-If `true`, array subscripts are returned; if `false`, array subscripts are replaced by `*`.
-Default `true`.
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
 
-unique;; A boolean.
-If `true`, duplicate field names are collapsed to single unique field name; if `false`, all duplicate field names are returned.
+| **composites** +
+__optional__
+| If `TRUE`, every level of every nested field is displayed. 
+
+If `FALSE`, only the deepest possible nested fields are returned.
+ 
+*Default:* `TRUE`
+| Boolean
+
+| **arraysubscript** +
+__optional__
+| If `TRUE`, array subscripts are returned. 
+
+If `FALSE`, array subscripts are replaced by `*`.
+
+*Default:* `TRUE`
+| Boolean
+
+| **unique** +
+__optional__
+| If `TRUE`, dduplicate field names are collapsed to single unique field name. 
+
+If `FALSE`, all duplicate field names are returned.
+
 Typically used when arrays are expanded and array subscripts are not returned.
-Default `true`.
 
-pattern;; A regular expression used to filter the returned paths.
+*Default:* `TRUE`
+| Boolean
+
+| **pattern** +
+__optional__
+| A regular expression used to filter the returned paths.
 Used in conjunction with the following setting.
 
-patternspace;; A string literal with two possible values.
-Default `"path"`.
-+
-[horizontal]
-`"field"`::: The pattern is matched against individual field names.
+| String
 
-`"path"`::: The pattern is matched against composite path names.
+| **patternspace** +
+__optional__
 
-exact;; A boolean. 
-Specifies whether the provided pattern must be an exact match for the field or path (determined by the `patternspace` parameter). 
-It is a short-cut for the regular expression start (^) and end ($) anchors, and can be used even when `regex` is set to `false`.
-Default `false`.
+| A string literal with two possible values.
+
+`"field"`: The pattern is matched against individual field names.
+
+`"path"`: The pattern is matched against composite path names.
+
+*Default:* `"path"`
+
+| String
+
+| **exact** +
+__optional__
+| Determines whether the provided pattern must be an exact match for the field or path (as determined by the `patternspace` parameter). 
+
+This is a short-cut for the regular expression start (^) and end ($) anchors, and can be used even when `regex` is set to `false`.
+
+If `TRUE`, the pattern must be an exact match.
+
+If `FALSE`, the pattern does not need to be an exact match.
+
+*Default:* `FALSE`
+| Boolean
+
+| **ignorecase** +
+__optional__
+| If `TRUE`, the pattern matching is case-sensitive.
+
+If `FALSE`, the pattern matching ignores case. 
+
+*Default:* `FALSE`
+| Boolean
+
+|===
 
 === Return Value
 
