@@ -352,7 +352,7 @@ __optional__
 
 | **exact** +
 __optional__
-| Determines whether the provided pattern must be an exact match for the field or path (as determined by the `patternspace` parameter). 
+| Specifies whether the provided pattern must be an exact match for the field or path (as determined by the `patternspace` parameter). 
 
 This is a short-cut for the regular expression start (^) and end ($) anchors, and can be used even when `regex` is set to `false`.
 
@@ -1327,7 +1327,7 @@ If `FALSE`, array subscripts are replaced by `*`.
 
 | **unique** +
 __optional__
-| If `TRUE`, dduplicate field names are collapsed to single unique field name. 
+| If `TRUE`, duplicate field names are collapsed to single unique field name. 
 
 If `FALSE`, all duplicate field names are returned.
 
@@ -1338,8 +1338,8 @@ Typically used when arrays are expanded and array subscripts are not returned.
 
 | **pattern** +
 __optional__
-| A regular expression used to filter the returned paths.
-Used in conjunction with the following setting.
+| A regular expression used to filter the returned paths. 
+Used in conjunction with the `patternspace` setting.
 
 | String
 
@@ -1470,7 +1470,7 @@ SELECT
 [[obj-paths-ex3,OBJECT_PATHS() Example 3]]
 .Pattern matching and pattern space
 ====
-This example searches for strings beginning with "n" in the given object paths.
+This example searches for strings beginning with "n" and also fields that exactly match "name". 
 
 .Query
 [source,sqlpp]
@@ -1484,7 +1484,9 @@ SELECT
   OBJECT_PATHS(input, {"pattern": "^n", "patternspace": "field"})
     AS field_starts_with_n,
   OBJECT_PATHS(input, {"pattern": "^n", "patternspace": "path"})
-    AS path_starts_with_n;
+    AS path_starts_with_n,
+  OBJECT_PATHS(input, {"pattern": "name", "patternspace": "field", "exact": true})
+    AS exact_field_name; 
 ----
 
 .Results
@@ -1499,7 +1501,10 @@ SELECT
     "field_starts_with_n": [
       "attribute.name"
     ],
-    "path_starts_with_n": []
+    "path_starts_with_n": [],
+    "exact_field_name": [
+      "attribute.name"
+    ]
   }
 ]
 ----
