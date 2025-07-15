@@ -12,12 +12,12 @@ Couchbase has performed testing to determine how index creation and query option
 The following sections describe the results of the testing and recommendations based on these results. 
 
 NOTE: Most of the tests were performed using the Hyperscale Vector index.
-However, many of the the results also apply to Composite Vector indexes where the two index types share the same settings.
+However, many of the results also apply to Composite Vector indexes where the two index types share the same settings.
 
 == Tuning Index Creation
 
 When you create a Hyperscale Vector index, you can set the parameters in the following list. 
-Each of them has the potential to affect the performance of box creating the index and the speed and accuracy of queries that use the index.
+Each has the potential to affect the performance of creating the index and the speed and accuracy of queries that use the index.
 
 nList::
 Sets the number of clusters (centroids) in the index. 
@@ -38,7 +38,7 @@ It also lowers the latency of queries that use the index.
 Trainlist::
 Sets the number of vectors that Couchbase {product-name} considers when searching for centroids in the dataset.
 You set it using the `trainlist` key in the `WITH` clause when you create your index.
-The default value is roughly 50 times the number of centroids in the index.
+The default value is approximately 50 times the number of centroids in the index.
 
 + 
 Tests show that increasing the `trainlist` improves QPS and reduces latency, but slightly increases memory usage for the index.
@@ -115,9 +115,9 @@ The results showed acceptable recall accuracy and similar performance to SQ8 on 
 
 +
 --
-* SQ8 provides the best balance between memory use, recall, for lower dimensional datasets. 
-* If you have a low-dimensional dataset that's in the billion vector range, consider using SQ4 quantization.
-* Use PQ for higher-dimensional datasets where you want to reduce memory use with the tradeoff of less accurate recall, decreased QPS, and increased latency.
+* SQ8 provides the best balance between memory use and recall for lower dimensional datasets. 
+* If you have a low-dimensional dataset that's in the range of a billion vectors, consider using SQ4 quantization.
+* Use PQ for higher-dimensional datasets if you want to reduce memory use and are willing to accept less accurate recall, decreased QPS, and increased latency.
 --
 
 // Similarity Function::
@@ -135,14 +135,14 @@ The following list describes the parameters you can set in the function:
 nProbes::
 Sets the number of centroids in the Hyperscale Vector index to ton search for similar vectors.
 You optionally set this value as the fourth parameter in the `APPROX_VECTOR_DISTANCE` function call in your query.
-The default value for this value is 1, which only only searches for similar vectors in the centroid that's closest to the search vector.
+The default value for this value is 1, which only searches for similar vectors in the centroid that's closest to the search vector.
 
 +
 Tests found that increasing `nProbes` beyond the default improves the accuracy of results non-linearly (larger values show diminishing improvements). 
 However, it caused a linear decrease in QPS and increase in latency.
 
 +
-*Recommendation:* if you find that your query recall is not meeting your needs, you can try increasing the `nProbes`` value.
+*Recommendation:* if you find that your query recall is not meeting your needs, you can try increasing the `nProbes` value.
 However, increasing this value reduces QPS and increases latency.
 
 [#reranking]
@@ -153,11 +153,13 @@ This setting is off by default.
 You can enable it by passing `TRUE` as the fifth parameter in the `APPROX_VECTOR_DISTANCE` function call in your query.
 
 + 
-Testing has shown that enabling reranking improves the accuracy of recall in only a few cases and significantly decrease QPS.
+Testing has shown that enabling reranking improves the accuracy of recall in limited cases and decreases QPS.
 
 +
-*Recommendation:* if you find recall accuracy is not meeting your needs and you're using SQ4 or PQ128x8 or below quantization, you can try enabling reranking.
-You must also have your index set to persist the full vector value, which increases memory use.
+*Recommendation:* if you find recall accuracy is not meeting your needs and you're using SQ4 or PQ128x8 or below quantization, try enabling reranking.
+You must have your index set to persist the full vector value, which increases memory use.
+
++
 If you do not enable reranking, consider preventing the persistence of the full vector value in the index to reduce memory and disk use.
 See xref:vector-index:hyperscale-reranking.adoc#prevent-vector-persistence[Preventing Vector Persistence] to learn how to turn off full vector persistence.
 
