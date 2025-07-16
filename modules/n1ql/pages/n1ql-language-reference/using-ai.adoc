@@ -12,8 +12,8 @@ When executed, the statement passes the input to Large Language Models (LLMs), w
 
 For example, you can input prompts such as `How many airlines are based in Europe` or `List the names of all hotels in the same city as an airport`, and the statement will generate the corresponding SQL++ queries. 
 
-If the generated {sqlpp} query is a SELECT statement, the system automatically executes it and returns the results.
-For others, the generated query is returned as a string without execution.
+If USING AI generates a SELECT query, it automatically executes it and returns the results.
+For all other query types, it returns the generated query as a string without executing it.
 
 IMPORTANT: With the introduction of the USING AI statement, you might notice that AI is now recognized as a keyword.
 However, this change has been implemented in a way that does not break existing queries or applications where "ai" is used as a field name or identifier.
@@ -42,7 +42,7 @@ options::
 
 [Optional] An object specifying additional <<optional-parameters,options>> to guide the statement execution.
 By default, the statement uses the `natural_orgid`, `natural_cred`, and `natural_context` request parameters to determine the organization ID, credentials, and keyspaces for the request.
-However, you can override these defaults by using the 
+However, you can override these defaults by using the options object.
  
 //TODO: Add links to `natural_orgid`, `natural_cred` and `natural_context` when they are available in the documentation.
 
@@ -121,9 +121,7 @@ Consider using a method like the following to prompt for the password:
 echo -n "Enter your password: "
 read -s p
 echo
-curl -s -d "natural_cred=<your-username>:${p}" \
-     -d "natural_orgid=<your-org-ID>" \
-     <url>
+curl -s -d "natural_cred=<your-username>:${p}" ...
 ----
 
 If you choose to reuse the password by setting an evironment variable, note that it might be visible to other users on the system with sufficient privileges for process inspection (for example, through `/proc`).
@@ -133,7 +131,7 @@ If security is a concern, consider using an HTTPS connection.
 
 In the following examples, replace `natural_cred` and `natural_orgid` with your Capella credentials and organization ID, respectively.
 
-.Natural language prompt with the default parameters
+.Natural language prompt with default request parameters
 ====
 Copy the entire sequence below and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell]. 
 Note that you must be using cbq shell version 8.0 or above.
@@ -142,7 +140,7 @@ Note that you must be using cbq shell version 8.0 or above.
 [source, console]
 ----
 \set -natural_context travel-sample.inventory.hotel;
-\set -natural_cred "username@couchbase.com:P@ssw0rd"; 
+\set -natural_cred username@couchbase.com:P@ssw0rd; 
 \set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab; 
 USING AI How many hotels provide free parking?; 
 ----
@@ -183,9 +181,10 @@ Note that you must be using cbq shell version 8.0 or above.
 .Request
 [source, console]
 ----
-\set -natural_cred "username@couchbase.com:P@ssw0rd"; 
-\set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab; 
-USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":false} How many airlines are based in United Kingdom?;
+\set -natural_cred rakhi.prathap@couchbase.com:Couchbase123#;
+\set -natural_orgid 7a99d00c-f55b-4b39-bc72-1b4cc68ba894;
+USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":false} \
+How many airlines are based in United Kingdom?;
 ----
 
 .Response
