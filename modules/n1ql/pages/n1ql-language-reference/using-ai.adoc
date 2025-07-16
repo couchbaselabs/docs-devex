@@ -41,7 +41,9 @@ natural-language-request:: A natural language prompt that you want to convert in
 options::
 
 [Optional] An object specifying additional <<optional-parameters,options>> to guide the statement execution.
-If specified, these options override the default `natural_orgid`, `natural_cred` and `natural_context` request parameters. 
+By default, the statement uses the `natural_orgid`, `natural_cred`, and `natural_context` request parameters to determine the organization ID, credentials, and keyspaces for the request.
+However, you can override these defaults by using the 
+ 
 //TODO: Add links to `natural_orgid`, `natural_cred` and `natural_context` when they are available in the documentation.
 
 [[optional-parameters]]
@@ -119,8 +121,8 @@ Consider using a method like the following to prompt for the password:
 echo -n "Enter your password: "
 read -s p
 echo
-curl -s -d "natural_cred=<<your-username>>:${p}" \
-     -d "natural_orgid=<<your-org-ID>>" \
+curl -s -d "natural_cred=<your-username>:${p}" \
+     -d "natural_orgid=<your-org-ID>" \
      <url>
 ----
 
@@ -140,7 +142,7 @@ Note that you must be using cbq shell version 8.0 or above.
 [source, console]
 ----
 \set -natural_context travel-sample.inventory.hotel;
-\set -natural_cred "hilary.smith@couchbase.com:P@ssw0rd"; 
+\set -natural_cred "username@couchbase.com:P@ssw0rd"; 
 \set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab; 
 USING AI How many hotels provide free parking?; 
 ----
@@ -181,7 +183,7 @@ Note that you must be using cbq shell version 8.0 or above.
 .Request
 [source, console]
 ----
-\set -natural_cred "hilary.smith@couchbase.com:P@ssw0rd"; 
+\set -natural_cred "username@couchbase.com:P@ssw0rd"; 
 \set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab; 
 USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":false} How many airlines are based in United Kingdom?;
 ----
@@ -217,7 +219,7 @@ Note that you must be using cbq shell version 8.0 or above.
 USING AI WITH
 {
   "creds": {
-    "user": "hilary.smith@couchbase.com",
+    "user": "username@couchbase.com",
     "pass": "P@ssw0rd"
   },
   "orgId": "5c670d3e-12a3-456b-7c89-123456789ab",
@@ -258,7 +260,7 @@ List the names of all hotels in the same city as an airport;
 echo -n "Enter your password: "
 read -s p
 echo
-curl -s -d "natural_cred=hilary.smith@couchbase.com:${p}" \
+curl -s -d "natural_cred=username@couchbase.com:${p}" \
      -d 'pretty=true&statement=USING AI WITH {"keyspaces":"travel-sample.inventory.landmark","orgId":"5c670d3e-12a3-456b-7c89-123456789ab"} \
      How many landmarks are in the western hemisphere?' \
      http://localhost:8093/query/service -u username:password 
