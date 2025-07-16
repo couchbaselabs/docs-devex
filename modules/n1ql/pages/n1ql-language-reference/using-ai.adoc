@@ -15,6 +15,18 @@ For example, you can input prompts such as `How many airlines are based in Europ
 If the generated {sqlpp} query is a SELECT statement, the system automatically executes it and returns the results.
 For others, the generated query is returned as a string without execution.
 
+IMPORTANT: With the introduction of the USING AI statement, you might notice that AI is now recognized as a keyword.
+However, this change has been implemented in a way that does not break existing queries or applications where "ai" is used as a field name or identifier.
+For example, queries like `SELECT ai FROM XYZ` will continue to work without any issues.
+AI is treated as a keyword only when used in conjunction with the USING AI statement.
+
+== Prerequisites
+
+Before using the USING AI statement, make sure you have:
+
+* A Couchbase Capella account. 
+* Your Capella account credentials and organization ID readily available.
+
 == Syntax
 
 [source,ebnf]
@@ -29,8 +41,8 @@ natural-language-request:: A natural language prompt that you want to convert in
 options::
 
 [Optional] An object specifying additional <<optional-parameters,options>> to guide the statement execution.
-If specified, these options override the default `natural_orgId`, `natural_cred` and `natural_context` request parameters. 
-//TODO: Add links to `natural_orgId`, `natural_cred` and `natural_context` when they are available in the documentation.
+If specified, these options override the default `natural_orgid`, `natural_cred` and `natural_context` request parameters. 
+//TODO: Add links to `natural_orgid`, `natural_cred` and `natural_context` when they are available in the documentation.
 
 [[optional-parameters]]
 === Options
@@ -41,40 +53,51 @@ If specified, these options override the default `natural_orgId`, `natural_cred`
 
 | **creds** +
 __optional__
-| Credentials to use for the request. 
-This can be a string matching the `natural_cred` specification or an object with the fields `user` and `pass`, similar to the xref:n1ql:n1ql-manage/query-settings.adoc#Credentials[`creds`] parameter.
+| Credentials to authenticate the request.
 
-If specified, it overrides the default `natural_cred` parameter.
+Can be one of the following:
+
+* A string in the username:password format, which matches the `natural_cred` specification. 
+//TODO: Add link to `natural_cred` when available in the documentation.
+* An object with the fields `user` and `pass`, similar to the xref:n1ql:n1ql-manage/query-settings.adoc#Credentials[`creds`] parameter.
+
+If specified, this value overrides the `natural_cred` parameter, which by default contains your Capella credentials.
 
 | String or object
 
 | **keyspaces** +
 __optional__
 
-| Keyspaces to use for the request.
-This can be a string matching the `natural_context` specification or an array of comma-separated strings, which when joined, provide the value. 
+| One or more keyspaces for the request.
 
-If specified, it overrides the default `natural_context` parameter.
+Can be one of the following:
+
+* A string matching the `natural_keyspaces` specification. 
+//TODO: Add link to `natural_context` when available in the documentation.
+* An array of comma-separated strings, which when joined, form the value.
+
+If specified, this value overrides the default `natural_context` parameter.
 
 | String or an array of strings 
 
 | **orgId** +
 __optional__
 
-| Organization ID to use for the request.
+| Organization ID for the request.
 
-If specified, it overrides the default `natural_orgid` parameter.
+If specified, this value overrides the `natural_orgid` parameter, which by default contains your Capella organization ID.
+//TODO: Add link to `natural_orgid` when available in the documentation.
 
 | String
 
 | **execute** +
 __optional__
 
-| Indicates if the generated statement should be executed immediately. 
-It provides the ability to suppress the execution of the generated statement.
+| Indicates if the generated statement should be executed. 
 
-If set to `TRUE`, the generated statement is executed immediately and the results are returned.
-If set to `FALSE`, the generated statement is returned as a string without execution.
+If `TRUE`, the generated statement is executed immediately and the results are returned.
+
+If `FALSE`, the generated statement is returned as a string without execution.
 
 *Default:* `TRUE`
 
@@ -106,16 +129,20 @@ If security is a concern, consider using an HTTPS connection.
 
 == Examples
 
+In the following examples, replace `natural_cred` and `natural_orgid` with your Capella credentials and organization ID, respectively.
+
 .Natural language prompt with the default parameters
 ====
+Copy the entire sequence below and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell]. 
+Note that you must be using cbq shell version 8.0 or above.
+
 .Request
 [source, console]
 ----
-cbq> \set -natural_context travel-sample.inventory.hotel;
-cbq> \set -natural_cred "username@couchbase.com";
-Enter password for "natural_cred":
-cbq> \set -natural_orgId 7a99d00c-####-4b39-bc72-############;
-cbq> USING AI How many hotels provide free parking?;
+\set -natural_context travel-sample.inventory.hotel;
+\set -natural_cred "hilary.smith@couchbase.com:P@ssw0rd"; 
+\set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab; 
+USING AI How many hotels provide free parking?; 
 ----
 .Response
 [source,json]
@@ -148,13 +175,15 @@ cbq> USING AI How many hotels provide free parking?;
 
 .Natural language prompt with a custom keyspace 
 ====
+Copy the entire sequence below and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell].
+Note that you must be using cbq shell version 8.0 or above.
+
 .Request
 [source, console]
 ----
-cbq> \set -natural_cred "username@couchbase.com";
-Enter password for "natural_cred":
-cbq> \set -natural_orgId 7a99d00c-####-4b39-bc72-############;
-cbq> USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":false} How many airlines are based in United Kingdom?;
+\set -natural_cred "hilary.smith@couchbase.com:P@ssw0rd"; 
+\set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab; 
+USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":false} How many airlines are based in United Kingdom?;
 ----
 
 .Response
@@ -179,22 +208,26 @@ cbq> USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":fa
 
 .Natural language prompt with all parameters directly in the statement, overriding the default ones
 ====
+Copy the entire sequence below and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell].
+Note that you must be using cbq shell version 8.0 or above.
+
 .Request
 [source, console]
 ----
-cbq> USING AI WITH {
-   >   "creds": {
-   >     "user": "username@couchbase.com",
-   >     "pass": "password"
-   >   },
-   >   "orgId": "7a99d00c-####-4b39-bc72-############",
-   >   "keyspaces": [
-   >     "travel-sample.inventory.hotel",
-   >     "travel-sample.inventory.airport"
-   >   ],
-   >   "execute": false
-   > }
-   > List the names of all hotels in the same city as an airport;
+USING AI WITH
+{
+  "creds": {
+    "user": "hilary.smith@couchbase.com",
+    "pass": "P@ssw0rd"
+  },
+  "orgId": "5c670d3e-12a3-456b-7c89-123456789ab",
+  "keyspaces": [
+    "travel-sample.inventory.hotel",
+    "travel-sample.inventory.airport"
+  ],
+  "execute": false
+}
+List the names of all hotels in the same city as an airport;
 
 ----
 .Response
@@ -217,7 +250,7 @@ cbq> USING AI WITH {
 ----
 ====
 
-.Natural language prompt submitted directly to the REST API
+.Natural language prompt submitted directly to the Query REST API
 ====
 .Request
 [source, sh]
@@ -225,9 +258,10 @@ cbq> USING AI WITH {
 echo -n "Enter your password: "
 read -s p
 echo
-curl -s -d "natural_cred=username@couhcbase.com:${p}" \
-     -d 'pretty=true&statement=USING AI WITH {"keyspaces":"travel-sample.inventory.landmark","orgId":"7a99d00c-####-4b39-bc72-############"} How many landmarks are in the western hemisphere?' \
-     http://user:password@localhost:8093/query/service
+curl -s -d "natural_cred=hilary.smith@couchbase.com:${p}" \
+     -d 'pretty=true&statement=USING AI WITH {"keyspaces":"travel-sample.inventory.landmark","orgId":"5c670d3e-12a3-456b-7c89-123456789ab"} \
+     How many landmarks are in the western hemisphere?' \
+     http://localhost:8093/query/service -u username:password 
 ----
 .Response
 [source,json]
