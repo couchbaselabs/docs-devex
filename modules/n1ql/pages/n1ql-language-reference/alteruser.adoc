@@ -1,0 +1,72 @@
+= AlTER USER
+:description: The ALTER USER statement enables you to alter the details of an existing user.
+:page-topic-type: reference
+:imagesdir: ../../assets/images
+
+[abstract]
+{description}
+
+== Purpose
+
+The ALTER USER statement allows you to update an user's attributes such as username, password, full name, and group.
+You can assign the user to one or more groups, or remove the user from all existing groups.
+
+This statement helps manage access control and keep the user information up to date within your system.
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=alter-user]
+----
+
+image::n1ql-language-reference/alter-user.png["Syntax diagram: refer to source code listing", align=left]
+
+[horizontal]
+username::
+(Required) The unique identifier of the user being updated.
+
+password::
+(Optional) A quoted string containing the user's new password.
+It must be at least 6 characters long.
+
+name::
+(Optional) A quoted string containing the user's updated name.
+
+group::
+(Optional) The name of the group to which the user is assigned. 
+
+[NOTE]
+====
+When altering a user, you can update their group using one of the following options: `GROUP`, `GROUPS`, or `NO GROUPS`. 
+You can specify only one of these options per statement. 
+
+* `GROUP` assigns the user to a single group.
+* `GROUPS` assigns the user to multiple groups (the names must be separated by commas).
+* `NO GROUPS` removes the user from all groups. 
+====
+
+== Examples
+
+====
+.Update password and full name of a user
+[source,sqlpp]
+----
+ALTER USER Hilary PASSWORD "newpassword" WITH "Hilary Chloe";
+----
+.Alter a user and assign to a new group
+[source,sqlpp]
+----
+ALTER USER Alice GROUP support;
+----
+.Alter a user and assign to multiple groups
+[source,sqlpp]
+----
+ALTER USER Bob GROUPS finance, operations;
+----
+.Remove a user from all groups
+[source,sqlpp]
+----
+ALTER USER Bob NO GROUPS;
+----
+====
