@@ -1,0 +1,74 @@
+= CREATE USER
+:description: The `CREATE USER` statement enables you to create a user.
+:page-topic-type: reference
+:imagesdir: ../../assets/images
+
+[abstract]
+{description}
+
+== Purpose
+
+The `CREATE USER` statement allows you to define a new user and specify their basic attributes such as username, password, full name, and group.
+You can assign a user to one or more groups, or create a user who does not belong to any group.
+
+This statement helps manage access control and organize users within your system.
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=create-user]
+----
+
+image::n1ql-language-reference/create-user.png["Syntax diagram: refer to source code listing", align=left]
+
+[horizontal]
+username::
+(Required) The unique identifier for the new user. 
+
+password::
+(Required) A quoted string containing the user's password.
+It must be at least 6 characters long.
+
+name::
+(Optional) A quoted string containing the user's name.
+
+group::
+(Optional) The name of the group to which the user belongs. 
+
+[NOTE]
+====
+When creating a user, you can assign them to groups using one of the following options: `GROUP`, `GROUPS`, or `NO GROUPS`. 
+You can specify only one of these options per statement. 
+
+* `GROUP` assigns the user to a single group.
+* `GROUPS` assigns the user to multiple groups (the names must be separated by commas).
+* `NO GROUPS` creates a user without assigning any groups. 
+This option has no effect during user creation. 
+====
+
+== Examples
+
+====
+.Create a user with a full name
+[source,sqlpp]
+----
+CREATE USER Hilary PASSWORD "password123" WITH "Hilary Smith";
+----
+
+.Create a user and assign to a single group
+[source,sqlpp]
+----
+CREATE USER Alice PASSWORD "password123" GROUP agents;
+----
+.Create a user and assign to multiple groups
+[source,sqlpp]
+----
+CREATE USER Bob PASSWORD "P@ssw0rd" GROUPS agents, tourguides, support;
+----
+.Create a user without assigning any groups
+[source,sqlpp]
+----
+CREATE USER Charlie PASSWORD "securePass" NO GROUPS;
+----
+====
