@@ -1,0 +1,91 @@
+= CREATE GROUP
+:description: The CREATE GROUP statement enables you to create a group.
+:page-topic-type: reference
+:imagesdir: ../../assets/images
+
+[abstract]
+{description}
+
+== Purpose
+
+The CREATE GROUP statement allows you to define a new group and specify their basic attributes such as username, password, full name, and group.
+You can assign the user to one or more groups, or create a user who does not belong to any group.
+
+This statement helps manage access control and organize users within your system.
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=create-group]
+----
+
+image::n1ql-language-reference/create-group.png["Syntax diagram: refer to source code listing", align=left]
+
+[horizontal]
+
+name::
+(Required) The unique identifier for the new group. 
+
+description::
+(Required) A quoted string containing the name of the group.
+It must be at least 6 characters long.
+
+role::
+(Optional) An RBAC role that the group will have. See <<roles,Roles>> for more information.
+
+=== Roles
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=role]
+----
+
+image::n1ql-language-reference/role.png["Syntax diagram: refer to source code listing", align=left]
+
+[horizontal]
+
+role-name::
+(Required) One of the xref:server:learn:security/roles.adoc[RBAC role names] predefined by Couchbase Server. 
+
+
+
+
+
+
+[NOTE]
+====
+When creating a user, you can assign them to groups using one of the following options: `GROUP`, `GROUPS`, or `NO GROUPS`. 
+You can specify only one of these options per statement. 
+
+* `GROUP` assigns the user to a single group.
+* `GROUPS` assigns the user to multiple groups (the names must be separated by commas).
+* `NO GROUPS` creates a user without assigning any groups. 
+This option has no effect during user creation. 
+====
+
+== Examples
+
+====
+.Create a user with a full name
+[source,sqlpp]
+----
+CREATE USER Hilary PASSWORD "password123" WITH "Hilary Smith";
+----
+
+.Create a user and assign to a single group
+[source,sqlpp]
+----
+CREATE USER Alice PASSWORD "password123" GROUP agents;
+----
+.Create a user and assign to multiple groups
+[source,sqlpp]
+----
+CREATE USER Bob PASSWORD "P@ssw0rd" GROUPS agents, tourguides, support;
+----
+.Create a user without assigning any groups
+[source,sqlpp]
+----
+CREATE USER Charlie PASSWORD "securePass" NO GROUPS;
+----
+====
