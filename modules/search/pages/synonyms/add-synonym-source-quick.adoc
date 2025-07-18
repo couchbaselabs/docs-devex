@@ -1,0 +1,81 @@
+= Add a Synonym Source Using the Quick Editor
+:page-topic-type: guide
+:page-status: Couchbase Server 8.0
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: You can add a Synonym Source to set the collection where your synonym documents are stored with the Quick Editor.
+
+[abstract]
+{description}
+After you have set the synonym source for your Search index and any child fields, you can run any type of text-based Search query to return results with synonyms. 
+
+For more information about synonym searches with the Search Service, see xref:synonyms/synonyms-search-quick.adoc[].
+
+== Prerequisites 
+
+* You have the Search Service enabled on a node in your database.
+For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+
+* You have created an index with the Quick Editor.
+For more information, see xref:create-quick-index.adoc[].
+
+* Your user account has the xref:learn:security/roles.adoc#search-admin[`Search Admin`] role for the bucket where you want to edit the Search index. 
+
+* You have logged in to the Couchbase {page-ui-name}. 
+
+== Procedure
+
+To add a synonym source to a Search index with the Couchbase {page-ui-name}'s Quick Editor:
+
+. Go to *Search*.
+. Click the index where you want to add a new synonym source.
+. Click btn:[Quick Edit].
+. Do one of the following: 
+.. To add synonyms to an existing text field, under *Mapped Fields*, click a text field mapping. 
+.. To add synonyms to a new text field, click a text field in your sample document.
+. Click btn:[Add Synonym Source].
+. In the *Name* field, enter a name for your new synonym source.
+For example, you could call the source for a collection of English synonyms `synonyms_en`.
+. In the *Collection* list, select the collection where you stored your synonym documents for this specific synonym source.
+. In the *Language* list, select the language for your synonym collection.
+Choose the same language as the language or analyzer on the text field.
+. Click btn:[Save].
+. In the *Synonym Source* list, select the synonym source you added in the previous step.
+. If you added synonyms to an existing field mapping, click btn:[Update].
+. Click btn:[Update Index].
+
+== Example: Search Index Definition with Synonyms
+
+For example, you could use the `travel-sample` dataset with the Quick Editor to create a Search index with synonyms. 
+
+First, create a new collection in the `travel-sample` bucket called `synonyms`. 
+Include the following synonym documents: 
+
+[source,json]
+----
+include::example$synonyms/synonym-document-cheap.json[]
+----
+
+[source,json]
+----
+include::example$synonyms/synonym-document-comfy.json[]
+----
+
+Create a new Search index with the following field mappings: 
+
+* *Name*: Set to *Include in search results*. 
+* *Description*: Set to *Include in search results*, *Support highlighting*,  and *Support phrase matching*.
+
+Then, you could run the following Search query: 
+
+[source,json]
+----
+include::example$synonyms/synonym-query-example.json[]
+----
+
+The query would return results for hotels that include both `cheap` and `comfortable`, or one of their defined synonyms, like `affordable` in the `description` field.
+Results could include `hotel_18843` and `hotel_27821`.
+
+== Next Steps
+
+For more information about other features and options for Search indexes in the Quick Editor, see xref:quick-index-field-options.adoc[].
