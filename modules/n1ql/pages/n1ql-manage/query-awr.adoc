@@ -1,5 +1,7 @@
 = Automatic Workload Reporting
+:page-status: Couchbase Server 8.0
 :description: Monitor and optimize query performance and workload using Automatic Workload Reporting (AWR). 
+:page-toclevels: 2
 
 [abstract]
 {description}
@@ -13,56 +15,77 @@ For instance, some queries may run quickly with minimal overhead, while others m
 Using AWR, you can easily identify these differences, understand your workload, and determine areas for optimization. 
 
 When enabled, AWR automatically gathers detailed metrics from the Query service for every query that you run. 
-These metrics are captured at set intervals and stored as snapshots.
-Each snapshot can be considered as a point-in-time capture of the query performance and includes key metrics such as total elapsed time (minimum, maximum, and average), CPU usage, and number of queries executed. 
+It captures key performance indicators such as query execution time, CPU usage, memory consumption, and number of executions for each query.
+This information is then aggregated into <<snapshots, snapshots>> and stored in a centralized <<awr-repository, repository>>. 
 
-All snapshots are stored in a user-defined keyspace (bucket, scope, collection), which acts as a central repository for AWR. 
-Once the data is stored, you can query the snapshots directly or generate detailed performance reports. 
-These reports help you analyze historical trends, compare performance across queries, and detect potential issues or bottlenecks. 
+To access the snapshots, you can either query the repository directly or leverage Couchbase's report generation tool to generate reports and compare query performance across different time periods.
+For more information, see <<view-awr-data-and-reports, View AWR Data and Reports>>.
 
-For example, AWR can help with: 
+== Use Cases
+
+Here are some scenarios where AWR can be effectively utilized to enhance query performance and workload:
 
 * **Troubleshooting Real-Time Issues**:
 You can quickly identify slow running queries or instances of high resource usage. 
-By using the SQL IDs from the AWR data, you can trace the problematic queries and their sources and resolve issues faster. 
+You can extract the SQL ID of the problematic query from the AWR report and use it to trace the query in xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-completed-req[completed_requests]. 
 
-* **Performance Analysis**: 
+* **Analyzing Performance**: 
 When rolling out changes, such as introducing new microservices, AWR lets you compare query performance before and after the update. This helps you identify 
 affected queries and optimize their performance accordingly. 
 
-* **Upgrade Impact Analysis**:
+* **Analyzing Upgrade Impacts**:
 You can assess query performance before and after a cluster upgrade to identify queries impacted by the new version. 
 
+[#awr-repository]
+== AWR Repository 
+
+The AWR repository is a centralized storage location where all snapshots are collected and maintained.
+It is a user-defined location within a keyspace that can be path to a bucket or a collection, but not a scope.
+
+Before AWR can start collecting data, you must configure the repository location in the <<system-awr, system:awr>> catalog.
+Until this specified location is available, AWR remains in a quiescent (inactive) state.
+Once the location becomes accessible, AWR transitions to an active state and begins collecting data. 
+If the location becomes unavailable at any point, AWR returns to the quiescent state and resumes activity only when the location is accessible again. 
+
+For more information about setting up the repository location, see <<enable-configure-awr, Enable and Configure AWR>>.
+
+[#snapshots]
+== AWR Snapshots 
+
+AWR stores query performance data in the form of snapshots. 
+During each reporting interval, AWR gathers and aggregates performance statistics for all queries executed on the cluster.
+For every unique statement executed within that interval, AWR generates a snapshot.
+The snapshot contains aggregate information for all executions of that specific statement during that period. 
+
+Each snapshot is stored as a document in the AWR repository, uniquely identified by its document key (ID), which includes the timestamp reporting interval's start time.
+
+=== Manage Snapshot Retention 
+
+To facilitate long-term analysis and performance comparisons across different periods, AWR retains snapshot documents in the repository.
+By default, AWR does not automatically enforce retention policies on these documents. 
+Instead, you need to configure a Time-To-Live (TTL) or expiration for the AWR location. 
+The TTL specifies how long the documents remain in that location before the system automatically purges them.
+
+For example, setting a TTL of 180 days on a given bucket ensures that all snapshot documents older than 180 days within the bucket are automatically deleted.
+This mechanism allows you to manage storage usage effectively while retaining relevant history of query performance data. 
+For more information on configuring the TTL, see xref:server:learn:data/expiration.adoc[Manage Expiration].
+
+[#enable-configure-awr]
 == Enable and Configure AWR
 
-To use AWR, you must first enable the feature and configure its settings. 
-AWR stores and manages these settings in the `system:awr` catalog. 
-This catalog determines how AWR functions including where it stores data, how often it collects statistics, and which queries to include in the report. 
+AWR is an opt-in feature that you must explicitly enable and configure.
+Once enabled, AWR starts collecting data as soon as the repository location is set and available.
 
-NOTE: Only admins or users with the `query_manage_system_catalog` role can modify settings in `system:awr` to customize the AWR configuration. 
+You can manage these settings through the <<system-awr, system:awr>> catalog.  
+
+[#system-awr]
+=== system:awr 
+
+This catalog determines how AWR functions including where it stores snapshots, how often it collects statistics, and which queries to include in the report. 
+You can adjust the AWR settings at any time to align with your monitoring needs. 
+
+NOTE: Only admins or users with the `query_manage_system_catalog` role can modify settings in `system:awr`. 
 For more information, see xref:n1ql:n1ql-intro/sysinfo.adoc#authentication-and-client-privileges[Authentication and Client Privileges].
-
-=== Enable AWR
-
-AWR is not enabled by default, so you must explicitly enable it to use the feature.
-
-To enable AWR, use the following query:
-
-[source,sqlpp]
-----
-UPDATE system:awr SET enabled = true;
-----
-
-Upon executing this query, AWR will begin collecting performance statistics for all queries executed on the cluster.
-
-=== View Configuration
-
-To view the current settings of AWR, you can query the `system:awr` keyspace as follows:
-
-[source,sqlpp]
-----
-SELECT * FROM system:awr;
-----
 
 The catalog consists of the following attributes: 
 
@@ -72,103 +95,127 @@ The catalog consists of the following attributes:
 
 |**enabled** +
 | Indicates whether AWR is enabled or disabled. 
+*Default*: `FALSE`
+
 | Boolean
 
 | **location** +
-| The target keyspace (bucket, scope, collection) where the data is stored. 
-
-AWR remains in a quiescent (inactive) state until this specified location becomes available. 
-Once it is available, AWR transitions to an active state and begins collecting data. 
-If the location becomes unavailable at any point, AWR returns to the quiescent state and will become active only once the location is accessible again. 
+| The target keyspace where the snapshots are stored. 
+This can only be a path to a bucket or collection; it cannot be a scope.
 
 AWR checks the availability of the location only once per interval. 
+
+*Example*: `"bucket1.scope1.collection1"`
 
 | String
 
 |**interval** +
 |The duration of the reporting interval.
-That is, the time between each snapshot or data collection.
-If the interval is set to 10 minutes, AWR captures a data every 10 minutes. 
+That is, the time between each snapshot collection.
+If the interval is set to 10 minutes, AWR captures a snapshot every 10 minutes. 
 
 The interval must be at least 1 minute.  
 
-**Example**: `“1m30s”`
+**Example**: `"1m30s"`
 
-|String
+|String(duration)
 
 |**threshold** +
-|The minimum time a statement must take to complete for it be in included in the AWR report.
+|The minimum time a statement must take to complete for it be captured and included in the snapshot.
 
-Statements that exceed the threshold are excluded from the report. 
 The threshold must be at least 0 seconds. 
 
-**Example**: `“1m30s”`
-|String
+*Default*: `"0s"`, so that by default, all statements are captured by AWR regardless of their execution time.
+
+**Example**: `"1m30s"`
+|String(duration)
 
 | **num_statements** +
 | The maximum number of unique statements for which aggregate data is collected during each interval.
 
-Once the specified limit is reached, any additional statements are not included in the AWR report. 
+Once the specified limit is reached during a reporting interval, AWR does not generate snapshots for any additional unique statements within that same interval.
+
+*Default*: `10000` 
+
+*Max*: `100000`
 
 | Positive integer
 
 | **queue_len** +
 | Length of the processing queue. It is recommended not to change this value. 
+
+The default value and maximum allowable value for `queue_len` are internally calculated based on system resources.
+
 | Positive integer
 |===
 
-=== Update AWR Settings
+=== Examples
 
-You can adjust the AWR settings at any time to align with your monitoring needs. 
-
-For example, you can modify the target location, reporting interval, and threshold by using the following query (make sure to replace the values with your desired settings).
-
+.Query to enable AWR and set the repository location
+====
+The following query enables AWR and sets the repository location to `default.s1.awr` with a reporting interval of 10 minutes and a threshold of 1 minute.
 [source,sqlpp]
 ----
-UPDATE system:awr SET location = "default.s1.awr", interval = "1m", threshold = "0s";
+UPDATE system:awr SET enabled = true, location = "default.s1.awr", interval = "1m", threshold = "0s";
 ----
+====
 
-=== Monitor AWR
+.Query to view the current AWR settings
+====    
+The following query retrieves the current AWR settings. 
+[source,sqlpp]
+----
+SELECT * FROM system:awr;
+----
+====
+
+[#monitor-awr]
+== Monitor AWR
 
 The current status of AWR is recorded in the `query.log`. 
-You can view this information in the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#vitals[`system:vitals`] output by using the following query: 
+You can view this information in the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#vitals[system:vitals] output by using the following query: 
 
 [source,sqlpp]
 ----
 SELECT awr FROM system:vitals;
 ----
 
+[#view-awr-data-and-reports]
 == View AWR Data and Reports
 
-You can view AWR data and reports using the AWR report generation tool (`cbqueryreportgen`) or by querying the data directly from the target keyspace.
+You can access the AWR snapshot documents using two methods:
 
-=== Using the Report Generation Tool 
+* <<report-generation-tool, By generating reports using the `cbqueryreportgen` tool>>
+* <<query-awr-data-directly, By querying the AWR data directly>>
 
-The primary way to generate AWR reports is to use the `cbqueryreportgen` tool, as it provides comprehensive and user-friendly report formats.
+[#report-generation-tool]
+=== Generate Reports using `cbqueryreportgen`
 
-The `cbqueryreportgen` tool executes SQL++ queries to generate the workload reports based on the AWR data collected. 
-To optimize query performance, it is recommended to create an index on the document key (`META().id`) in your configured AWR location.
-If this index is not created, the tool will use sequential scans, which can impact performance.
+You can generate AWR reports using the `cbqueryreportgen` tool.
+It provides comprehensive and user-friendly reports by executing SQL++ queries against the collected AWR snapshots.
 
-For example, if your AWR data is stored in the `default:bucket1.scope1.awr` keyspace, you can create the recommended index as follows:
+For optimal query performance with the this tool, it is recommended to create an index on the document key (`META().id`) in your configured AWR location.
+If this index is not present, the tool will use sequential scans, which can impact performance.
+
+For example, if the snapshots are stored in the `default:bucket1.scope1.awr` keyspace, you can create the recommended index as follows:
 
 [source,sqlpp]
 ----
 CREATE INDEX idx_awr ON default:bucket1.scope1.awr(META().id);
 ----
 
-This index will be used by the `cbqueryreportgen` tool to efficiently query and retrieve the AWR data for generating reports.
-For more information about the tool and how to use it, see (__link to be added__).
+This index enables the `cbqueryreportgen` tool to efficiently query and retrieve AWR data for generating reports.
+For more information about the tool and its usage, see (__link to be added__).
 // TODO: Add link to the CLI Reference section.  
 
-=== Querying AWR Data Directly
+[#query-awr-data-directly]
+=== Query AWR Data Directly
 
-You can also query AWR data directly from the target keyspace using SQL++ queries.
+You can also query AWR data directly from the AWR repository using SQL++ queries.
 When doing so, it is important to understand the data format, which is optimized to minimize the storage size.
 
 To query AWR data, access the specific target keyspace where the snapshots are stored. 
-Each snapshot is saved as a document, and its document key (ID) includes the timestamp of the interval during which the data was collected. 
-This enables time-based filtering without requiring indexes, as sequential scans can support range-based key patterns. 
+Since each snapshot is stored as a document and the document key (ID) includes the timestamp of the reporting interval's start time, you can filter documents based on time ranges without requiring indexes (as sequential scans support range-based key patterns).  
 However, you can define and add indexes if needed. 
 
 Each document contains the following fields: 
@@ -195,7 +242,7 @@ Each document contains the following fields:
 You can use the xref:n1ql:n1ql-language-reference/stringfun.adoc#fn-str-uncompress[UNCOMPRESS()] function to decompress this the value into a string, which can then be passed to xref:n1ql:n1ql-language-reference/jsonfun.adoc[DECODE_JSON()] for formatting, if needed.  
 
 **Note**: This is just the outline of the plan listing operators and significant objects used.  
-For full execution details, configure the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-completed-config[completed_requests] system keyspace to capture the execution time of the statement.
+For full execution details, configure the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-completed-config[completed_requests] system keyspace to capture the executions of the statement.
 
 | Array of strings
 
@@ -354,7 +401,7 @@ It includes the time spent executing the `PrimaryScan` operator code and waiting
 
 === Example
 ====
-The following example fetches AWR data for a specific SQL ID, including the statement text, max execution plan, statement count, total time, and max CPU usage. 
+The following example fetches AWR data for a specific SQL ID, including the statement text, max execution plan, number of executions, total time, and max CPU usage. 
 
 .Query
 [source,sqlpp]
