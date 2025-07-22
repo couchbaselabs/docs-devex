@@ -59,7 +59,7 @@ This snapshot contains aggregate metrics for all executions of that statement du
 These metrics include execution time, CPU usage, memory consumption, and other performance indicators.
 
 Snapshots are stored as individual documents in the workload repository. 
-Each document is uniquely identified by its document key (ID), that includes the start time of the reporting interval, making it easier to filter and analyze performance data.
+Each document is uniquely identified by its document key (ID), that includes the start time of the reporting interval, making it easier to filter and analyze data.
 
 === Snapshot Retention Management
 
@@ -70,7 +70,7 @@ The TTL specifies how long the documents remain in that location before the syst
 
 For example, setting a TTL of 180 days on a given bucket ensures that all snapshot documents older than 180 days within the bucket are automatically deleted.
 This mechanism allows you to manage storage usage effectively while retaining relevant history of query performance data. 
-For more information about configuring the TTL, see xref:server:learn:data/expiration.adoc[Manage Expiration].
+For more information about configuring the TTL, see xref:server:learn:data/expiration.adoc[Expiration].
 
 [#enable-configure-awr]
 == Enable and Configure AWR
@@ -105,7 +105,7 @@ The catalog consists of the following attributes:
 | **location** +
 | The target keyspace (repository) where the snapshots are stored. 
 This can only be a path to a bucket or collection; it cannot be a scope.
-For more information about the repository, see <<awr-repository, AWR Repository>>.
+For more information about the repository, see <<workload-repository, Workload Repository>>.
 
 AWR checks the availability of the location only once per interval.
 
@@ -116,7 +116,7 @@ AWR checks the availability of the location only once per interval.
 |**interval** +
 |The duration of the reporting interval.
 That is, the time between each snapshot collection.
-If the interval is set to 10 minutes, AWR captures a snapshot every 10 minutes. 
+If the interval is set to 10 minutes, AWR captures snapshots every 10 minutes. 
 
 The interval must be at least 1 minute.  
 
@@ -159,7 +159,7 @@ The default value and maximum allowable value for `queue_len` are internally cal
 .Enable AWR and set the repository location
 ====
 The following query enables AWR and sets the repository location to `default.s1.awr`. 
-It also sets the reporting interval to 10 minutes and threshold to 1 minute.
+It also sets the reporting interval to 1 minute and threshold to 0 seconds.
 
 [source,sqlpp]
 ----
@@ -222,7 +222,7 @@ You can also query AWR data directly from the workload repository using SQL++ qu
 When doing so, it is important to understand the data format, which is optimized to minimize the storage size.
 
 To query AWR data, access the specific target keyspace where the snapshots are stored. 
-The documents keys (IDs) of the snapshot documents include the timestamp of the reporting interval's start time.
+The document keys (IDs) of the snapshot documents include the timestamp of the reporting interval's start time.
 This allows you to filter documents based on time ranges without requiring additional indexes, as sequential scans support range-based key patterns.
 However, if needed, you can define and add indexes to further optimize your queries.
 
