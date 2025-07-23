@@ -34,6 +34,7 @@ image::n1ql-language-reference/select-clause.png["Syntax diagram", align=left]
 [horizontal.compact]
 hint-comment:: <<hint-comment>> icon:caret-down[]
 projection:: <<sec_Arguments>> icon:caret-down[]
+exclude-clause:: <<sec_ExcludeClause>> icon:caret-down[]
 
 [#hint-comment]
 === Optimizer Hints
@@ -154,6 +155,35 @@ If you do not explicitly give a field an alias, it is given an _implicit alias_.
 * For any expression which does not refer to a field, the implicit alias is a dollar sign followed by a number, based on the position of the expression in the projection; for example, `$1`, `$2`, and so on.
 
 An implicit or explicit alias is returned in the result set, unless you suppress it using the <<raw-element-value,RAW keyword>>.
+
+[#sec_ExcludeClause]
+=== EXCLUDE Clause
+
+The EXCLUDE clause enables you to exclude fields from the result set. 
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=exclude-clause]
+----
+image::n1ql-language-reference/exclude-clause.png["Syntax diagram", align=left]
+
+It can one or more <<exclude-terms, terms>>, separated by commas.
+
+==== Term
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=term]
+----
+image::n1ql-language-reference/term.png["Syntax diagram", align=left]
+
+Term is an element (alias) listed previously in the projection of the SELECT.  
+Elements listed are excluded from the final projection.  
+This is primarily for excluding fields from star expressions.
+
+They can be identifiers (e.g. default.field) or string expressions which identify fields similarly (e.g. "default.field") in a comma-separated list.
+When there is a single FROM term, fields are automatically qualified with it.
+Terms should identify the field as addressed in the projection - if a term is aliased the alias should be used.
+
 
 [#sec_BestPractices]
 == Best Practices
@@ -630,6 +660,52 @@ FROM hotel LIMIT 5;
 ----
 
 <.> With a select expression, you may optionally include the keyspace name; in either case, the keyspace name is not added to the results.
+====
+
+[[ex-exclude-clause]]
+.Exclude clause
+====
+.Query
+[source,sqlpp]
+----
+SELECT * EXCLUDE reviews,h.public_likes,"geo,`description`" 
+FROM `travel-sample`.inventory.hotel h 
+ORDER BY meta().id LIMIT 1
+----
+
+.Results
+[source,json]
+----
+"results": [
+    {
+        "h": {
+            "address": "Capstone Road, ME7 3JE",
+            "alias": null,
+            "checkin": null,
+            "checkout": null,
+            "city": "Medway",
+            "country": "United Kingdom",
+            "directions": null,
+            "email": null,
+            "fax": null,
+            "free_breakfast": true,
+            "free_internet": false,
+            "free_parking": true,
+            "id": 10025,
+            "name": "Medway Youth Hostel",
+            "pets_ok": true,
+            "phone": "+44 870 770 5964",
+            "price": null,
+            "state": null,
+            "title": "Gillingham (Kent)",
+            "tollfree": null,
+            "type": "hotel",
+            "url": "http://www.yha.org.uk",
+            "vacancy": true
+        }
+    }
+]  
+----
 ====
 
 [#sec_RelatedLinks]
