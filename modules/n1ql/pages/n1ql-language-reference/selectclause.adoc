@@ -159,16 +159,19 @@ An implicit or explicit alias is returned in the result set, unless you suppress
 [#sec_ExcludeClause]
 === EXCLUDE Clause
 
-The EXCLUDE clause enables you to exclude fields from the result set. 
-
 [source,ebnf]
 ----
 include::partial$grammar/dql.ebnf[tag=exclude-clause]
 ----
 image::n1ql-language-reference/exclude-clause.png["Syntax diagram", align=left]
 
-It can one or more <<exclude-terms, terms>>, separated by commas.
+The EXCLUDE clause enables you to remove specific fields from the result set. 
+This is particularly useful when you're using the star expression `{asterisk}` to select all fields, and want to remove only a few.
+It saves you from having to explicitly list every field you want in your result set. 
 
+The clause consists of one or more <<exclude-term,terms>>, separated by commas.
+
+[[exclude-term]]
 ==== Term
 [source,ebnf]
 ----
@@ -176,14 +179,24 @@ include::partial$grammar/dql.ebnf[tag=term]
 ----
 image::n1ql-language-reference/term.png["Syntax diagram", align=left]
 
-Term is an element (alias) listed previously in the projection of the SELECT.  
-Elements listed are excluded from the final projection.  
-This is primarily for excluding fields from star expressions.
+A term is an element previously listed in the projection of the SELECT statement. 
+You can use a term to exclude a specific field from the final projection.
+It must exactly match the field name or alias as it appears in the projection.
 
-They can be identifiers (e.g. default.field) or string expressions which identify fields similarly (e.g. "default.field") in a comma-separated list.
-When there is a single FROM term, fields are automatically qualified with it.
-Terms should identify the field as addressed in the projection - if a term is aliased the alias should be used.
+A term can be:
 
+* An identifier, such as `hotel.name`.
+* A string expression with one ore more fields separated by commas, such as `"hotel.name, address"`.
+
+Refer to <<ex-exclude-clause>>.
+
+[NOTE]
+====
+* If the field has an alias, you must use the alias as the term. 
+* When your query includes only one FROM term, fields are automatically qualified with it.
+You can use the field name without the full identifier.
+For example `name` instead of `hotel.name`.
+====
 
 [#sec_BestPractices]
 == Best Practices
@@ -663,48 +676,48 @@ FROM hotel LIMIT 5;
 ====
 
 [[ex-exclude-clause]]
-.Exclude clause
+.SELECT with an EXCLUDE clause
 ====
 .Query
 [source,sqlpp]
 ----
 SELECT * EXCLUDE reviews,h.public_likes,"geo,`description`" 
 FROM `travel-sample`.inventory.hotel h 
-ORDER BY meta().id LIMIT 1
+ORDER BY meta().id LIMIT 1;
 ----
 
 .Results
 [source,json]
 ----
-"results": [
-    {
-        "h": {
-            "address": "Capstone Road, ME7 3JE",
-            "alias": null,
-            "checkin": null,
-            "checkout": null,
-            "city": "Medway",
-            "country": "United Kingdom",
-            "directions": null,
-            "email": null,
-            "fax": null,
-            "free_breakfast": true,
-            "free_internet": false,
-            "free_parking": true,
-            "id": 10025,
-            "name": "Medway Youth Hostel",
-            "pets_ok": true,
-            "phone": "+44 870 770 5964",
-            "price": null,
-            "state": null,
-            "title": "Gillingham (Kent)",
-            "tollfree": null,
-            "type": "hotel",
-            "url": "http://www.yha.org.uk",
-            "vacancy": true
-        }
+[
+  {
+    "h": {
+      "address": "Capstone Road, ME7 3JE",
+      "alias": null,
+      "checkin": null,
+      "checkout": null,
+      "city": "Medway",
+      "country": "United Kingdom",
+      "directions": null,
+      "email": null,
+      "fax": null,
+      "free_breakfast": true,
+      "free_internet": false,
+      "free_parking": true,
+      "id": 10025,
+      "name": "Medway Youth Hostel",
+      "pets_ok": true,
+      "phone": "+44 870 770 5964",
+      "price": null,
+      "state": null,
+      "title": "Gillingham (Kent)",
+      "tollfree": null,
+      "type": "hotel",
+      "url": "http://www.yha.org.uk",
+      "vacancy": true
     }
-]  
+  }
+]
 ----
 ====
 
