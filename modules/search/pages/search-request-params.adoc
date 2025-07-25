@@ -1993,17 +1993,18 @@ The setting has no effect if your `scoring_model` is set to `tfidf`.
 
 If your Search index is configured with partitions and replicas, add the `partition_selection` property to choose how the Search Service selects the partitions to search for your Search query: 
 
-* `""`: The Search Service targets only active partitions or replicas.
+* `""`: The Search Service targets only active partitions.
 Active partitions are the partitions currently being used to serve Search requests.
+This is the default setting.
 * `"local"`: The Search Service targets all active or replica partitions, local to the coordinator node. 
 If the required Search index partition for a query is not available on the coordinator node, the Search Service looks for the partition within the node's xref:manage:manage-groups/manage-groups.adoc[Server Group].
 If the Search Service still cannot find the partition, then it chooses a random node in the cluster that's running the Search Service, that contains the correct active or replica partition.
 * `"local_only"`: The Search Service targets all active or replica partitions, local to the coordinator node.
 If the required Search index partition for a query is not available on the coordinator node, the Search Service looks for the partition within the node's xref:manage:manage-groups/manage-groups.adoc[Server Group].
 If the Search Service still cannot find the partition, then the query returns partial results.
-* `"random"`: The Search Service chooses a random node that contains the required active or replica partition needed for the Search query.
+* `"random"`: The Search Service chooses a random selection of partitions from local and remote nodes for the Search query.
 * `"random_balanced"`: The Search Service tries to choose a node that is not already serving a Search request.
-If the Search Service cannot find an available, it defaults to a random node with the correct partition or replica.
+If the Search Service cannot find an available node, it defaults to a random node with the correct partition or replica.
 This mode is designed to keep the number of query handling partitions per node the same. 
 
 For more information about how to configure partitions and replicas on your Search index, see xref:set-advanced-settings.adoc[] or xref:search-index-params.adoc#planparams[planParams Object].
