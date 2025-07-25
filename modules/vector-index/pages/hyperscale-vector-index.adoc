@@ -66,7 +66,10 @@ See xref:guides:create-index.adoc[] for an overview of creating indexes.
 You must also supply a `WITH` clause to set some additional information about the vector column that the Hypsercale index needs. 
 
 
-The syntax for the `CREATE VECTOR INDEX` with the most common parameters is:
+The following syntax for the `CREATE VECTOR INDEX` shows the minimum required parameters. 
+For the full syntax, see CREATE VECTOR INDEX in the SQL++ for Query Reference.
+
+// FIXME: Link goes here
 
 [source,sqlpp]
 ----
@@ -84,16 +87,17 @@ CREATE VECTOR INDEX `<index-name>`
 The key value must be an array of floating point numbers or a base64 encoded string. 
 * `dimensions` is an integer value that sets the number of dimensions in the vector.
 The embedded model you use to embed the vectors determines the number of dimensions in the vector.
-* `similarity-function` is a string that sets the distance function to use when comparing vectors during index creation.
-Couchbase {product-name} uses the following strings to represent the proximity functions:
+* `similarity-metric` is a string that sets the distance metric to use when comparing vectors during index creation.
+Couchbase {product-name} uses the following strings to represent the distance metrics:
 +
 --
 ** `COSINE`: xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
 ** `DOT`: xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
-** `L2`, `L2_SQUARED`, `EUCLIDEAN`, or `EUCLIDEAN_SQUARED`: xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
+** `L2` or `EUCLIDEAN`: xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
+** `L2_SQUARED` or `EUCLIDEAN_SQUARED`: xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean Squared Distance]
 --
 +
-For the greatest accuracy, use the distance function you plan to use to query the data.
+For the greatest accuracy, use the distance metric you plan to use to query the data.
 * `algorithm-settings` is a string containing the settings for the indexing algorithms. 
 See <<#algo_settings>> in the next section for more information.
 
@@ -104,7 +108,7 @@ include::partial$index-algorithm-settings.adoc[]
 [#examples]
 === Create Hyperscale Vector Index Example
 
-The examples in this section use a dataset that contains information about colors, including a text description of the color.
+The examples in this section use a dataset that contains information about colors including a text description of the color.
 There's also a field named `couchbase_search_query.knn.vector` that contains an embedded vector for the color description.
 
 include::vector-search:partial$download-sample-partial.adoc[]
@@ -124,7 +128,7 @@ The result of running the query is:
 include::vector-index:example$hyperscale-idx-data.json[tag=rgb-document]
 ----
 
-The following example creates an Hyperscale vector index for the vector column named `embedding-vetor-dot`.
+The following example creates an Hyperscale vector index for the vector column named `embedding-vector-dot`.
 
 [source,sqlpp]
 ----
@@ -149,6 +153,7 @@ In most cases, you'll not use these settings in a production environment.
 
 To use your Hyperscale Vector index, use the `SELECT` statement with a `ORDER BY` clause containing a call to the  `APPROX_VECTOR_DISTANCE` function.
 This function performs the vector search using the Hyperscale Vector index.
+
 A typical query looks like this:
 
 [source,sqlpp]
@@ -158,17 +163,31 @@ SELECT <fields>
        ORDER BY APPROX_VECTOR_DISTANCE(
                 <collection-vector-column>, 
                 <search-vector-value>, 
-                <distance-function>, 
+                <distance-metric>, 
                 [<centroids-to-probe>]
         ) LIMIT <number-of-results>;
 ----
 
-The `search-vector-value` is the vector Couchbase {product-name} will search for in the index. 
+The parameters in the `APPROX_VECTOR_DISTANCE` function are:
+
+* `collection-vector-column` is the name of the key containing the vector in the collection.
+* `search-vector-value` is the vector value to to search for ibn the collection column.
 It can be an array of floating point numbers or a base64 encoded string.
+* `distance-metric` is the distance metric to use when comparing the vectors. 
+This value should match the distance metric you set when you created the index.
+* `centroids-to-probe` is an optional integer value that sets the number of centroids to probe for matching vectors.
+By default, the vector search only probes a single centroid.
+
+
+For the full syntax of the `APPROX_VECTOR_DISTANCE` function in the SQL++ reference.
+
+// FIXME: add link when available.
 
 NOTE: You can also call the function `VECTOR_DISTANCE` to find similar vectors. 
 However, this function does not use the Hyperscale Vector index to perform the vector search. 
 Instead, it performs a brute-force search for similar vectors.
+It's useful to determine the recall rate of your Hyperscale Vector index. 
+See xref:vector-index/vector-index-best-practices.adoc[] for more information about comparing recall rates.
 
 Also use a `LIMIT` clause to return just the number of results you need. 
 The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the requested number of matches.
@@ -179,8 +198,8 @@ The query pushes the `LIMIT` clause down into the index scan so that the scan en
 You must supply a vector value in your query that Couchbase {product-name} can compare to the vectors in the index.
 In actual use, your application  generates a vector for the query value using the same embedding model it used to embed the vectors in your documents.
 
-To avoid the complication of calling an embedding function, this example uses embedded vectors in the `rgb_questions.json` file that's included in `color_data_2vectors.zip`.
-The contents of this file are loaded into a collection named `vector-sample.color.rgb-questions`.
+To avoid the complication of calling an embedding mopdel, this example uses embedded vectors in the `rgb_questions.json` file that's included in `color_data_2vectors.zip`.
+For this example, the contents of this file are loaded into a collection named `vector-sample.color.rgb-questions`.
 This collection contains a `question` attribute which is a search prompt for a particular color. 
 The `couchbase_search_query.knn.vector` attribute contains the embedded vector for the `question` attribute.
 The following query lists several attributes from a document in the collection.
@@ -200,7 +219,7 @@ include::vector-index:example$hyperscale-idx-data.json[tag=query-rgb-questions-o
 
 To use the embedded vector, you need to include the `couchbase_search_query.knn.vector` attribute in your query's the `SELECT` statement.
 You can either directly cut & paste the entire array into your query or use a subquery to retrieve it from the `vector-sample.color.rgb-questions` collection.
-The following example uses a subquery to get the vector, and also includes the `wanted_similar_color_from_search` attribute in the output which shows you the color that he query should return. 
+The following example uses a subquery to get the vector, and also includes the `wanted_similar_color_from_search` attribute in the output which shows you the color that the query should return. 
 
 [source,sqlpp]
 ----

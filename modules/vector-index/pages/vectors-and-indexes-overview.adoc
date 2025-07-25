@@ -109,7 +109,7 @@ You can use external embedding models or https://www.couchbase.com/products/ai-s
 endif::[] 
 
 [#vector_similarity]
-== Vector Similarity
+== Vector Similarity Metrics
 
 Once you have embedded vectors in your database, you find documents with a similar meaning by finding similar vectors. 
 You use metrics to (also referred to as distance functions) to find similar vectors.
@@ -212,17 +212,11 @@ Use this method when you're performing searches that rely on semantic meaning, s
 
 
 [#index-algorithms]
-=== Indexing Algorithms
+== Index Formats
 
-When you add a vector to an index, you specify one or more algorithms that Couchbase {product-name} uses to process the vector values.
-These algorithms organize and consolidate vector data in the index to make it more efficient to search.
-
-Couchbase {product-name} supports the algorithms described in the following sections.
-
-==== Index Formats
-
-Couchbase Server supports two formats for the index, which controls how the index stores the vectors.
-It automatically chooses which algorithm to use, based on the type of the index and the size of the dataset.
+Couchbase Server supports two formats that the Vector indexes use when storing their data. 
+These formats control how the index stores the vectors.
+Couchbase Server automatically chooses which algorithm to use, based on the type of the index and the size of the dataset.
 However, you can set parameters when you create the index that affect how the algorithm organizes data.
 
 Flat Index::
@@ -234,7 +228,7 @@ However, searching a flat index is inefficient.
 The search must compare every vector in the index to find matches.
 You should only use it for small data sets or for testing. 
 +
-NOTE: FTS Vector indexes use a flat index when indexing smaller datasets.
+NOTE: FTS Vector indexes use a flat index when indexing datasets with 1000 or fewer vectors.
 Hyperscale Vector and Composite Vector indexes only support the next algorithm, IVF.
 
 [#IVF]
@@ -258,12 +252,17 @@ This risk increases as you add and delete data after you train the index.
 The centroids chosen during the initial training may no longer accurately represent clusters in current dataset.
 See <<#index-training>> for more information about index accuracy.
 +
-Hyperscale Vector and Composite Vector indexes always use IVF.
-FTS Vector indexes automatically uses IVF when the indexing larger datasets.
-In addition to IVF, Hyperscale Vector indexes also use proprietary optimizations to improve performance for billion-scale indexes.
+Hyperscale Vector and Composite Vector indexes always use IVF as the basis of their indexes.
+In addition, they use a Hierarchical Navigable Small World (HNSW) graph to index the IVF's centroids.
+This graph connects related centroids together so that a similarity search can quickly traverse the graph to find the centroids that are closest to the search vector.
+Hyperscale also adds other proprietary optimizations that allow it to scale to billions of vectors.
+
++
+FTS Vector indexes automatically uses IVF when the indexing datasets larger than 1000 vectors.
+
 
 [#quantization]
-==== Quantization
+== Quantization
 
 Quantization simplifies vector data so it consumes less space in memory and on disk.
 Reducing the amount of data in a vector also makes vector comparison faster.
@@ -319,6 +318,10 @@ Use PQ quantization when:
 * You're willing to trade higher processing requirements during training for smaller memory use and less CPU time during searches.
 * Your dataset is large (millions to billions of vectors).
 
++
+Hyoerscale Vector and Composite Vector indexes support PQ quantization.
+FTS Vector indexes do not support it.   
+
 [#sq]
 Scalar Quantization (SQ)::
 Scalar Quantization is a simpler form of quantization than PQ. 
@@ -335,7 +338,7 @@ This means the second dimension's bins will only cover the range from 0.1 to 0.9
 . SQ assigns each bin an index value that's from 4 to 8 bits in length. 
 . It find a centroid within the range associated with the bin. 
 It saves the centroid as a 16 or 32 bit floating point number.
-. SQ then quantizes the vectors by replacing their dimensional values with the index value of the bin the dimnesional value falls into.
+. SQ then quantizes the vectors by replacing their dimensional values with the index value of the bin the dimensional value falls into.
 +
 image::sq-diagram.svg["Diagram showing each floating point dimension of a vector being converted to an 8-bit integer by looking up which bucket it falls into."]
 +
@@ -358,9 +361,19 @@ Its training just determines the range of values for each dimension.
 Use SQ if you do not want the processing overhead of training a PQ index. 
 You can also use it if you have a smaller dataset (hundreds of thousands to millions of vectors).
 
++
+All three types of vector indexes support SQ quantization.
+
+
 === Choosing Quantization
 
-When creating a Hypsercale Vector or Composite Index, you choose which quantization method to use. 
+You do not choose a quantization method for FTS vector indexes.
+Instead, they automatically choose whether to use quantization:
+
+* FTS Vector indexes do not use quantization for datasets smaller than 10000 vectors.
+* FTS Vector indexes automatically use 8-bit SQ quantization for datasets with 10000 vectors or larger.
+
+When creating a Hyperscale Vector or Composite Index, you choose which quantization method to use when creating the index. 
 When deciding, consider the following:
 
 * Use SQ when you want higher accuracy than PQ, at the cost of lower compression and therefore more memory use.
@@ -370,23 +383,23 @@ PQ is a good choice for larger datasets (millions to billions of vectors) where 
 You should also consider the potential need to retrain the index if your dataset changes over time.
 See the following section for more information about index training.
 
-Whichever quantization you choose, you should perform tests to verify it meets your needs.
+No matter which quantization you choose, you should perform tests to verify it meets your needs.
 See xref:vector-index:vector-index-best-practices.adoc[] for more information about choosing quantization for your Hyperscale Vector and Composite Vector indexes.
 
 [#index-training]
-=== The Importance of Index Training
+== The Importance of Index Training
 
-The IVF indexing algorithm and the PQ ans SQ quantization algorithms rely on training the index on existing data. 
+The IVF indexing algorithm and the PQ ans SQ quantizations rely on training the index on existing data. 
 Both PQ and IVF locate centroids that represent clusters of vectors in vector space.
 The SQ quantization samples vectors to determine the range of values in each dimension.
-This training reflects the content of dataset when you create the index.
+These training techniques reflect the content of dataset at the time you create the index.
 For this training to give you accurate search results, the data in your dataset must represent the full range of data you expect to search.
 
-If the ddataset is not representative, the centroids the PQ or IVF indexing method selects may not accurately represent clusters of data in the dataset.
+If the dataset is not representative, the centroids that the PQ quantization or IVF indexing method selects may not accurately represent clusters of data in the dataset.
 Having accurate centroids are key to these indexing methods returning accurate results. 
 For indexes using SQ quantization, the range of values in the dimensions may not accurately represent the data in the dataset.
-If one or more dimensional values fall outside the range that SQ assign  buckets to, they get assigned closest bucket.
-As youir dataset changes, these inaccuracies can build, skewing results.
+If one or more dimensional values fall outside the range that SQ assign bins to, they get assigned closest bin which may not properly represent the value.
+As your dataset changes, these inaccuracies can build, skewing results.
 
 Over time, may find your vector search's recall (percentage of the nearest neighbors of the search vector returned by a query) decreases. 
 Searches for similar vectors may miss relevant results or may rank less-related vectors higher than more relevant results.
@@ -397,7 +410,9 @@ For indexes using SQ quantization, the range of values in the dimensions may hav
 
 To resolve these accuracy issues, you can retrain your indexes when you notice poor recall. 
 You can also choose to retrain indexes periodically or after you make significant changes to your dataset.
+To retrain an index, you create a new index with the same (or tweaked) settings as the existing index, but with a different name. 
+After Couchbase {product-name} builds and trains the new index, you can drop the old index.
 
 You should consider the need to retrain your indexes when choosing which quantization to use. 
 For example, the PQ quantization requires more resources to train than SQ. 
-If your dataset evolves rapidly, you may want avoid using PQ because you'll need to perform more frequent retraining.  
+If your dataset evolves rapidly, you may choose to not use PQ because you'll need to perform more frequent retraining.  
