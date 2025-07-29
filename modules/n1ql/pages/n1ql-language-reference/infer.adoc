@@ -91,6 +91,7 @@ The `similarity_metric` is the degree of similarity that two schemas must have t
 You can specify a real number between 0 and 1 indicating the percentage match (of attributes) required to establish similarity between two documents.
 The default value is 0.6, which means two documents are considered similar if 60% of the top-level attributes are the same.
 
+[[infer-flags]]
 [.var]`flags`:: A set of flags that control the behavior of the INFER statement.
 The following flags are supported: 
 +
@@ -218,6 +219,11 @@ Each property is described by a key-value pair, in which the key is the name of 
 Details for Documents and Subdocuments::
 [.out]`$schema`;; Specifies the version of the JSON Schema standard.
 [.out]`Flavor`;; Specifies the flavor of a document or sub-document.
+
+NOTE: From Couchbase Server 8.0 onwards, the `~meta` attribute is included in the output of the INFER statement by default. 
+This attribute contains the `id` property that describes the document keys.
+However, if you use the `flags` option to customize the behavior of the INFER analysis, you must explicitly set the `INCLUDE_KEY` flag to include the `~meta` attribute in the output. 
+For more information about the available flags, see <<infer-flags,flags>>.
 
 == Examples
 
@@ -535,6 +541,175 @@ WITH {"sample_size": 10000, "num_sample_values": 5, "similarity_metric": 0.0};
               }
           }
       ]
+]
+----
+====
+
+[[ex-3]]
+.Infer metadata for a keyspace using the `INCLUDE_KEY` flag
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+[source,sqlpp]
+----
+INFER `travel-sample`.inventory.hotel WITH {"flags": ["INCLUDE_KEY"]};
+----
+.Results
+[source,json]
+----
+[
+  [
+    {
+      "#docs": 187,
+      "$schema": "http://json-schema.org/draft-06/schema",
+      "Flavor": "`type` = \"airline\"",
+      "properties": {
+        "callsign": {
+          "#docs": [
+            53,
+            134
+          ],
+          "%docs": [
+            28.34,
+            71.65
+          ],
+          "samples": [
+            [
+              null
+            ],
+            [
+              "AIR WISCONSIN",
+              "FLYSTAR",
+              "NIGHT CARGO",
+              "REGIONAL EUROPE",
+              "WESTERN"
+            ]
+          ],
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "country": {
+          "#docs": 187,
+          "%docs": 100,
+          "samples": [
+            "France",
+            "United Kingdom",
+            "United States"
+          ],
+          "type": "string"
+        },
+        "iata": {
+          "#docs": [
+            32,
+            155
+          ],
+          "%docs": [
+            17.11,
+            82.88
+          ],
+          "samples": [
+            [
+              null
+            ],
+            [
+              "-+",
+              "H1",
+              "WP",
+              "YE",
+              "YX"
+            ]
+          ],
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "icao": {
+          "#docs": 187,
+          "%docs": 100,
+          "samples": [
+            "--+",
+            "HA1",
+            "MEP",
+            "MKU",
+            "YEL"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "#docs": 187,
+          "%docs": 100,
+          "samples": [
+            3497,
+            8809,
+            13391,
+            16735,
+            18239
+          ],
+          "type": "number"
+        },
+        "name": {
+          "#docs": 187,
+          "%docs": 100,
+          "samples": [
+            "Hankook Air US",
+            "Island Air (WP)",
+            "Midwest Airlines",
+            "U.S. Air",
+            "Yellowtail"
+          ],
+          "type": "string"
+        },
+        "type": {
+          "#docs": 187,
+          "%docs": 100,
+          "samples": [
+            "airline"
+          ],
+          "type": "string"
+        },
+        "~meta": {
+          "#docs": 187,
+          "%docs": 100,
+          "properties": {
+            "id": {
+              "#docs": 187,
+              "%docs": 100,
+              "samples": [
+                "airline_13391",
+                "airline_16735",
+                "airline_18239",
+                "airline_3497",
+                "airline_8809"
+              ],
+              "type": "string"
+            }
+          },
+          "samples": [
+            {
+              "id": "airline_13391"
+            },
+            {
+              "id": "airline_16735"
+            },
+            {
+              "id": "airline_18239"
+            },
+            {
+              "id": "airline_3497"
+            },
+            {
+              "id": "airline_8809"
+            }
+          ],
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  ]
 ]
 ----
 ====
