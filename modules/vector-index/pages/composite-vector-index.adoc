@@ -1,4 +1,4 @@
-= Filtered Search Using Composite Vector Index
+= Filtered Searches Using Composite Vector Index
 :page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
@@ -9,7 +9,7 @@
 :index-name-plural: Composite Vector indexes
 
 {description}
-The added vector column lets your application perform a query using both the index's scalar, array, and object index entries to pre-filter the dataset before peroforming a vector similarity search. 
+The added vector column lets your application perform a query using both the index's scalar, array, and object index entries to pre-filter the dataset before performing a vector similarity search. 
 
 == How the Composite Vector Index's Vector Column Works 
 
@@ -47,14 +47,21 @@ include::vector-search:partial$download-sample-partial.adoc[]
 The embedding model you use to embed the vectors may determine this value for you.
 For example, OpenAI API's `text-embedding-ada-002` embedding model that embedded the sample data demonstrated later in this page creates vectors that have 1536 dimensions.
 
-* You must decide what algorithms you want your index to use. 
-These algorithms affect how much memory and processing Couchbase {product-name} uses to train and search them.
-See xref:vector-index:vectors-and-indexes-overview.adoc#index-algorithms[Indexing Algorithms]
+* You must decide what distance metric and quantization you want your index to use. 
+The metrics affect how the index compares vectors. 
+The quantization  determines how much memory your index uses and the amount of processing Couchbase {product-name} must perform to train and search them.
+See xref:vector-index:vectors-and-indexes-overview.adoc#vector_similarity[Vector Similarity Metrics] and xref:vector-index:vectors-and-indexes-overview.adoc#quantization[Quantization] for more information.
 
-include::partial$index-algorithm-settings.adoc[]
 
+[#create-index]
+ifeval::['{product-name}' == 'Capella']
+include::vector-index:partial$create-composite-index-capella-ui.adoc[]
 
-== Create a Composite Vector Index
+== Create a Composite Vector Index Using SQL++
+endif::[] 
+ifeval::['{product-name}' == 'Server']
+== Create a Hyperscale Vector Index
+endif::[] 
 
 Creating a Composite Vector index is similar to creating a non-vector GSI index.
 See xref:guides:create-index.adoc[] for an overview of creating indexes.
@@ -67,7 +74,7 @@ The format for this clause with the most commonly used parameters is:
 ----
 WITH {  "dimension":<dimensions> , 
         "similarity":<similarity-metric>, 
-        "description":<algorithm-settings>
+        "description":<centroids-and-quantization>
      }; 
 ----
 
@@ -79,10 +86,12 @@ include::partial$distance-metric-list.adoc[]
 
 +
 For the greatest accuracy, use the distance function you plan to use when querying vector data.
-* `algorithm-settings` is a string containing the settings for the indexing algorithms. 
-See <<#algo_settings>> earlier in this page.
+* `centroids-and-quantization` is a string containing the settings for the quantization and index algorithms. 
+See <<#algo_settings>> in the next section for more information.
 
-For a full list of the parameters that affect a vector column in a GSI, see *FIXME:TDB*.
+For a full list of the parameters that affect a Composite Vector index, see Composite Vector Index in the SQL++ reference.
+
+include::partial$index-algorithm-settings.adoc[]
 
 [#examples]
 === Examples
@@ -109,7 +118,7 @@ include::vector-index:example$composite-vector-data.json[tag=sample-doc]
 
 The `rgb.json` file's `colorvect_l2` attribute defines an array containing the RGB values for the entry's color. 
 While this technically is not an embedded vector, you can still create a vector index column for this array. 
-The following example creates a GSI for this attribute as an embedded vector as well as the color's name and brightness.
+The following example creates a Composite Vector index for this attribute as an embedded vector as well as the color's name and brightness.
 
 [source,sqlpp]
 ----
@@ -147,7 +156,7 @@ The `embedding_vector_dot` attribute contains the embedded vectors for the text 
 The data sample shown in <<#examples>> truncated this attribute to several values.
 The embedded vector contains 1536 dimensions.
 
-The following example creates a GSI that indexes the embedded vectors in the `embedding_vector_dot` as well as indexing the scalar `color` that contains the color's name and `brightness.`
+The following example creates a Composite Vector index that indexes the embedded vectors in the `embedding_vector_dot` as well as indexing the scalar `color` that contains the color's name and `brightness.`
  
 [source,sqlpp]
 ----
@@ -200,7 +209,7 @@ include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-rgb-idx]
 The query uses the `APPROX_VECTOR_DISTANCE` function to sort the results. 
 You pass it the vector column to search, the vector to search for (in this case, the array `128, 128, 128`) and the distance function.
 
-For the best accuracy, use the same distance function you specified when creating the GSI (in this case, `L2`).
+For the best accuracy, use the same distance function you specified when creating the Composite Vector index (in this case, `L2`).
 The query pushes the `LIMIT` clause down into the index scan, so once it finds the 5 entries that satisfy the query, it exits.
 
 The top result is the entry for gray. 

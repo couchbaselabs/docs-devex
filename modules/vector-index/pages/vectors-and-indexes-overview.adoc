@@ -113,86 +113,85 @@ endif::[]
 
 Once you have embedded vectors in your database, you find documents with a similar meaning by finding similar vectors. 
 You use metrics to (also referred to as distance functions) to find similar vectors.
-When you add vectors to a Couchbase {product-name} index, you must specify which metric to use to compare vectors.
-Each metric works best for different types of data.
-In most cases, the metric you select when comparing vectors  matches the metric the embedding model used when generating the vectors.
+When you create an index or perform a vector search, you must specify which metric to use to compare vectors.
+Each metric works best for certain applications and types of data.
 
 Couchbase {product-name} supports four metrics:
 
 [#euclidean]
-Euclidean Distance (also known as L2)::
-Calculates the geometric distance between two vectors by finding the distance between the individual dimensions in the vectors.
+=== Euclidean Distance (also known as L2)
+
+Euclidean distance calculates the geometric distance between two vectors by finding the distance between the individual dimensions in the vectors.
 This method is most sensitive to the distance between the vectors in space, rather than their alignment. 
 It's also sensitive to the scale of the vectors, where the length of one vector verses the other affects the relationship between the vectors.
-Use this method when the proximity of the vectors and their magnitudes are important.
-+
+Use this method when the actual distance of the vectors and their magnitudes are important.
+This method is useful if the distance between vectors represents a real-world value.
+ 
 image::euclidean-distance-example.svg["Three-dimensional plot showing two vectors with points along each vector joined by dotted lines, indicating the summing of corresponding points."]
-+
+ 
 Euclidean Distance is useful for tasks such as:
 
-+
-* .
 * 3D motion capture where you're detecting similar positions or trajectories of joints, objects, where finding real-world values for thresholds is important. 
 * Geographic or spatial searches where you care about exact (and often real-world) distances.
-* Other cases in which the results are used to in filters in calculations that require the actual distance between the vectors.
+* Other cases where you use the results as filters in calculations that require the actual distance between the vectors.
 
-+
 NOTE: Only Hyperscale Vector and Composite Vector indexes support this metric.
 FTS Vector indexes do not support it.
 
 [#euclidean-squared]
-Euclidean Squared Distance (also known as L2 Squared or L2^2^)::
+=== Euclidean Squared Distance (also known as L2 Squared or L2^2^)
+
 This method is similar to Euclidean Distance, but it does not take the square root of the sum distances between the vectors:
 
-+
-*Euclidean Distance Formula:* latexmath:[L2(x, y) = \sqrt{\sum_{i=1}^n (x_i - y_i)^2}]
 
-+
-*Euclidean Squared Distance Formula:* latexmath:[L2^2(x, y) = \sum_{i=1}^n (x_i - y_i)^2]
+Euclidean Distance Formula::
+ latexmath:[L2(x, y) = \sqrt{\sum_{i=1}^n (x_i - y_i)^2}]
 
-+
+
+Euclidean Squared Distance Formula:: 
+latexmath:[L2^2(x, y) = \sum_{i=1}^n (x_i - y_i)^2]
+
+
 Because it does not take the square root of the sums, Euclidean Squared Distance is faster to calculate than Euclidean Distance.
-However, it does not represent the actual distance between points on the vectors. 
+However, it does not represent the actual distance between the vectors. 
 The results of a vector search using  L2 Squared as a metric always returns the same rankings that an L2 search returns. 
-However, in cases where the dimensions of the vectors represent real-world values, L2 is more intuitive to use because it returns the actual distance between the vectors.
+In cases where the dimensions of the vectors represent real-world values, L2 is more intuitive to use because it returns the actual distance between the vectors.
 
-+
 Use this method when you need higher performance than Euclidean Distance. 
-It's better in cases where comparing literal distances is less important than performance and having the ranking of search results is enough. 
+It's better in cases when comparing literal distances is less important than performance and where having the ranking of search results is sufficient. 
 
-+
 For example:
 
-+
 * Image recognition tasks where real-world distances between vectors are not a factor, including:
 ** Searching for products that are visually similar to an image uploaded by a shopper.
 ** Facial recognition.
+* Audio recognition tasks such as identifying who's speaking in a recording.
+* Locating similar genomic and biological sequences in a dataset, such as related gene profiles.
 
-
-+
 NOTE: Only Hyperscale Vector and Composite Vector indexes support this metric.
 FTS Vector indexes do not support it.
 
 [#dot]
-Dot Product::
+=== Dot Product
+
 This metric finds related vectors by comparing the magnitude (length) and alignment of the vectors. 
 Here, the proximity of the vectors in space is less important than whether they point in a similar direction and have the a similar magnitude.
 Vectors that point in similar directions (have a low angle between them) and have similar magnitude are strongly associated with each other.
 This method uses the similarity of the vectors' magnitudes to rank their relation.
-+
+ 
 image::dot-product-example.svg["Three-dimensional plot showing two vectors labeled with their magnitudes and the angle between them labeled with the theta symbol."]
-+
+ 
 Use this method for tasks where ranking confidence is key. 
 The magnitude of the vectors is important when determining the strength of the relationship.
 For example:
 
-+
 * Recommending related products based on a shopper's previous purchases.
-* Personalizing a music service's user home page  based on the user's likes and dislikes of artists.
+* Personalizing a music service's user home page  based on the user's likes and dislikes of artists and songs.
 * Targeting ads based on a user's interests and previous interactions with the service.
 
 [#cosine]
-Cosine Similarity::
+=== Cosine Similarity::
+
 This metric is similar to the dot product. 
 However, it normalizes the vectors (making them the same length) during comparison.
 Normalization means their magnitudes are not taken into account, just their alignment. 
@@ -200,12 +199,11 @@ This normalization makes this method better for comparing textual data because i
 The magnitude of a vector generated by some text embedding models depend on the length of the source text.
 Normalizing vector magnitudes emphasizes the semantic meaning when performing comparisons.
 Therefore, Cosine Similarity can find the semantic relationship between a short question and a long article that's relevant to answering it.
-+
+
 image::cosine-similarity-example.svg["Three-dimensional plot showing two vectors that are of equal length, with the angle between them labeled as theta."]
-+
+
 Use this method when you're performing searches that rely on semantic meaning, such as:
 
-+
 * Find relevant articles to answer a question posed by a user.
 * Locate code snippets based on a user's question about how to perform a task.
 * Organize scanned documents in a document management system based on their semantic meaning.
@@ -219,7 +217,7 @@ These formats control how the index stores the vectors.
 Couchbase Server automatically chooses which algorithm to use, based on the type of the index and the size of the dataset.
 However, you can set parameters when you create the index that affect how the algorithm organizes data.
 
-Flat Index::
+=== Flat Index
 This algorithm just stores the full vector value in the index without performing any sort of optimization. 
 Searches using this index use a brute-force method to find similar vectors.
 Adding new vectors to a flat index is fast and the index does not need training.
@@ -227,39 +225,38 @@ It also offers high precision because search compares the full vector values.
 However, searching a flat index is inefficient.
 The search must compare every vector in the index to find matches.
 You should only use it for small data sets or for testing. 
-+
+
 NOTE: FTS Vector indexes use a flat index when indexing datasets with 1000 or fewer vectors.
 Hyperscale Vector and Composite Vector indexes only support the next algorithm, IVF.
 
 [#IVF]
-Inverted File (IVF)::
+=== Inverted File (IVF)
 This algorithm partitions the vector space to limit the number of vectors that a search must compare.
 An IVF index trains itself during creation using a set of parameters you pass to it:
-+
+
 . It samples vectors in the dataset to locate clusters of similar vectors. 
 . For each cluster it finds, it chooses a representative vector (called a centroid).
 . It creates a data structure called an inverted list that associates all vectors with their closest centroid.
-+
+
 image::ivf-diagram-with-vectors.svg["A plot showing clusters of points in a 3D graph labelled and assigned to centroid vectors. The centroids then point to multiple vectors in an inverted list."]
-+
+
 When you search using an IVF index, it first locates the centroids that are most relevant to the vector value you're searching for.
 It then searches just the vectors associated with those centroids in the inverted list.
 By limiting the number of vector comparisons to just the vectors close to the relevant centroids, IVF makes vector search faster.
-+
+
 A drawback of this method is the possibility that the search could miss some relevant vectors.
 A search can miss vectors if they're associated with a centroid that's not relevant to the search vector.
 This risk increases as you add and delete data after you train the index.
 The centroids chosen during the initial training may no longer accurately represent clusters in current dataset.
 See <<#index-training>> for more information about index accuracy.
-+
+
 Hyperscale Vector and Composite Vector indexes always use IVF as the basis of their indexes.
 In addition, they use a Hierarchical Navigable Small World (HNSW) graph to index the IVF's centroids.
 This graph connects related centroids together so that a similarity search can quickly traverse the graph to find the centroids that are closest to the search vector.
 Hyperscale also adds other proprietary optimizations that allow it to scale to billions of vectors.
 
-+
-FTS Vector indexes automatically uses IVF when the indexing datasets larger than 1000 vectors.
 
+FTS Vector indexes automatically uses IVF when the indexing datasets larger than 1000 vectors.
 
 [#quantization]
 == Quantization
@@ -275,62 +272,58 @@ Unlike the indexing algorithms, you choose the quantization method you want Couc
 Couchbase {product-name} supports two types of quantization:
 
 [#pq]
-Product Quantization (PQ)::
+=== Product Quantization (PQ)
 Product Quantization simplifies vectors by breaking their dimensions into chunks called subspaces.
 It then replaces each set of dimensions within the with a single value that represents the nearest centroid in the subspace.
 This method reduces the size of the vector by replacing the original floating point values with smaller integers that represent the centroid.
 
-+
 PQ processes vectors by following these steps:
-+
---
+
 . It groups the vector's dimensions into chunks called subspaces.
 For example, suppose the vectors contain 1024 dimensions.
 Then PQ may break the vectors into 128 subspaces, each containing 8 dimensions.
 . It finds groups of centroids in each subspace and adds them to a data structure called a codebook.
 The codebook assigns each centroid an index number. 
 . PQ then reduces the size of the vectors by replacing each subspace's dimensions with the index of the closest centroid in the codebook.
---
-+
+
+
 image::pq-diagram.svg["Three-dimensional plot showing two vectors that are of equal length, with the angle between them labeled as theta."]
-+
+
 PQ could quantize the vector in the previous example from 1024 64-bit floating point values to 128 8 bit or 16 bit integer values.
 This data size reduction improves performance because integer operations are less computationally expensive than floating point operations. 
 It also reduces memory use because each vector requires less data to store (for example, from 64KB to 128 bytes). 
-+
+
 A search of the PQ index performs the same steps on the vector you're searching for:
-+
--- 
+ 
 . It breaks the search vector into subspaces and quantizes it using the codebook.
 . It then locates closest centroids to the quantized query vector.
 . It searches the vectors related to the matching centroids for vectors that relate to the search vector.
---
-+
+
 PQ sacrifices some accuracy because it compares quantized vectors instead of their original raw values.
 The process of quantization adds additional processing requirements to training.
 This overhead makes training a PQ index more computationally expensive than the other methods.
 However, PQ reduces the amount of memory and processing time necessary when searching for related vectors in a large dataset.
 
-+
+
 Use PQ quantization when:
-+
+
 * Your vectors contain a large number of dimensions.
 * You're willing to trade higher processing requirements during training for smaller memory use and less CPU time during searches.
 * Your dataset is large (millions to billions of vectors).
 
-+
+
 Hyoerscale Vector and Composite Vector indexes support PQ quantization.
 FTS Vector indexes do not support it.   
 
 [#sq]
-Scalar Quantization (SQ)::
+=== Scalar Quantization (SQ)
 Scalar Quantization is a simpler form of quantization than PQ. 
 Instead of breaking the vector into subspaces, it quantizes each dimension of the vector independently.
 Its quantized vectors are larger, but are a more precise represenation than than those quantized using PQ.
 
-+
+
 SQ follows these steps to process vectors:
-+
+
 . SQ determines the maximum and minimum values for each dimension in the dataset.
 . It then partitions each dimension in the vector into equal segments (called bins) over the range of the dimension's values.
 For example, in the diagram, the first dimension's values range from 0 to 1, while the second dimension's range from 0.1 to 0.9.
@@ -339,33 +332,32 @@ This means the second dimension's bins will only cover the range from 0.1 to 0.9
 . It find a centroid within the range associated with the bin. 
 It saves the centroid as a 16 or 32 bit floating point number.
 . SQ then quantizes the vectors by replacing their dimensional values with the index value of the bin the dimensional value falls into.
-+
+
 image::sq-diagram.svg["Diagram showing each floating point dimension of a vector being converted to an 8-bit integer by looking up which bucket it falls into."]
-+
+
 This quantization reduces the dimensions from 32 or 64 bit floating point values to 8 or less bit integers, reducing the memory needed for search.
 It also makes search faster because integer operations are computationally less expensive than floating point operations.
-+
+
 A search on an SQ index reassembles vectors before comparing them. 
 For each of the vector's dimensions, SQ replaces the integer bin number with the floating point centroid associated with the bin.
 This recreation  is an approximation of the original vector, because each dimension in the vector is the bin's centroid value instead of the original dimensional value.
-+
+
 Because this method quantizes the vectors, it loses precision.
 It's less precise than the PQ method (which also quantizes vectors) because it assumes that each dimension can be evenly divided. 
 Its accuracy suffers if your data has clusters.
 It's best suited for data that's more evenly distributed and does not have high correlations.
 For example, SQ may be a good fit for an IoT sensor dataset where the measured values (such as temperature) are evenly distributed over the range of measurements.
-+
+
 SQ has a lower training overhead compared to PQ because it does not search for clusters of vectors.
 Its training just determines the range of values for each dimension.
-+
+
 Use SQ if you do not want the processing overhead of training a PQ index. 
 You can also use it if you have a smaller dataset (hundreds of thousands to millions of vectors).
 
-+
 All three types of vector indexes support SQ quantization.
 
 
-=== Choosing Quantization
+=== Choosing a Quantization Method
 
 You do not choose a quantization method for FTS vector indexes.
 Instead, they automatically choose whether to use quantization:

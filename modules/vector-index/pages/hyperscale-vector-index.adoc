@@ -45,6 +45,11 @@ If your documents contain multiple embedded vectors, you can create multiple ind
 Embeddings can be an array of floating point numbers or a base64 encoded string.
 Couchbase {product-name} does not embed vectors itself. 
 You must use an external embedding model to embed vectors into your data and add them to your documents.
++
+[TIP]
+--
+include::vector-search:partial$download-sample-partial.adoc[]
+--
 
 * The vectors you add to an index must contain the same number of dimensions. 
 Also the values in the vector must be 32-bit floating point numbers.
@@ -54,12 +59,21 @@ If a vector does not meet both of these requirements, the vector index treats it
 The embedding model you use to embed the vectors may determine this value for you.  
 For example,  OpenAI API's `text-embedding-ada-002` embedding model creates vectors that have 1536 dimensions.
 
-* You must decide what algorithms you want your index to use. 
-These algorithms affect how much memory your index uses and the amount of processing Couchbase {product-name} must perform to train and search them.
-See xref:vector-index:vectors-and-indexes-overview.adoc#index-algorithms[Indexing Algorithms].
+* You must decide what distance metric and quantization you want your index to use. 
+The metrics affect how the index compares vectors. 
+The quantization  determines how much memory your index uses and the amount of processing Couchbase {product-name} must perform to train and search them.
+See xref:vector-index:vectors-and-indexes-overview.adoc#vector_similarity[Vector Similarity Metrics] and xref:vector-index:vectors-and-indexes-overview.adoc#quantization[Quantization] for more information.
 
 [#create-index]
+ifeval::['{product-name}' == 'Capella']
+include::vector-index:partial$create-hyperscale-index-capella-ui.adoc[]
+
+== Create a Hyperscale Vector Index Using SQL++
+endif::[] 
+ifeval::['{product-name}' == 'Server']
 == Create a Hyperscale Vector Index
+endif::[] 
+
 Use the `CREATE VECTOR INDEX` statement to create a Hyperscale Vector Index.
 This statement is similar to the `CREATE INDEX` statement that you use to create Global Secondary Indexes (GSI). 
 See xref:guides:create-index.adoc[] for an overview of creating indexes.
@@ -77,7 +91,7 @@ CREATE VECTOR INDEX `<index-name>`
        ON `<collection>`(`<column-name>` VECTOR)
        WITH {  "dimension":<dimensions> , 
                "similarity":<similarity-metric>, 
-               "description":<algorithm-settings>
+               "description":<centroids-and-quantization>
         }; 
 ----
 
@@ -93,7 +107,7 @@ include::partial$distance-metric-list.adoc[]
 
 +
 For the greatest accuracy, use the distance metric you plan to use to query the data.
-* `algorithm-settings` is a string containing the settings for the indexing algorithms. 
+* `centroids-and-quantization` is a string containing the settings for the quantization and index algorithms. 
 See <<#algo_settings>> in the next section for more information.
 
 include::partial$index-algorithm-settings.adoc[]
@@ -180,11 +194,11 @@ For the full syntax, see `APPROX_VECTOR_DISTANCE` in the SQL++ reference.
 NOTE: You can also call the function `VECTOR_DISTANCE` to find similar vectors. 
 However, this function does not use the Hyperscale Vector index to perform the vector search. 
 Instead, it performs a brute-force search for similar vectors.
-It's useful to determine the recall rate of your Hyperscale Vector index. 
-See xref:vector-index/vector-index-best-practices.adoc[] for more information about comparing recall rates.
+It's useful to measure the recall of your Hyperscale Vector index. 
+See xref:vector-index:vector-index-best-practices.adoc#recall-accuracy[Determine Recall Rate] for more information about measuring recall.
 
 Also use a `LIMIT` clause to return just the number of results you need. 
-The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the requested number of matches.
+The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the number of matches you need.
 
 [#query-example]
 === Hyperscale Vector Index Query Example

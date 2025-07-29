@@ -1,8 +1,8 @@
 [#algo_settings]
-== Index Algorithm Settings
+=== Quantization and Centroid settings
 
 When creating an index that includes a vector field, you choose settings that affect how the index processes vectors. 
-The parameter named `description` is the primary setting that controls the indexing algorithms that Couchbase {product-name} to create the index.
+The parameter named `description` is the primary setting that controls the  quantization and the number of centroids Couchbase {product-name} to create the index.
 Using it, you control how the index subdivides the dataset to improve performance and how it quantizes vectors to reduce memory and processing requirements.
 
 The `description` parameter is a string in the following format:
@@ -14,11 +14,11 @@ The `description` parameter is a string in the following format:
 
 The following sections describe the settings for centroids and quantization.
 
-=== Number of Centroids
+==== Number of Centroids
 
-{index-name} uses several algorithms to organize data in its index to improve its performance.
-One of these algorithms,  xref:vector-index:use-vector-indexes.adoc#IVF[Inverted File (IVF)], has a setting you can adjust to control how it subdivides the dataset. 
-The other algorithms that it uses do not have settings you can adjust.
+{index-name} uses several algorithms to organize its data to improve its performance. 
+One of these algorithms, xref:vector-index:use-vector-indexes.adoc#IVF[Inverted File (IVF)], has a setting you can adjust to control how it subdivides the dataset. 
+The other algorithms that {index-name} uses do not have settings you can adjust.
 
 The key setting for IVF is the number of centroids it allocates for the index. 
 This number affects the performance of your index in two ways:
@@ -42,16 +42,19 @@ It chooses the number of centroids based on the number of vectors in the dataset
 You can manually set the number of centroids for the index by adding an integer value after the `IVF` in the `description` parameter.
 The number of centroids you set manually must be less than the number of vectors in the dataset.
 
-=== Quantization Setting
+See xref:vector-index:vector-index-best-practices.adoc#nlist[nList] for guidance on choosing the number of centroids for the index.
+
+==== Quantization Setting
 
 {index-name} always uses quantization to reduce the size of vectors stored in the index. 
 You must choose whether the index uses xref:vector-index:use-vector-indexes.adoc#sq[Scalar Quantization (SQ)] or xref:vector-index:use-vector-indexes.adoc#pq[Product Quantization (PQ)]. 
+See xref:vector-index:vector-index-best-practices.adoc#quantization[Quantization] for guidance on choosing the quantization method for the index.
 
 You select the quantization by adding a comma followed by either `PQ` or `SQ` to the `description` parameter after the IVF setting in the `description` value.
 
 Each quantization method has additional settings explained in the following sections.
 
-==== SQ Settings
+===== SQ Settings
 
 For SQ, you set the number of bits the SQ algorithm uses for the bin index value or the number of bits it uses to store the centroid for each bin.
 The values for SQ that Couchbase {product-name} supports are:
@@ -78,7 +81,8 @@ The values for SQ that Couchbase {product-name} supports are:
 
 See xref:vector-index:vectors-and-indexes-overview.adoc#sq[Scalar Quantization] for more information about how SQ works.
 
-==== PQ Settings
+
+===== PQ Settings
 
 If you choose to use PQ in your index, you must set two values:
 
@@ -107,8 +111,9 @@ PQ<subquantizers>x<number of bits>
 ----
 
 For example, `PQ32x8` has PQ break the vector's dimensions into 32 subspaces, each of which has 256 centroids. 
+See xref:vector-index:vectors-and-indexes-overview.adoc#pq[Product Quantization] for more information about how PQ works.
 
-=== Algorithm Settings Examples
+==== Algorithm Settings Examples
 
 The following table shows several `description` values along with an explanation.
 
@@ -128,4 +133,3 @@ This settings means each subspace has 256 centroids.
 
 |===
 
-See xref:vector-index:vectors-and-indexes-overview.adoc#pq[Product Quantization ] for more information about how PQ works.
