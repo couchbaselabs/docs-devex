@@ -1,4 +1,4 @@
-= Hybrid Search Using Composite Vector Index
+= Filtered Search Using Composite Vector Index
 :page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
@@ -9,7 +9,7 @@
 :index-name-plural: Composite Vector indexes
 
 {description}
-The added vector column lets your application perform a hybrid query using both the index's scalar, array, and object index entries plus a vector similarity search. 
+The added vector column lets your application perform a query using both the index's scalar, array, and object index entries to pre-filter the dataset before peroforming a vector similarity search. 
 
 == How the Composite Vector Index's Vector Column Works 
 
@@ -66,21 +66,17 @@ The format for this clause with the most commonly used parameters is:
 [source,sqlpp]
 ----
 WITH {  "dimension":<dimensions> , 
-        "similarity":<similarity-function>, 
+        "similarity":<similarity-metric>, 
         "description":<algorithm-settings>
      }; 
 ----
 
 * `dimensions` is an integer value that sets the number of dimensions in the vector.
 This value is set by the embedded model you used to embed the vectors.
-* `similarity-function` is a string that sets the distance function to use when comparing vectors during index creation.
-Couchbase {product-name} uses the following strings to represent the proximity functions:
+* `similarity-metric` is a string that sets the distance metric to use when comparing vectors during index creation.
 +
---
-** `COSINE`: xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
-** `DOT`: xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
-** `L2`, `L2_SQUARED`, `EUCLIDEAN`, or `EUCLIDEAN_SQUARED`: xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
---
+include::partial$distance-metric-list.adoc[]
+
 +
 For the greatest accuracy, use the distance function you plan to use when querying vector data.
 * `algorithm-settings` is a string containing the settings for the indexing algorithms. 

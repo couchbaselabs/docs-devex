@@ -94,3 +94,139 @@ WITH question_vec AS (
     ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4, TRUE)
     LIMIT 3;
 /* end::rerank-after-example[] */
+
+
+/* tag::query-rgb-with-distance[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector  
+        FROM `vector-sample`.`color`.`rgb-questions` 
+        WHERE meta().id = "#87CEEB"),
+    question_answer AS (
+        SELECT wanted_similar_color_from_search
+        FROM `vector-sample`.`color`.`rgb-questions` 
+        WHERE meta().id = "#87CEEB")
+SELECT b.color, b.description, q.wanted_similar_color_from_search, approx_distance  
+       FROM `vector-sample`.`color`.`rgb` AS b, question_answer as q, 
+       APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4) 
+       as approx_distance
+       ORDER BY approx_distance  LIMIT 3;
+/* end::query-rgb-with-distance[] */
+
+/* tag::untuned-query[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector 
+        FROM `vector-sample`.`color`.`rgb-questions` 
+        WHERE meta().id = "#87CEEB"
+    ), 
+colors AS (
+    SELECT b.color
+    FROM `vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2")
+    LIMIT 10 )
+SELECT RAW colors;
+/* end::untuned-query[] */
+
+
+/* tag::exact-query[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector 
+        FROM `vector-sample`.`color`.`rgb-questions` 
+        WHERE meta().id = "#87CEEB"
+    ), 
+colors AS (
+    SELECT b.color
+    FROM `vector-sample`.`color`.`rgb` AS b
+    ORDER BY VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2")
+    LIMIT 10 )
+SELECT RAW colors;
+/* end::exact-query[] */
+
+/* tag::recall-rate-query[] */
+-- Get the vector for the question
+WITH question_vec AS (
+    SELECT RAW couchbase_search_query.knn[0].vector
+    FROM `vector-sample`.`color`.`rgb-questions`
+    WHERE meta().id = "#87CEEB"
+),
+-- Exact Search results
+GroundTruthResults AS (
+    SELECT b.color
+    FROM `vector-sample`.`color`.`rgb` AS b
+    ORDER BY VECTOR_DISTANCE(b.embedding_vector_dot,
+    question_vec[0], "l2") LIMIT 10
+),
+-- Approximate Search results
+ApproximateResults AS (
+    SELECT b.color
+    FROM `vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot,
+    question_vec[0], "l2") LIMIT 10
+)
+SELECT
+    -- List the stats based on the merges in the following clauses
+    COUNT(DISTINCT gr.color) AS total_returned_items,
+    ARRAY_AGG(intersection_results) AS matching_color_list,
+    COUNT(DISTINCT intersection_results.color) AS matching_color_count,
+    (COUNT(DISTINCT intersection_results.color) * 100.0 / COUNT(DISTINCT gr.color)) AS recall_percentage
+FROM
+    GroundTruthResults AS gr
+LEFT JOIN
+    ApproximateResults AS ar ON gr.color = ar.color
+LEFT JOIN
+    -- Use INTERSECT SELECT to find the shared members of the two result sets
+    (SELECT t1.color FROM GroundTruthResults AS t1 INTERSECT SELECT t2.color FROM ApproximateResults AS t2) AS intersection_results
+    ON gr.color = intersection_results.color;
+/* end::recall-rate-query[] */
+
+/* tag::recall-rate-tuned[] */
+-- Get the vector for the question
+WITH question_vec AS (
+    SELECT RAW couchbase_search_query.knn[0].vector
+    FROM `vector-sample`.`color`.`rgb-questions`
+    WHERE meta().id = "#87CEEB"
+),
+-- Exact Search results
+GroundTruthResults AS (
+    SELECT b.color
+    FROM `vector-sample`.`color`.`rgb` AS b
+    ORDER BY VECTOR_DISTANCE(b.embedding_vector_dot,
+    question_vec[0], "l2") LIMIT 10
+),
+-- Approximate Search results, this timw with nProbes set to 4:
+ApproximateResults AS (
+    SELECT b.color
+    FROM `vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot,
+    question_vec[0], "l2", 4) LIMIT 10
+)
+SELECT
+    -- List the stats based on the merges in the following clauses
+    COUNT(DISTINCT gr.color) AS total_returned_items,
+    ARRAY_AGG(intersection_results) AS matching_color_list,
+    COUNT(DISTINCT intersection_results.color) AS matching_color_count,
+    (COUNT(DISTINCT intersection_results.color) * 100.0 / COUNT(DISTINCT gr.color)) AS recall_percentage
+FROM
+    GroundTruthResults AS gr
+LEFT JOIN
+    ApproximateResults AS ar ON gr.color = ar.color
+LEFT JOIN
+    -- Use INTERSECT SELECT to find the shared members of the two result sets
+    (SELECT t1.color FROM GroundTruthResults AS t1 INTERSECT SELECT t2.color FROM ApproximateResults AS t2) AS intersection_results
+    ON gr.color = intersection_results.color;
+/* end::recall-rate-tuned[] */
+
+
+/* tag::tuned-query[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector 
+        FROM `vector-sample`.`color`.`rgb-questions` 
+        WHERE meta().id = "#87CEEB"
+    ), 
+colors AS (
+    SELECT b.color
+    FROM `vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4)
+    LIMIT 10 )
+SELECT RAW colors;
+/* end::tuned-query[] */
+
