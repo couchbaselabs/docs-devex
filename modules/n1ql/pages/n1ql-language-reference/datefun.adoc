@@ -522,7 +522,7 @@ If the date string does not explicitly declare the value of a component, then th
 * The month and day default to 1.
 * The century (when not specified by year) defaults to 19 if year is greater than or equal to 69, or 20 otherwise.
 * All other numeric components default to 0.
-* The time zone defaults to the local local system time zone.
+* The time zone defaults to the local system time zone.
 
 In cases where the timezone is not specified, the local system time is assumed.
 
@@ -532,8 +532,11 @@ For example, `2016-02-07` is equivalent to `2016-02-07T00:00:00` and parsing jus
 [NOTE#tzn-date-format]
 .TZN Date Format
 ====
-In addition to the previously listed date formats, {sqlpp} also supports the `TZN` date format.
-This format parses date strings like `TZD` but outputs the time zone name instead of the offset.
+In addition to the date formats listed <<date-string,here>>, {sqlpp} also supports the `TZN` (Time Zone Name) format.
+This format parses date strings in the same way as `TZD` but outputs the time zone name instead of the offset.
+For example, the `TZN` representation of the "Australia/Darwin" time zone is `ACST`. 
+
+For an example of its usage, refer to the <<ex-str-to-tz,STR_TO_TZ()>> function.
 ====
 
 [#manipulating-components]
@@ -2652,6 +2655,7 @@ If not specified, the output date format follows the date format of the input st
 
 A single date string representing the date string converted to the specified timezone.
 
+[[ex-str-to-tz]]
 === Examples
 
 ====
@@ -2660,7 +2664,9 @@ A single date string representing the date string converted to the specified tim
 SELECT STR_TO_TZ('1111-11-11T00:00:00+08:00', 'America/New_York') as est,
     STR_TO_TZ('1111-11-11T00:00:00+08:00', 'UTC') as utc,
     STR_TO_TZ('1111-11-11', 'UTC') as utc_short,
-    STR_TO_TZ('1111-11-11', 'UTC', 'YYYY-MM-DD', 'YYYY-MM-DD HH:MI:SS') as utc_datetime;
+    STR_TO_TZ('1111-11-11', 'UTC', 'YYYY-MM-DD', 'YYYY-MM-DD HH:MI:SS') as utc_datetime, 
+    STR_TO_TZ('1111-11-11T00:00:00+07:00', 'Europe/Paris', 
+              "YYYY-MM-DDThh:mm:ssTZD", "YYYY-MM-DDThh:mm:ssTZN") as tzn;
 ----
 
 .Results
@@ -2671,7 +2677,8 @@ SELECT STR_TO_TZ('1111-11-11T00:00:00+08:00', 'America/New_York') as est,
     "est": "1111-11-10T11:03:58-04:56",
     "utc": "1111-11-10T16:00:00Z",
     "utc_short": "1111-11-11",
-    "utc_datetime": "1111-11-11 12:00:00"
+    "utc_datetime": "1111-11-11 12:00:00",
+    "tzn": "1111-11-10T17:09:21LMT"
   }
 ]
 ----
