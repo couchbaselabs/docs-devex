@@ -87,15 +87,13 @@ Using {sqlpp} enables you to obtain further insights from the keyspaces.
 Users must have permission to access restricted system keyspaces.
 For more details about cluster credentials, see xref:clusters:manage-database-users.adoc[].
 
-ifdef::flag-devex-rest-api[]
 == Examples on this Page
 
 In the REST API examples:
 
-* `$BASE_URL` is the protocol, host name or IP address, and port -- for example, `+http://localhost:8093+`.
-* `$USER` is the user name.
-* `$PASSWORD` is the password.
-endif::flag-devex-rest-api[]
+* `$BASEURL` is the base URL for the Data API -- for example, `+https://xl4lqhkdzixeo3oh.data.cloud.couchbase.com+`.
+* `$USER` is the cluster access username.
+* `$PASSWORD` is the cluster access secret.
 
 [#vitals]
 == Monitor System Vitals
@@ -1027,18 +1025,15 @@ endif::flag-devex-rest-api[]
 
 To activate profiling at the request level, you can:
 
-ifdef::flag-devex-rest-api[]
-* Specify the `profile` setting using the xref:n1ql-rest-query:index.adoc[Query REST API] (`/query/service` endpoint).
-endif::flag-devex-rest-api[]
+* Specify the `profile` setting using the xref:data-api-guide:data-api-intro.adoc[Data API] (Query Service passthrough).
 * Specify the `profile` setting using the xref:n1ql:n1ql-intro/cbq.adoc[cbq] command line tool.
 
 [tabs]
 ====
-ifdef::flag-devex-rest-api[]
 REST API::
 +
 --
-To set query settings using the REST API, specify the parameters in the request body.
+To set query settings using the Data API, specify the parameters in the request body.
 
 '''
 
@@ -1046,7 +1041,7 @@ The following statement sets the profiling to phases:
 
 [source,sh]
 ----
-curl $BASE_URL/query/service -u $USER:$PASSWORD \
+curl $BASEURL/_p/query/query/service -u $USER:$PASSWORD \
   -d 'profile=phases&statement=SELECT * FROM `travel-sample`.inventory.airline LIMIT 1'
 ----
 
@@ -1054,11 +1049,10 @@ The following statement sets the profiling to timings:
 
 [source,sh]
 ----
-curl $BASE_URL/query/service -u $USER:$PASSWORD \
+curl $BASEURL/_p/query/query/service -u $USER:$PASSWORD \
   -d 'profile=timings&statement=SELECT * FROM `travel-sample`.inventory.airline LIMIT 1'
 ----
 --
-endif::flag-devex-rest-api[]
 
 {sqlpp}::
 +
@@ -1103,20 +1097,12 @@ When a query executes a user-defined function, profiling information is availabl
 
 When profiling is enabled:
 
-* If you are using
-ifdef::flag-devex-rest-api[]
-the Query REST API or
-endif::flag-devex-rest-api[]
-the cbq shell, query profiling information is returned with the query results.
+* If you are using the Data API or the cbq shell, query profiling information is returned with the query results.
 * If you are using the Query tab, query profiling information is not returned with the query results.
 
 .Phases Profile
 ====
-If you are using
-ifdef::flag-devex-rest-api[]
-the Query REST API or
-endif::flag-devex-rest-api[]
-the cbq shell, the following statistics are returned when `profile` is set to `phases`:
+If you are using the Data API or the cbq shell, the following statistics are returned when `profile` is set to `phases`:
 
 [source,json]
 ----
@@ -1174,11 +1160,7 @@ the cbq shell, the following statistics are returned when `profile` is set to `p
 
 .Timings Profile
 ====
-If you are using
-ifdef::flag-devex-rest-api[]
-the Query REST API or
-endif::flag-devex-rest-api[]
-the cbq shell, the following statistics are returned when `profile` is set to `timings`:
+If you are using the Data API or the cbq shell, the following statistics are returned when `profile` is set to `timings`:
 
 [source,json]
 ----
@@ -1516,7 +1498,7 @@ workbench
 s|
 cbq
 s|
-ifdef::flag-devex-rest-api[REST API]
+Data API
 s| Active +
 Requests
 s| Completed +
@@ -1527,7 +1509,7 @@ Statements
 | `off`
 a|  &mdash;
 a|  &mdash;
-a| ifdef::flag-devex-rest-api[&mdash;]
+a|  &mdash;
 a| icon:check[fw] phases
 a| icon:check[fw] phases
 a| icon:check[fw] timings
@@ -1535,10 +1517,7 @@ a| icon:check[fw] timings
 | `phases`
 a| &mdash;
 a| icon:check[fw] phases
-a| 
-ifdef::flag-devex-rest-api[]
-icon:check[fw] phases
-endif::flag-devex-rest-api[]
+a| icon:check[fw] phases
 a| icon:check[fw] phases
 a| icon:check[fw] phases
 a| icon:check[fw] timings
@@ -1549,10 +1528,8 @@ a| [%hardbreaks]
 icon:check[fw] phases
 icon:check[fw] timings
 a| [%hardbreaks]
-ifdef::flag-devex-rest-api[]
 icon:check[fw] phases
 icon:check[fw] timings
-endif::flag-devex-rest-api[]
 a| [%hardbreaks]
 icon:check[fw] phases
 icon:check[fw] timings
