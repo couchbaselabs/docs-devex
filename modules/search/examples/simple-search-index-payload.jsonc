@@ -20,8 +20,78 @@
         "doc_config": {
             "docid_prefix_delim": "",
             "docid_regexp": "",
-            "mode": "scope.collection.type_field",
-            "type_field": "type"
+            "mode": "scope.collection.custom",
+            "type_field": "type",
+            // tag::doc_filter[]
+            "doc_filter": {
+                // tag::boolean_filter[]
+                "free_breakfast_true": {
+                    "bool": true,
+                    "field": "free_breakfast",
+                    "order": 1
+                },
+                // end::boolean_filter[]
+                // tag::date_range_filter[]
+                "review_date_range": {
+                    "start": "2015-01-01",
+                    "end": "2019-01-01",
+                    "inclusive_end": true,
+                    "inclusive_start": false,
+                    "field": "reviews.date",
+                    "order": 2,
+                    "datetime_parser": "My_Date_Time_Parser"
+                },
+                // end::date_range_filter[]
+                // tag::numeric_range_filter[]
+                "cleanliness_range": {
+                    "min": 3,
+                    "max": 5,
+                    "inclusive_min": true,
+                    "inclusive_max": true,
+                    "field": "reviews.ratings.Cleanliness",
+                    "order": 3
+                },
+                // end::numeric_range_filter[]
+                // tag::conjunct_filter[]
+                "free_parking_AND_vacancy": {
+                    "conjuncts": [
+                        {
+                            "bool": true,
+                            "field": "vacancy"
+                        },
+                        {
+                            "bool": true,
+                            "field": "free_parking"
+                        }
+                    ],
+                    "order": 4
+                },
+                // end::conjunct_filter[]
+                // tag::disjunct_filter[]
+                "location_OR_service": {
+                    "disjuncts": [
+                        {
+                            "min": 5,
+                            "field": "reviews.ratings.Service"
+                        },
+                        {
+                            "min": 5,
+                            "field": "reviews.ratings.Location"
+                        }
+                    ],
+                    "order": 6
+                },
+                // end::disjunct_filter[]
+                // tag::term_filter[]
+                "name_hotel": {
+                    "term": "Hotel",
+                    "order": 5,
+                    "field": "name"
+                }
+                // end::term_filter[]
+
+            }
+            // end::doc_filter[]
         },
         // end::doc_config[]
         // tag::mapping[]
@@ -202,6 +272,26 @@
                                     "name": "city",
                                     "store": true,
                                     "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "inventory.hotel.free_breakfast_true": {
+                    "dynamic": true,
+                    "enabled": true,
+                    "properties": {
+                        "free_breakfast": {
+                            "dynamic": false,
+                            "enabled": true,
+                            "fields": [
+                                {
+                                    "docvalues": true,
+                                    "include_in_all": true,
+                                    "index": true,
+                                    "name": "free_breakfast",
+                                    "store": true,
+                                    "type": "boolean"
                                 }
                             ]
                         }
