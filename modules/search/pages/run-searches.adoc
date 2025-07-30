@@ -26,8 +26,19 @@ To run a Search query against multiple Search indexes at once, xref:create-searc
 [#scoring]
 == Scoring for Search Queries 
 
-To determine a document's score in search results, the Search Service uses the https://en.wikipedia.org/wiki/Tf%E2%80%93idf[tf-idf^] algorithm. 
-`tf-idf` increases the score of a document based on term frequency, or the number of times a term appears in a document divided by the total number of terms in the document. 
+As of Couchbase Server version 8.0, you can choose between 2 scoring algorithms for your Search index: 
+
+* <<tf-idf,tf-idf>>
+* <<bm25,bm25>>
+
+TIP: Scoring can also change based on whether you're using synonyms in your Search index.
+For more information, see xref:synoynms/synonyms-search.adoc#run-synonym-search[Running a Search for Synonyms].
+
+[#tf-idf]
+=== tf-idf Search Scoring
+
+To determine a document's score in search results, the Search Service can use the https://en.wikipedia.org/wiki/Tf%E2%80%93idf[tf-idf^] algorithm. 
+`tf-idf` increases the score of a document based on term frequency, or the number of times a term occurs in a document divided by the total number of terms in the document. 
 It penalizes document frequency, or how often a term appears across all documents. 
 
 The `tf-idf` score is calculated at a partition level in a Search index. 
@@ -46,12 +57,44 @@ hit_score = (query_1_boost * query_1_hit_score) + (knn_boost * knn_distance)
 
 When running a hybrid search with the <<ui,{page-ui-name}>> or <<api,REST API>>, the Search Service displays results as a disjunct (`OR`) between your regular Search and Vector Search queries. 
 
-TIP: When running a hybrid Search query, you should add a `boost` value to your regular Search query to level the `tf-idf` score with the knn distance.
+TIP: When running a hybrid Search query and the `tf-idf` algorithm, you should add a `boost` value to your regular Search query to level the `tf-idf` score with the knn distance.
 Otherwise, you might see unexpected search results.
 This is because of the differences in the scoring algorithms between the 2 query types.
 
-Scoring can also change based on whether you're using synonyms in your Search index.
-For more information, see xref:synoynms/synonyms-search.adoc#run-synonym-search[Running a Search for Synonyms].
+[#bm25]
+=== bm25 Search Scoring
+
+[.status]#Couchbase Server version 8.0#
+
+As of Couchbase Server version 8.0, you can choose to use the https://en.wikipedia.org/wiki/Okapi_BM25[bm25^] algorithm instead of `tf-idf` for your Search index.
+
+`bm25` ranks documents based on the query terms that appear in each document, regardless of proximity.
+It calculates the number of times a term occurs in a document, with penalties for more common terms like `tf-idf`, but also includes: 
+
+* Diminishing returns for a term that continues to frequently appear in documents, based on a saturation parameter (`k1`).
+* An adjustment to the resulting score, based on the total length of the current document field, divided by a normalized average length of the field across all documents (`b`).
+
+The value of `k1` limits just how much a single query term's frequency can affect the scoring of a document.
+The Search Service chooses reasonable defaults for the value of `k1` and `b`.
+
+Unlike `tf-idf`, `bm25` rewards term frequency, but penalizes document frequency.
+
+The calculation for a basic Search query is still based on the document's score for a query multiplied by any xref:search-request-params.adoc#boost[boost] parameters: 
+
+----
+hit_score = (query_1_boost * query_1_hit_score) + (query_2_boost * query_2_hit_score)
+----
+
+The calculation when running a hybrid Search query, that includes xref:vector-search:vector-search.adoc[a Vector Search query], is still: 
+
+----
+hit_score = (query_1_boost * query_1_hit_score) + (knn_boost * knn_distance)
+----
+
+When running a hybrid search with the <<ui,{page-ui-name}>> or <<api,REST API>>, the Search Service displays results as a disjunct (`OR`) between your regular Search and Vector Search queries. 
+
+`bm25` supports better hybrid search results and richer result rankings. 
+It also gives more stable result ordering across Search index partitions, when xref:search-request-params.adoc#global-scoring[`global_scoring`] is enabled.
 
 [#ui]
 == Run a Search with the {page-ui-name}

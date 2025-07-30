@@ -31,6 +31,7 @@ curl -s -XPUT -H "Content-Type: application/json" \
         "docvalues_dynamic": false,
         "index_dynamic": false,
         "store_dynamic": false,
+        "scoring_model": "bm25",
         "type_field": "_type",
         "types": {
         "color.rgb": {
