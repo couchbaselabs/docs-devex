@@ -357,10 +357,13 @@ When inserting documents into a specified keyspace, keep in mind the following r
 
 * The keyspace must exist.
 The INSERT statement returns an error if the keyspace does not exist.
+
 * Do not insert a document with a duplicate key.
 If you are inserting multiple documents, the statement aborts at the first error encountered.
+
 * Timeouts can affect the completion of an INSERT statement, especially when performing bulk inserts.
 Ensure that the timeout is set to a reasonable value that allows the bulk insert operation to complete.
+ifdef::flag-devex-rest-api[]
 +
 To set the indexer timeout, use the REST API to set the `indexer.settings.scan_timeout` property.
 For example,
@@ -377,6 +380,7 @@ Use the following command to retrieve the indexer settings:
 ----
 curl -X GET http://localhost:9102/settings -u Administrator:password
 ----
+endif::flag-devex-rest-api[]
 
 * When inserting multiple documents, no cleanup or rollback is done for the already inserted documents if the INSERT operations hits an error.
 This means, when you are inserting 10 documents, if the INSERT operation fails when inserting the 6th document, the operator quits and exits.
@@ -391,8 +395,13 @@ When inserting a large number of  documents, you can improve the performance of 
 
 * Batching the documents to perform bulk inserts, which decreases the latency and increases the throughput.
 The INSERT statement sends documents to the data node in batches, with a default batch size of 16.
-You can configure this value using the {pipeline_batch_req}[pipeline_batch] request-level parameter, or the {pipeline-batch-srv}[pipeline-batch] service-level setting.
-Note that the maximum batch size is (2^32^ -1) and specifying a value higher than the maximum batch size may increase the memory consumption.
+You can configure this value using
+ifdef::flag-devex-rest-api[]
+the {pipeline-batch-srv}[pipeline-batch] service-level setting, or
+endif::flag-devex-rest-api[]
+the {pipeline_batch_req}[pipeline_batch] request-level parameter.
+Note that the maximum batch size is (2^32^ -1) and specifying a value higher than this may increase the memory consumption.
+ifdef::flag-devex-rest-api[]
 The following example command sets the pipeline-batch size to 32 instead of the default 16:
 +
 [source,sh]
@@ -400,8 +409,14 @@ The following example command sets the pipeline-batch size to 32 instead of the 
 curl -v -X POST http://localhost:8093/admin/settings -u Administrator:password \
 -d '{ "debug":true, "pipeline-batch": 32 }'
 ----
+endif::flag-devex-rest-api[]
 
-* Use the {max_parallelism_req}[max_parallelism] request-level parameter, or the {max-parallelism-srv}[max-parallelism] service-level setting when inserting multiple documents.
+* Use
+ifdef::flag-devex-rest-api[]
+the {max-parallelism-srv}[max-parallelism] service-level setting, or
+endif::flag-devex-rest-api[]
+the {max_parallelism_req}[max_parallelism] request-level parameter
+when inserting multiple documents.
 * When performing bulk inserts, use prepared statements or multiple values.
 * When new documents are inserted, the indexes are updated.
 When a large number of documents are inserted, this may affect the performance of the cluster.
@@ -948,13 +963,18 @@ USING {"key": "airport_10001", "faa_code": "DEL"};
 ]
 ----
 
-Alternatively, execute the prepared statement using the REST API, passing `$key` and `$faa_code` as REST parameters.
+Alternatively, execute the prepared statement using the Data API, passing `$key` and `$faa_code` as REST parameters.
+
+* `$BASEURL` is the base URL for the Data API.
+* `$USER` is the cluster access username.
+* `$PASSWORD` is the cluster access secret.
 
 .Request
 [source,sh]
 ----
-curl -v http://localhost:8093/query/service -u Administrator:password \
--d 'prepared="ins_india"&$key="airport_10002"&$faa_code="BLR"'
+curl -X POST "$BASEURL/_p/query/query/service" \
+     -u $USER:$PASSWORD \
+     -d 'prepared="ins_india"&$key="airport_10002"&$faa_code="BLR"'
 ----
 
 .Results
