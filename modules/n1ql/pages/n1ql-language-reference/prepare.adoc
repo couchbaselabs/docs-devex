@@ -212,30 +212,31 @@ For information about how to set this value, see the table in the xref:learn:ser
 
 By default, a prepared statement is only reprepared if an index in its current plan becomes unavailable.
 With auto-reprepare, prepared statements can adapt to new indexes as well. 
+For example: 
 
 * *When the feature is inactive*: 
-A prepared statement keeps its original execution plan, even if you create new indexes later.
-For example, if no indexes exist when you prepare a statement, the prepared plan uses sequential scan.
-If you create a primary index or a secondary index afterwards, the statement still continues to use sequential scan, and does not automatically benefit from the new indexes.
+//A prepared statement keeps its original execution plan, even if you create new indexes later.
+If no indexes exist when you prepare a statement, then the prepared plan uses a sequential scan.
+If you create a primary index or a secondary index later, the statement still continues to use the sequential scan and does not automatically benefit from the new indexes.
 
 * *When the feature is active*: 
-The Query Service tracks changes to indexes.
-When you create a new index or drop an existing one, the service flags the prepared statement for an update.
-For example, if you create a primary index after preparing a statement, the next time the statement executes, it generates a new plan using the primary index.
+//The Query Service tracks changes to indexes.
+//When you create a new index or drop an existing one, the service flags the prepared statement for an update.
+If you create a primary index after preparing a statement, the next time the statement executes, the Query Service generates a new plan using the primary index.
 Similarly, if a more optimal secondary index becomes available, the service flags the statement again and generates a new plan on the next execution using the new index.
 
-While this feature improves performance, it has a potential drawback. 
+Although this feature improves performance, it has a potential drawback. 
 Any change to indexes, even those unrelated to a specific statement, can trigger an update. 
-For example, creating an unrelated secondary index or dropping an unused primary index can cause a statment to be reprepared. 
-Although the statement will likely select the existing plan again, this can lead to additional load.
+For example, creating an unrelated secondary index or dropping an unused primary index can cause a statement to be reprepared. 
+While the statement may select the existing plan again, this can lead to additional load.
 If index changes are infrequent, the impact is minimal.
 
 To manage this effectively, you can enable or disable this feature as needed. 
-For instance, you can enable the feature before creating a selection of new indexes and then disable it after all statements have been reprepared.
+For example, you can enable the feature before creating new indexes and then disable it after all statements are reprepared.
 
 === Manual Reprepare
 
-In addition to the automatic mode, you can also manually reprepare a prepared statement. 
+In addition to the automatic mode, you can also manually reprepare a statement. 
 To do this, update xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[system:prepareds] and unset the `planPreparedTime` field for the statement.
 
 [source,sqlpp]
@@ -243,7 +244,7 @@ To do this, update xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared
 UPDATE system:prepareds USE KEYS ["[1.1.1.1:8091]pstmt1"] UNSET planPreparedTime;
 ----
 
-You can repeat this operation after creating relevant indexes to refresh the prepared statement's plan.
+You can repeat this operation after creating each relevant index to refresh the prepared statement's plan.
 
 [[auto-execute]]
 == Auto-Execute
