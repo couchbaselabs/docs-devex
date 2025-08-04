@@ -1,5 +1,5 @@
 = REVOKE
-:description: The REVOKE statement allows revoking of any RBAC roles from specific users.
+:description: The REVOKE statement allows revoking of any RBAC roles from specific users or groups. 
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 
@@ -37,6 +37,21 @@ include::partial$grammar/dcl.ebnf[tag=revoke]
 
 image::n1ql-language-reference/revoke.png["Syntax diagram: refer to source code listing", align=left]
 
+[source,ebnf]
+----
+include::partial$grammar/dcl.ebnf[tag=revoke-user]
+----
+
+image::n1ql-language-reference/revoke-user.png["Syntax diagram: refer to source code listing", align=left]
+
+[source,ebnf]
+----
+include::partial$grammar/dcl.ebnf[tag=revoke-group]
+----
+
+image::n1ql-language-reference/revoke-group.png["Syntax diagram: refer to source code listing", align=left]
+
+[horizontal]
 role::
 One of the {authorization-overview}[RBAC role names predefined] by Couchbase Server.
 +
@@ -47,8 +62,22 @@ The following roles have short forms that can be used as well:
 * `query_update` → `update`
 * `query_delete` → `delete`
 
+keyspace-ref::
+<<keyspace-ref,Keyspace Reference>>
+
 user::
 A user name created by the Couchbase Server RBAC system.
+
+group::
+A group name created by the Couchbase Server RBAC system.
+
+[NOTE]
+====
+* [Optional] Use the keyword `USER` or `USERS` to revoke roles from users. 
+* [Required] Use the keyword `GROUP` or `GROUPS` to revoke roles from groups. 
+* You can use either the singular or plural form of the keyword as 
+it does not affect the number of users or groups the revoke applies to.  
+====
 
 [[keyspace-ref,keyspace-ref]]
 === Keyspace Reference
@@ -94,5 +123,15 @@ REVOKE ClusterAdmin FROM david, michael, robin
 REVOKE ClusterAdmin, QueryUpdate
     ON `travel-sample`
   FROM debby
+----
+====
+
+.Revoke the roles of Query Update in the hotel keyspace from the Sales group. 
+====
+[source,sqlpp]
+----
+REVOKE query_update
+    ON `travel-sample`.inventory.hotel
+  FROM GROUP sales
 ----
 ====
