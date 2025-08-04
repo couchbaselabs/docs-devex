@@ -1,5 +1,5 @@
 = GRANT
-:description: The GRANT statement allows granting any RBAC roles to a specific user.
+:description: The GRANT statement allows granting any RBAC roles to a specific user or group.
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 
@@ -36,6 +36,21 @@ include::partial$grammar/dcl.ebnf[tag=grant]
 
 image::n1ql-language-reference/grant.png["Syntax diagram: refer to source code listing", align=left]
 
+[source,ebnf]
+----
+include::partial$grammar/dcl.ebnf[tag=grant-user]
+----
+
+image::n1ql-language-reference/grant-user.png["Syntax diagram: refer to source code listing", align=left]
+
+[source,ebnf]
+----
+include::partial$grammar/dcl.ebnf[tag=grant-group]
+----
+
+image::n1ql-language-reference/grant-group.png["Syntax diagram: refer to source code listing", align=left]
+
+[horizontal]
 role::
 One of the {authorization-overview}[RBAC role names predefined] by Couchbase Server.
 +
@@ -46,8 +61,22 @@ The following roles have short forms that can be used as well:
 * `query_update` → `update`
 * `query_delete` → `delete`
 
+keyspace-ref::
+<<keyspace-ref,Keyspace Reference>>
+
 user::
 A user name created by the Couchbase Server RBAC system.
+
+group::
+A group name created by the Couchbase Server RBAC system.
+
+[NOTE]
+====
+* [Optional] Use the keyword `USER` or `USERS` to grant roles to users. 
+* [Required] Use the keyword `GROUP` or `GROUPS` to grant roles to groups. 
+* You can use either the singular or plural form of the keyword as 
+it does not affect the number of users or groups the grant applies to.  
+====
 
 [[keyspace-ref,keyspace-ref]]
 === Keyspace Reference
@@ -110,7 +139,7 @@ NOTE: Mixing of parameterized and unparameterized roles or syntax is not allowed
 ====
 [source,sqlpp]
 ----
-GRANT ClusterAdmin TO david, michael, robin;
+GRANT cluster_admin TO david, michael, robin;
 ----
 ====
 
@@ -118,6 +147,14 @@ GRANT ClusterAdmin TO david, michael, robin;
 ====
 [source,sqlpp]
 ----
-GRANT ClusterAdmin, DataReader ON `travel-sample` TO debby;
+GRANT cluster_admin, data_reader ON `travel-sample` TO debby;
+----
+====
+
+.Grant the role of Data Reader in the hotel keyspace to the sales group
+====
+[source,sqlpp]    
+----
+GRANT data_reader ON `travel-sample`.`inventory`.`hotel` TO GROUP sales;
 ----
 ====
