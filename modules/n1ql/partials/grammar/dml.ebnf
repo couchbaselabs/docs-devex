@@ -144,13 +144,22 @@ returning-clause ::= 'RETURNING' (result-expr (',' result-expr)* |
 /* end::returning-clause[] */
 
 /* tag::set-clause[] */
-set-clause ::= 'SET' ( meta '=' expiration | path '=' expr update-for? )
-               ( ',' ( meta '=' expiration | path '=' expr update-for? ) )*
+set-clause ::= 'SET' ( meta '=' expiration |
+                'meta().' 'xattrs.' identifier ('.' identifier)* '=' expr |
+                path '=' expr update-for? )
+                ( ',' ( meta '=' expiration | 
+                'meta().' 'xattrs.' identifier ('.' identifier)* '=' expr |
+                path '=' expr update-for? ) )*
 /* end::set-clause[] */
 
 /* tag::unset-clause[] */
-unset-clause ::= 'UNSET' path update-for? (',' path update-for?)*
+unset-clause ::= 'UNSET' unset-attr ( ',' unset-attr )*
 /* end::unset-clause[] */
+
+/* tag::unset-attr[] */
+unset-attr ::= path update-for? 
+              | meta '.' xattrs '.' xattr-name ( '.' path )?
+/* end::unset-attr[] */
 
 /* tag::update-for[] */
 update-for ::= ('FOR' (name-var ':')? var ('IN' | 'WITHIN') path

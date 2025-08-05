@@ -230,12 +230,19 @@ You can insert NULL, empty, or MISSING values.
 
 options::
 [Optional] An object representing the metadata to be set for the inserted document.
-Only the `expiration` attribute has any effect; any other attributes are ignored.
+Only the listed attribute have any effect; any other attributes are ignored.
 
 expiration:::
 An integer, or an expression resolving to an integer, representing the {document-expiration}[document expiration] in seconds.
 +
 If the document expiration is not specified, it defaults to `0`, meaning the document expiration is the same as the {bucket-expiration}[bucket or collection expiration].
+
+xattrs:::
+An object containing extended attribute (XATTR) names as top-level keys and their corresponding JSON values. 
++
+The object does not replace all existing extended attributes. 
+It only includes attributes you want to add or update, and you must provide the complete value for each attribute.
+You cannot make partial updates to only nested fields as the entire top-level value is replaced. 
 
 For examples illustrating the VALUES clause, see <<insert-examples>>.
 
@@ -985,6 +992,23 @@ curl -v http://localhost:8093/query/service -u Administrator:password \
       "mutationCount":1
    }
 }
+----
+====
+
+[[example-xattr]]
+.Insert a document with XATTRs
+====
+Insert a document into the `airline` keyspace with extended attributes (XATTRs).
+
+.Query
+[source,sqlpp]
+----
+INSERT INTO airline (KEY, VALUE, OPTIONS)
+    VALUES ("airline:1402",
+            { "callsign": "MY-AIR",
+              "country": "United States",
+              "type": "airline" },
+            { "xattrs": { "metadata": { "created_by": "admin", "created_at": "2025-08-05" } } });
 ----
 ====
 
