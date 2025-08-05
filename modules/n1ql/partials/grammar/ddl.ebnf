@@ -12,6 +12,7 @@ create-statement ::= create-scope
                    | create-sequence
                    | create-user
                    | create-group
+                   | create-bucket
 
 drop-statement ::= drop-scope
                  | drop-collection
@@ -22,7 +23,9 @@ drop-statement ::= drop-scope
                  | drop-user
                  | drop-group
 
-other-statement ::= alter-index
+other-statement ::= alter-bucket
+                  | alter-group
+                  | alter-index
                   | alter-sequence
                   | alter-user
                   | build-index
@@ -30,8 +33,12 @@ other-statement ::= alter-index
 
 
 /**************************
- * Scopes and Collections *
+ * Buckets, Scopes, and Collections *
  **************************/
+
+/* tag::create-bucket[] */
+create-bucket ::= 'CREATE' ( 'BUCKET' | 'DATABASE' ) name ( 'WITH' '{' with-fields '}' )?
+/* end::create-bucket[] */
 
 /* tag::create-scope[] */
 create-scope ::= 'CREATE' 'SCOPE' ( namespace ':' )? bucket '.' scope ( 'IF' 'NOT' 'EXISTS' )?
@@ -41,6 +48,14 @@ create-scope ::= 'CREATE' 'SCOPE' ( namespace ':' )? bucket '.' scope ( 'IF' 'NO
 create-collection ::= 'CREATE' 'COLLECTION' ( ( namespace ':' )? bucket '.' scope '.' )?
                       collection ( 'IF' 'NOT' 'EXISTS' )? ( 'WITH' expr )?
 /* end::create-collection[] */
+
+/* tag::alter-bucket[] */
+alter-bucket ::= 'ALTER' ( 'BUCKET' | 'DATABASE' ) name ( 'WITH' '{' with-fields '}' )?
+/* end::alter-bucket[] */
+
+/* tag::drop-bucket[] */
+drop-bucket ::= 'DROP' ( 'BUCKET' | 'DATABASE' ) name
+/* end::drop-bucket[] */
 
 /* tag::drop-scope[] */
 drop-scope ::= 'DROP' 'SCOPE' ( namespace ':' )? bucket '.' scope ( 'IF' 'EXISTS' )?
@@ -319,9 +334,10 @@ create-group ::= 'CREATE' 'GROUP' name ( 'WITH' '"' description '"' )?
                  ( 'ROLE' role | 'ROLES' role ( ',' role )* | 'NO' 'ROLES' )            
 /* end::create-group[] */
 
-/* tag::role[] */
-role ::= role-name ( 'ON' target-keyspace )?           
-/* end::role[] */
+/* tag::alter-group[] */
+alter-group ::= 'ALTER' 'GROUP' name ( 'WITH' '"' description '"' )? 
+                ( 'ROLE' role | 'ROLES' role (',' role )* | NO ROLES )?        
+/* end::alter-group[] */
 
 /* tag::drop-group[] */
 drop-group ::= 'DROP' 'GROUP' groupname
