@@ -57,6 +57,20 @@ The entry point `OnDelete(meta,options)` passes `meta`, which contains informati
 
 It is not possible to get the value of a document that has been deleted or expired.
 
+==== `OnDeploy`
+
+The `OnDeploy` handler runs once when an Eventing function is deployed or resumed. 
+
+The entry point `OnUpdate(action)` receives an `action`, like `deploy` or `resume`, indicating the reason for invocation. It also includes a `delay` value (in milliseconds), representing the time elapsed since the function was paused. For deployment operations, this value is `0`
+
+Limitation: Long-running operations within the `OnDeploy` can delay function deployment and must be avoided.
+
+Use `OnDeploy` for one-time setup tasks such as:
+* Registering a Timer
+* Initializing resources required by the function
+
+If `OnDeploy` fails, no mutations are processed, and the function remains in its previous state.
+
 ==== Timer Callback
 
 Timer callbacks are user-defined JavaScript functions passed as the `callback` argument to the built-in function call `createTimer(callback,date,reference,context)`.
