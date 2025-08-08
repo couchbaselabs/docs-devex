@@ -15,7 +15,7 @@ The Eventing Service can run one or more Eventing Functions.
 == Eventing Functions
 
 Eventing Functions handle data changes in the Eventing Service. 
-They're standalone JavaScript fragments that trigger in real time as a response to document mutations and that must execute from start to finish before a specified timeout is reached.
+These are standalone JavaScript fragments that trigger in real time as a response to document mutations and must be executed from start to finish before the specified timeout.
 
 Eventing Functions allow you to:
 
@@ -24,7 +24,7 @@ Eventing Functions allow you to:
 ** Work with Atomic Counters, CAS, and TTLS
 * Integrate with the Query Service to use inline {sqlpp} queries or statements
 * Enable a Timer to schedule functions to run in the future
-* Interact with external REST endpoints through cURL functionality
+* Interact with external REST endpoints through cURL capability
 * Route mutations to the entry points `OnUpdate` and `OnDelete`
 * Route fired timers to a user-defined Timer callback
 
@@ -42,10 +42,10 @@ The `OnUpdate` handler is called when you create or modify a document.
 
 The entry point `OnUpdate(doc,meta)` passes `doc`, the document, and `meta`, which contains additional data like the document ID, CAS, expiration date, and data type. 
 
-There are two limitations to the `OnUpdate` handler:
+Limitations of the `OnUpdate` handler:
 
-* If you modify a document several times in a short period of time, the handler calls can merge into a single event due to deduplication
-* It is not possible to distinguish between Create and Update operations
+* If you modify a document several times in a short period of time, the handler calls can merge into a single event due to deduplication.
+* It is not possible to distinguish between Create and Update operations.
 
 NOTE: To prevent the suppression of binary documents, you must set the language compatibility of your Function to Couchbase Server version 6.6.2 or later.
 
@@ -53,7 +53,7 @@ NOTE: To prevent the suppression of binary documents, you must set the language 
 
 The `OnDelete` handler is called when you delete a document or when the document expires.
 
-The entry point `OnDelete(meta,options)` passes `meta`, which contains information like the document, and `options`, which contains the boolean parameter `options.expired` that indicates if the document was removed because of a deletion or an expiration.
+The entry point `OnDelete(meta,options)` passes `meta`, which contains information like the document, and `options`, that contains the boolean parameter `options.expired` that indicates if the document was removed because of a deletion or an expiration.
 
 It is not possible to get the value of a document that has been deleted or expired.
 
@@ -61,13 +61,13 @@ It is not possible to get the value of a document that has been deleted or expir
 
 The `OnDeploy` handler runs once when an Eventing function is deployed or resumed. 
 
-The entry point `OnUpdate(action)` receives an `action`, like `deploy` or `resume`, indicating the reason for invocation. It also includes a `delay` value (in milliseconds), representing the time elapsed since the function was paused. For deployment operations, this value is `0`
+The entry point `OnDeploy(action)` receives an `action` parameter, like `deploy` or `resume`, indicating the reason for invocation. It also includes a `delay` value (in milliseconds), showing the time since the function was paused. For deployment operations, this value is `0`
 
 * *Limitation*: Long-running operations within the `OnDeploy` can delay function deployment and must be avoided.
 
 Use `OnDeploy` for one-time setup tasks such as:
-* Registering a Timer
-* Initializing resources required by the function
+* Registering a Timer.
+* Initializing resources required by the function.
 
 If `OnDeploy` fails, no mutations are processed, and the function remains in its previous state.
 
@@ -77,7 +77,7 @@ Timer callbacks are user-defined JavaScript functions passed as the `callback` a
 
 When you create a Timer, the `callback` argument is executed at or close to the `date` argument.
 The `reference` argument works as an identifier for the Timer scoped to an Eventing Function and callback.
-The `context` argument must be serializable data that is available to the callback when the Timer is fired.
+When the Timer fires, the `context` argument data must be in serialized form and available to the callback.
 
 For more information about Timer callbacks, see xref:eventing-timers.adoc#createtimer-function[`createTimer()` and `cancelTimer()`].
 
@@ -86,13 +86,13 @@ For more information about Timer callbacks, see xref:eventing-timers.adoc#create
 
 The persistent state of an Eventing Function is captured in the following external elements:
 
-* Documents or mutations and their extended attributes
-* Listen to Location, or the Eventing source: a collection that is the source of mutations sent to the Function through the Database Change Protocol (DCP)
-* Eventing Storage, or the Eventing metadata: a collection used as a scratchpad for the state of the Function
+* Documents or mutations and their extended attributes.
+* Listen to Location, or the Eventing source: a collection that's the source of mutations sent to the Function through the Database Change Protocol (DCP).
+* Eventing Storage, or the Eventing metadata: a collection used as a scratchpad for the state of the Function.
 * Optional bindings for the Function:
-** Bucket alias: an alias and access mode used by the Function to access a collection
-** URL alias: an alias and HTTP/S setting used by the Function to access external REST APIs
-** Constant alias: an alias to an integer, decimal number, string, boolean, or a JSON object used as a global variable within the Function
+** Bucket alias: an alias and access mode used by the Function to access a collection.
+** URL alias: an alias and HTTP/S setting used by the Function to access external REST APIs.
+** Constant alias: an alias to an integer, decimal number, string, boolean, or a JSON object used as a global variable within the Function.
 
 All states in the execution stack are short-lived.
 
@@ -164,12 +164,11 @@ The keyspaces `bucket.scope.collection` are accessible by the bound name as a Ja
 You can add bucket aliases by selecting *Bucket alias* and entering an alias-name, a keyspace, and the access level.
 This sequence of values does the following:
 
-* alias-name is the name you can use to refer to the keyspace or collection from your Eventing Function code
-* keyspace is the full path to a collection in the cluster
-* the access level provides access to the keyspace as `read only` or `read and write`
-** `read only` lets you read documents from the collection but not write (create, update, or delete) documents in the collection
-** `read and write` lets you read and write documents in the collection
-
+* alias-name is the name you can use to refer to the keyspace or collection from your Eventing Function code.
+* keyspace is the full path to a collection in the cluster.
+* the access level provides access to the keyspace as `read only` or `read and write`.
+** `read only` lets you read documents from the collection but not write (create, update, or delete) documents in the collection.
+** `read and write` lets you read and write documents in the collection.
 NOTE: You must have one or more bucket alias bindings for your Eventing Function to perform operations directly against the Data Service.
 
 An Eventing Function can listen to multiple collections when you use the `{asterisk}` wildcard in its scope or collection.
@@ -207,10 +206,10 @@ A keyspace is a path to a collection in the format `bucket-name.scope-name.colle
 For backward compatibility, you can also use the format `bucket-name._default._default`.
 This is the format of a bucket from Couchbase Server version 6.6 that has been upgraded to version 7.0.
 
-The following are the two keyspaces used by Eventing Functions:
+The two keyspaces used by Eventing Functions are:
 
-* <<listen-to-location,Listen to Location>>, which represents the Eventing source
-* <<eventing-storage,Eventing Storage>>, which represents the Eventing metadata
+* <<listen-to-location,Listen to Location>>, which represents the Eventing source.
+* <<eventing-storage,Eventing Storage>>, which represents the Eventing metadata.
 
 [#listen-to-location]
 ==== Listen to Location
@@ -293,7 +292,7 @@ You can only modify the Feed Boundary when you create a Function or when a Funct
 
 |System Log Level
 |Determines the granularity of messages logged across the Eventing Function.
-Can be one of `Info` (the default), `Error`, `Debug`, `Warning`, or `Trace`.
+Can be `Info` (the default), `Error`, `Debug`, `Warning`, or `Trace`.
 
 |Application Log Location
 |The directory path to the log file for the Eventing Function.
@@ -327,11 +326,11 @@ New Functions default to the highest compatibility version available of 6.6.2.
 In version 6.5.0, trying to access a non-existing item from a keyspace returns an undefined value.
 In version 6.0.0, it throws an exception.
 
-Only a Function with a language compability setting of version 6.6.2 passes binary documents to Eventing Function handlers.
+Only a Function with a language compatibility setting of version 6.6.2 passes binary documents to Eventing Function handlers.
 Versions 6.0.0 and 6.5.0 filter all binary documents out of the DCP mutation stream.
 
 |Script Timeout
-|The number of seconds to elapse before the script times out and is terminated.
+|The number of seconds to elapse before the script times out and terminates.
 
 The entry points into the handler processing for each mutation must run from start to finish before the specified timeout duration.
 The default number of seconds is `60`.
