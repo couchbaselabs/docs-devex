@@ -1499,20 +1499,44 @@ SELECT array_star(children).age FROM contacts WHERE fname = "Dave"
 
 === Empty Array Subscripts
 
-You can use an empty array subscript ([ ]) to return an array that includes only defined elements. 
+You can use an empty array subscript (`[ ]`) to return an array that includes only defined elements. 
+
 The rules governing its use are as follows: 
 
-* `field[]`: 
-** If `field` is an array, this is equivalent to `field` itself and returns the array as is.
-** If `field` is not an array, it returns `NULL`.
-* `field[].field2`:
-** Returns an array of `field2` values from each element in the `field` array. 
-** Elements in `field` that are not objects or do not contain `field2` are ignored.
-* `field[].field2[].field3`: 
-** Returns an array of `field3` values by traversing two levels of arrays.
-** First through each element of `field`, then through each element of `field2` within those elements, extracting `field3` from each valid object. 
-* `field[][].field2`: 
-** Returns `MISSING` if elements of `field[]` are not arrays.
+[cols="1a,2a"]
+|====
+| Expression | Description 
+
+| `field[]` 
+|* If `field` is not an array, it returns `NULL`.  
+* If `field` is an array, it returns the array as is.
+
+
+| `field[][]`
+|* If `field` is not an array, it returns `NULL`.
+* If `field` contains only unnamed arrays, it returns `field` as is.
+Otherwise, it returns `NULL`.
+
+| `field[].field2`
+|* If `field` is not an array, it returns `MISSING`.
+* If `field` is an array, it extracts `field2` from each element in `field` and returns a new array with those values.
+* If `field` contains unnamed arrays, they are flattened by one level. 
+Then from the resulting array, it extracts `field2` from each object where it is present.
+
+| `field[][].field2`
+|* If `field` is not an array, it returns `MISSING`.
+* If every element in `field` is not an unnamed array, it returns `MISSING`.
+* If `field` contains unnamed arrays, they are flattened by one level.
+Then from the resulting array, it extracts `field2` from each object where it is present.
+
+
+| `field[].field2[].field3`
+|* Returns an array of `field3` values by traversing two levels of arrays.
+First it extracts `field2` from each element of `field`, then extracts `field3` from each element of the resulting `field2` array.
+* If `field` and `field2` contain unnamed arrays, they are flattened by one level.
+Then from the resulting `field2` array, it extracts `field3` from each object where it is present.
+
+|====
 
 NOTE: If you use more that two empty array subscripts (for example, `field[][][]`), only the first two are considered.
 Any additional subscripts are ignored.
