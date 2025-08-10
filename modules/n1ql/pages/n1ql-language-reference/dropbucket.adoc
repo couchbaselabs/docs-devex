@@ -1,18 +1,32 @@
 = DROP BUCKET
-:description: The DROP BUCKET statement enables you to create a bucket.
+:description: The DROP BUCKET statement enables you to delete a bucket.
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 
 :identifier: xref:n1ql-language-reference/identifiers.adoc
-:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
-:naming-for-scopes-and-collections: xref:learn:data/scopes-and-collections.adoc#naming-for-scopes-and-collections
-:scopes-and-collections: xref:learn:data/scopes-and-collections.adoc
-:manage-scopes-and-collections: xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc
-:scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
-:couchbase-cli-collection-manage: xref:cli:cbcli/couchbase-cli-collection-manage.adoc
+:roles: xref:learn:security/roles.adoc
+:bucket-parameters: xref:rest-api:rest-bucket-create.adoc#parameter-groups
+:buckets: xref:learn:buckets-memory-and-storage/buckets.adoc
+:manage-buckets: xref:manage:manage-buckets/bucket-management-overview.adoc
+:buckets-api: xref:rest-api:rest-bucket-intro.adoc
+:couchbase-cli-bucket-delete: xref:cli:cbcli/couchbase-cli-bucket-edit.adoc
 
 [abstract]
 {description}
+
+== Purpose
+
+Use the DROP BUCKET statement to permanently delete an existing bucket from your Couchbase cluster.
+Dropping a bucket deletes all data in the bucket, including documents, scopes, and collections.
+It also deletes all associated indexes, metadata, and other bucket resources.
+
+Only administrators with the following roles can perform this operation:
+
+* Full Admin
+* Cluster Admin
+* Bucket Admin (if privileges are extended to the specific bucket or all buckets on the cluster)
+
+WARNING: This operation is irreversible, so use this statement with caution.
 
 == Syntax
 
@@ -23,14 +37,25 @@ include::partial$grammar/ddl.ebnf[tag=drop-bucket]
 
 image::n1ql-language-reference/drop-bucket.png["Syntax diagram: refer to source code listing", align=left]
 
+The `BUCKET` and `DATABASE` keywords are synonyms, you can use either of them.
+
 [horizontal]
-name::
-(Optional) An {identifier}[identifier] that refers to the {logical-hierarchy}[namespace] of the bucket in which you want to create the scope.
-Currently, only the `default` namespace is available.
-If the namespace name is omitted, the default namespace in the current session is used.
-
-[[with-fields]]
-=== WITH 
-
+name:: 
+(Required) An {identifier}[identifier] that represents the name of the bucket that you want to delete.
 
 == Example
+
+.Drop a bucket named `student-records`
+====
+[source,sqlpp]
+----
+DROP BUCKET `student-records`;
+----
+====
+
+== Related Links
+
+* For an overview buckets, see {buckets}[Buckets].
+* For step-by-step procedures for bucket management, {manage-buckets}[Manage Buckets].
+* For managing buckets with the REST API, see {buckets-api}[Buckets API].
+* For managing buckets with the CLI, see {couchbase-cli-bucket-delete}[CLI Reference]. 

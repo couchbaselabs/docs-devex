@@ -13,15 +13,11 @@
 
 == Purpose
 
-The CREATE GROUP statement allows you to define a new group within Couchbase Server. 
-The groups can have specific roles, which cont
-Groups are used to organize users and manage their access control more efficiently.
+Use the CREATE GROUP statement to define a new group within Couchbase Server Role-Based Access Control (RBAC) system.
+You can specify the group's name, description, and assign one or more roles to the group.
 
-After you create a group, you can assign users to it and they will inherit the roles and persmissions associated with that group.
-
-To create a user, you can use the xref:n1ql-language-reference/createuser.adoc[CREATE USER] statement.
-
-This statement helps manage access control and organize users within your system.
+By creating groups, you can organize users and assign roles collectively.
+When you add users to a group, they automatically inherit the roles assigned to that group.
 
 == Syntax
 
@@ -37,11 +33,10 @@ name::
 (Required) The unique identifier for the new group. 
 
 description::
-(Required) A quoted string containing the name of the group.
-It must be at least 6 characters long.
+(Optional) A description for the group.
 
-role::
-<<roles,Roles>>
+rbac-role::
+<<roles,Add Roles>>
 
 [NOTE]
 ====
@@ -55,21 +50,21 @@ This option has no effect during group creation.
 ====
 
 [[roles]]
-=== Roles
+=== Add Roles
 
 [source,ebnf]
 ----
-include::partial$grammar/ddl.ebnf[tag=role]
+include::partial$grammar/ddl.ebnf[tag=rbac-role]
 ----
 
-image::n1ql-language-reference/role.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/rbac-role.png["Syntax diagram: refer to source code listing", align=left]
 
 [horizontal]
 
-role-name::
+role::
 One of the xref:learn:security/authorization-overview.adoc[RBAC role names predefined] by Couchbase Server.
 +
-The following roles have short forms that can be used as well:
+For the following roles, you can use their short forms as well:
 
 * `query_select` → `select`
 * `query_insert` → `insert`
@@ -89,7 +84,7 @@ include::partial$grammar/dml.ebnf[tag=target-keyspace]
 
 image::n1ql-language-reference/target-keyspace.png["Syntax diagram: refer to source code listing", align=left]
 
-The update target is the keyspace which you want to update.
+The update target is the keyspace which you want to add.
 
 [horizontal.compact]
 keyspace-ref:: <<keyspace-ref>> 
@@ -120,20 +115,20 @@ include::partial$grammar/dql.ebnf[tag=keyspace-partial]
 image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
 
 Keyspace reference for the update target.
-For more details, refer to {from-keyspace-ref}[Keyspace Reference].
+For more information, see {from-keyspace-ref}[Keyspace Reference].
 
 [id="update-alias"]
 ==== AS Alias
 
 Assigns another name to the keyspace reference.
-For details, refer to {as-clause}[AS Clause].
+For more information, see {as-clause}[AS Clause].
 
 Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
 
 == Examples
 
-.Create a group with the name `sales` and assign it the `query_select` role
+.Create a group `sales` and assign it the `query_select` role
 ====
 [source,sqlpp]
 ----
@@ -141,10 +136,19 @@ CREATE GROUP sales ROLE query_select;
 ----
 ====
 
-.Create a group with the name `agents` and assign it multiple roles
+.Create a group `travelagents` and assign it multiple roles
 ====
 [source, sqlpp]
 ----
-CREATE GROUP agents ROLES data_reader,query_select,query_insert ON `travel-sample`;
+CREATE GROUP travelagents 
+WITH "Sample travel agents group" 
+ROLES data_reader ON `travel-sample`.`inventory`.`airline`, 
+select ON `travel-sample`.`inventory`.`landmark`;
 ----
 ====
+
+== Related Links
+* To create a new user, see xref:n1ql:n1ql-language-reference/createuser.adoc[].
+* To update an existing group, see xref:n1ql:n1ql-language-reference/altergroup.adoc[].
+* To delete a group, see xref:n1ql:n1ql-language-reference/dropgroup.adoc[].
+

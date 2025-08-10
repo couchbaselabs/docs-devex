@@ -8,10 +8,13 @@
 
 == Purpose
 
-The ALTER USER statement allows you to update an user's attributes such as username, password, full name, and group.
-You can assign the user to one or more groups, or remove the user from all existing groups.
+Use the ALTER USER statement to update an existing user's attributes, such as their password, full name, and group. 
+You can add the user to new groups or remove them from all existing groups.
 
-This statement helps manage access control and keep the user information up to date within your system.
+This statement helps manage access control and keeps user information up to date within Couchbase Server.
+
+CAUTION: When you add new groups to a user, the ALTER USER statement replaces the user's existing group assignments with the new ones you provide. 
+It updates the entire group list, so any existing groups not included in the new list will be removed.
 
 == Syntax
 
@@ -24,7 +27,7 @@ image::n1ql-language-reference/alter-user.png["Syntax diagram: refer to source c
 
 [horizontal]
 username::
-(Required) The unique identifier of the user being updated.
+(Required) The unique identifier of the user you want to update.
 
 password::
 (Optional) A quoted string containing the user's new password.
@@ -34,7 +37,7 @@ name::
 (Optional) A quoted string containing the user's updated name.
 
 group::
-(Optional) The name of the group to which the user is assigned. 
+(Optional) The group you want to assign the user to.
 
 [NOTE]
 ====
@@ -49,24 +52,24 @@ You can specify only one of these options per statement.
 == Examples
 
 ====
-.Update password and full name of a user
+.Change a user's password and full name 
 [source,sqlpp]
 ----
 ALTER USER Hilary PASSWORD "newpassword" WITH "Hilary Chloe";
 ----
-.Alter a user and assign to a new group
+.Assign a user to a new group
 [source,sqlpp]
 ----
 ALTER USER Alice GROUP support;
 ----
-.Alter a user and assign to multiple groups
-[source,sqlpp]
-----
-ALTER USER Bob GROUPS finance, operations;
-----
-.Remove a user from all groups
+.Remove a user from existing groups
 [source,sqlpp]
 ----
 ALTER USER Bob NO GROUPS;
 ----
 ====
+
+== Related Links
+* To create a new user, see xref:n1ql:n1ql-language-reference/createuser.adoc[].
+* To delete a user, see xref:n1ql:n1ql-language-reference/dropuser.adoc[].
+* To create a new group, see xref:n1ql:n1ql-language-reference/creategroup.adoc[].

@@ -1,5 +1,5 @@
 = ALTER GROUP
-:description: The ALTER GROUP statement enables you to update an existing group.
+:description: The ALTER GROUP statement enables you to modify an existing group.
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 
@@ -13,15 +13,13 @@
 
 == Purpose
 
-The CREATE GROUP statement allows you to define a new group within Couchbase Server. 
-The groups can have specific roles, which cont
-Groups are used to organize users and manage their access control more efficiently.
+Use the ALTER GROUP statement to modify an existing group within Couchbase Server Role-Based Access Control (RBAC) system.
+You can update the group's description and roles assigned to it.
+You can either add new roles or remove the existing ones.
+When you update a role for a group, all users in the group inherit the updated permissions automatically.
 
-After you create a group, you can assign users to it and they will inherit the roles and persmissions associated with that group.
-
-To create a user, you can use the xref:n1ql-language-reference/createuser.adoc[CREATE USER] statement.
-
-This statement helps manage access control and organize users within your system.
+CAUTION: When you add new roles to a group, the ALTER GROUP statement replaces the group's existing role assignments with the new ones you provide.
+It updates the entire role list, so any existing roles not included in the new list will be removed.
 
 == Syntax
 
@@ -34,39 +32,37 @@ image::n1ql-language-reference/alter-group.png["Syntax diagram: refer to source 
 
 [horizontal]
 name::
-(Required) The unique identifier for the new group. 
+(Required) The unique identifier of the group you want to update.
 
 description::
-(Required) A quoted string containing the name of the group.
-It must be at least 6 characters long.
+(Required) The updated description for the group.
 
 role::
-<<roles,Roles>>
+<<roles,Update Roles>> 
 
 [NOTE]
 ====
-When creating a group, you can grant roles to them using one of the following options: `ROLE`, `ROLES`, or `NO ROLES`. 
+When altering a group, you can update its roles using one of the following options: `ROLE`, `ROLES`, or `NO ROLES`. 
 You can specify only one of these options per statement. 
 
 * `ROLE` assigns a single role to the group.
 * `ROLES` assigns multiple roles to group (the names must be separated by commas).
-* `NO ROLES` creates a group with no roles assigned. 
-This option has no effect during group creation. 
+* `NO ROLES` removes all roles from the group.
 ====
 
 [[roles]]
-=== Roles
+=== Update Roles
 
 [source,ebnf]
 ----
-include::partial$grammar/ddl.ebnf[tag=role]
+include::partial$grammar/ddl.ebnf[tag=rbac-role]
 ----
 
-image::n1ql-language-reference/role.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/rbac-role.png["Syntax diagram: refer to source code listing", align=left]
 
 [horizontal]
 
-role-name::
+role::
 One of the xref:learn:security/authorization-overview.adoc[RBAC role names predefined] by Couchbase Server.
 +
 The following roles have short forms that can be used as well:
@@ -133,18 +129,34 @@ If you assign an alias to the keyspace reference, the `AS` keyword may be omitte
 
 == Examples
 
-.Create a group with the name `sales` and assign it the `query_select` role
+.Alter a group and update its description
 ====
 [source,sqlpp]
 ----
-CREATE GROUP sales ROLE query_select;
+ALTER GROUP support WITH "Support team for customer queries";
 ----
 ====
 
-.Create a group with the name `agents` and assign it multiple roles
+.Alter a group and add new roles
 ====
-[source, sqlpp]
+[source,sqlpp]
 ----
-CREATE GROUP agents ROLES data_reader,query_select,query_insert ON `travel-sample`;
+ALTER GROUP support 
+ROLES 
+query_select ON `travel-sample`.`inventory`.`airline`, 
+query_insert ON `travel-sample`.`inventory`.`airline`;
 ----
 ====
+
+.Alter a group and remove all roles
+====
+[source,sqlpp]
+----
+ALTER GROUP support NO ROLES WITH "Currently unused group";
+----
+====
+
+== Related Links
+* To create a group, see xref:n1ql-language-reference/creategroup.adoc[].
+* To delete a group, see xref:n1ql-language-reference/altergroup.adoc[].
+* To create a new user, see xref:n1ql-language-reference/createuser.adoc[].

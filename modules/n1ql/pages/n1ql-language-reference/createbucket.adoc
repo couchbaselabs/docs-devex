@@ -4,15 +4,28 @@
 :imagesdir: ../../assets/images
 
 :identifier: xref:n1ql-language-reference/identifiers.adoc
-:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
-:naming-for-scopes-and-collections: xref:learn:data/scopes-and-collections.adoc#naming-for-scopes-and-collections
-:scopes-and-collections: xref:learn:data/scopes-and-collections.adoc
-:manage-scopes-and-collections: xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc
-:scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
-:couchbase-cli-collection-manage: xref:cli:cbcli/couchbase-cli-collection-manage.adoc
+:roles: xref:learn:security/roles.adoc
+:bucket-parameters: xref:rest-api:rest-bucket-create.adoc#parameter-groups
+:buckets: xref:learn:buckets-memory-and-storage/buckets.adoc
+:manage-buckets: xref:manage:manage-buckets/bucket-management-overview.adoc
+:buckets-api: xref:rest-api:rest-bucket-intro.adoc
+:couchbase-cli-bucket-create: xref:cli:cbcli/couchbase-cli-bucket-create.adoc
 
 [abstract]
 {description}
+
+== Purpose
+
+Use the CREATE BUCKET statement to create a new bucket in your Couchbase cluster.
+A bucket is a top-level data container, similar to a database in relational database management systems.
+It stores documents and provides a logical grouping for data.
+
+When you create a new bucket, a `_default` scope and a `_default` collection are automatically created within it, providing a basic structure for your data right away.
+The name of the bucket must be unique name within the cluster, and it cannot be changed once you create the bucket.
+You can have a maximum of 30 buckets per cluster.
+
+Only administrators with the Full Admin or Cluster Admin role can create buckets.
+For more information about roles and privileges, see {roles}[Roles].
 
 == Syntax
 
@@ -23,14 +36,47 @@ include::partial$grammar/ddl.ebnf[tag=create-bucket]
 
 image::n1ql-language-reference/create-bucket.png["Syntax diagram: refer to source code listing", align=left]
 
+The `BUCKET` and `DATABASE` keywords are synonyms, you can use either of them. 
+
 [horizontal]
-name::
-(Optional) An {identifier}[identifier] that refers to the {logical-hierarchy}[namespace] of the bucket in which you want to create the scope.
-Currently, only the `default` namespace is available.
-If the namespace name is omitted, the default namespace in the current session is used.
+name:: 
+(Required) An {identifier}[identifier] that represents the name of the bucket that you want to create.
+It must be unique within the cluster and cannot be longer than 100 characters. 
+Acceptable characters are A-Z, a-z, 0-9, and the special characters underscore, period, dash, and percent.
 
-[[with-fields]]
-=== WITH 
+with-fields:: 
+(Optional) A JSON object containing a list of name-value pairs that specify additional options for the bucket.
+For a list of valid fields names and values, see {bucket-parameters}[Bucket Parameter Groups] in the REST API documentation.
 
+NOTE: If `with-fields` is not specified, the bucket uses a default memory quota (`ramQuota`) of 100 MiB. 
+If `storageBackend` is specified as `magma`, then the default `ramQuota` is 1024 MiB.
 
-== Example
+== Examples
+
+.Create a bucket named `student-records` with default settings
+====
+[source,sqlpp]
+----
+CREATE BUCKET `student-records`;
+----
+====    
+
+.Create a bucket named `custom-bucket` with custom settings
+====
+The bucket has a memory quota of `512 MiB`, bucket type as `couchbase`, and storage backend as `magma`.
+[source,sqlpp]
+----
+CREATE BUCKET `custom-bucket` WITH {
+    "ramQuota": 512,
+    "bucketType": "couchbase",
+    "storageBackend": "magma"
+};
+----
+====
+
+== Related Links
+
+* For an overview buckets, see {buckets}[Buckets].
+* For step-by-step procedures for bucket management, {manage-buckets}[Manage Buckets].
+* For managing buckets with the REST API, see {buckets-api}[Buckets API].
+* For managing buckets with the CLI, see {couchbase-cli-bucket-create}[CLI Reference]. 
