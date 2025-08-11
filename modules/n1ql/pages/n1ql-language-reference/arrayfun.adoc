@@ -1497,6 +1497,119 @@ SELECT array_star(children).age FROM contacts WHERE fname = "Dave"
 ----
 ====
 
+=== Empty Array Subscripts
+
+You can use an empty array subscript (`[ ]`) to return an array that includes only defined elements. 
+
+The rules governing its use are as follows: 
+
+[cols="1a,2a"]
+|====
+| Expression | Description 
+
+| `field[]` 
+|* If `field` is not an array, it returns `NULL`.  
+* If `field` is an array, it returns the array as is.
+
+
+| `field[][]`
+|* If `field` is not an array, it returns `NULL`.
+* If `field` contains only unnamed arrays, it returns `field` as is.
+Otherwise, it returns `NULL`.
+
+| `field[].field2`
+|* If `field` is not an array, it returns `MISSING`.
+* If `field` is an array, it extracts `field2` from each element in `field` and returns a new array with those values.
+* If `field` contains unnamed arrays, they are flattened by one level. 
+Then from the resulting array, it extracts `field2` from each object where it is present.
+
+| `field[][].field2`
+|* If `field` is not an array, it returns `MISSING`.
+* If every element in `field` is not an unnamed array, it returns `MISSING`.
+* If `field` contains unnamed arrays, they are flattened by one level.
+Then from the resulting array, it extracts `field2` from each object where it is present.
+
+
+| `field[].field2[].field3`
+|* Returns an array of `field3` values by traversing two levels of arrays.
+First it extracts `field2` from each element of `field`, then extracts `field3` from each element of the resulting `field2` array.
+* If `field` and `field2` contain unnamed arrays, they are flattened by one level.
+Then from the resulting `field2` array, it extracts `field3` from each object where it is present.
+
+|====
+
+NOTE: If you use more that two empty array subscripts (for example, `field[][][]`), the function considers only the first two subscripts and ignores the rest.
+
+==== Example
+
+====
+Given the following sample document:
+
+[source,json]
+----
+{
+  "a": {
+    "airline": "AF",
+    "airlineid": "airline_003",
+    "destinationairport": "SFO",
+    "distance": 2481.617376098415,
+    "equipment": "320",
+    "id": 3,
+    "schedule": [
+      {
+        "day": 0,
+        "flight": "AF198",
+        "utc": "10:13:00"
+      },
+      {
+        "flight": "AF250",
+        "utc": "12:59:00"
+      },
+      {
+        "day": 2,
+        "flight": "AF223",
+        "special_flights": [
+          {
+            "a": "SA"
+          },
+          {
+            "b": [
+              [
+                {
+                  "c": "SC1"
+                },
+                {
+                  "c": "SC2"
+                }
+              ],
+              [
+                {
+                  "c": "SC3"
+                }
+              ]
+            ]
+          }
+        ],
+        "utc": "19:41:00"
+      }
+    ],
+    "sourceairport": "DFW"
+  }
+}
+----
+
+Here's how different array subscripts evaluate:
+
+* `a.airline[]`: Returns `NULL` (not an array).
+* `a.schedule[]`: Equivalent to `a.schedule`, returns the array.
+* `a.schedule[].day`: Returns `[0, 2]`. This is in contrast to `a.schedule[*].day`, which returns `[0, null, 2]`.
+* `a.schedule[].special_flights[].a`: Returns `["SA"]`.
+* `a.schedule[][].utc`: Returns `MISSING`.
+* `a.schedule[].special_flights[].b[][].c`: Returns `["SC1", "SC2", "SC3"]`.
+* `a.schedule[].special_flights[].b[].c`: Also returns `["SC1", "SC2", "SC3"]`, as the unnamed arrays are flattened. 
+
+====
+
 [[fn-array-sum,ARRAY_SUM()]]
 == ARRAY_SUM([.var]`expr`)
 
