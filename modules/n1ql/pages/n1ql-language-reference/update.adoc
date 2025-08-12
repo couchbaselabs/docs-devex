@@ -168,18 +168,26 @@ The value may be a generic expression term, a subquery, or an expression that re
 
 update-for:: <<update-for>> icon:caret-down[]
 
-The SET clause also supports alternative arguments which enable you to set the expiration of the document.
+The SET clause also supports alternative arguments which enable you to set the expiration and extended attributes of the document.
 
 [horizontal]
-meta::
-A {meta}[META().expiration] expression specifying the expiration property of the document being updated.
+meta:: 
 
-expiration::
+A META() expression specifying the document metadata.
++
+To set the expiration property, use {meta}[META().expiration].
++
+To set extended attributes (XATTR), use {meta}[META().xattrs.<attribute>[.<path>\]] 
+
+expiration::: 
 An integer, or an expression resolving to an integer, representing the {document-expiration}[document expiration] in seconds.
-
++
 [NOTE]
 If the document expiration is not specified, the document expiration is set according to the request-level {preserve_expiry}[preserve_expiry] parameter.
 If this is `true`, the existing document expiration is preserved; if `false`, the document expiration defaults to `0`, meaning the document expiration is the same as the {bucket-expiration}[bucket or collection expiration].
+
+xattrs:::
+An object containing one or more extended attribute (XATTR) names as top-level keys and their corresponding JSON values.  
 
 [[unset-clause]]
 === UNSET Clause
@@ -193,12 +201,22 @@ image::n1ql-language-reference/unset-clause.png["Syntax diagram: refer to source
 
 Removes the specified attribute from the document.
 
-[horizontal.compact]
+[horizontal]
 path::
 A <<path,path>> specifying the attribute to be removed.
 
 update-for:: <<update-for>> icon:caret-down[]
 
+meta-xattr:: 
+An expression specifying the extended attribute (XATTR) to be removed.
++
+--
+The format is {meta}[META().xattrs.<attribute>[.<path>\]], where:
+
+* `<attribute>` is a top-level attribute name or key of the XATTR object.
+* `<path>` is an optional subpath within that attribute.
+You can directly reference individual fields in composite XATTR values through the nested path.
+--
 [NOTE]
 You cannot use the UNSET clause to unset the document expiration.
 To unset the document expiration, set the document expiration to `0`.
@@ -408,5 +426,33 @@ Alternatively, if the request-level {preserve_expiry}[preserve_expiry] parameter
 [source,sqlpp]
 ----
 include::example$dml/update-unset-expire-alt.n1ql[]
+----
+====
+
+[[example-10]]
+.Update a document and set an extended attribute (XATTR)
+====
+
+.Query
+[source,sqlpp]
+----
+include::example$dml/set-xattr.n1ql[]
+----
+
+.Result
+[source,json]
+----
+include::example$dml/set-xattr.jsonc[]
+----
+====
+
+[[example-11]]
+.Update a document and unset an extended attribute (XATTR)
+====
+
+.Query
+[source,sqlpp]
+----
+include::example$dml/unset-xattr.n1ql[]
 ----
 ====
