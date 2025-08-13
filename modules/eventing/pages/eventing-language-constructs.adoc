@@ -618,18 +618,7 @@ The entry point is still supported, but using it means you're unable to differen
 
 [source,javascript]
 ----
-function OnDeploy(action) {
-    log("OnDeploy triggered. Reason:", action.reason, "Delay (ms):", action.delay);
-
-    if (action.reason === "deploy") {
-        // Perform operations for fresh deployment (like timer creation, resource initialisation)
-        log("Deploy: perform first time setup for function");
-    } 
-    else if (action.reason === "resume") {
-        // Function was paused and resumed: refresh any cached information
-        log("Resume: perform operations before function resumption");
-    }
-} 
+function OnDelete(meta) {
     log("Document deleted or expired", meta.id);
 }
 ----
@@ -644,12 +633,18 @@ The `OnDeploy` handler has a limitation. Avoid any long-running operations withi
 
 [source,javascript]
 ----
-function OnUpdate(doc, meta) {
-  if (doc.type === 'order' && doc.value > 5000) {
-    // ‘phoneverify’ is a bucket alias or binding to a keyspace
-    phoneverify[meta.id] = doc.customer;
-  }
-}
+function OnDeploy(action) {
+    log("OnDeploy triggered. Reason:", action.reason, "Delay (ms):", action.delay);
+
+    if (action.reason === "deploy") {
+        // Perform operations for fresh deployment (like timer creation, resource initialisation)
+        log("Deploy: perform first time setup for function");
+    } 
+    else if (action.reason === "resume") {
+        // Function was paused and resumed: refresh any cached information
+        log("Resume: perform operations before function resumption");
+    }
+} 
 ----
 
 [#timer_callback_handler]
