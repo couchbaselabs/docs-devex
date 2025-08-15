@@ -9,10 +9,30 @@
 {description}
 You can retrieve your records using the <<#retrieve-with-query-editor,query editor>> or the <<#retrieve-with-sdk,SDK>>.
 
+== Prerequisites
+
+* You have created a Capella operational free tier cluster.
+For more information, see xref:get-started:create-account.adoc#getting-started[Create and Deploy Your Free Tier Operational Cluster].
+
+* You have created the required bucket, scope, and collections.
+For more information, see xref:buckets-scopes-and-collections.adoc[].
+
+* You have installed the Java Software Development Kit (version 8, 11, 17, or 21).
+** The recommended version is the latest Java LTS release.
+Make sure to install the highest available patch for the LTS version. 
+
+* You have installed https://maven.apache.org/[Apache Maven^] (version 3+).
+
+* You have connected the Java SDK to your free tier cluster.
+For more information, see xref:install-couchbase-java-sdk.adoc[].
+
+* You have created student and course records on your cluster.
+For more information, see xref:java-tutorial/create-records.adoc[].
+
 [#retrieve-with-query-editor]
 == With the Query Editor
 
-To retrieve the records with the Query Editor, you must first define an index.
+To retrieve the records with the query editor, you must first define an index.
 
 === Define an Index
 
@@ -21,17 +41,12 @@ The index helps your cluster find specific data when you run a query.
 
 To define an index:
 
-. On the *Operational Clusters* page, select *student-cluster*.
+. On the *Operational Clusters* page, click the name of your free tier operational cluster.
 
 . Go to menu:Data Tools[Query]. 
 
-. Select *student-bucket* and *art-school-scope* in the *Context* drop-down.
-+
-Using these filters, you can narrow down the scope of your queries. 
-You do not need to add the names of your bucket and scope to your queries.
-+
-image::query-editor-filters.png[alt="Filters in the Query Editor"]
-+
+. xref:clusters:query-service/query-workbench.adoc#specify-bucket-and-scope-context[Set your bucket and scope context] to the `student-bucket` and `art-school-scope`.
+
 . Enter the following query into your query editor:
 +
 [source, sqlpp]
@@ -43,11 +58,11 @@ create primary index course_idx on `course-record-collection`
 
 === Retrieve Your Records
 
-You can use the Query Editor to retrieve all course records at once, or narrow your search down to retrieve records based on specific criteria.
+You can use the query editor to retrieve all course records at once, or narrow your search to retrieve records based on specific criteria.
 
 ==== Retrieve All Course Records
 
-To retrieve all of your course records using the query editor:
+To retrieve all of your course records:
 
 . Enter the following query into your query editor:
 +
@@ -81,8 +96,8 @@ select crc.* from `course-record-collection` crc
 
 ==== Retrieve Course Records with Less than 200 Credits
 
-You can expand your query to narrow your search down further.
-To retrieve only courses with less than 200 `credit-points` using the query editor:
+You can expand your query to narrow your search further.
+To retrieve only courses with less than 200 `credit-points`:
 
 . Enter the following query into your query editor:
 +
@@ -159,7 +174,7 @@ select crc.* from `student-bucket`.`art-school-scope`.`course-record-collection`
 
 === Retrieve Your Records
 
-You can use the SDK to retrieve all course records at once, or narrow your search down to retrieve records based on specific criteria.
+You can use the SDK to retrieve all course records at once, or narrow your search to retrieve records based on specific criteria.
 
 ==== Retrieve All Course Records
 
@@ -173,7 +188,7 @@ To retrieve all of your course records using the Java SDK:
 include::example$ArtSchoolRetrieverAll.java[]
 ----
 +
-. In the `ArtSchoolRetriever.java` file, replace the `\<<connection-string>>`, `\<<username>>`, and `\<<password>>` placeholders with the connection string, username, and password that you noted when configuring the cluster connection.
+. In the `ArtSchoolRetriever.java` file, replace the `\<<connection-string>>`, `\<<username>>`, and `\<<password>>` placeholders with your cluster's public connection string, and the username and password from your cluster access credentials.
 . Open a terminal window and navigate to your `student` directory.
 . Run the command `mvn install` to pull in all the dependencies and rebuild your application.
 . Run the following command to retrieve all course records:
@@ -184,12 +199,10 @@ mvn exec:java -Dexec.mainClass="ArtSchoolRetriever" -Dexec.cleanupDaemonThreads=
 ----
 +
 If the retrieval is successful, the course information outputs in the console log.
-+
-image::record-retrieval-console-output.png[alt="Console showing successful course retrieval using the SDK"]
 
 ==== Retrieve Course Records with Less than 200 Credits
 
-You can set parameters in your code to narrow your search down further.
+You can set parameters in your code to narrow your search further.
 To retrieve only courses with less than 200 `credit-points` using the Java SDK:
 
 . In your `java` directory, create a new file called `ArtSchoolRetrieverParameters.java`.
@@ -200,7 +213,7 @@ To retrieve only courses with less than 200 `credit-points` using the Java SDK:
 include::example$ArtSchoolRetriever.java[]
 ----
 +
-. In the `ArtSchoolRetrieverParameters.java` file, replace the `\<<connection-string>>`, `\<<username>>`, and `\<<password>>` placeholders with the connection string, username, and password that you noted when configuring the cluster connection.
+. In the `ArtSchoolRetrieverParameters.java` file, replace the `\<<connection-string>>`, `\<<username>>`, and `\<<password>>` placeholders with your cluster's public connection string, and the username and password from your cluster access credentials.
 . Open a terminal window and navigate to your `student` directory.
 . Run the command `mvn install` to pull in all the dependencies and rebuild your application.
 . Run the following command to retrieve all course records:
@@ -211,10 +224,8 @@ mvn exec:java -Dexec.mainClass="ArtSchoolRetrieverParameters" -Dexec.cleanupDaem
 ----
 +
 If the retrieval is successful, the course information with your parameters outputs in the console log.
-+
-image::record-retrieval-parameters-console-output.png[alt="Console showing successful course retrieval using parameters using the SDK"]
 
-If you come across errors in your console, see the xref:java-tutorial/tutorial-troubleshooting.adoc[troubleshooting page].
+If you come across errors in your console, see xref:java-tutorial/tutorial-troubleshooting.adoc[].
 
 
 == Next Steps
