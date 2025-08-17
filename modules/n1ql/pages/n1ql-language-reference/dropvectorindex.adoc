@@ -1,0 +1,81 @@
+= DROP VECTOR INDEX
+:description: The DROP VECTOR INDEX statement allows you to drop a hyperscale vector index, a composite vector index, or a secondary index.
+:page-topic-type: reference
+:page-status: Couchbase Server 8.0
+:imagesdir: ../../assets/images
+
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
+:identifiers: xref:n1ql-language-reference/identifiers.adoc
+:drop-primary-index: xref:n1ql-language-reference/dropprimaryindex.adoc
+:drop-index: xref:n1ql-language-reference/dropindex.adoc
+:prerequisites: xref:vector-index:hyperscale-vector-index.adoc#prerequisites
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+{description}
+Dropping an index that has replicas will drop all of the replica indexes too.
+
+The {drop-index}[DROP INDEX] statement is a synonym for the DROP VECTOR INDEX statement.
+The two statements have the same functionality.
+
+[NOTE]
+To drop a primary index, use the {drop-primary-index}[DROP PRIMARY INDEX] statement.
+For compatibility with legacy versions of Couchbase Server, you can also use DROP INDEX or DROP VECTOR INDEX to drop a named primary index.
+
+include::dropindex.adoc[tags=prerequisites]
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=drop-vector-index]
+----
+
+image::n1ql-language-reference/drop-vector-index.png["Syntax diagram: refer to source code listing", align=left]
+
+include::dropindex.adoc[tags=syntax-arguments]
+
+include::dropindex.adoc[tags=index-path-and-name]
+
+include::dropindex.adoc[tags=if-exists]
+
+include::dropindex.adoc[tags=index-using]
+
+include::dropindex.adoc[tags=usage]
+
+== Examples
+
+To try the examples in this section, you must install the sample data as described in {prerequisites}[Prerequisites].
+
+[[ex-1]]
+.Drop a hyperscale vector index
+====
+For this example, the path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Drop the hyperscale vector index called `color_desc_hyperscale`, if it exists.
+
+[source,sqlpp]
+----
+DROP VECTOR INDEX `color_desc_hyperscale`
+     IF EXISTS
+     ON `vector-sample`.color.rgb
+----
+
+The following command would drop the index in exactly the same way, but uses alternative syntax.
+
+[source,sqlpp]
+----
+DROP VECTOR INDEX IF EXISTS
+     default:`vector-sample`.color.rgb.`color_desc_hyperscale`
+----
+====
+
+== Related Links
+
+* xref:vector-index:hyperscale-vector-index.adoc[]
+* xref:n1ql:n1ql-language-reference/createvectorindex.adoc[]
+* xref:n1ql:n1ql-language-reference/build-index.adoc[]
+* xref:n1ql:n1ql-language-reference/altervectorindex.adoc[]
