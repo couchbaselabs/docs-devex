@@ -8,6 +8,7 @@ create-statement ::= create-scope
                    | create-collection
                    | create-primary-index
                    | create-index
+                   | create-vector-index
                    | create-function
                    | create-sequence
 
@@ -15,10 +16,12 @@ drop-statement ::= drop-scope
                  | drop-collection
                  | drop-primary-index
                  | drop-index
+                 | drop-vector-index
                  | drop-function
                  | drop-sequence
 
 other-statement ::= alter-index
+                  | alter-vector-index
                   | alter-sequence
                   | build-index
                   | execute-function
@@ -66,23 +69,35 @@ index-with ::= 'WITH' expr
 /* end::index-with[] */
 
 /* tag::create-index[] */
-create-index ::= 'CREATE' 'VECTOR'? 'INDEX' ( index-name ( 'IF' 'NOT' 'EXISTS' )? |
+create-index ::= 'CREATE' 'INDEX' ( index-name ( 'IF' 'NOT' 'EXISTS' )? |
                  'IF' 'NOT' 'EXISTS' index-name ) 'ON' keyspace-ref
                  '(' index-keys-and-attribs ')'
-                 index-include? index-partition? where-clause? index-using? index-with?
+                 index-partition? where-clause? index-using? index-with?
 /* end::create-index[] */
+
+/* tag::create-vector-index[] */
+create-vector-index ::= 'CREATE' 'VECTOR' 'INDEX' ( index-name ( 'IF' 'NOT' 'EXISTS' )? |
+                        'IF' 'NOT' 'EXISTS' index-name ) 'ON' keyspace-ref
+                        '(' index-key-and-attrib ')'
+                        index-include? index-partition? where-clause? index-using? index-with?
+/* end::create-vector-index[] */
 
 /* tag::index-keys-and-attribs[] */
 index-keys-and-attribs ::= index-key lead-key-attribs? ( ( ',' index-key key-attribs? )+ )?
 /* end::index-keys-and-attribs[] */
+
+/* tag::index-key-and-attrib[] */
+index-key-and-attrib ::= index-key index-vector
+/* end::index-key-and-attrib[] */
 
 /* tag::index-key[] */
 index-key ::= expr | array-expr
 /* end::index-key[] */
 
 /* tag::lead-key-attribs[] */
-lead-key-attribs ::= ( index-order | index-vector ) include-missing? |
-                       include-missing ( index-order | index-vector )?
+lead-key-attribs ::= index-order include-missing? |
+                     include-missing index-order? |
+                     index-vector
 /* end::lead-key-attribs[] */
 
 /* tag::key-attribs[] */
@@ -123,6 +138,10 @@ pairs-function ::= 'PAIRS' '(' ( 'SELF' | index-key-object ) ')'
 index-key-object ::= expr
 /* end::index-key-object[] */
 
+/* tag::index-include[] */
+index-include ::= 'INCLUDE' '(' expr ( ',' expr )* ')'
+/* end::index-include[] */
+
 /* tag::index-partition[] */
 index-partition ::= 'PARTITION' 'BY' 'HASH' '(' partition-key-expr
                     ( ',' partition-key-expr )* ')'
@@ -133,9 +152,14 @@ partition-key-expr ::= expr
 /* end::partition-key-expr[] */
 
 /* tag::alter-index[] */
-alter-index ::= 'ALTER' 'VECTOR'? 'INDEX' ( index-path '.' index-name | index-name 'ON' keyspace-ref )
+alter-index ::= 'ALTER' 'INDEX' ( index-path '.' index-name | index-name 'ON' keyspace-ref )
                 index-using? index-with
 /* end::alter-index[] */
+
+/* tag::alter-vector-index[] */
+alter-vector-index ::= 'ALTER' 'VECTOR' 'INDEX' ( index-path '.' index-name | index-name 'ON' keyspace-ref )
+                       index-using? index-with
+/* end::alter-vector-index[] */
 
 /* tag::build-index[] */
 build-index ::= 'BUILD' 'INDEX' 'ON' keyspace-ref '(' index-term (',' index-term)* ')'
@@ -156,9 +180,14 @@ drop-primary-index ::= 'DROP' 'PRIMARY' 'INDEX' ( index-name? ( 'IF' 'EXISTS' )?
 /* end::drop-primary-index[] */
 
 /* tag::drop-index[] */
-drop-index ::= 'DROP' 'VECTOR'? 'INDEX' ( index-path-and-name | index-name-on-keyspace )
+drop-index ::= 'DROP' 'INDEX' ( index-path-and-name | index-name-on-keyspace )
                index-using?
 /* end::drop-index[] */
+
+/* tag::drop-vector-index[] */
+drop-vector-index ::= 'DROP' 'VECTOR' 'INDEX' ( index-path-and-name | index-name-on-keyspace )
+                      index-using?
+/* end::drop-vector-index[] */
 
 /* tag::index-path-and-name[] */
 index-path-and-name ::= index-path '.' index-name ( 'IF' 'EXISTS' )? |
