@@ -1,6 +1,7 @@
 = ALTER INDEX
 :description: The ALTER INDEX statement moves the placement of an existing index or replica among different GSI nodes.
 :page-edition: Enterprise Edition
+:page-partial:
 :imagesdir: ../../assets/images
 
 :rebalancing-the-index-service: xref:learn:clusters-and-availability/rebalance.adoc#rebalancing-the-index-service
@@ -9,6 +10,7 @@
 :identifiers: xref:n1ql-language-reference/identifiers.adoc
 :logical-hierarchy: xref:n1ql:n1ql-intro/queriesandresults.adoc#logical-hierarchy
 :querying-indexes: xref:n1ql-intro/sysinfo.adoc#querying-indexes
+:alter-vector-index: xref:n1ql-language-reference/altervectorindex.adoc
 
 // TEMP
 include::partial$n1ql-language-reference/horizontal-style.adoc[]
@@ -16,9 +18,13 @@ include::partial$n1ql-language-reference/horizontal-style.adoc[]
 [abstract]
 {description}
 
+The {alter-vector-index}[ALTER VECTOR INDEX] statement is a synonym for the ALTER INDEX statement.
+The two statements have the same functionality.
+
+//tag::purpose[]
 == Purpose
 
-You can use the `ALTER INDEX` statement to change the placement of an existing index or replica among different GSI nodes, to increase or decrease the number of replicas, or to drop a specified index replica temporarily.
+You can use the `{doctitle}` statement to change the placement of an existing index or replica among different GSI nodes, to increase or decrease the number of replicas, or to drop a specified index replica temporarily.
 You can also use it to perform the same alterations to a partitioned index and any replica partitions.
 You may use this statement when you encounter any of the following situations:
 
@@ -28,27 +34,31 @@ You may use this statement when you encounter any of the following situations:
 * The automated process of rebalancing does not give the expected results.
 * Other types of scaling up or scaling down are needed.
 
-For example, if a node fails, you can use the `ALTER INDEX` statement to move an index to another node.
+For example, if a node fails, you can use the `{doctitle}` statement to move an index to another node.
 See <<examples>> below.
 
-NOTE: The ALTER INDEX move operation is asynchronous.
+NOTE: The {doctitle} move operation is asynchronous.
 As soon as the move alter index command is executed, the command returns.
 If there is no error in the input, the move operation can be tracked through the console UI and any error can be found in the Console logs and Indexer logs.
 
-If a node goes down while an ALTER INDEX operation is in progress, then the index would rollback to its original node (not affecting queries) and a notification would appear.
+If a node goes down while an {doctitle} operation is in progress, then the index would rollback to its original node (not affecting queries) and a notification would appear.
 
 IMPORTANT: It is not possible to move an index or index replica and change the number of index replicas at the same time.
 
+//end::purpose[]
+
+//tag::prerequisites[]
 == Prerequisites
 
-Only users with the RBAC role of `Administrator` are allowed to run the `ALTER INDEX` directive.
+Only users with the RBAC role of `Administrator` are allowed to run the `{doctitle}` statement.
 
-This directive is applicable only for Standard GSI (Plasma) and MOI Indexes; and hence supported only for Enterprise Edition nodes.
+This statement is applicable only for Standard GSI (Plasma) and MOI Indexes; and hence supported only for Enterprise Edition nodes.
 (Not applicable for Forest DB.)
 
-This statement is only supported only in Couchbase Server 5.5 and later; if the cluster is a mix of Couchbase Server 5.5 and previous versions, then this statement will not work.
+Altering indexes is only supported in Couchbase Server 5.5 and later; if any nodes in the cluster are running a version of Couchbase Server earlier than 5.5, then this statement will not work.
 
-In addition, altering the number of replicas or deleting an index replica is only supported in Couchbase Server 6.5 and later; if the cluster is a mix of Couchbase Server 6.5 and previous versions, then these operations will not work.
+In addition, altering the number of replicas or deleting an index replica is only supported in Couchbase Server 6.5 and later; if any nodes in the cluster are running a version of Couchbase Server earlier than 6.5, then these operations will not work.
+//end::prerequisites[]
 
 == Syntax
 
@@ -57,9 +67,10 @@ In addition, altering the number of replicas or deleting an index replica is onl
 include::partial$grammar/ddl.ebnf[tag=alter-index]
 ----
 
+//tag::syntax-arguments[]
 image::n1ql-language-reference/alter-index.png["Syntax diagram: refer to source code listing", align=left]
 
-The ALTER INDEX statement provides two possible syntaxes for specifying the index and the keyspace where the index is located.
+The {doctitle} statement provides two possible syntaxes for specifying the index and the keyspace where the index is located.
 
 // TODO: Automatic links in EBNF.
 // FIXME: Maybe try to make consistent with DROP INDEX
@@ -68,24 +79,19 @@ The ALTER INDEX statement provides two possible syntaxes for specifying the inde
 index-name:: (Required) A unique name that identifies the index.
 
 index-path:: (Optional) One possible syntax for specifying the keyspace.
-Refer to <<index-path>> below.
+See <<index-path>>.
 
 keyspace-ref:: (Optional) The other possible syntax for specifying the keyspace.
-Refer to <<keyspace-ref>> below.
+See <<keyspace-ref>>.
 
 index-using:: (Optional) Specifies the index type.
-Refer to <<index-using>> below.
+See <<index-using>>.
 
 index-with:: (Required) Specifies options for the index.
-Refer to <<index-with>> below.
+See <<index-with>>.
+//end::syntax-arguments[]
 
-[[vector]]
-=== VECTOR Keyword
-
-FIXME: The optional VECTOR keyword indicates that you are altering a vector index.
-The VECTOR keyword is purely a visual mnemonic.
-There is no syntactic requirement to include the VECTOR keyword when altering a vector index.
-
+//tag::index-path[]
 [[index-path]]
 === Index Path
 
@@ -101,7 +107,7 @@ This syntax provides compatibility with legacy versions of Couchbase Server.
 The index path may be a <<keyspace-full-index>>, a <<keyspace-prefix-index>>, or a <<keyspace-partial-index>>.
 
 NOTE: If there is a hyphen (-) inside the index name or any part of the index path, you must wrap the index name or that part of the index path in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+See the examples on this page.
 
 [[keyspace-full-index,full keyspace path]]
 ==== Index Path: Full Keyspace
@@ -180,7 +186,9 @@ collection::
 ====
 For example, `airline.{backtick}idx-name{backtick}` indicates the `idx-name` index on the `airline` collection, assuming that the query context is set.
 ====
+//end::index-path[]
 
+//tag::keyspace-ref[]
 [[keyspace-ref]]
 === Index Name ON Keyspace Reference
 
@@ -195,7 +203,7 @@ You can use the index name with the `ON` keyword and a keyspace reference to spe
 The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
 
 NOTE: If there is a hyphen (-) inside the index name or any part of the keyspace reference, you must wrap the index name or that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+See the examples on this page.
 
 [[keyspace-path,keyspace path]]
 ==== Keyspace Reference: Keyspace Path
@@ -253,7 +261,9 @@ collection::
 ====
 For example, `{backtick}idx-name{backtick} ON airline` indicates the `idx-name` index on the `airline` collection, assuming the query context is set.
 ====
+//end::keyspace-ref[]
 
+//tag::index-using[]
 [[index-using]]
 === USING Clause
 
@@ -266,7 +276,9 @@ image::n1ql-language-reference/index-using.png["Syntax diagram: refer to source 
 
 The index type for a secondary index must be Global Secondary Index (GSI).
 The `USING GSI` keywords are optional and may be omitted.
+//end::index-using[]
 
+//tag::index-with[]
 [[index-with]]
 === WITH Clause
 
@@ -338,12 +350,14 @@ __optional__
 An integer, specifying a replica ID.
 | Integer
 |===
+//end::index-with[]
 
+//tag::usage[]
 == Usage
 
 If you attempt to alter an index which is still scheduled for background creation, the request fails.
 
-`ALTER INDEX` will not work while the cluster is undergoing a rebalance.
+The statement will not work while the cluster is undergoing a rebalance.
 
 === Moving an Index or Index Replicas
 
@@ -380,16 +394,24 @@ To find the ID of an index replica and see which node it is placed on, you can u
 When dropping a replica, it is possible to leave a server group with no replica.
 For a partitioned index, run a rebalance to move a replica into the vacant server group.
 
+=== Index Redistribution
+
+Using this statement to move one index at a time may be cumbersome if there are a lot of indexes to be moved.
+The _index redistribution_ setting enables you to specify how Couchbase Server redistributes indexes automatically on rebalance.
+Refer to {rebalancing-the-index-service}[Rebalance] for more information.
+//end::usage[]
+
+//tag::return-value[]
 == Return Value
 
-If the `ALTER INDEX` succeeds, then:
+If the statement succeeds, then:
 
 * The query returns an empty array.
 * The index progress is visible in the Query Workbench.
 * After the movement is complete, the new indexes begin to service query scans.
 * The command line displays the new index nodes.
 
-If the `ALTER INDEX` fails, then:
+If the statement fails, then:
 
 * The original indexes continue to service query scans.
 * The UI Log and Query Workbench has the appropriate error message.
@@ -425,6 +447,7 @@ a|
 a|
 * Mistyped the `"action"`
 |===
+//end::return-value[]
 
 [[examples]]
 == Examples
@@ -557,6 +580,10 @@ WITH {"action": "drop_replica", "replicaId": 2};
 
 == Related Links
 
-Using the ALTER INDEX command to move one index at a time may be cumbersome if there are a lot of indexes to be moved.
-The _index redistribution_ setting enables you to specify how Couchbase Server redistributes indexes automatically on rebalance.
-Refer to {rebalancing-the-index-service}[Rebalance] for more information.
+* xref:indexes:indexing-overview.adoc[]
+* xref:vector-index:composite-vector-index.adoc[]
+* xref:n1ql:n1ql-language-reference/createindex.adoc[]
+* xref:n1ql:n1ql-language-reference/createprimaryindex.adoc[]
+* xref:n1ql:n1ql-language-reference/build-index.adoc[]
+* xref:n1ql:n1ql-language-reference/dropindex.adoc[]
+* xref:n1ql:n1ql-language-reference/dropprimaryindex.adoc[]
