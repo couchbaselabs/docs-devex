@@ -1,7 +1,7 @@
-= Keyspace Hints
+= Negative Keyspace Hints
 :page-topic-type: reference
 :imagesdir: ../../assets/images
-:description: Keyspace hints apply to a specific keyspace.
+:description: Keyspace hints that instruct the optimizer to not use certain indexes or join methods.
 :cbo-preamble: For the examples in this section, it is assumed that the cost-based optimizer is active, and all optimizer statistics are up-to-date.
 :page-partial:
 :!example-caption:
@@ -9,19 +9,13 @@
 [abstract]
 {description}
 
-A keyspace hint is a type of xref:n1ql-language-reference/optimizer-hints.adoc[optimizer hint].
-Keyspace hints include _index_ hints, which enable you to specify indexes, and _join_ hints, which enable you to specify join methods.
+Currently optimizer hints  are all “positive”, i.e., instructing the optimizer to do something, e.g., use this index or this join method. Relational systems also frequently support “negative” hints, i.e., instructing the optimizer NOT to do something. We will be adding negative versions of the index hints and join hints.
 
-For each keyspace hint, you must specify the keyspace or keyspaces that the hint applies to.
-If a keyspace is given an explicit alias in the query, then the hint must refer to the explicit alias, not the keyspace name. This is to avoid confusion in situations where the same keyspace can be used multiple times (with different aliases) in the same query.
+For the negative optimizer hints, we support 2 versions of the syntax. One version uses the “NO_” prefix, which is for compatibility with relational databases such as Oracle and Postgres; one version uses the “AVOID_” prefix, which is used by some relational databases such as Informix.
 
-If the keyspace is _not_ given an explicit alias in the query, the hint must refer to the keyspace using the keyspace name.
-(If the keyspace name is a dotted path, the hint must refer to the keyspace using its implicit alias, which is the last component in the keyspace path.)
+There are no equivalent legacy hints for the negative hints, since previously Couchbase does not support negative optimizer hints. This is in contrast to the positive hints which have legacy counterparts.
 
-There are two possible formats for each optimizer hint: simple syntax and JSON syntax.
-Note that you cannot mix simple syntax and JSON syntax in the same hint comment.
-
-== INDEX
+== NO_INDEX or AVOID_INDEX
 
 This hint directs the optimizer to consider one or more specified secondary indexes.
 If not specified, the optimizer selects the optimal available index.
@@ -188,39 +182,43 @@ If you do this, the hint comment and the `USE` clause are marked as erroneous an
 
 == INDEX_ALL
 
-This hint directs the optimizer to consider all specified secondary indexes. 
+This hint directs the optimizer to consider all the specified secondary indexes. 
 If not specified, the optimizer selects the optimal available index.
 
-When you apply INDEX_ALL on a keyspace, the optimizer performs an intersect scan across all specified indexes.
-This process differs from a typical intersect scan and does not end early even when enough document IDs are found.
-Instead, it waits for all index scans to complete before intersecting the documents IDs. 
+When you specify INDEX_ALL on a keyspace, the optimizer performs an intersect scan across all listed indexes.
+It waits for all index scans to complete before intersecting the document IDs.
 
-The INDEX_ALL hint operates on an all-or-nothing basis.
-The optimizer uses this hint only if all specified indexes are usable.
-If even one of the indexes is not usable (for example, due to the lack of necessary predicates on index keys), the optimizer ignores the hint entirely and reverts to the standard index selection process.
-It does not attempt to use only a subset of the indexes.
+
+
+
+the optimizer uses all listed indexes to perform an intersect scan.
+It waits for all scans to complete
+Instead, it waits for all index scans to complete before performing a complete intersect of the document IDs.
+
+The INDEX_All hint uses a “all or nothing” semantics.
+It either uses all the indexes specified, or it does not consider the hint at all.
+The optimizer does not attempt to consider a subset of the indexes specified.
+If the INDEX_ALL hint is not followed, the optimizer falls back to its normal process for picking index(es) for the keyspace.
+
+An INDEX_ALL hint is only considered “followed” if all the indexes specified are usable for the keyspace in the query.
+If one or more of the indexes cannot be used (due to lack of necessary predicates on index keys), then the INDEX_ALL hint is considered “not followed”.
 
 [NOTE]
 ====
+* You must specify at least two indexes in the hint.
+If you provide no indexes or only one index, the hint is considered invalid.
 
-To use the INDEX_ALL hint effectively:
+* Only supports GSI indexes.
+You cannot use FTS indexes with this hint. 
 
-* You must specify at least two indexes.
-The hint is invalid with zero or one index.
-
-* You can only use GSI indexes with this hint.
-It does not support FTS indexes. 
-
-* You cannot mix INDEX_ALL with other index hints for the same keyspace.
+* The INDEX_ALL hint cannot be used with any other index hints for the same keyspace.
 It must be the only index hint present. 
 
-* Negative hints are not available for INDEX_ALL.
+* There is no negative hint for the INDEX_ALL hint.
 
-* You can use the hint on a keyspace on the right-hand side of an ANSI JOIN or ANSI NEST.
-
-* You cannot use it on a keyspace on the inner side of a legacy JOIN or NEST, like LOOKUP JOIN/NEST or INDEX JOIN/NEST.
-
-* INDEX_COMBINE is an alias for INDEX_ALL and you can use it interchangeably.
+* The INDEX_ALL hint can be used for a keyspace on the right-hand side of an ANSI JOIN or ANSI NEST.
+* The INDEX_ALL hint cannot be used for a keyspace on the inner of a legacy join/nest, i.e. lookup join/nest or index join/nest
+* INDEX_COMBINE is accepted as an alias for INDEX_ALL.
 ====
 
 === Simple Syntax
@@ -232,10 +230,10 @@ include::partial$grammar/hints.ebnf[tag=gsi-all-hint-simple]
 
 image::n1ql-language-reference/gsi-all-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
 
-With the simple syntax, this hint specifies a single keyspace expression along with zero, one, or more indexes. You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
+With the simple syntax, this hint specifies a single keyspace expression; and zero, one, or more indexes. You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
 
 NOTE: You must specify at least two indexes in the hint.
-The hint is invalid if there's zero or one index.
+If you provide no indexes or only one index, the hint is considered invalid.
 
 ==== Arguments
 
@@ -356,7 +354,7 @@ include::example$select/index-opt.jsonc[tag=index]
 [#ex-index-all-hint]
 .INDEX hint
 ====
-The following query hints that the optimizer should select indexes `def_inventory_route_route_src_dst_day` and `def_inventory_route_sourceairport` for the keyspace `route`.
+The following query hints that the optimizer should select the index `def_inventory_route_route_src_dst_day` and `def_inventory_route_sourceairport` for the keyspace `route`.
 
 .Query
 [source,sqlpp]
