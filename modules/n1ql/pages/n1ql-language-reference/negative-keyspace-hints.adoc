@@ -1,7 +1,7 @@
-= Negative Keyspace Hints
+= Negative Hints
 :page-topic-type: reference
 :imagesdir: ../../assets/images
-:description: Keyspace hints that instruct the optimizer to not use certain indexes or join methods.
+:description: Negative hints instruct the optimizer to not use certain indexes or join methods.
 :cbo-preamble: For the examples in this section, it is assumed that the cost-based optimizer is active, and all optimizer statistics are up-to-date.
 :page-partial:
 :!example-caption:
@@ -9,27 +9,44 @@
 [abstract]
 {description}
 
-Currently optimizer hints  are all “positive”, i.e., instructing the optimizer to do something, e.g., use this index or this join method. Relational systems also frequently support “negative” hints, i.e., instructing the optimizer NOT to do something. We will be adding negative versions of the index hints and join hints.
+A negative hint is a type of optimizer hint that instructs the optimizer to avoid using specific indexes or join methods.
+Unlike positive keyspace hints, which force the optimizer to use a particular method, negative hints provide a way to exclude options. 
 
-For the negative optimizer hints, we support 2 versions of the syntax. One version uses the “NO_” prefix, which is for compatibility with relational databases such as Oracle and Postgres; one version uses the “AVOID_” prefix, which is used by some relational databases such as Informix.
+There are two types of negative hints: index hints and join hints. 
+Index hints prevent the optimizer from using certain indexes, while join hints prevent the optimizer from using certain join methods.
 
-There are no equivalent legacy hints for the negative hints, since previously Couchbase does not support negative optimizer hints. This is in contrast to the positive hints which have legacy counterparts.
+For each negative hint, you must specify the keyspace or keyspaces that the hint applies to.
+If a keyspace is given an explicit alias in the query, then the hint must refer to the explicit alias, not the keyspace name. This is to avoid confusion in situations where the same keyspace can be used multiple times (with different aliases) in the same query.
 
-== NO_INDEX or AVOID_INDEX
+If the keyspace is _not_ given an explicit alias in the query, the hint must refer to the keyspace using the keyspace name.
+(If the keyspace name is a dotted path, the hint must refer to the keyspace using its implicit alias, which is the last component in the keyspace path.)
 
-This hint directs the optimizer to consider one or more specified secondary indexes.
-If not specified, the optimizer selects the optimal available index.
+You can specify negative hints using either simple syntax or JSON syntax.
+You cannot mix simple syntax and JSON syntax in the same hint comment.
+
+Additionally, negative hints also support two prefixes: `NO_` and `AVOID_`.
+
+Unlike positive keyspace hints, negative hints do not have legacy equivalents. 
+
+== NO_INDEX
+
+This hint is the negative equivalent of the xref:n1ql-language-reference/keyspace-hints.adoc#index[INDEX Hint].
+It directs the optimizer not to use a specific index or indexes for a keyspace.
+If you do not specify this hint, the optimizer selects the optimal available index. 
+
+IMPORTANT: Since Couchbase does not currently support full table scans, the optimizer ignores the NO_INDEX hint when no indexes are specified.
+Therefore, for this hint to work effectively, you must specify at least one index.
 
 === Simple Syntax
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=gsi-hint-simple]
+include::partial$grammar/hints.ebnf[tag=no-gsi-hint-simple]
 ----
 
-image::n1ql-language-reference/gsi-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-gsi-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
 
-With the simple syntax, this hint specifies a single keyspace expression, and zero, one, or more indexes.
+With the simple syntax, this hint specifies a single keyspace expression along with zero, one, or more indexes to avoid.
 You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
 
 ==== Arguments
@@ -40,17 +57,19 @@ The keyspace or alias to which this hint applies.
 // end::keyspace[]
 
 index::
-A secondary index that the optimizer should consider for the given keyspace.
-This argument is optional; if omitted, the optimizer considers _all_ secondary indexes available in the given keyspace.
+A secondary index that the optimizer must not use for the given keyspace.
+This argument is optional. 
++
+IMPORTANT: Since Couchbase does not currently support full table scans, the optimizer ignores the NO_INDEX hint when no indexes are specified.
 
 === JSON Syntax
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=gsi-hint-json]
+include::partial$grammar/hints.ebnf[tag=no-gsi-hint-json]
 ----
 
-image::n1ql-language-reference/gsi-hint-json.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-gsi-hint-json.png["Syntax diagram: refer to source code listing", align=left]
 
 With the JSON syntax, this hint takes the form of an `index` property.
 You may only use this property once within the hint comment.
@@ -113,15 +132,16 @@ The value of this property may be:
 
 [horizontal]
 `null`::
-The optimizer considers all secondary indexes available in the given keyspace.
+The optimizer avoids all secondary indexes available in the given keyspace.
+However, since Couchbase does not currently support full table scans, the optimizer ignores the NO_INDEX hint when the value is `null`.
 
 An _index_ string::
-A secondary index that the optimizer should consider for the given keyspace.
+A secondary index that the optimizer must not use for the given keyspace.
 
 An array of _index_ strings::
-An array of secondary indexes that the optimizer should consider for the given keyspace.
+An array of secondary indexes that the optimizer must not use for the given keyspace.
 
-[#index-examples,reftext="INDEX Examples"]
+[#no-index-examples,reftext="NO_INDEX Examples"]
 === Examples
 
 {cbo-preamble}
@@ -129,7 +149,7 @@ An array of secondary indexes that the optimizer should consider for the given k
 include::ROOT:partial$query-context.adoc[tag=section]
 
 [#ex-index-opt]
-.Optimized index selection
+.Query without any hints
 ====
 The following query does not include an index hint.
 
@@ -148,92 +168,38 @@ include::example$select/index-opt.jsonc[tag=index]
 ----
 ====
 
-[#ex-index-hint]
-.INDEX hint
+[#ex-no-ndex-hint]
+.Query with the NO_INDEX Hint
 ====
-The following query hints that the optimizer should select the index `def_inventory_route_route_src_dst_day` for the keyspace `route`.
+The following query hints the optimizer to avoid using the `def_inventory_route_sourceairport` index for the keyspace `route`.
 
 .Query
 [source,sqlpp]
 ----
-include::example$select/index-all-hint.n1ql[tag=query]
+include::example$select/no-index-hint.n1ql[tag=query]
 ----
 
-<.> The keyspace is not given an explicit alias in the query.
-You must therefore refer to the keyspace using the keyspace name or implicit alias -- in this case, `route`.
-<.> The implicit alias is the last element in the keyspace path.
-
-If you examine the plan for this query, you can see that the query uses the suggested index.
+If you examine the plan for this query, you can see that the query avoids the `def_inventory_route_sourceairport` index, forcing the optimizer to consider other available indexes.
 
 .Explain plan
 [source,json,indent=0]
 ----
-include::example$select/index-hint.jsonc[tag=index]
+include::example$select/no-index-hint.jsonc[tag=index]
 ----
 ====
 
-=== Legacy Equivalent
-
-This hint is equivalent to the legacy `USE INDEX (USING GSI)` clause.
-For more details, refer to xref:n1ql-language-reference/hints.adoc#use-index-clause[USE INDEX Clause].
-
-Note that you cannot use a hint comment and the `USE` clause to specify optimizer hints on the same keyspace.
-If you do this, the hint comment and the `USE` clause are marked as erroneous and ignored by the optimizer.
-
-== INDEX_ALL
-
-This hint directs the optimizer to consider all the specified secondary indexes. 
-If not specified, the optimizer selects the optimal available index.
-
-When you specify INDEX_ALL on a keyspace, the optimizer performs an intersect scan across all listed indexes.
-It waits for all index scans to complete before intersecting the document IDs.
-
-
-
-
-the optimizer uses all listed indexes to perform an intersect scan.
-It waits for all scans to complete
-Instead, it waits for all index scans to complete before performing a complete intersect of the document IDs.
-
-The INDEX_All hint uses a “all or nothing” semantics.
-It either uses all the indexes specified, or it does not consider the hint at all.
-The optimizer does not attempt to consider a subset of the indexes specified.
-If the INDEX_ALL hint is not followed, the optimizer falls back to its normal process for picking index(es) for the keyspace.
-
-An INDEX_ALL hint is only considered “followed” if all the indexes specified are usable for the keyspace in the query.
-If one or more of the indexes cannot be used (due to lack of necessary predicates on index keys), then the INDEX_ALL hint is considered “not followed”.
-
-[NOTE]
-====
-* You must specify at least two indexes in the hint.
-If you provide no indexes or only one index, the hint is considered invalid.
-
-* Only supports GSI indexes.
-You cannot use FTS indexes with this hint. 
-
-* The INDEX_ALL hint cannot be used with any other index hints for the same keyspace.
-It must be the only index hint present. 
-
-* There is no negative hint for the INDEX_ALL hint.
-
-* The INDEX_ALL hint can be used for a keyspace on the right-hand side of an ANSI JOIN or ANSI NEST.
-* The INDEX_ALL hint cannot be used for a keyspace on the inner of a legacy join/nest, i.e. lookup join/nest or index join/nest
-* INDEX_COMBINE is accepted as an alias for INDEX_ALL.
-====
-
+== NO_INDEX_FTS
 === Simple Syntax
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=gsi-all-hint-simple]
+include::partial$grammar/hints.ebnf[tag=no-gsi-hint-simple]
 ----
 
-image::n1ql-language-reference/gsi-all-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-gsi-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
 
-With the simple syntax, this hint specifies a single keyspace expression; and zero, one, or more indexes. You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
-
-NOTE: You must specify at least two indexes in the hint.
-If you provide no indexes or only one index, the hint is considered invalid.
+With the simple syntax, this hint specifies a single keyspace expression, and zero, one, or more indexes.
+You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
 
 ==== Arguments
 
@@ -250,91 +216,29 @@ This argument is optional; if omitted, the optimizer considers _all_ secondary i
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=gsi-all-hint-json]
+include::partial$grammar/hints.ebnf[tag=no-gsi-hint-json]
 ----
 
-image::n1ql-language-reference/gsi-all-hint-json.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-gsi-hint-json.png["Syntax diagram: refer to source code listing", align=left]
 
-With the JSON syntax, this hint takes the form of an `index_all` property.
+With the JSON syntax, this hint takes the form of an `index` property.
 You may only use this property once within the hint comment.
-The value of this property may be an <<index-array-all>> or an <<index-object-all>>.
+The value of this property may be an <<index-array>> or an <<index-object>>.
 
-[#index-array-all]
-==== Index Array
+include::./keyspace-hints.adoc[tag=index-array]
 
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=index-array]
-----
 
-image::n1ql-language-reference/index-array.png["Syntax diagram: refer to source code listing", align=left]
-
-Use this array to specify indexes for multiple keyspaces.
-Each element must be an <<index-object-all>>.
-
-[#index-object-all]
-==== Index Object
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=index-object]
-----
-
-image::n1ql-language-reference/index-object.png["Syntax diagram: refer to source code listing", align=left]
-
-Use this object to specify indexes for a single keyspace.
-It must contain a <<keyspace-property>> and an <<indexes-property>>.
-The order of the properties within the object is not significant.
-
-[#keyspace-property-all]
-==== Keyspace Property
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=keyspace-property]
-----
-
-image::n1ql-language-reference/keyspace-property.png["Syntax diagram: refer to source code listing", align=left]
-
-Synonym for `"keyspace"`: `"alias"`
-
-// tag::keyspace-property[]
-The value of this property is the keyspace or alias to which this hint applies.
-// end::keyspace-property[]
-
-[#indexes-property-all]
-==== Indexes Property
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=indexes-property]
-----
-
-image::n1ql-language-reference/indexes-property.png["Syntax diagram: refer to source code listing", align=left]
-
-The value of this property may be:
-
-[horizontal]
-`null`::
-The optimizer considers all secondary indexes available in the given keyspace.
-
-An _index_ string::
-A secondary index that the optimizer should consider for the given keyspace.
-
-An array of _index_ strings::
-An array of secondary indexes that the optimizer should consider for the given keyspace.
-
-[#index-all-examples,reftext="INDEX_ALL Examples"]
+[#no-index-fts-examples,reftext="NO_INDEX_FTS Examples"]
 === Examples
 
 {cbo-preamble}
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
-[#ex-index-all-opt]
-.Optimized index selection
+[#ex-no-index-fts-hint]
+.Query Without an Index Hint
 ====
-The following query does not include an INDEX_ALL hint.
+The following query does not include an index hint.
 
 .Query
 [source,sqlpp]
@@ -344,6 +248,8 @@ include::example$select/index-opt.n1ql[tag=query]
 
 If you examine the plan for this query, you can see that the optimizer has selected the index `def_inventory_route_sourceairport`, which is installed with the travel sample dataset.
 
+Without the NO_INDEX hint, the optimizer automatically selects the def_inventory_route_sourceairport index for the query.
+
 .Explain plan
 [source,json,indent=0]
 ----
@@ -351,525 +257,109 @@ include::example$select/index-opt.jsonc[tag=index]
 ----
 ====
 
-[#ex-index-all-hint]
-.INDEX hint
+[#ex-no-ndex-hint]
+.Query with the NO_INDEX Hint
 ====
-The following query hints that the optimizer should select the index `def_inventory_route_route_src_dst_day` and `def_inventory_route_sourceairport` for the keyspace `route`.
+The following query hints that the optimizer to avoid using the `def_inventory_route_sourceairport` index for the keyspace `route`.
 
 .Query
 [source,sqlpp]
 ----
-include::example$select/index-all-hint.n1ql[tag=query]
+include::example$select/no-index-hint.n1ql[tag=query]
 ----
-<.> The keyspace is not given an explicit alias in the query.
-You must therefore refer to the keyspace using the keyspace name or implicit alias -- in this case, `route`.
-<.> The implicit alias is the last element in the keyspace path.
 
-If you examine the plan for this query, you can see that the query uses the suggested index.
+If you examine the plan for this query, you can see that the query excludes the  `def_inventory_route_sourceairport` index, forcing the optimizer to consider other available indexes.
+In this case, it has selected the `def_inventory_route_route_src_dst_day` index.
+
 
 .Explain plan
 [source,json,indent=0]
 ----
-include::example$select/index-all-hint.jsonc[tag=index]
+include::example$select/no-index-hint.jsonc[tag=index]
 ----
 ====
 
-== INDEX_FTS
 
-This hint directs the optimizer to consider one or more specified full-text indexes.
-If not specified, the optimizer selects the optimal available index.
+
+== NO_USE_HASH
 
 === Simple Syntax
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=fts-hint-simple]
+include::partial$grammar/hints.ebnf[tag=no-gsi-hint-simple]
 ----
 
-image::n1ql-language-reference/fts-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-gsi-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
 
-With the simple syntax, this hint specifies a single keyspace expression; and zero, one, or more indexes.
+With the simple syntax, this hint specifies a single keyspace expression, and zero, one, or more indexes.
 You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
 
 ==== Arguments
 
 keyspace::
-include::keyspace-hints.adoc[tag=keyspace]
+// tag::keyspace[]
+The keyspace or alias to which this hint applies.
+// end::keyspace[]
 
 index::
-A full-text index that the optimizer should consider for the given keyspace.
-This argument is optional; if omitted, the optimizer considers _all_ full-text indexes available in the given keyspace.
+A secondary index that the optimizer should consider for the given keyspace.
+This argument is optional; if omitted, the optimizer considers _all_ secondary indexes available in the given keyspace.
 
 === JSON Syntax
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=fts-hint-json]
+include::partial$grammar/hints.ebnf[tag=no-gsi-hint-json]
 ----
 
-image::n1ql-language-reference/fts-hint-json.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-gsi-hint-json.png["Syntax diagram: refer to source code listing", align=left]
 
-With the JSON syntax, this hint takes the form of an `index_fts` property.
+With the JSON syntax, this hint takes the form of an `index` property.
 You may only use this property once within the hint comment.
-The value of this property may be an <<index-array-fts>> or an <<index-object-fts>>.
+The value of this property may be an <<index-array>> or an <<index-object>>.
 
-[#index-array-fts]
-==== Index Array
+include::./keyspace-hints.adoc[tag=index-array]
 
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=index-array]
-----
-
-image::n1ql-language-reference/index-array.png["Syntax diagram: refer to source code listing", align=left]
-
-Use this array to specify indexes for multiple keyspaces.
-Each element must be an <<index-object-fts>>.
-
-[#index-object-fts]
-==== Index Object
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=index-object]
-----
-
-image::n1ql-language-reference/index-object.png["Syntax diagram: refer to source code listing", align=left]
-
-Use this object to specify indexes for a single keyspace.
-It must contain a <<keyspace-property-fts>> and an <<indexes-property-fts>>.
-The order of the properties within the object is not significant.
-
-[#keyspace-property-fts]
-==== Keyspace Property
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=keyspace-property]
-----
-
-image::n1ql-language-reference/keyspace-property.png["Syntax diagram: refer to source code listing", align=left]
-
-Synonym for `"keyspace"`: `"alias"`
-
-include::keyspace-hints.adoc[tag=keyspace-property]
-
-[#indexes-property-fts]
-==== Indexes Property
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=indexes-property]
-----
-
-image::n1ql-language-reference/indexes-property.png["Syntax diagram: refer to source code listing", align=left]
-
-The value of this property may be:
-
-[horizontal]
-`null`::
-The optimizer considers all full-text indexes available in the given keyspace.
-
-_index_ string::
-A full-text index that the optimizer should consider for the given keyspace.
-
-_index_ array::
-An array of full-text indexes that the optimizer should consider for the given keyspace.
-
-[#index-fts-examples,reftext="INDEX_FTS Examples"]
-=== Examples
-
-include::ROOT:partial$query-context.adoc[tag=section]
-
-[#ex-index-fts-hint]
-.INDEX_FTS hint
-====
-This example specifies that the optimizer should prefer any suitable FTS index, without specifying an index by name.
-To qualify for this query, there must be an FTS index on `state` and `type`, using the keyword analyzer.
-(Or alternatively, an FTS index on `state`, with a custom type mapping on "hotel".)
-
-.Query
-[source,sqlpp]
-----
-SELECT /*+ INDEX_FTS (hotel) */
-       META().id
-FROM hotel
-WHERE state = "Corse" OR state = "California";
-----
-
-All FTS indexes are considered.
-If a qualified FTS index is available, it is selected for the query.
-If none of the available FTS indexes are qualified, the available GSI indexes are considered instead.
-====
-
-=== Legacy Equivalent
-
-This hint is equivalent to the legacy `USE INDEX (USING FTS)` clause.
-For more details, refer to xref:n1ql-language-reference/hints.adoc#use-index-clause[USE INDEX Clause].
-
-Note that you cannot use a hint comment and the `USE` clause to specify optimizer hints on the same keyspace.
-If you do this, the hint comment and the `USE` clause are marked as erroneous and ignored by the optimizer.
-
-== USE_NL
-
-This hint directs the optimizer to consider a nested-loop join for the specified keyspace.
-This hint must be specified on the keyspace on the right-hand side of the join.
-If not specified, the optimizer selects the optimal join method.
+== NO_USE_NL
 
 === Simple Syntax
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=nl-hint-simple]
+include::partial$grammar/hints.ebnf[tag=no-gsi-hint-simple]
 ----
 
-image::n1ql-language-reference/nl-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-gsi-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
 
-With the simple syntax, this hint specifies one or more keyspaces.
-You may also use this hint multiple times within the hint comment.
+With the simple syntax, this hint specifies a single keyspace expression, and zero, one, or more indexes.
+You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
 
 ==== Arguments
 
 keyspace::
-include::keyspace-hints.adoc[tag=keyspace]
+// tag::keyspace[]
+The keyspace or alias to which this hint applies.
+// end::keyspace[]
+
+index::
+A secondary index that the optimizer should consider for the given keyspace.
+This argument is optional; if omitted, the optimizer considers _all_ secondary indexes available in the given keyspace.
 
 === JSON Syntax
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=nl-hint-json]
+include::partial$grammar/hints.ebnf[tag=no-gsi-hint-json]
 ----
 
-image::n1ql-language-reference/nl-hint-json.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-gsi-hint-json.png["Syntax diagram: refer to source code listing", align=left]
 
-With the JSON syntax, this hint takes the form of a `use_nl` property.
+With the JSON syntax, this hint takes the form of an `index` property.
 You may only use this property once within the hint comment.
-The value of this property may be a <<keyspace-array>> or a <<keyspace-object>>.
+The value of this property may be an <<index-array>> or an <<index-object>>.
 
-[#keyspace-array]
-==== Keyspace Array
+include::./keyspace-hints.adoc[tag=index-array]
 
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=keyspace-array]
-----
+== Interaction of positive and negative optimizer hints
 
-image::n1ql-language-reference/keyspace-array.png["Syntax diagram: refer to source code listing", align=left]
-
-Use this array to apply the hint to multiple keyspaces.
-Each element must be a <<keyspace-object>>.
-
-[#keyspace-object]
-==== Keyspace Object
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=keyspace-object]
-----
-
-image::n1ql-language-reference/keyspace-object.png["Syntax diagram: refer to source code listing", align=left]
-
-Use this object to apply the hint to a single keyspace.
-It must contain a <<keyspace-property-nl>>.
-
-[#keyspace-property-nl]
-==== Keyspace Property
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=keyspace-property]
-----
-
-image::n1ql-language-reference/keyspace-property.png["Syntax diagram: refer to source code listing", align=left]
-
-Synonym for `"keyspace"`: `"alias"`
-
-include::keyspace-hints.adoc[tag=keyspace-property]
-
-[#use-nl-examples,reftext="USE_NL Examples"]
-=== Examples
-
-{cbo-preamble}
-
-include::ROOT:partial$query-context.adoc[tag=section]
-
-[#ex-use-nl-opt]
-.Optimized join method selection
-====
-The following query does not include a join hint.
-
-.Query
-[source,sqlpp]
-----
-include::example$select/use-nl-opt.n1ql[tag=query]
-----
-
-If you examine the plan for this query, you can see that the optimizer has selected the hash join method.
-
-.Explain plan
-[source,json,indent=0]
-----
-include::example$select/use-nl-opt.jsonc[tag=method]
-----
-====
-
-[#ex-use-nl-hint]
-.USE_NL hint
-====
-The following query is equivalent to the one in the <<ex-use-nl-opt>> example, but includes a nested-loop join hint.
-
-.Query
-[source,sqlpp]
-----
-include::example$select/use-nl-hint.n1ql[tag=query]
-----
-
-<.> The keyspace is given an explicit alias in the query.
-You must therefore refer to the keyspace using the explicit alias.
-<.> In this case, the explicit alias is `a`.
-
-If you examine the plan text for this query, you can see that the query uses the suggested join method.
-
-.Explain plan
-[source,json,indent=0]
-----
-include::example$select/use-nl-hint.jsonc[tag=method]
-----
-====
-
-=== Legacy Equivalent
-
-This hint is equivalent to the legacy `USE NL` clause.
-For more details, refer to xref:n1ql-language-reference/join.adoc#use-nl-hint[USE NL Clause].
-
-Note that you cannot specify optimizer hints and the `USE` clause on the same keyspace in the same query.
-If you do this, the optimizer hints and `USE` clause are both marked as erroneous and ignored by the optimizer.
-
-== USE_HASH
-
-[.edition]#{enterprise}#
-
-This hint directs the optimizer to consider a hash join for the specified keyspace.
-This hint must be specified on the keyspace on the right-hand side of the join.
-If not specified, the optimizer selects the optimal join method.
-
-A hash join has two sides: a *build* side and a *probe* side.
-The build side of the join is used to create an in-memory hash table.
-The probe side uses that table to find matches and perform the join.
-Typically, this means you want the build side to be used on the smaller of the two sets.
-
-This hint enables you specify whether the right side of the join should be the build side or the probe side.
-If you specify that the right side of the join is the build side, then the left side will be the probe side, and vice versa.
-
-NOTE: For Couchbase Server Community Edition (CE), only nested-loop join is considered by the optimizer, and any specified `USE_HASH` hint will be silently ignored.
-
-=== Simple Syntax
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=hash-hint-simple]
-----
-
-image::n1ql-language-reference/hash-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
-
-With the simple syntax, this hint specifies one or more keyspaces.
-For each keyspace, you may also add a slash, followed by an option.
-You may also use this hint multiple times within the hint comment.
-
-==== Arguments
-
-keyspace::
-include::keyspace-hints.adoc[tag=keyspace]
-
-==== Options
-
-/BUILD::
-// tag::build[]
-The specified keyspace is to be used as the build side of the join.
-// end::build[]
-
-/PROBE::
-// tag::probe[]
-The specified keyspace is to be used as the probe side of the join.
-// end::probe[]
-
-If you omit the option (including the slash), the optimizer determines whether the specified keyspace is to be used as the build side or the probe side of the join, based on the estimated cardinality of both sides.
-
-=== JSON Syntax
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=hash-hint-json]
-----
-
-image::n1ql-language-reference/hash-hint-json.png["Syntax diagram: refer to source code listing", align=left]
-
-With the JSON syntax, this hint takes the form of a `use_hash` property.
-You may only use this property once within the hint comment.
-The value of this property may be a <<hash-array>> or a <<hash-object>>.
-
-[#hash-array]
-==== Hash Array
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=hash-array]
-----
-
-image::n1ql-language-reference/hash-array.png["Syntax diagram: refer to source code listing", align=left]
-
-Use this array to apply the hint to multiple keyspaces.
-Each element must be a <<hash-object>>.
-
-[#hash-object]
-==== Hash Object
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=hash-object]
-----
-
-image::n1ql-language-reference/hash-object.png["Syntax diagram: refer to source code listing", align=left]
-
-Use this object to apply the hint to a single keyspace.
-It must contain a <<keyspace-property-hash>> and an optional <<option-property>>.
-The order of the properties within the object is not significant.
-
-[#keyspace-property-hash]
-==== Keyspace Property
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=keyspace-property]
-----
-
-image::n1ql-language-reference/keyspace-property.png["Syntax diagram: refer to source code listing", align=left]
-
-Synonym for `"keyspace"`: `"alias"`
-
-include::keyspace-hints.adoc[tag=keyspace-property]
-
-[#option-property]
-==== Option Property
-
-[source,ebnf]
-----
-include::partial$grammar/hints.ebnf[tag=option-property]
-----
-
-image::n1ql-language-reference/option-property.png["Syntax diagram: refer to source code listing", align=left]
-
-The value of this property may be:
-
-[horizontal]
-`"build"`::
-include::keyspace-hints.adoc[tag=build]
-
-`"probe"`::
-include::keyspace-hints.adoc[tag=probe]
-
-`null`::
-The optimizer determines whether the specified keyspace is to be used as the build side or the probe side of the join, based on the estimated cardinality of both sides.
-
-Similarly, if you omit this property entirely, the optimizer determines whether the specified keyspace is to be used as the build side or the probe side of the join.
-
-[#use-hash-examples,reftext="USE_HASH Examples"]
-=== Examples
-
-{cbo-preamble}
-
-include::ROOT:partial$query-context.adoc[tag=section]
-
-[#ex-use-hash-opt]
-.Optimized join method selection
-====
-The following query does not include a join hint.
-
-.Query
-[source,sqlpp]
-----
-include::example$select/use-hash-opt.n1ql[tag=query]
-----
-
-If you examine the plan for this query, you can see that the optimizer has selected to use the hash join method, and to put the `aline` keyspace on the build side of the join.
-
-.Explain plan
-[source,json,indent=0]
-----
-include::example$select/use-hash-opt.jsonc[tags=method;ellipsis]
-----
-====
-
-[#ex-use-hash-probe-hint]
-.USE_HASH with PROBE
-====
-The following query is equivalent to the one in the <<ex-use-hash-opt>> example, but specifies that the keyspace `aline` is to be joined (with `rte`) using a hash join, and `aline` is used as the probe side of the hash join.
-
-.Query -- simple syntax
-[source,sqlpp]
-----
-include::example$select/use-hash-probe-hint.n1ql[tag=query]
-----
-
-If you examine the explain plan for this query, you can see that the query uses the hash join method as suggested, with the `aline` keyspace on the probe side of the join.
-
-.Explain plan
-[source,json,indent=0]
-----
-include::example$select/use-hash-probe-hint.jsonc[tags=method;ellipsis]
-----
-====
-
-[#ex-use-hash-build-hint]
-.USE_HASH with BUILD
-====
-This is effectively the same query as the <<ex-use-hash-probe-hint>> example, except the two keyspaces are switched, and here the `BUILD` option is used, indicating the hash join should use `rte` as the build side.
-
-.Query
-[source,sqlpp]
-----
-include::example$select/use-hash-build-hint.n1ql[tag=query]
-----
-
-If you examine the explain plan for this query, you can see that the query uses the hash join method as suggested, with the `rte` keyspace on the build side.
-
-.Explain plan
-[source,json,indent=0]
-----
-include::example$select/use-hash-probe-hint.jsonc[tags=method;ellipsis]
-----
-====
-
-[#ex-use-hash-null-hint]
-.USE_HASH with optimizer
-====
-This is the same query as the <<ex-use-hash-probe-hint>> example, but the hint does not specify whether the `aline` keyspace should be on the probe side or the build side of the join.
-
-.Query -- JSON syntax
-[source,sqlpp]
-----
-include::example$select/use-hash-null-hint.n1ql[tag=query]
-----
-
-If you examine the explain plan for this query, you can see that the query uses the hash join method as suggested, but the optimizer has selected to put the `aline` keyspace on the build side of the join.
-
-.Explain plan
-[source,json,indent=0]
-----
-include::example$select/use-hash-null-hint.jsonc[tags=method;ellipsis]
-----
-====
-
-=== Legacy Equivalent
-
-This hint is equivalent to the legacy `USE HASH` clause.
-For more details, refer to xref:n1ql-language-reference/join.adoc#use-hash-hint[USE HASH Clause].
-
-Note that you cannot specify both optimizer hints and the `USE` clause on the same keyspace.
-If you do this, the optimizer hints and the `USE` clause are both marked as erroneous and ignored by the optimizer.
-
-== Related Links
-
-* xref:n1ql-language-reference/cost-based-optimizer.adoc[]
-* xref:n1ql-language-reference/optimizer-hints.adoc[]
-* xref:n1ql-language-reference/query-hints.adoc[]
