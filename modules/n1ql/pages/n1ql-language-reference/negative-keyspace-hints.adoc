@@ -53,9 +53,7 @@ You can use this hint multiple times within the hint comment to specify hints fo
 ==== Arguments
 
 keyspace::
-// tag::keyspace[]
 The keyspace or alias to which this hint applies.
-// end::keyspace[]
 
 index::
 A secondary index that the optimizer must not use for the given keyspace.
@@ -214,9 +212,7 @@ You can use this hint multiple times within the hint comment to specify hints fo
 ==== Arguments
 
 keyspace::
-// tag::keyspace[]
 The keyspace or alias to which this hint applies.
-// end::keyspace[]
 
 index::
 A full-text index that the optimizer must not use for the given keyspace.
@@ -326,107 +322,132 @@ If a qualified FTS index is available, it is selected for the query.
 If none of the available FTS indexes are qualified, the available GSI indexes are considered instead.
 ====
 
-
-
-
-
 == NO_USE_HASH
 [.edition]#{enterprise}#
 
 This hint is the negative equivalent of the xref:n1ql-language-reference/keyspace-hints.adoc#use_hash[USE_HASH hint].
-It directs the optimizer not to consider a hash join for the specified keyspace.
+It directs the optimizer not to consider a hash join for a specified keyspace.
 This hint must be specified on the keyspace on the right-hand side of the join.
 If not specified, the optimizer selects the optimal join method.
 
-A hash join has two sides: a *build* side and a *probe* side.
-The build side of the join is used to create an in-memory hash table.
-The probe side uses that table to find matches and perform the join.
-Typically, this means you want the build side to be used on the smaller of the two sets.
-
-This hint enables you specify whether the right side of the join should be the build side or the probe side.
-If you specify that the right side of the join is the build side, then the left side will be the probe side, and vice versa.
-
-
- The syntax is similar to USE_HASH hint, with one difference: in USE_HASH hint, you can optionally specify whether the keyspace should appear on the build or probe side of the hash join. This option is not available for the NO_USE_HASH/AVOID_HASH hint. For this hint, only one or more keyspace or alias can be specified. For example: NO_USE_HASH(airport), or AVOID_HASH(route, airline).
-
+Unlike xref:n1ql-language-reference/keyspace-hints.adoc#use_hash[USE_HASH], this hint does not allow you to specify whether the keyspace should appear on the build or probe side of the hash join.
+Instead, you can only specify the keyspace name or alias to which this hint applies. 
 
 === Simple Syntax
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=no-gsi-hint-simple]
+include::partial$grammar/hints.ebnf[tag=no-hash-hint-simple]
 ----
 
-image::n1ql-language-reference/no-gsi-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-hash-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
 
-With the simple syntax, this hint specifies a single keyspace expression, and zero, one, or more indexes.
-You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
+With the simple syntax, this hint specifies one or more keyspaces.
+You may also use this hint multiple times within the hint comment.
 
 ==== Arguments
 
 keyspace::
-// tag::keyspace[]
 The keyspace or alias to which this hint applies.
-// end::keyspace[]
-
-index::
-A secondary index that the optimizer should consider for the given keyspace.
-This argument is optional; if omitted, the optimizer considers _all_ secondary indexes available in the given keyspace.
 
 === JSON Syntax
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=no-gsi-hint-json]
+include::partial$grammar/hints.ebnf[tag=no-hash-hint-json]
 ----
 
-image::n1ql-language-reference/no-gsi-hint-json.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-hash-hint-json.png["Syntax diagram: refer to source code listing", align=left]
 
-With the JSON syntax, this hint takes the form of an `index` property.
+With the JSON syntax, this hint takes the form of a `no_use_hash` or `avoid_hash` property.
 You may only use this property once within the hint comment.
-The value of this property may be an <<index-array>> or an <<index-object>>.
+The value of this property may be a <<no-hash-array>> or a <<no-hash-object>>.
 
-include::./keyspace-hints.adoc[tag=index-array]
-
-== NO_USE_NL
-
-=== Simple Syntax
+[#no-hash-array]
+==== No Hash Array
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=no-gsi-hint-simple]
+include::partial$grammar/hints.ebnf[tag=no-hash-array]
 ----
 
-image::n1ql-language-reference/no-gsi-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-hash-array.png["Syntax diagram: refer to source code listing", align=left]
 
-With the simple syntax, this hint specifies a single keyspace expression, and zero, one, or more indexes.
-You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
+Use this array to apply the hint to multiple keyspaces.
+Each element must be a <<no-hash-object>>.
 
-==== Arguments
-
-keyspace::
-// tag::keyspace[]
-The keyspace or alias to which this hint applies.
-// end::keyspace[]
-
-index::
-A secondary index that the optimizer should consider for the given keyspace.
-This argument is optional; if omitted, the optimizer considers _all_ secondary indexes available in the given keyspace.
-
-=== JSON Syntax
+[#no-hash-object]
+==== No Hash Object
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=no-gsi-hint-json]
+include::partial$grammar/hints.ebnf[tag=no-hash-object]
 ----
 
-image::n1ql-language-reference/no-gsi-hint-json.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-hash-object.png["Syntax diagram: refer to source code listing", align=left]
 
-With the JSON syntax, this hint takes the form of an `index` property.
-You may only use this property once within the hint comment.
-The value of this property may be an <<index-array>> or an <<index-object>>.
+Use this object to apply the hint to a single keyspace.
+It must contain a <<keyspace-property-hash>>.
+The order of the properties within the object is not significant.
 
-include::./keyspace-hints.adoc[tag=index-array]
+[#keyspace-property-hash]
+==== Keyspace Property
 
-== Interaction of positive and negative optimizer hints
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=keyspace-property]
+----
 
+image::n1ql-language-reference/keyspace-property.png["Syntax diagram: refer to source code listing", align=left]
+
+Synonym for `"keyspace"`: `"alias"`
+
+include::keyspace-hints.adoc[tag=keyspace-property]
+
+[#no-use-hash-examples,reftext="NO_USE_HASH Examples"]
+=== Examples
+
+{cbo-preamble}
+
+include::ROOT:partial$query-context.adoc[tag=section]
+
+[#ex-no-use-hash-opt]
+.OQuery without a join hint
+====
+The following query does not include a join hint.
+
+.Query
+[source,sqlpp]
+----
+include::example$select/use-hash-opt.n1ql[tag=query]
+----
+
+If you examine the plan for this query, you can see that the optimizer has selected to use the hash join method. 
+
+.Explain plan
+[source,json,indent=0]
+----
+include::example$select/use-hash-opt.jsonc[tags=method;ellipsis]
+----
+====
+
+[#ex-no-use-hash-hint]
+.Query with the NO_USE_HASH Hint
+====
+The following query hints the optimizer to avoid using a hash join for the `aline` keyspace. 
+
+.Query
+[source,sqlpp]
+----
+include::example$select/no-use-hash-hint.n1ql[tag=query]
+----
+
+If you examine the plan for this query, you can see that the optimizer avoids using a hash join for the `aline` keyspace and considers other join methods. 
+In this case, the optimizer has selected the generic join method.
+
+.Explain plan
+[source,json,indent=0]
+----
+include::example$select/no-use-hash-hint.jsonc[tag=join]
+----
+====
