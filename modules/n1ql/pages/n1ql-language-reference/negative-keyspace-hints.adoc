@@ -30,8 +30,9 @@ Unlike positive keyspace hints, negative hints do not have legacy equivalents.
 
 == NO_INDEX
 
-This hint is the negative equivalent of the xref:n1ql-language-reference/keyspace-hints.adoc#index[INDEX Hint].
-It directs the optimizer not to use a specific index or indexes for a keyspace.
+This hint is the negative equivalent of the xref:n1ql-language-reference/keyspace-hints.adoc#index[INDEX hint].
+It directs the optimizer not to use a specific secondary index for a keyspace.
+You can add one or more secondary indexes in the hint.
 If you do not specify this hint, the optimizer selects the optimal available index. 
 
 IMPORTANT: Since Couchbase does not currently support full table scans, the optimizer ignores the NO_INDEX hint when no indexes are specified.
@@ -189,16 +190,25 @@ include::example$select/no-index-hint.jsonc[tag=index]
 ====
 
 == NO_INDEX_FTS
+
+This hint is the negative equivalent of the xref:n1ql-language-reference/keyspace-hints.adoc#index_fts[INDEX_FTS hint].
+It directs the optimizer not to use a specific full-text index for a keyspace.
+You can add one or more full-text indexes in the hint. 
+If you do not specify this hint, the optimizer selects the optimal available index. 
+
+IMPORTANT: Since Couchbase does not currently support full table scans, the optimizer ignores the NO_INDEX_FTS hint when no indexes are specified.
+Therefore, for this hint to work effectively, you must specify at least one index.
+
 === Simple Syntax
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=no-gsi-hint-simple]
+include::partial$grammar/hints.ebnf[tag=no-fts-hint-simple]
 ----
 
-image::n1ql-language-reference/no-gsi-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/no-fts-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
 
-With the simple syntax, this hint specifies a single keyspace expression, and zero, one, or more indexes.
+With the simple syntax, this hint specifies a single keyspace expression along with zero, one, or more indexes.
 You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
 
 ==== Arguments
@@ -209,8 +219,10 @@ The keyspace or alias to which this hint applies.
 // end::keyspace[]
 
 index::
-A secondary index that the optimizer should consider for the given keyspace.
-This argument is optional; if omitted, the optimizer considers _all_ secondary indexes available in the given keyspace.
+A full-text index that the optimizer must not use for the given keyspace.
+This argument is optional.
++
+IMPORTANT: Since Couchbase does not currently support full table scans, the optimizer ignores the NO_INDEX_FTS hint when no indexes are specified.
 
 === JSON Syntax
 
@@ -225,63 +237,118 @@ With the JSON syntax, this hint takes the form of an `index` property.
 You may only use this property once within the hint comment.
 The value of this property may be an <<index-array>> or an <<index-object>>.
 
-include::./keyspace-hints.adoc[tag=index-array]
+[#index-array-fts]
+==== Index Array
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=index-array]
+----
+
+image::n1ql-language-reference/index-array.png["Syntax diagram: refer to source code listing", align=left]
+
+Use this array to specify indexes for multiple keyspaces.
+Each element must be an <<index-object>>.
+
+[#index-object-fts]
+==== Index Object
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=index-object]
+----
+
+image::n1ql-language-reference/index-object.png["Syntax diagram: refer to source code listing", align=left]
+
+Use this object to specify indexes for a single keyspace.
+It must contain a <<keyspace-property>> and an <<indexes-property>>.
+The order of the properties within the object is not significant.
+
+[#keyspace-property-fts]
+==== Keyspace Property
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=keyspace-property]
+----
+
+image::n1ql-language-reference/keyspace-property.png["Syntax diagram: refer to source code listing", align=left]
+
+Synonym for `"keyspace"`: `"alias"`
+
+// tag::keyspace-property[]
+The value of this property is the keyspace or alias to which this hint applies.
+// end::keyspace-property[]
+
+[#indexes-property-fts]
+==== Indexes Property
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=indexes-property]
+----
+
+image::n1ql-language-reference/indexes-property.png["Syntax diagram: refer to source code listing", align=left]
+
+The value of this property may be:
+
+[horizontal]
+`null`::
+The optimizer avoids all full-text indexes available in the given keyspace.
+However, since Couchbase does not currently support full table scans, the optimizer ignores the NO_INDEX_FTS hint when the value is `null`.
+
+An _index_ string::
+A full-text index that the optimizer must not use for the given keyspace.
+
+An array of _index_ strings::
+An array of full-text indexes that the optimizer must not use for the given keyspace.
 
 
-[#no-index-fts-examples,reftext="NO_INDEX_FTS Examples"]
+[#no-index-fts-examples,reftext="NO_INDEX_FTS Example"]
 === Examples
-
-{cbo-preamble}
-
-include::ROOT:partial$query-context.adoc[tag=section]
-
-[#ex-no-index-fts-hint]
-.Query Without an Index Hint
+.NO_INDEX_FTS hint
 ====
-The following query does not include an index hint.
+This example specifies that the optimizer should not use the `hotel_state_fts_index` FTS index.
+To qualify for this query, you must have this FTS index on `state` and `type`, using the keyword analyzer.
+(Or alternatively, the FTS index on `state`, with a custom type mapping on "hotel".)
 
 .Query
 [source,sqlpp]
 ----
-include::example$select/index-opt.n1ql[tag=query]
+SELECT /*+ NO_INDEX_FTS (hotel hotel_state_fts_index) */
+       META().id
+FROM hotel
+WHERE state = "Corse" OR state = "California";
 ----
 
-If you examine the plan for this query, you can see that the optimizer has selected the index `def_inventory_route_sourceairport`, which is installed with the travel sample dataset.
-
-Without the NO_INDEX hint, the optimizer automatically selects the def_inventory_route_sourceairport index for the query.
-
-.Explain plan
-[source,json,indent=0]
-----
-include::example$select/index-opt.jsonc[tag=index]
-----
+The optimizer omits the `hotel_state_fts_index` index from the query plan.
+If a qualified FTS index is available, it is selected for the query.
+If none of the available FTS indexes are qualified, the available GSI indexes are considered instead.
 ====
 
-[#ex-no-ndex-hint]
-.Query with the NO_INDEX Hint
-====
-The following query hints that the optimizer to avoid using the `def_inventory_route_sourceairport` index for the keyspace `route`.
 
-.Query
-[source,sqlpp]
-----
-include::example$select/no-index-hint.n1ql[tag=query]
-----
-
-If you examine the plan for this query, you can see that the query excludes the  `def_inventory_route_sourceairport` index, forcing the optimizer to consider other available indexes.
-In this case, it has selected the `def_inventory_route_route_src_dst_day` index.
-
-
-.Explain plan
-[source,json,indent=0]
-----
-include::example$select/no-index-hint.jsonc[tag=index]
-----
-====
 
 
 
 == NO_USE_HASH
+[.edition]#{enterprise}#
+
+This hint is the negative equivalent of the xref:n1ql-language-reference/keyspace-hints.adoc#use_hash[USE_HASH hint].
+It directs the optimizer not to consider a hash join for the specified keyspace.
+This hint must be specified on the keyspace on the right-hand side of the join.
+If not specified, the optimizer selects the optimal join method.
+
+A hash join has two sides: a *build* side and a *probe* side.
+The build side of the join is used to create an in-memory hash table.
+The probe side uses that table to find matches and perform the join.
+Typically, this means you want the build side to be used on the smaller of the two sets.
+
+This hint enables you specify whether the right side of the join should be the build side or the probe side.
+If you specify that the right side of the join is the build side, then the left side will be the probe side, and vice versa.
+
+
+ The syntax is similar to USE_HASH hint, with one difference: in USE_HASH hint, you can optionally specify whether the keyspace should appear on the build or probe side of the hash join. This option is not available for the NO_USE_HASH/AVOID_HASH hint. For this hint, only one or more keyspace or alias can be specified. For example: NO_USE_HASH(airport), or AVOID_HASH(route, airline).
+
 
 === Simple Syntax
 
