@@ -1,32 +1,29 @@
 = Negative Hints
 :page-topic-type: reference
 :imagesdir: ../../assets/images
-:description: Negative hints instruct the optimizer to not use certain indexes or join methods.
-:cbo-preamble: For the examples in this section, it is assumed that the cost-based optimizer is active, and all optimizer statistics are up-to-date.
-:page-partial:
-:!example-caption:
+:description: Negative hints instructs the optimizer not to use certain indexes or join methods.
+:cbo-preamble: For the examples in this section, it's assumed that the cost-based optimizer is active, and all optimizer statistics are up-to-date.
 
 [abstract]
 {description}
 
-A negative hint is a type of optimizer hint that instructs the optimizer to avoid using specific indexes or join methods.
-Unlike positive keyspace hints, which force the optimizer to use a particular method, negative hints provide a way to exclude options. 
+A negative hint is a type of xref:n1ql-language-reference/optimizer-hints.adoc[optimizer hint] that applies to a specific keyspace. 
+While xref:n1ql-language-reference/keyspace-hints.adoc[positive keyspace hints] force the optimizer to use a particular method, negative hints instructs it what to avoid.
 
-There are two types of negative hints: index hints and join hints. 
-Index hints prevent the optimizer from using certain indexes, while join hints prevent the optimizer from using certain join methods.
+Negative hints are of two types: index hints and join hints. 
+Index hints direct optimizer not to use specific indexes, and join hints directs it to avoid specific join methods.
 
 For each negative hint, you must specify the keyspace or keyspaces that the hint applies to.
-If a keyspace is given an explicit alias in the query, then the hint must refer to the explicit alias, not the keyspace name. This is to avoid confusion in situations where the same keyspace can be used multiple times (with different aliases) in the same query.
+If a keyspace is given an explicit alias in the query, then the hint must refer to the explicit alias, not the keyspace name. 
+This is to avoid confusion in situations where the same keyspace can be used multiple times (with different aliases) in the same query.
 
-If the keyspace is _not_ given an explicit alias in the query, the hint must refer to the keyspace using the keyspace name.
+If the keyspace is not given an explicit alias in the query, the hint must refer to the keyspace using the keyspace name.
 (If the keyspace name is a dotted path, the hint must refer to the keyspace using its implicit alias, which is the last component in the keyspace path.)
 
-You can specify negative hints using either simple syntax or JSON syntax.
-You cannot mix simple syntax and JSON syntax in the same hint comment.
+Negative hints support two prefixes: `NO_` and `AVOID_`. 
+You can specify them using either simple syntax or JSON syntax, but you cannot mix the two in the same hint comment.
 
-Additionally, negative hints also support two prefixes: `NO_` and `AVOID_`.
-
-Unlike positive keyspace hints, negative hints do not have legacy equivalents. 
+NOTE: Unlike xref:n1ql-language-reference/keyspace-hints.adoc[positive keyspace hints], negative hints do not have legacy equivalents. 
 
 == NO_INDEX
 
@@ -48,7 +45,8 @@ include::partial$grammar/hints.ebnf[tag=no-gsi-hint-simple]
 image::n1ql-language-reference/no-gsi-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
 
 With the simple syntax, this hint specifies a single keyspace expression along with zero, one, or more indexes to avoid.
-You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
+You can either use `NO_INDEX` or `AVOID_INDEX` as the hint keyword.
+You can also use this hint multiple times within a hint comment to apply it to more than one keyspace.
 
 ==== Arguments
 
@@ -70,9 +68,9 @@ include::partial$grammar/hints.ebnf[tag=no-gsi-hint-json]
 
 image::n1ql-language-reference/no-gsi-hint-json.png["Syntax diagram: refer to source code listing", align=left]
 
-With the JSON syntax, this hint takes the form of an `index` property.
-You may only use this property once within the hint comment.
-The value of this property may be an <<index-array>> or an <<index-object>>.
+With the JSON syntax, this hint takes the form of a `no_index` or `avoid_index` property.
+You can only use this property once within a hint comment.
+The value of this property can be an <<index-array>> or an <<index-object>>.
 
 [#index-array]
 ==== Index Array
@@ -127,17 +125,17 @@ include::partial$grammar/hints.ebnf[tag=indexes-property]
 
 image::n1ql-language-reference/indexes-property.png["Syntax diagram: refer to source code listing", align=left]
 
-The value of this property may be:
+The value of this property can be:
 
 [horizontal]
-`null`::
+null::
 The optimizer avoids all secondary indexes available in the given keyspace.
 However, since Couchbase does not currently support full table scans, the optimizer ignores the NO_INDEX hint when the value is `null`.
 
-An _index_ string::
+An index string::
 A secondary index that the optimizer must not use for the given keyspace.
 
-An array of _index_ strings::
+An array of index strings::
 An array of secondary indexes that the optimizer must not use for the given keyspace.
 
 [#no-index-examples,reftext="NO_INDEX Examples"]
@@ -207,7 +205,8 @@ include::partial$grammar/hints.ebnf[tag=no-fts-hint-simple]
 image::n1ql-language-reference/no-fts-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
 
 With the simple syntax, this hint specifies a single keyspace expression along with zero, one, or more indexes.
-You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
+You can either use `NO_INDEX_FTS` or `AVOID_INDEX_FTS` as the hint keyword.
+You can also use this hint multiple times within a hint comment to apply it to more than one keyspace.
 
 ==== Arguments
 
@@ -229,11 +228,11 @@ include::partial$grammar/hints.ebnf[tag=no-gsi-hint-json]
 
 image::n1ql-language-reference/no-gsi-hint-json.png["Syntax diagram: refer to source code listing", align=left]
 
-With the JSON syntax, this hint takes the form of an `index` property.
-You may only use this property once within the hint comment.
-The value of this property may be an <<index-array>> or an <<index-object>>.
+With the JSON syntax, this hint takes the form of a `no_index_fts` or `avoid_index_fts` property.
+You can only use this property once within the hint comment.
+The value of this property can be an <<index-array-no-fts>> or an <<index-object-no-fts>>.
 
-[#index-array-fts]
+[#index-array-no-fts]
 ==== Index Array
 
 [source,ebnf]
@@ -244,9 +243,9 @@ include::partial$grammar/hints.ebnf[tag=index-array]
 image::n1ql-language-reference/index-array.png["Syntax diagram: refer to source code listing", align=left]
 
 Use this array to specify indexes for multiple keyspaces.
-Each element must be an <<index-object>>.
+Each element must be an <<index-object-no-fts>>.
 
-[#index-object-fts]
+[#index-object-no-fts]
 ==== Index Object
 
 [source,ebnf]
@@ -257,10 +256,10 @@ include::partial$grammar/hints.ebnf[tag=index-object]
 image::n1ql-language-reference/index-object.png["Syntax diagram: refer to source code listing", align=left]
 
 Use this object to specify indexes for a single keyspace.
-It must contain a <<keyspace-property>> and an <<indexes-property>>.
+It must contain a <<keyspace-property-no-fts>> and an <<indexes-property-no-fts>>.
 The order of the properties within the object is not significant.
 
-[#keyspace-property-fts]
+[#keyspace-property-no-fts]
 ==== Keyspace Property
 
 [source,ebnf]
@@ -276,7 +275,7 @@ Synonym for `"keyspace"`: `"alias"`
 The value of this property is the keyspace or alias to which this hint applies.
 // end::keyspace-property[]
 
-[#indexes-property-fts]
+[#indexes-property-no-fts]
 ==== Indexes Property
 
 [source,ebnf]
@@ -286,17 +285,17 @@ include::partial$grammar/hints.ebnf[tag=indexes-property]
 
 image::n1ql-language-reference/indexes-property.png["Syntax diagram: refer to source code listing", align=left]
 
-The value of this property may be:
+The value of this property can be:
 
 [horizontal]
-`null`::
+null::
 The optimizer avoids all full-text indexes available in the given keyspace.
 However, since Couchbase does not currently support full table scans, the optimizer ignores the NO_INDEX_FTS hint when the value is `null`.
 
-An _index_ string::
+An index string::
 A full-text index that the optimizer must not use for the given keyspace.
 
-An array of _index_ strings::
+An array of index strings::
 An array of full-text indexes that the optimizer must not use for the given keyspace.
 
 
@@ -306,7 +305,7 @@ An array of full-text indexes that the optimizer must not use for the given keys
 ====
 This example specifies that the optimizer should not use the `hotel_state_fts_index` FTS index.
 To qualify for this query, you must have this FTS index on `state` and `type`, using the keyword analyzer.
-(Or alternatively, the FTS index on `state`, with a custom type mapping on "hotel".)
+(Or alternatively, the FTS index on `state`, with a custom type mapping on `hotel`.)
 
 .Query
 [source,sqlpp]
@@ -318,11 +317,12 @@ WHERE state = "Corse" OR state = "California";
 ----
 
 The optimizer omits the `hotel_state_fts_index` index from the query plan.
-If a qualified FTS index is available, it is selected for the query.
+If a qualified FTS index is available, it's selected for the query.
 If none of the available FTS indexes are qualified, the available GSI indexes are considered instead.
 ====
 
 == NO_USE_HASH
+
 [.edition]#{enterprise}#
 
 This hint is the negative equivalent of the xref:n1ql-language-reference/keyspace-hints.adoc#use_hash[USE_HASH hint].
@@ -343,7 +343,8 @@ include::partial$grammar/hints.ebnf[tag=no-hash-hint-simple]
 image::n1ql-language-reference/no-hash-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
 
 With the simple syntax, this hint specifies one or more keyspaces.
-You may also use this hint multiple times within the hint comment.
+You can either use `NO_USE_HASH` or `AVOID_HASH` as the hint keyword.
+You may also use this hint multiple times within a hint comment.
 
 ==== Arguments
 
@@ -360,37 +361,36 @@ include::partial$grammar/hints.ebnf[tag=no-hash-hint-json]
 image::n1ql-language-reference/no-hash-hint-json.png["Syntax diagram: refer to source code listing", align=left]
 
 With the JSON syntax, this hint takes the form of a `no_use_hash` or `avoid_hash` property.
-You may only use this property once within the hint comment.
-The value of this property may be a <<no-hash-array>> or a <<no-hash-object>>.
+You can only use this property once within a hint comment.
+The value of this property can be a <<keyspace-array-no-hash>> or a <<keyspace-object-no-hash>>.
 
-[#no-hash-array]
-==== No Hash Array
+[#keyspace-array-no-hash]
+==== Keyspace Array
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=no-hash-array]
+include::partial$grammar/hints.ebnf[tag=keyspace-array]
 ----
 
-image::n1ql-language-reference/no-hash-array.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-array.png["Syntax diagram: refer to source code listing", align=left]
 
 Use this array to apply the hint to multiple keyspaces.
-Each element must be a <<no-hash-object>>.
+Each element must be a <<keyspace-object-no-hash>>.
 
-[#no-hash-object]
-==== No Hash Object
+[#keyspace-object-no-hash]
+==== Keyspace Object
 
 [source,ebnf]
 ----
-include::partial$grammar/hints.ebnf[tag=no-hash-object]
+include::partial$grammar/hints.ebnf[tag=keyspace-object]
 ----
 
-image::n1ql-language-reference/no-hash-object.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-object.png["Syntax diagram: refer to source code listing", align=left]
 
 Use this object to apply the hint to a single keyspace.
-It must contain a <<keyspace-property-hash>>.
-The order of the properties within the object is not significant.
+It must contain a <<keyspace-property-no-hash>>.
 
-[#keyspace-property-hash]
+[#keyspace-property-no-hash]
 ==== Keyspace Property
 
 [source,ebnf]
@@ -412,7 +412,7 @@ include::keyspace-hints.adoc[tag=keyspace-property]
 include::ROOT:partial$query-context.adoc[tag=section]
 
 [#ex-no-use-hash-opt]
-.OQuery without a join hint
+.Query without a join hint
 ====
 The following query does not include a join hint.
 
@@ -449,5 +449,127 @@ In this case, the optimizer has selected the generic join method.
 [source,json,indent=0]
 ----
 include::example$select/no-use-hash-hint.jsonc[tag=join]
+----
+====
+
+== NO_USE_NL
+
+This hint is the negative equivalent of the xref:n1ql-language-reference/keyspace-hints.adoc#use_nl[USE_NL hint].
+It directs the optimizer not to consider a nested loop join for a specified keyspace.
+This hint must be specified on the keyspace on the right-hand side of the join. 
+If not specified, the optimizer selects the optimal join method.
+
+=== Simple Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=no-nl-hint-simple]
+----
+
+image::n1ql-language-reference/no-nl-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
+
+With the simple syntax, this hint specifies one or more keyspaces.
+You can either use `NO_USE_NL` or `AVOID_NL` as the hint keyword.
+You can also use this hint multiple times within the hint comment.
+
+==== Arguments
+
+keyspace::
+The keyspace or alias to which this hint applies.
+
+=== JSON Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=no-nl-hint-json]
+----
+
+image::n1ql-language-reference/no-nl-hint-json.png["Syntax diagram: refer to source code listing", align=left]
+
+With the JSON syntax, this hint takes the form of a `no_use_nl` or `avoid_nl` property.
+You can only use this property once within the hint comment.
+The value of this property can be a <<keyspace-array-no-nl>> or a <<keyspace-object-no-nl>>.
+
+[#keyspace-array-no-nl]
+==== Keyspace Array
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=keyspace-array]
+----
+
+image::n1ql-language-reference/keyspace-array.png["Syntax diagram: refer to source code listing", align=left]
+
+Use this array to apply the hint to multiple keyspaces.
+Each element must be a <<keyspace-object-no-nl>>.
+
+[#keyspace-object-no-nl]
+==== Keyspace Object
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=keyspace-object]
+----
+
+image::n1ql-language-reference/keyspace-object.png["Syntax diagram: refer to source code listing", align=left]
+
+Use this object to apply the hint to a single keyspace.
+It must contain a <<keyspace-property-no-nl>>.
+
+[#keyspace-property-no-nl]
+==== Keyspace Property
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=keyspace-property]
+----
+
+image::n1ql-language-reference/keyspace-property.png["Syntax diagram: refer to source code listing", align=left]
+
+Synonym for `"keyspace"`: `"alias"`
+
+include::keyspace-hints.adoc[tag=keyspace-property]
+
+[#no-use-nl-examples,reftext="NO_USE_NL Examples"]
+=== Examples
+
+[#ex-no-use-nl-opt]
+.Query without a join hint
+====
+The following query does not include a join hint.
+
+.Query
+[source,sqlpp]
+----
+include::example$select/use-nl-opt.n1ql[tag=query]
+----
+
+If you examine the plan for this query, you can see that the optimizer has selected the nested-loop join method.
+
+.Explain plan
+[source,json,indent=0]
+----
+include::example$select/no-use-nl-opt.jsonc[tag=join]
+----
+====
+
+[#ex-no-use-nl-hint]
+.NO_USE_NL hint
+====
+The following query hints the optimizer to avoid using a nested-loop join.
+
+.Query
+[source,sqlpp]
+----
+include::example$select/no-use-nl-hint.n1ql[tag=query]
+----
+
+If you examine the plan for this query, you can see that the optimizer avoids using a nested-loop join and considers other join methods. 
+In this case, the optimizer has selected the hash join method.
+
+.Explain plan
+[source,json,indent=0]
+----
+include::example$select/no-use-nl-hint.jsonc[tag=join]
 ----
 ====
