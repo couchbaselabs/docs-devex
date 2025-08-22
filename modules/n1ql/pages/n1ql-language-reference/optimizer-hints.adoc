@@ -74,9 +74,8 @@ WHERE city = "San Francisco";
 
 == Placement
 
-Currently, a hint comment is only supported in the `SELECT` statement.
-The hint comment must be located immediately after the `SELECT` keyword.
-For details, refer to xref:n1ql-language-reference/selectclause.adoc[SELECT Clause].
+Currently, a hint comment is only supported in `SELECT`, `DELETE`, `UPDATE`, and `MERGE` statements.
+The hint comment must be located immediately after the statement keyword.
 
 There can only be one hint comment in a query block.
 If there is more than one hint comment, a syntax error is generated.
@@ -231,10 +230,10 @@ When the optimizer follows a simple hint, the hint is shown in the explain plan.
 .Explain plan for <<ex-simple-hint>>
 [source,sqlpp]
 ----
-EXPLAIN SELECT /*+ INDEX(airport def_inventory_airport_city) */
-               airportname, faa
-FROM airport
-WHERE city = "San Francisco";
+EXPLAIN 
+UPDATE /*+ INDEX(airport def_inventory_airport_city) */ airport 
+SET updated = true 
+WHERE city = "San Jose";
 ----
 
 .Result
@@ -244,7 +243,7 @@ WHERE city = "San Francisco";
   {
     "optimizer_hints": {
       "hints_followed": [
-        "INDEX(airport def_inventory_airport_city)"
+        "INDEX(`airport` `def_inventory_airport_city`)"
       ]
     },
 // ...
@@ -261,10 +260,9 @@ When the optimizer follows a JSON hint, the hint is shown in the explain plan in
 .Explain plan for <<ex-json-hint>>
 [source,sqlpp]
 ----
-EXPLAIN SELECT /*+ {"index": {"keyspace": "airport",
-                              "indexes": "def_inventory_airport_city"}} */
-               airportname, faa
-FROM airport
+EXPLAIN
+UPDATE /*+ {"index": {"keyspace": "airport", "indexes": "def_inventory_airport_city"}} */ airport
+SET updated = true
 WHERE city = "San Francisco";
 ----
 
@@ -423,7 +421,12 @@ Refer to the following pages for details of individual optimizer hints:
 
 * xref:n1ql-language-reference/query-hints.adoc[] apply to an entire query block.
 * xref:n1ql-language-reference/keyspace-hints.adoc[] apply to a specific keyspace.
+* xref:n1ql:n1ql-language-reference/negative-keyspace-hints.adoc[] apply to a specific keyspace, but instruct the optimizer not to use certain options.
 
 == Related Links
 
 * xref:n1ql-language-reference/cost-based-optimizer.adoc[Cost-Based Optimizer]
+* xref:n1ql-language-reference/selectclause.adoc[SELECT]
+* xref:n1ql-language-reference/delete.adoc[DELETE]
+* xref:n1ql-language-reference/update.adoc[UPDATE]
+* xref:n1ql-language-reference/merge.adoc[MERGE]
