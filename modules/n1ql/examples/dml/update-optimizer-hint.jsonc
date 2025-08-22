@@ -1,0 +1,112 @@
+[{
+  "cardinality": 144.16573971078978,
+  "cost": 1459.9202656953678,
+  "optimizer_hints": {
+      "hints_followed": [
+          "INDEX(`landmark` `def_inventory_landmark_city`)"
+      ]
+  },
+  "plan": {
+      "#operator": "Sequence",
+      "~children": [{
+//tag::index[]        
+              "#operator": "IndexScan3",
+              "bucket": "travel-sample",
+              "index": "def_inventory_landmark_city",
+              "index_id": "b5b63aad2950349",
+              "index_projection": {
+                  "primary_key": true
+              },
+              "keyspace": "landmark",
+              "namespace": "default",
+//end::index[]              
+              "optimizer_estimates": {
+                  "cardinality": 805,
+                  "cost": 167.75622482878458,
+                  "fr_cost": 12.19348599357613,
+                  "size": 14
+              },
+              "scope": "inventory",
+              "spans": [{
+                  "exact": true,
+                  "range": [{
+                      "high": "\"San Francisco\"",
+                      "inclusion": 3,
+                      "index_key": "`city`",
+                      "low": "\"San Francisco\""
+                  }]
+              }],
+              "using": "gsi"
+          },
+          {
+              "#operator": "Parallel",
+              "~child": {
+                  "#operator": "Sequence",
+                  "~children": [{
+                          "#operator": "Fetch",
+                          "bucket": "travel-sample",
+                          "keyspace": "landmark",
+                          "namespace": "default",
+                          "optimizer_estimates": {
+                              "cardinality": 805,
+                              "cost": 1231.6605396312289,
+                              "fr_cost": 25.500199428113326,
+                              "size": 683
+                          },
+                          "scope": "inventory"
+                      },
+                      {
+                          "#operator": "Filter",
+                          "alias": "landmark",
+                          "condition": "((`landmark`.`city`) = \"San Francisco\")",
+                          "optimizer_estimates": {
+                              "cardinality": 144.16573971078978,
+                              "cost": 1252.6986259272778,
+                              "fr_cost": 25.646129288690833,
+                              "size": 683
+                          }
+                      },
+                      {
+                          "#operator": "Clone",
+                          "optimizer_estimates": {
+                              "cardinality": 144.16573971078978,
+                              "cost": 1267.7692906376844,
+                              "fr_cost": 25.75066636345381,
+                              "size": 683
+                          }
+                      },
+                      {
+                          "#operator": "Set",
+                          "optimizer_estimates": {
+                              "cardinality": 144.16573971078978,
+                              "cost": 1271.536956815286,
+                              "fr_cost": 25.776800632144553,
+                              "size": 683
+                          },
+                          "set_terms": [{
+                              "path": "(`landmark`.`nickname`)",
+                              "value": "\"Golden Gate\""
+                          }]
+                      },
+                      {
+                          "#operator": "SendUpdate",
+                          "alias": "landmark",
+                          "bucket": "travel-sample",
+                          "fast_discard": true,
+                          "keyspace": "landmark",
+                          "namespace": "default",
+                          "optimizer_estimates": {
+                              "cardinality": 144.16573971078978,
+                              "cost": 1459.9202656953678,
+                              "fr_cost": 27.08351406668175,
+                              "size": 683
+                          },
+                          "scope": "inventory"
+                      }
+                  ]
+              }
+          }
+      ]
+  },
+  "text": "\nUPDATE /*+ INDEX(landmark def_inventory_landmark_city ) */ landmark\nSET nickname = \"Golden Gate\"\nWHERE city = \"San Francisco\""
+}]

@@ -74,10 +74,23 @@ image::n1ql-language-reference/merge.png["Syntax diagram: refer to source code l
 // TODO: Automatic links from EBNF
 
 [horizontal.compact]
+hint-comment:: <<hint-comment>> icon:caret-down[]
 ansi-merge:: <<ansi-merge>> icon:caret-down[]
 lookup-merge::  <<lookup-merge>> icon:caret-down[]
 limit-clause:: <<limit-clause>> icon:caret-down[]
 returning-clause:: <<returning-clause>> icon:caret-down[]
+
+[[hint-comment]]
+=== Optimizer Hint
+
+You can supply hints to the optimizer within a specially-formatted hint comment. 
+For more information, see xref:n1ql-language-reference/optimizer-hints.adoc[].
+
+[IMPORTANT]
+====
+* Optimizer hints are only supported in <<ansi-merge>> and not in <<lookup-merge>>.
+* ORDERED hints are not available in MERGE statements.
+====
 
 [[ansi-merge]]
 == ANSI Merge
@@ -747,6 +760,24 @@ include::example$dml/ansi-merge-expire.n1ql[]
 ----
 
 Note that it is possible to preserve the document expiration using the request-level {preserve_expiry}[preserve_expiry] parameter.
+====
+
+.ANSI merge with an optimizer hint
+====
+
+This example uses an optimizer hint to specify that the `airport` keyspace should be joined using a hash join.
+
+[source,sqlpp]
+----
+include::example$dml/ansi-merge-hint.n1ql[]
+----
+
+If you examine the query plan, you will see that the optimizer has used the index specified in the hint.
+
+[source,json,indent=0]
+----
+include::example$dml/ansi-merge-hint.jsonc[tag=hint]
+----
 ====
 
 .Lookup merge with expression source

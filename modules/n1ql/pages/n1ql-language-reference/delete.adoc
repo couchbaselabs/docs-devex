@@ -62,12 +62,21 @@ image::n1ql-language-reference/delete.png["Syntax diagram: refer to source code 
 // TODO: Automatic links from EBNF
 
 [horizontal.compact]
+hint-comment:: <<hint-comment>> icon:caret-down[]
 target-keyspace:: <<delete-target>> icon:caret-down[]
-use-keys-clause:: <<delete-hint>> icon:caret-down[]
+use-keys-clause:: <<use-keys-clause>> icon:caret-down[]
 where-clause:: <<where-clause>> icon:caret-down[]
 limit-clause:: <<limit-clause>> icon:caret-down[]
 offset-clause:: <<offset-clause>> icon:caret-down[]
 returning-clause:: <<returning-clause>> icon:caret-down[]
+
+[[hint-comment]]
+=== Optimizer Hints
+
+You can supply hints to the optimizer within a specially-formatted hint comment. 
+For more information, see xref:n1ql-language-reference/optimizer-hints.adoc[].
+
+IMPORTANT: Join hints and ORDERED hints are not available in DELETE statements.
 
 [[delete-target]]
 === Delete Target
@@ -121,8 +130,8 @@ For details, refer to {as-clause}[AS Clause].
 Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
 
-[[delete-hint]]
-=== Delete Hint
+[[use-keys-clause]]
+=== USE KEYS Clause
 
 You can use a `USE KEYS` hint on the delete target to specify the keys of the data items to be deleted.
 For details, refer to {use-keys-clause}[USE KEYS Clause].
@@ -309,4 +318,22 @@ include::example$dml/delete-offset.jsonc[]
 
 <.> Documents with the first 10 ids--the offset--remain in the airline collection.
 <.> After deleting 10 documents--the limit--1 more document remains in the collection.
+====
+
+.Delete query with an optimizer hint
+====
+This example uses an optimizer hint to specify that the `def_inventory_hotel_city` index should be used for the query.
+
+[source,sqlpp]
+----
+include::example$dml/delete-optimizer-hint.n1ql[]
+----
+
+If you examine the plan for this query, you can see that it uses the suggested index.
+
+.Results
+[source,json,indent=0]
+----
+include::example$dml/delete-optimizer-hint.jsonc[tag=index]
+----
 ====
