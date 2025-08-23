@@ -8,7 +8,7 @@
 {description}
 
 A negative hint is a type of xref:n1ql-language-reference/optimizer-hints.adoc[optimizer hint] that applies to a specific keyspace. 
-While xref:n1ql-language-reference/keyspace-hints.adoc[positive keyspace hints] guide the optimizer to use specific indexes or join methods, negative hints instruct it what not to use. 
+While xref:n1ql-language-reference/keyspace-hints.adoc[positive keyspace hints] guide the optimizer to use specific indexes or join methods, you can use negative hints to prevent the optimizer from using methods you want to avoid.
 
 Negative hints are of two types: index hints and join hints. 
 Index hints direct optimizer not to use specific indexes, and join hints direct it to avoid specific join methods.
@@ -22,8 +22,6 @@ If the keyspace is not given an explicit alias in the query, the hint must refer
 
 Negative hints support two prefixes: `NO_` and `AVOID_`. 
 You can specify them using either simple syntax or JSON syntax, but you cannot mix the two in the same hint comment.
-
-NOTE: Unlike xref:n1ql-language-reference/keyspace-hints.adoc[positive keyspace hints], negative hints do not have legacy equivalents. 
 
 == NO_INDEX
 
@@ -334,7 +332,7 @@ It directs the optimizer not to use a nested loop join for a specified keyspace.
 This hint must be specified on the keyspace on the right-hand side of the join. 
 If not specified, the optimizer selects the optimal join method.
 
-NOTE: This hint is only supported in xref:n1ql-language-reference/selectclause.adoc[SELECT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements. 
+NOTE: Currently, this hint is only supported in xref:n1ql-language-reference/selectclause.adoc[SELECT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements. 
 
 === Simple Syntax
 
@@ -463,7 +461,7 @@ If you do not specify this hint, the optimizer selects the optimal join method.
 Unlike xref:n1ql-language-reference/keyspace-hints.adoc#use_hash[USE_HASH], this hint does not allow you to specify whether the keyspace should appear on the build or probe side of the hash join.
 Instead, you can only specify the keyspace name or alias to which this hint applies. 
 
-NOTE: This hint is only supported in xref:n1ql-language-reference/selectclause.adoc[SELECT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements. 
+NOTE: Currently, this hint is only supported in xref:n1ql-language-reference/selectclause.adoc[SELECT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements. 
 
 === Simple Syntax
 
@@ -583,3 +581,33 @@ In this case, the optimizer has selected the generic join method.
 include::example$select/no-use-hash-hint.jsonc[tag=join]
 ----
 ====
+
+== Legacy Equivalent
+
+Unlike xref:n1ql-language-reference/keyspace-hints.adoc[positive keyspace hints], negative hints do not have legacy equivalents. 
+Also, you cannot specify a negative hint and the `USE` clause on the same keyspace.
+If you do this, the negative hint and the `USE` clause are both marked as erroneous and ignored by the optimizer.
+
+== Interaction between Positive and Negative Hints
+
+As a best practice, avoid using positive and negative hints of the same type on the same keyspace, as this can lead to conflicts and cause the optimizer to ignore both hints.
+
+=== Join Hints
+
+You can only specify one join hint per keyspace or alias. 
+This can be either a positive (xref:n1ql-language-reference/keyspace-hints.adoc#use_hash[USE HASH], xref:n1ql-language-reference/keyspace-hints.adoc#use_nl[USE_NL]) or a negative (xref:n1ql-language-reference/negative-keyspace-hints.adoc#no_use_hash[NO_USE_HASH], xref:n1ql-language-reference/negative-keyspace-hints.adoc#no_use_nl[NO_USE_NL]) join hint.
+
+=== Index Hints
+
+You can specify both positive (xref:n1ql-language-reference/keyspace-hints.adoc#index[INDEX], xref:n1ql-language-reference/keyspace-hints.adoc#index_fts[INDEX_FTS]) and negative (xref:n1ql-language-reference/negative-keyspace-hints.adoc#no_index[NO_INDEX], xref:n1ql-language-reference/negative-keyspace-hints.adoc#no_index_fts[NO_INDEX_FTS]) index hints on the same keyspace or alias, provided the list of indexes are non-overlapping.
+       
+If an index is included in both the positive and negative hint lists, the optimizer ignores both hints. 
+Similarly, omitting the index list in either a positive or negative hint may result in conflicts, causing the hints to be ignored.
+
+== Related Links
+
+* xref:n1ql-language-reference/cost-based-optimizer.adoc[]
+* xref:n1ql-language-reference/optimizer-hints.adoc[]
+* xref:n1ql-language-reference/keyspace-hints.adoc[]
+* xref:n1ql-language-reference/query-hints.adoc[]
+
