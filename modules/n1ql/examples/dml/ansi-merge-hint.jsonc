@@ -1,0 +1,174 @@
+[{
+  "cardinality": 1.0210425633668097,
+  "cost": 81768.65420207467,
+  "optimizer_hints": {
+      "hints_followed": [
+          "USE_HASH(`airport`)"
+      ]
+  },
+  "plan": {
+      "#operator": "Sequence",
+      "~children": [{
+              "#operator": "PrimaryScan3",
+              "bucket": "travel-sample",
+              "index": "def_inventory_route_primary",
+              "index_projection": {
+                  "primary_key": true
+              },
+              "keyspace": "route",
+              "namespace": "default",
+              "optimizer_estimates": {
+                  "cardinality": 24024,
+                  "cost": 4108.612246388904,
+                  "fr_cost": 12.170521655277593,
+                  "size": 11
+              },
+              "scope": "inventory",
+              "using": "gsi"
+          },
+          {
+              "#operator": "Fetch",
+              "bucket": "travel-sample",
+              "keyspace": "route",
+              "namespace": "default",
+              "optimizer_estimates": {
+                  "cardinality": 24024,
+                  "cost": 32622.23063412261,
+                  "fr_cost": 25.35690270704806,
+                  "size": 563
+              },
+              "scope": "inventory"
+          },
+//tag::hint[]          
+          {
+              "#operator": "HashJoin",
+              "build_aliases": [
+                  "airport"
+              ],
+              "build_exprs": [
+                  "(`airport`.`faa`)"
+              ],
+//end::hint[]
+              "on_clause": "((`route`.`sourceairpor`) = (`airport`.`faa`))",
+              "optimizer_estimates": {
+                  "cardinality": 410570.1599999997,
+                  "cost": 81726.79494524094,
+                  "fr_cost": 1733.4006888160152,
+                  "size": 813
+              },
+              "probe_exprs": [
+                  "(`route`.`sourceairpor`)"
+              ],
+              "~child": {
+                  "#operator": "Sequence",
+                  "~children": [{
+                          "#operator": "IndexScan3",
+                          "bucket": "travel-sample",
+                          "index": "def_inventory_airport_faa",
+                          "index_id": "2994d0a0818fe9c2",
+                          "index_keys": [
+                              "_index_key ((`airport`.`faa`))",
+                              "_index_key ((meta(`airport`).`id`))"
+                          ],
+                          "keyspace": "airport",
+                          "namespace": "default",
+                          "optimizer_estimates": {
+                              "cardinality": 1708.9999999999986,
+                              "cost": 317.82494057645437,
+                              "fr_cost": 12.178949643403426,
+                              "size": 12
+                          },
+                          "scope": "inventory",
+                          "spans": [{
+                              "exact": true,
+                              "range": [{
+                                  "inclusion": 0,
+                                  "index_key": "`faa`",
+                                  "low": "null"
+                              }]
+                          }],
+                          "using": "gsi"
+                      },
+                      {
+                          "#operator": "Fetch",
+                          "bucket": "travel-sample",
+                          "keyspace": "airport",
+                          "namespace": "default",
+                          "optimizer_estimates": {
+                              "cardinality": 1708.9999999999986,
+                              "cost": 1680.9080708833933,
+                              "fr_cost": 24.96951905844552,
+                              "size": 250
+                          },
+                          "scope": "inventory"
+                      }
+                  ]
+              }
+          },
+          {
+              "#operator": "Parallel",
+              "~child": {
+                  "#operator": "Sequence",
+                  "~children": [{
+                      "#operator": "Merge",
+                      "bucket": "travel-sample",
+                      "can_spill": true,
+                      "fast_discard": true,
+                      "keyspace": "route",
+                      "namespace": "default",
+                      "optimizer_estimates": {
+                          "cardinality": 1.0210425633668097,
+                          "cost": 81768.65420207467,
+                          "fr_cost": 1774.3972724409955,
+                          "size": 563
+                      },
+                      "scope": "inventory",
+                      "update": {
+                          "#operator": "Sequence",
+                          "~children": [{
+                                  "#operator": "Clone",
+                                  "optimizer_estimates": {
+                                      "cardinality": 1.0210425633668097,
+                                      "cost": 40.6236843724975,
+                                      "fr_cost": 39.78647495217438,
+                                      "size": 563
+                                  }
+                              },
+                              {
+                                  "#operator": "Set",
+                                  "optimizer_estimates": {
+                                      "cardinality": 1.0210425633668097,
+                                      "cost": 40.64791128350209,
+                                      "fr_cost": 39.81020257320979,
+                                      "size": 563
+                                  },
+                                  "set_terms": [{
+                                      "path": "(`route`.`updated`)",
+                                      "value": "true"
+                                  }]
+                              },
+                              {
+                                  "#operator": "SendUpdate",
+                                  "alias": "route",
+                                  "bucket": "travel-sample",
+                                  "fast_discard": true,
+                                  "keyspace": "route",
+                                  "namespace": "default",
+                                  "optimizer_estimates": {
+                                      "cardinality": 1.0210425633668097,
+                                      "cost": 41.85925683373162,
+                                      "fr_cost": 40.99658362498026,
+                                      "size": 563
+                                  },
+                                  "scope": "inventory"
+                              }
+                          ]
+                      },
+                      "update_filter": "((`airport`.`city`) = \"San Jose\")"
+                  }]
+              }
+          }
+      ]
+  },
+  "text": "\nMERGE /*+ USE_HASH(airport) */ INTO route \nUSING airport \nON route.sourceairpor = airport.faa \nWHEN MATCHED THEN \nUPDATE SET route.updated = true \nWHERE airport.city = \"San Jose\";"
+}]

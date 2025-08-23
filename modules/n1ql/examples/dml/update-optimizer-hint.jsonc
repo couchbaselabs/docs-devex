@@ -1,0 +1,112 @@
+[{
+    "cardinality": 0.000703294230174136,
+    "cost": 25.16041264096158,
+    "optimizer_hints": {
+        "hints_followed": [
+            "INDEX(`airport` `def_inventory_airport_city`)"
+        ]
+    },
+    "plan": {
+        "#operator": "Sequence",
+        "~children": [{
+//tag::index[]            
+                "#operator": "IndexScan3",
+                "bucket": "travel-sample",
+                "index": "def_inventory_airport_city",
+                "index_id": "34798b782a732137",
+//end::index[]                
+                "index_projection": {
+                    "primary_key": true
+                },
+                "keyspace": "airport",
+                "namespace": "default",
+                "optimizer_estimates": {
+                    "cardinality": 1.1764705882352944,
+                    "cost": 12.211117739712101,
+                    "fr_cost": 12.179450078755286,
+                    "size": 12
+                },
+                "scope": "inventory",
+                "spans": [{
+                    "exact": true,
+                    "range": [{
+                        "high": "\"San Jose\"",
+                        "inclusion": 3,
+                        "index_key": "`city`",
+                        "low": "\"San Jose\""
+                    }]
+                }],
+                "using": "gsi"
+            },
+            {
+                "#operator": "Parallel",
+                "~child": {
+                    "#operator": "Sequence",
+                    "~children": [{
+                            "#operator": "Fetch",
+                            "bucket": "travel-sample",
+                            "keyspace": "airport",
+                            "namespace": "default",
+                            "optimizer_estimates": {
+                                "cardinality": 1.1764705882352944,
+                                "cost": 25.141199404467507,
+                                "fr_cost": 24.97001949379738,
+                                "size": 250
+                            },
+                            "scope": "inventory"
+                        },
+                        {
+                            "#operator": "Filter",
+                            "alias": "airport",
+                            "condition": "((`airport`.`city`) = \"San Jose\")",
+                            "optimizer_estimates": {
+                                "cardinality": 0.000703294230174136,
+                                "cost": 25.159801037762616,
+                                "fr_cost": 24.98862112709249,
+                                "size": 250
+                            }
+                        },
+                        {
+                            "#operator": "Clone",
+                            "optimizer_estimates": {
+                                "cardinality": 0.000703294230174136,
+                                "cost": 25.15984551799527,
+                                "fr_cost": 24.988665607325142,
+                                "size": 250
+                            }
+                        },
+                        {
+                            "#operator": "Set",
+                            "optimizer_estimates": {
+                                "cardinality": 0.000703294230174136,
+                                "cost": 25.15985663805343,
+                                "fr_cost": 24.988676727383304,
+                                "size": 250
+                            },
+                            "set_terms": [{
+                                "path": "(`airport`.`updated`)",
+                                "value": "true"
+                            }]
+                        },
+                        {
+                            "#operator": "SendUpdate",
+                            "alias": "airport",
+                            "bucket": "travel-sample",
+                            "fast_discard": true,
+                            "keyspace": "airport",
+                            "namespace": "default",
+                            "optimizer_estimates": {
+                                "cardinality": 0.000703294230174136,
+                                "cost": 25.16041264096158,
+                                "fr_cost": 24.989232730291455,
+                                "size": 250
+                            },
+                            "scope": "inventory"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "text": "\nUPDATE /*+ INDEX(airport def_inventory_airport_city) */ airport \nSET updated = true \nWHERE city = \"San Jose\";"
+}]

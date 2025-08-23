@@ -1,0 +1,70 @@
+[{
+  "optimizer_hints": {
+      "hints_followed": [
+          "INDEX(`hotel` `def_inventory_hotel_city`)"
+      ]
+  },
+  "plan": {
+      "#operator": "Sequence",
+      "~children": [{
+              "#operator": "IndexScan3",
+              "bucket": "travel-sample",
+              "covers": [
+                  "cover ((`hotel`.`city`))",
+                  "cover ((meta(`hotel`).`id`))"
+              ],
+//tag::index[] 
+              "index": "def_inventory_hotel_city",
+              "index_id": "c31e7f44f9ff274c",
+              "keyspace": "hotel",
+              "namespace": "default",
+//end::index[]              
+              "optimizer_estimates": {
+                  "cardinality": 132,
+                  "cost": 75.93105014156366,
+                  "fr_cost": 12.484326137436089,
+                  "size": 50
+              },
+              "scope": "inventory",
+              "spans": [{
+                  "exact": true,
+                  "range": [{
+                      "high": "\"San Francisco\"",
+                      "inclusion": 3,
+                      "index_key": "`city`",
+                      "low": "\"San Francisco\""
+                  }]
+              }],
+              "using": "gsi"
+          },
+          {
+              "#operator": "Parallel",
+              "~child": {
+                  "#operator": "Sequence",
+                  "~children": [{
+                          "#operator": "Filter",
+                          "alias": "hotel",
+                          "condition": "(cover ((`hotel`.`city`)) = \"San Francisco\")",
+                          "optimizer_estimates": {
+                              "cardinality": 19.001090512540895,
+                              "cost": 76.8644310927299,
+                              "fr_cost": 12.533448631250335,
+                              "size": 50
+                          }
+                      },
+                      {
+                          "#operator": "SendDelete",
+                          "alias": "hotel",
+                          "bucket": "travel-sample",
+                          "fast_discard": true,
+                          "keyspace": "hotel",
+                          "namespace": "default",
+                          "scope": "inventory"
+                      }
+                  ]
+              }
+          }
+      ]
+  },
+  "text": "\nDELETE /*+ INDEX (hotel def_inventory_hotel_city) */ \nFROM `hotel`\nWHERE city = \"San Francisco\";"
+}]
