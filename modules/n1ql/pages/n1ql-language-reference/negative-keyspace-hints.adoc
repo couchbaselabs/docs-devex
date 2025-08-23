@@ -1,17 +1,17 @@
 = Negative Keyspace Hints
 :page-topic-type: reference
 :imagesdir: ../../assets/images
-:description: Negative hints instructs the optimizer not to use certain indexes or join methods.
+:description: Negative hints direct the optimizer not to use certain indexes or join methods.
 :cbo-preamble: For the examples in this section, it's assumed that the cost-based optimizer is active, and all optimizer statistics are up-to-date.
 
 [abstract]
 {description}
 
 A negative hint is a type of xref:n1ql-language-reference/optimizer-hints.adoc[optimizer hint] that applies to a specific keyspace. 
-While xref:n1ql-language-reference/keyspace-hints.adoc[positive keyspace hints] guide the optimizer to use specific indexes or join methods, you can use negative hints to prevent the optimizer from using methods you want to avoid.
+Unlike xref:n1ql-language-reference/keyspace-hints.adoc[positive keyspace hints], which direct the optimizer to use specific indexes or join methods, negative hints tell it what not to use.
 
 Negative hints are of two types: index hints and join hints. 
-Index hints direct optimizer not to use specific indexes, and join hints direct it to avoid specific join methods.
+Index hints direct optimizer not to use specific indexes, and join hints direct it not to use specific join methods.
 
 For each negative hint, you must specify the keyspace or keyspaces that the hint applies to.
 If a keyspace is given an explicit alias in the query, then the hint must refer to the explicit alias, not the keyspace name. 
@@ -307,7 +307,7 @@ An array of full-text indexes that the optimizer must not use for the given keys
 === Examples
 .NO_INDEX_FTS hint
 ====
-This example specifies that the optimizer should not use the `hotel_state_fts_index` FTS index.
+This example specifies that the optimizer should not use the FTS index `hotel_state_fts_index`.
 To qualify for this query, you must have this FTS index on `state` and `type`, using the keyword analyzer.
 (Or alternatively, the FTS index on `state`, with a custom type mapping on `hotel`.)
 
@@ -564,7 +564,7 @@ include::example$select/use-hash-opt.jsonc[tags=method;ellipsis]
 [#ex-no-use-hash-hint]
 .Query with the NO_USE_HASH Hint
 ====
-The following query hints the optimizer to avoid using a hash join for the `aline` keyspace. 
+The following query hints the optimizer to avoid using a hash join for the keyspace `aline`. 
 
 .Query
 [source,sqlpp]
@@ -572,7 +572,7 @@ The following query hints the optimizer to avoid using a hash join for the `alin
 include::example$select/no-use-hash-hint.n1ql[tag=query]
 ----
 
-If you examine the plan for this query, you can see that the optimizer avoids using a hash join for the `aline` keyspace and considers other join methods. 
+If you examine the plan for this query, you can see that the optimizer avoids using a hash join and considers other join methods. 
 In this case, the optimizer has selected the generic join method.
 
 .Explain plan
@@ -590,12 +590,13 @@ If you do this, the negative hint and the `USE` clause are both marked as errone
 
 == Interaction between Positive and Negative Hints
 
-As a best practice, avoid using positive and negative hints of the same type on the same keyspace, as this can lead to conflicts and cause the optimizer to ignore both hints.
+As a best practice, avoid using positive and negative hints of the same type on the same keyspace.
+This can create conflicts and may cause the optimizer to ignore both hints.
 
 === Join Hints
 
 You can only specify one join hint per keyspace or alias. 
-This can be either a positive (xref:n1ql-language-reference/keyspace-hints.adoc#use_hash[USE HASH], xref:n1ql-language-reference/keyspace-hints.adoc#use_nl[USE_NL]) or a negative (xref:n1ql-language-reference/negative-keyspace-hints.adoc#no_use_hash[NO_USE_HASH], xref:n1ql-language-reference/negative-keyspace-hints.adoc#no_use_nl[NO_USE_NL]) join hint.
+This can be either a positive (xref:n1ql-language-reference/keyspace-hints.adoc#use_hash[USE HASH], xref:n1ql-language-reference/keyspace-hints.adoc#use_nl[USE_NL]) or a negative (xref:n1ql-language-reference/negative-keyspace-hints.adoc#no_use_hash[NO_USE_HASH], xref:n1ql-language-reference/negative-keyspace-hints.adoc#no_use_nl[NO_USE_NL]) join hint. 
 
 === Index Hints
 
