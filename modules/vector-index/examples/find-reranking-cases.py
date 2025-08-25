@@ -1,5 +1,5 @@
 # This script just iterates over all of the colors in the example dataset to find cases
-# where reranking imporved the search results. 
+# where reranking improved the search results. 
 
 import sys
 from couchbase.cluster import Cluster, ClusterOptions
