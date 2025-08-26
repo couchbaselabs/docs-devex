@@ -558,17 +558,18 @@ The Eventing Service calls the following JavaScript functions on events like mut
 
 * <<onupdate_handler>>
 * <<ondelete_handler>>
+* <<ondeploy_handler>>
 * <<timer_callback_handler>>
 
 [#onupdate_handler]
 === OnUpdate Handler
 
-The `OnUpdate` handler is called when you create or modify a document using an operation like insert or update.
+The `OnUpdate` handler is called when you create or modify a document.
 The entry point `OnUpdate(doc, meta)` listens to mutations in the associated source bucket.
 
 The `OnUpdate` handler has the following limitations:
 
-* If a document is modified several times in a short period of time, the handler calls might be combined into a single event due to deduplication.
+* If a document is modified several times in a short period of time, the handler calls can merge into a single event due to deduplication.
 * You cannot distinguish between a Create and an Update operation.
 
 [source,javascript]
@@ -616,6 +617,33 @@ The entry point is still supported, but using it means you're unable to differen
 function OnDelete(meta) {
     log("Document deleted or expired", meta.id);
 }
+----
+
+[#ondeploy_handler]
+=== OnDeploy Handler
+
+[.status]#Couchbase Server 8.0#
+
+The `OnDeploy` handler is invoked once when an Eventing function is deployed or resumed, before any mutations are processed.
+The entry point `OnDeploy(action)` is used for one-time setup tasks like resource initialization, creation of timers, and so on.
+
+The `OnDeploy` handler has a limitation. Avoid any long-running operations within the `OnDeploy` as they can delay function deployment.
+
+The timeout for OnDeploy execution is configurable separately in the xref:eventing:eventing-Terminologies.adoc#function-settings[Eventing Function Settings].
+
+----
+function OnDeploy(action) {
+    log("OnDeploy triggered. Reason:", action.reason, "Delay (ms):", action.delay);
+
+    if (action.reason === "deploy") {
+        // Perform operations for fresh deployment (like timer creation, resource initialisation)
+        log("Deploy: perform first time setup for function");
+    } 
+    else if (action.reason === "resume") {
+        // Function was paused and resumed: refresh any cached information
+        log("Resume: perform operations before function resumption");
+    }
+} 
 ----
 
 [#timer_callback_handler]
