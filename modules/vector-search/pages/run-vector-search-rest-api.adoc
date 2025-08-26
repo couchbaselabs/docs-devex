@@ -2,37 +2,40 @@
 :page-topic-type: guide 
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
-:description: You can use the REST API and a curl command to run a search against a Vector Search index and return similar vectors.
+:description: You can use the REST API and a curl command to run a search against an FTS Vector Index and return similar vectors.
+:page-toclevels: 3
 
 [abstract]
 {description}
 
 For more information about how the Search Service scores documents in search results, see xref:run-searches.adoc#scoring[Scoring for Search Queries].
 
+include::partial$vector-search-no-windows.adoc[]
+
 == Prerequisites 
 
-* You have the Search Service enabled on a node in your database.
-For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
 
-* You have a bucket with scopes and collections in your database.
+* You have a bucket with scopes and collections in your cluster.
 For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[]. 
 
 * Your user account has the *Search Admin* or *Search Reader* role. 
 
 * You installed the Couchbase command-line tool (CLI).
 
-* You have the hostname or IP address for the node in your database where you're running the Search Service.
+* You have the hostname or IP address for the node in your cluster where you're running the Search Service.
 For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
 
-* You have created a Vector Search index. 
+* You have created an FTS Vector Index. 
 +
-For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
+For more information about how to create an FTS Vector Index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
 +
 [TIP]
 --
 include::partial$download-sample-partial.adoc[]
 
-For the best results, consider using the sample Vector Search index from xref:create-vector-search-index-ui.adoc#example[Create a Vector Search Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create a Vector Search Index with the REST API and curl/HTTP]. 
+For the best results, consider using the sample FTS Vector Index from xref:create-vector-search-index-ui.adoc#example[Create an FTS Vector Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create an FTS Vector Index with the REST API and curl/HTTP]. 
 --
 
 == Procedure 
@@ -41,7 +44,7 @@ To run a Vector search with the REST API:
 
 . In your command-line tool, enter a `curl` command with the `XPOST` verb. 
 . Set your header content to include `"Content-Type: application/json"`.
-. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the Vector Search index you want to query: 
+. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the FTS Vector Index you want to query: 
 +
 [source,console]
 ----
@@ -54,7 +57,7 @@ To use SSL, use the `https` protocol in the Search Service endpoint URL and port
 TIP: You can copy the JSON for a Query Request from the Couchbase {page-ui-name} to use in your REST API call.
 For more information about how to perform a search with the UI, see xref:search:simple-search-ui.adoc[].
 
-=== Example
+=== Example: Hybrid Search for a Color Vector
 
 In the following example, the JSON payload uses both a `query` and `knn` object to run both a Vector Search and traditional Search query on an index named `color-index`.
 
@@ -71,6 +74,35 @@ If the same documents match the `knn` and `query` objects, the Search Service ra
 TIP: For a more complex query, you can copy the `query` object from the example under xref:run-vector-search-ui.adoc#large[Example: Running a Semantic Search Query with a Large Embedding Vector] to use in your REST API call. 
 
 For more information about the available properties for a Search query JSON payload, see xref:search:search-request-params.adoc[].
+
+If the REST API call is successful, the Search Service returns a `200 OK` and the following JSON response: 
+
+[source,json]
+----
+include::example$run-vector-search-response.json[]
+----
+
+=== Example: Use global_scoring With a bm25 Search Index
+
+In the following example, the JSON payload uses both a `query` and `knn` object to run both a Vector Search and traditional Search query on an index named `products-index`.
+
+The query searches for a specific embedding vector generated from an ecommerce website's product description.
+The Search vector is generated from the phrase `long battery life wireless earbuds`.
+The `query` object specifically searches for documents that have `Electronics` as their category, with a price between `100.00` and `300.00`.
+The query returns the `description`, `price`, and `product_name` fields in results.
+Since the query is on a large, partitioned index and uses the `bm25` scoring algorithm, the query also uses `global_scoring` to keep document scores consistent across the Search index's partitions:
+
+[source,console]
+----
+include::example$run-global-scoring-vector-search-payload.sh[]
+----
+
+NOTE: The vector embedding has been truncated for this example.
+The vector embedding in your Search query must match the configured dimension and similarity metric for your Search index.
+
+If the REST API call is successful, the Search Service returns a `200 OK`.
+
+For more information about the `bm25` scoring algorithm, see xref:search:run-searches.adoc#scoring[Scoring for Search Queries].
 
 == Next Steps 
 

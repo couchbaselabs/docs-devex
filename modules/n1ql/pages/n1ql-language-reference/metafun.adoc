@@ -331,6 +331,354 @@ SELECT DS_VERSION() as server_version;
 ----
 ====
 
+[[evaluate,EVALUATE()]]
+== EVALUATE(`statement` [ ,`params` ])
+
+=== Description
+
+This function enables you to execute a SQL++ statement provided as a string and returns the result as an array. 
+It can be used as a part of larger query or request, or wherever arrays are permitted within a statement.
+
+The function evaluates the statement dynamically using the same permissions as the invoking statement. 
+The statement must be read-only. If it tries to modify data (like with UPDATE or INSERT), the function fails with `error 5010, "not a readonly request”`. 
+
+NOTE: The results are materialized in memory, so large result sets may require a lot of memory. 
+To limit memory usage, you can use quotas (the evaluated statement operates within the invoking statement's quota). 
+
+=== Arguments
+
+statement:: A string containing the statement to evaluate.
+
+params:: Can be one of the following:
++
+--
+* An object containing named parameters. 
+* An array containing positional parameters. 
+--
+
+=== Return Value
+
+An array that contains the result of the evaluated statement.
+
+=== Examples
+
+[[evaluate-ex1,EVALUATE() Example 1]]
+.Example 1: Using named parameters
+====
+.Query
+[source,sqlpp]
+----
+SELECT EVALUATE("SELECT $named_param AS example",
+        {"named_param":"This is the named parameter's value"}) 
+        eval_result;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "eval_result": [
+      {
+        "example": "This is the named parameter's value"
+      }
+    ]
+  }
+]
+----
+====
+
+[[evaluate-ex2,EVALUATE() Example 2]]
+.Example 2: Using EVALUATE with INFER
+====
+.Query
+[source,sqlpp]
+----
+SELECT `Flavor` FROM EVALUATE("INFER `travel-sample`")[0] inf;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "Flavor": "`type` = \"airport\""
+  },
+  {
+    "Flavor": "`stops` = 0, `type` = \"route\""
+  },
+  {
+    "Flavor": "`type` = \"landmark\""
+  },
+  {
+    "Flavor": "`type` = \"hotel\""
+  },
+  {
+    "Flavor": "`type` = \"airline\""
+  }
+]
+----
+====
+
+[[finderr,FINDERR()]]
+== FINDERR(`expression`)
+
+ifeval::['{page-component-version}' == '7.6'] 
+[.status]#Couchbase Server 7.6.4#
+endif::[]
+
+=== Description
+
+Returns the full details of any Query service or cbq shell error.
+
+=== Arguments
+
+expression:: One of the following:
++
+--
+* A number representing an error code.
+In this case, the function returns the full details of the error matching the error code.
+
+* A string.
+In this case, the function searches for the target string in all of the error message fields except for `user_error`, and returns the full details of any errors that match the string.
+
+* A regular expression.
+In this case, the function searches for the regular expression in all of the error message fields except for `user_error`, and returns the full details of any errors that match the pattern.
+--
+
+=== Return Value
+
+The return value is an array of one or more objects, each of which contains the details of an error that matches the find expression.
+
+For each error, the function returns the following fields.
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**applies_to** +
+__required__
+|One of the following:
+
+* `cbq-shell`: The error applies to the cbq shell.
+* `Server`: The error applies to the server.
+|enum (cbq-shell, Server)
+
+|**code** +
+__required__
+|A number representing the error.
+|Integer
+
+|**description** +
+__required__
+|Message describing why the error occurred.
+|String
+
+|**reason** +
+__optional__
+|List of possible causes of the error.
+|String array
+
+|**user_action** +
+__optional__
+|List of possible steps a user can take to mitigate the error.
+|String array
+
+|**user_error** +
+__optional__
+|One of the following:
+
+* `Yes`: The error was caused by the user.
+* `No`: The error was caused by other services, or was internal to the server.
+* `Maybe`: A combination of both.
+|enum (Yes, No, Maybe)
+|===
+
+NOTE: The error details also include a `symbol` field, which contains a representation string for the error.
+This field is for internal use only, and is not shown in the results.
+However, the FINDERR function does search this field when the find expression is a string or a regular expression.
+
+=== Examples
+
+[[finderr-ex1,FINDERR() Example 1]]
+.Find error details by code number
+====
+.Query
+[source,sqlpp]
+----
+SELECT FINDERR(5011);
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      {
+        "applies_to": "Server",
+        "code": 5011,
+        "description": "Abort: «reason»",
+        "reason": [
+          [
+            "The SQL++ abort() function was called in the statement.",
+            "e.g. SELECT abort('An example cause')"
+          ]
+        ],
+        "user_error": "Yes"
+      }
+    ]
+  }
+]
+----
+====
+
+[[finderr-ex2,FINDERR() Example 2]]
+.Find error details by matching a string
+====
+.Query
+[source,sqlpp]
+----
+SELECT FINDERR("A semantic error is present in the statement.");
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      {
+        "applies_to": "Server",
+        "code": 3100,
+        "description": "A semantic error is present in the statement.",
+        "reason": [
+          "The statement includes portions that violate semantic constraints."
+        ],
+        "user_action": [
+          "The cause will contain more detail on the violation; revise the statement and re-submit."
+        ],
+        "user_error": "Yes"
+      }
+    ]
+  }
+]
+----
+====
+
+[[finderr-ex3,FINDERR() Example 3]]
+.Find multiple error details by matching a string
+====
+.Query
+[source,sqlpp]
+----
+SELECT FINDERR("semantic");
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      {
+        "applies_to": "Server",
+        "code": 3100,
+        "description": "A semantic error is present in the statement.",
+        "reason": [
+          "The statement includes portions that violate semantic constraints."
+        ],
+        "user_action": [
+          "The cause will contain more detail on the violation; revise the statement and re-submit."
+        ],
+        "user_error": "Yes"
+      },
+      {
+        "applies_to": "Server",
+        "code": 3220,
+        "description": "«name» window function «clause» «reason»",
+        "reason": [
+          "A violation of the window function semantic restrictions was present in the statement."
+        ],
+        "user_action": [
+          "Revise the statement to remove the violation."
+        ],
+        "user_error": "Yes"
+      },
+      {
+        "applies_to": "Server",
+        "code": 3300,
+        "description": "recursive_with semantics: «cause»",
+        "reason": [
+          "The statement specifies restricted syntax in a recursive common table expression definition."
+        ],
+        "user_action": [
+          "Revise the statement removing the restricted syntax."
+        ],
+        "user_error": "Yes"
+      }
+    ]
+  }
+]
+----
+====
+
+[[finderr-ex4,FINDERR() Example 4]]
+.Find multiple error details by matching a regular expression
+====
+.Query
+[source,sqlpp]
+----
+SELECT FINDERR("[IU][NP]SERT");
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      {
+        "applies_to": "Server",
+        "code": 3150,
+        "description": "MERGE with ON KEY clause cannot have document key specification in INSERT action.",
+        "reason": [
+          [
+            "A lookup merge statement specified a document key.",
+            "e.g. MERGE INTO default USING [{},{}] AS source ON KEY 'aaa' WHEN NOT MATCHED THEN INSERT ('key',{})"
+          ]
+        ],
+        "user_action": [
+          "Refer to the documentation for lookup merge statements."
+        ],
+        "user_error": "Yes"
+      },
+// ...
+      {
+        "applies_to": "Server",
+        "code": 5072,
+        "description": "No UPSERT key for «value»",
+        "user_action": [
+          "Contact support."
+        ]
+      },
+// ...
+      {
+        "applies_to": "Server",
+        "code": 15005,
+        "description": "No keys to insert «details»"
+      }
+    ]
+  }
+]
+----
+====
+
+=== See Also
+
+* The xref:cli:finderr.adoc[finderr] command line tool
+* xref:n1ql:n1ql-language-reference/n1ql-error-codes.adoc[]
+
 [[flatten_keys,FLATTEN_KEYS()]]
 == FLATTEN_KEYS(`expr1` [ `modifiers` ], `expr2` [ `modifiers` ], ...)
 
@@ -436,6 +784,99 @@ FROM system:completed_requests;
       "formalized": "select self.* from `default`:`travel-sample`.`inventory`.`landmark` where ((`landmark`.`country`) = \"United Kingdom\") limit 1"
   },
   // ...
+]
+----
+====
+
+[[hashbytes,HASHBYTES()]]
+
+== HASHBYTES(`input`, [ `options` ])
+
+=== Description
+
+This function returns a binary hash value for a given input using a specified hashing algorithm. 
+By using this function, you can verify or compare data quickly, or protect your data by masking its original form while still allowing verification or comparison. 
+
+=== Arguments
+
+input:: A binary object or any {sqlpp} data type.
+The JSON marshalled value of the data is used as the input.
+
+options::  [Optional]
+An object that specifies the hashing algorithm and other options for the function.
+If omitted, the default hashing algorithm is `sha256`.
+
+=== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **algorithm** +
+__required__
+| Specifies the hashing algorithm to be used.
+
+Supported algorithms are: `crc32`, `md4`, `md5`, `sha224`, `sha256`, `sha384`, `sha512`, `sha512/224`, and `sha512/256`. 
+| String
+
+| **polynomial** +
+__optional__
+| The polynomial to use.
+This only applies if the algorithm is `crc32`.
+This property may have one of the following values:
+
+* `ieee` (the default value)
+* `castagnoli`
+* `koopman`
+* A valid 32-bit integer, provided either as a JSON number (decimal) or a string that can be parsed as a numeric value (supports hexadecimal with a "0x" prefix)
+
+*Default:* `ieee`
+| String or integer
+|===
+
+=== Return Value
+
+A binary hash value. 
+The size or length of the value depends on the algorithm you choose. 
+
+=== Examples
+
+[[hashbytes-ex1,HASHBYTES() Example 1]]
+
+.Find the hash value using the `sha256` algorithm 
+====
+.Query
+[source,sqlpp]
+----
+SELECT HASHBYTES('Hello World', {"algorithm":"sha256"});
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+  }
+]
+----
+====
+
+[[hashbytes-ex2,HASHBYTES() Example 2]]
+
+.Find the hash value using the `crc32` algorithm
+====
+.Query
+[source,sqlpp]
+----
+SELECT HASHBYTES("hello world", {"algorithm":"crc32", "polynomial":"koopman"});
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": "df373d3c"
+  }
 ]
 ----
 ====
@@ -584,6 +1025,24 @@ type::: Value for the type of document; currently only `json` is supported.
 +
 This property is not indexable.
 If you attempt to build an index on this property, an error is returned.
+
+xattrs::: 
+// tag::metadata-xattr[]
+Value representing extended attributes (XATTRs) of a document. 
++
+--
+To access XATTRs, use the syntax `META().xattrs.<attribute>[.<path>]`, where:
+
+* `<attribute>` is a top-level attribute name or key of the XATTR object.
+* `<path>` is an optional subpath within that attribute.
+--
++
+While you can create an index on a specific extended attribute like `META().xattrs.attr1`, you cannot create an index on the entire `META().xattrs` object itself. 
+// end::metadata-xattr[]
++
+Attempting to select the entire `META().xattrs` object will return an empty result. 
++
+NOTE: Starting with Couchbase Server 8.0, you can include up to 15 XATTRs per query.
 
 === Return Value
 

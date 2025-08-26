@@ -3,6 +3,31 @@
 :description: {sqlpp} has a system namespace that stores metadata about data containers, the Query service, and the system as a whole. \
 You can query the system namespace to get this information.
 
+// Pass through HTML table styles for this page
+
+ifdef::basebackend-html[]
+++++
+<style type="text/css">
+  /* No maximum width for table cells */
+  .doc table.spread > tbody > tr > *,
+  .doc table.stretch > tbody > tr > * {
+    max-width: none !important;
+  }
+
+  /* Ignore fixed column widths */
+  table:not(.fixed-width) col{
+    width: auto !important;
+  }
+
+  /* Do not hyphenate words in the table */
+  td.tableblock p,
+  p.tableblock{
+    hyphens: manual !important;
+  }
+</style>
+++++
+endif::[]
+
 [abstract]
 {description}
 
@@ -23,12 +48,15 @@ a| [%hardbreaks]
 <<querying-keyspaces,system:keyspaces>>
 <<querying-indexes,system:indexes>>
 <<querying-dual,system:dual>>
+<<querying-groups, system:group_info>>
+<<querying-bucket-info, system:bucket_info>>
 
 a| [%hardbreaks]
 xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#vitals[system:vitals]
 xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-active-req[system:active_requests]
 xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[system:prepareds]
 xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-completed-req[system:completed_requests]
+xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-history[system:completed_requests_history]
 
 a| [%hardbreaks]
 <<sys_my-user-info,system:my_user_info>>
@@ -45,6 +73,8 @@ a| [%hardbreaks]
 <<sys-transactions,system:transactions>>
 <<sys-sequences,system:sequences>>
 <<sys-all-sequences,system:all-sequences>>
+xref:n1ql:n1ql-language-reference/auto-update-statistics.adoc#system_aus[system:aus]
+xref:n1ql:n1ql-language-reference/auto-update-statistics.adoc#system_aus_settings[system:aus_settings]
 |===
 
 == Authentication and Client Privileges
@@ -423,6 +453,85 @@ SELECT 2+5 FROM system:dual
 ----
 
 The query returns the result of the expression, 7 in this case.
+
+[#querying-groups]
+== Query Groups
+
+You can query group information using the `system:group_info` keyspace as follows:
+
+[source,sqlpp]
+----
+SELECT * FROM system:group_info;
+----
+
+This catalog contains the following attributes:
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**description** +
+__required__
+|User-defined description associated with the group.
+|String
+
+|**id** +
+__required__
+|ID of the group.
+|String
+
+|**ldap_group_ref** +
+__optional__
+|LDAP mapping associated with the group.  
+|String
+
+|**roles** +
+__required__
+|List of RBAC roles for the group.
+|Array of <<roles,roles>> objects
+|===
+
+[[roles]]
+**Roles**
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**bucket_name** +
+__optional__
+|Name of the bucket to which the role applies.
+|String
+
+|**collection_name** +
+__optional__
+|Name of the collection to which the role applies.
+|String
+
+|**role** +
+__required__
+|Specifies the RBAC role.
+|String
+
+|**scope_name** +
+__optional__
+|Name of the scope to which the role applies.
+|String
+|===
+
+[#querying-bucket-info]
+== Query Bucket Information
+
+The `system:bucket_info` (alias: `system:database_info`) keyspace provides comprehensive information about all buckets, including their metadata, configuration settings, memory usage, and other details.
+
+You can query the keyspace as follows:
+
+[source,sqlpp]
+----
+SELECT * FROM system:bucket_info;
+----
+
+The query returns the same data as the xref:server:rest-api:rest-buckets-summary.adoc[pools/default/buckets] REST API.
+However, the `vBucketServerMap.vBucketMap` field is returned in a more compact format as a pipe-delimited string, rather than an array of arrays.
 
 [#sys_my-user-info]
 == Monitor Your User Info
@@ -1249,6 +1358,8 @@ This catalog contains the following attributes:
 __required__
 |The class of the task.
 
+For tasks related to xref:n1ql:n1ql-language-reference/auto-update-statistics.adoc[Auto Update Statistics (AUS)], the class is `auto_update_statistics`.
+
 *Example*: ``advisor``
 |string
 
@@ -1276,7 +1387,17 @@ __required__
 __required__
 |The state of the task.
 
-*Values*: `scheduled`, `cancelled`, `completed`
+Possible values are:
+--
+* `scheduled`: The task is scheduled and yet to run.
+* `deleting`: The scheduled task is in the process of being cancelled.
+* `cancelled`: The task was cancelled before it began executing.
+* `running`: The task is currently executing.
+* `aborting`: The running task is in the process of being aborted.
+* `aborted`: The task was aborted while it was running.
+* `completed`: The task completed successfully without being cancelled or aborted.
+--
+
 |string
 
 |**subClass** +

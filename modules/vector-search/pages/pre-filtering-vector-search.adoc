@@ -1,0 +1,73 @@
+= Pre-filtering Vector Searches
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:description: You can specify filters as part of a Vector Search query object to restrict the documents searched in a Search index.
+
+[abstract]
+{description}
+
+== About Pre-filtering
+
+The Search Service supports pre-filtering on Vector Search queries. 
+Pre-filtering allows you to execute vector searches over a subset of the vector index, 
+via the means of a filter request that qualifies the subset.
+
+include::partial$vector-search-no-windows.adoc[]
+
+== Prerequisites
+
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+
+* You have a bucket with scopes and collections in your cluster.
+For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[].
+
+* Your user account has the *Search Admin* or *Search Reader* role.
+
+* You installed the Couchbase command-line tool (CLI).
+
+* You have the hostname or IP address for the node in your cluster where you're running the Search Service.
+For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
+
+* You have created an FTS Vector Index.
++
+For more information about how to create an FTS Vector Index, see xref:create-vector-search-index-ui.adoc[] or xref:create-vector-search-index-rest-api.adoc[].
++
+[TIP]
+--
+include::partial$download-sample-partial.adoc[]
+
+For the best results, consider using the sample FTS Vector Index from xref:create-vector-search-index-ui.adoc#example[Create an FTS Vector Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create an FTS Vector Index with the REST API and curl/HTTP].
+--
+
+== Procedure
+
+To add pre-filtering to a Vector Search with the REST API:
+
+. In your command-line tool, enter a `curl` command with the `XPOST` verb.
+. Set your header content to include `"Content-Type: application/json"`.
+. Add your `username`, `password`, and the Search Service endpoint on port `8094`.
+. Add the `index name` you want to query to the endpoint.
++
+[source, console]
+----
+curl -XPOST -H "Content-Type: application/json" \
+  -u ${CB_USERNAME}:${CB_PASSWORD} http://${CB_HOSTNAME}:8094/api/bucket/vector-sample/scope/color/index/{INDEX_NAME}/query \
+-d \
+----
+. Enter a search query that includes a `filter` object with your `knn` object.
++
+For more information about the `filter` object, see xref:search:search-request-params.adoc#filter[filter].
+
+
+=== Example: Pre-Filter A Vector Search Query For The Color "Navy"
+
+For example, the following Vector Search query tries to find matches to a color with an RGB value of `[176, 0, 176]` with a minimum brightness of `70` and a maximum of `80`.
+A pre-filter on the query will narrow the documents searched inside the FTS Vector Index to documents that have a `color` field value that closely matches `navy`:
+
+[source, console]
+----
+include::example$run-pre-filtered-vector-search-rest-api.sh[]
+----
+
+

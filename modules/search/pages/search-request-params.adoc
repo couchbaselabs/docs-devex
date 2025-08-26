@@ -2,7 +2,7 @@
 :page-topic-type: reference
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
-:page-aliases: fts:fts-creating-with-curl-http-requests-json-structure.adoc, fts:fts-creating-with-curl-http-requests.adoc, fts:fts-search-request.adoc, fts:fts-supported-queries.adoc, fts:fts-supported-queries-query-string-query.adoc, fts:fts-query-string-syntax.adoc, fts:fts-query-string-syntax-boosting.adoc, fts:fts-query-string-syntax-date-ranges.adoc, fts:fts-query-string-syntax-escaping.adoc, fts:fts-query-string-syntax-field-scoping.adoc, fts:fts-query-string-syntax-match-phrase.adoc, fts:fts-query-string-syntax-match.adoc, fts:fts-query-string-syntax-numeric-ranges.adoc, fts:fts-supported-queries-analytic-query.adoc, fts:fts-supported-queries-match.adoc, fts:fts-supported-queries-match-phrase.adoc, fts:fts-supported-queries-non-analytic-query.adoc, fts:fts-supported-queries-term.adoc, fts:fts-supported-queries-phrase.adoc, fts:fts-supported-queries-prefix-query.adoc, fts:fts-supported-queries-regexp.adoc, fts:fts-supported-queries-fuzzy.adoc, fts:fts-supported-queries-wildcard.adoc, fts:fts-supported-queries-compound-query.adoc, fts:fts-supported-queries-conjuncts-disjuncts.adoc, fts:fts-supported-queries-boolean-field-query.adoc, fts:fts-supported-queries-range-query.adoc, fts:fts-supported-queries-numeric-range.adoc, fts:fts-supported-queries-date-range.adoc, fts:fts-supported-queries-term-range.adoc, fts:fts-supported-queries-geospatial.adoc, fts:fts-supported-queries-geopoint-spatial.adoc, fts:fts-supported-queries-geo-point-distance.adoc, fts:fts-supported-queries-geo-bounded-rectangle.adoc, fts:fts-supported-queries-geo-bounded-polygon.adoc, fts:fts-supported-queries-geojson-spatial.adoc, fts:fts-queryshape-point.adoc, fts:fts-queryshape-linestring.adoc, fts:fts-queryshape-polygon.adoc, fts:fts-queryshape-multipoint.adoc, fts:fts-queryshape-multilinestring.adoc, fts:fts-queryshape-multipolygon.adoc, fts:fts-queryshape-geometrycollection.adoc, fts:fts-queryshape-circle.adoc, fts:fts-queryshape-envelope.adoc, fts:fts-supported-queries-special-query.adoc, fts:fts-supported-queries-match-all.adoc, fts:fts-supported-queries-match-none.adoc
+:page-aliases: fts:fts-creating-with-curl-http-requests-json-structure.adoc, fts:fts-creating-with-curl-http-requests.adoc, fts:fts-pagination.adoc, fts:fts-search-request.adoc, fts:fts-supported-queries.adoc, fts:fts-supported-queries-query-string-query.adoc, fts:fts-query-string-syntax.adoc, fts:fts-query-string-syntax-boosting.adoc, fts:fts-query-string-syntax-date-ranges.adoc, fts:fts-query-string-syntax-escaping.adoc, fts:fts-query-string-syntax-field-scoping.adoc, fts:fts-query-string-syntax-match-phrase.adoc, fts:fts-query-string-syntax-match.adoc, fts:fts-query-string-syntax-numeric-ranges.adoc, fts:fts-supported-queries-analytic-query.adoc, fts:fts-supported-queries-match.adoc, fts:fts-supported-queries-match-phrase.adoc, fts:fts-supported-queries-non-analytic-query.adoc, fts:fts-supported-queries-term.adoc, fts:fts-supported-queries-phrase.adoc, fts:fts-supported-queries-prefix-query.adoc, fts:fts-supported-queries-regexp.adoc, fts:fts-supported-queries-fuzzy.adoc, fts:fts-supported-queries-wildcard.adoc, fts:fts-supported-queries-compound-query.adoc, fts:fts-supported-queries-conjuncts-disjuncts.adoc, fts:fts-supported-queries-boolean-field-query.adoc, fts:fts-supported-queries-range-query.adoc, fts:fts-supported-queries-numeric-range.adoc, fts:fts-supported-queries-date-range.adoc, fts:fts-supported-queries-term-range.adoc, fts:fts-supported-queries-geospatial.adoc, fts:fts-supported-queries-geopoint-spatial.adoc, fts:fts-supported-queries-geo-point-distance.adoc, fts:fts-supported-queries-geo-bounded-rectangle.adoc, fts:fts-supported-queries-geo-bounded-polygon.adoc, fts:fts-supported-queries-geojson-spatial.adoc, fts:fts-queryshape-point.adoc, fts:fts-queryshape-linestring.adoc, fts:fts-queryshape-polygon.adoc, fts:fts-queryshape-multipoint.adoc, fts:fts-queryshape-multilinestring.adoc, fts:fts-queryshape-multipolygon.adoc, fts:fts-queryshape-geometrycollection.adoc, fts:fts-queryshape-circle.adoc, fts:fts-queryshape-envelope.adoc, fts:fts-supported-queries-special-query.adoc, fts:fts-supported-queries-match-all.adoc, fts:fts-supported-queries-match-none.adoc
 :description: You can add additional properties to a Search request to control how the Search Service returns results. 
 :page-toclevels: 3
 
@@ -27,7 +27,7 @@ A Search request can contain the following properties:
 An object that contains the properties for one of the supported query types.
 
 The `query` object is required if you want to run a regular search, or a hybrid search that includes a xref:vector-search:vector-search.adoc[Vector Search] query.
-If your database is running Couchbase Server version 7.6.2 and later, you do not need to include the `query` object for a pure Vector Search query. 
+If your cluster is running Couchbase Server version 7.6.2 and later, you do not need to include the `query` object for a pure Vector Search query. 
 
 For more information about how to configure the `query` object, see <<query-object,>>.
 
@@ -39,15 +39,27 @@ For more information about how to configure the objects inside a `knn` array, se
 
 |ctl |Object |No a|
 
-An object that contains properties for query consistency. 
+An object that contains properties for query consistency.
+Depending on your version of Couchbase Server, the `ctl` object can also validate Search queries or choose specific Search index partitions for a query.
 
-For more information about how to configure Search query consistency inside the `ctl` object, see <<ctl,>>.
+For more information about how to configure the `ctl` object, see <<ctl,>>.
 
 |[[size-limit]]size/limit |Integer |No a|
 
 Set the total number of results to return for a single page of search results. 
 
 If you provide both the `size` and `limit` properties, the Search Service uses the `size` value.
+
+The Search Service returns the `size` number of results: 
+
+* Starting at the offset in the `from` or `offset` property.
+* Starting from the key specified in the <<search_after,search_after property>>.
+* Starting backward from the key specified in the <<search_before,search_before property>>.
+
+The `size` property is added by default to all Search requests, if not otherwise specified, with a value of `10`.
+
+If you do not provide a `from`, `size`, or other pagination settings in your query, the Search Service defaults to a `size` value of `10` and a `from` value of `0`.
+This means the Search Service does not offset results, and returns the first `10` matches to your query.
 
 |from/offset |Integer |No a|
 
@@ -56,6 +68,10 @@ Set an offset value to change where pagination starts for search results, based 
 For example, if you set a `size` value of `5` and a `from` value of `10`, the Search query returns results 11 through 15 on a page. 
 
 If you provide both the `from` and `offset` properties, the Search Service uses the `from` value.
+If you do not provide a `from`, `size`, or other pagination settings in your query, the Search Service defaults to a `size` value of `10` and a `from` value of `0`.
+This means the Search Service does not offset results, and returns the first `10` matches to your query.
+
+The `from` property is added by default to all Search requests, if not otherwise specified, with a value of `0`.
 
 |highlight |Object |No a|
 
@@ -87,9 +103,10 @@ To create an explanation for a search result's score in search results, set `exp
 
 To turn off explanations for search result scoring, set `explain` to `false`.
 
-|sort |Array |No a|
+|[[sort_arr]]sort |Array |No a|
 
-Contains an array of strings or JSON objects to set how to sort search results. 
+Contains an array of strings or JSON objects to set how to sort search results.
+By default, the Search Service sorts results based on score values, from highest to lowest.
 
 The strings can be: 
 
@@ -114,31 +131,53 @@ To turn off document relevancy scoring in search results, set `score` to `none`.
 
 To turn on document relevancy scoring in search results, remove the `score` property.
 
-|search_after |Array |No a|
+|[[search_after]]search_after |Array |No a|
 
-NOTE: If you use `search_after` in a search request, you can't use `search_before`. Both properties are included in the example code to show the correct syntax.
+NOTE: If you use `search_after` in a search request, you cannot use `search_before`. Both properties are included in the example code to show the correct syntax.
 
 Use `search_after` with `from/offset` and `sort` to control pagination in search results. 
 
-Give a value for each string or JSON object in the `sort` array to the `search_after` array.
-The Search Service starts search result pagination after the document with those values. 
+Give a value for each string or JSON object in the <<sort_arr,sort array>> to the `search_after` array.
+You must provide the values in the same order that they appear in the <<sort_arr,sort array>>.
+Your `sort` array must force a total order on your search results.
 
-You must provide the values in the same order that they appear in the `sort` array. 
+Values in the `search_after` array must be strings.
+You cannot use `search_after` with numbers or other field data types - if your `sort` array includes fields with a `date` or `number` type, you cannot use `search_after`. 
+Only result relevancy score values can be entered as strings in the array. 
 
-For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_after` set to `8`, documents 9-10 appear on the same page. 
+The Search Service starts search result pagination after the document with the values you provide in the array.
 
-|search_before |Array |No a|
+For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_after` set to `8`, documents 9-10 appear on the same page.
 
-NOTE: If you use `search_before` in a search request, you can't use `search_after`. Both properties are included in the example code to show the correct syntax.
+To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array. 
+Set the `search_after` property to include the values from the last result on your previous page of search results to effectively paginate.
+
+Use `search_after` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`. 
+`search_after` lets you start your search results from a specific result, rather than needing to process a number of search results to skip.
+
+|[[search_before]]search_before |Array |No a|
+
+NOTE: If you use `search_before` in a search request, you cannot use `search_after`. Both properties are included in the example code to show the correct syntax.
 
 Use `search_before` with `from/offset` and `sort` to control pagination in search results.
 
-Give a value for each string or JSON object in the `sort` array to the `search_before` array.
-The Search Service starts search result pagination before the document with those values. 
+Give a value for each string or JSON object in the <<sort_arr,sort array>> to the `search_before` array. 
+You must provide the values in the same order that they appear in the `sort` array.
+Your `sort` array must force a total order on your search results.
 
-You must provide the values in the same order that they appear in the `sort` array. 
+Values in the `search_before` array must be strings.
+You cannot use `search_before` with numbers or other field data types - if your `sort` array includes fields with a `date` or `number` type, you cannot use `search_before`. 
+Only result relevancy score values can be entered as strings in the array.
 
-For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_before` set to `8`, documents 2-6 appear on the same page. 
+The Search Service starts search result pagination before the document with the values you provide in the array.   
+
+For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_before` set to `8`, documents 2-6 appear on the same page.
+
+To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array. 
+Set the `search_before` property to include the values from the last result on your previous page of search results to effectively paginate. 
+
+Use `search_before` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`.
+`search_before` lets you start your search results back from a specific result, rather than needing to process a number of search results to skip.
 
 |[[collections]]collections |Array |No |Contains an array of strings that specify the collections where you want to run the query. 
 
@@ -156,7 +195,7 @@ Add the `knn` array with at least one object to run a Vector Search query:
 include::example$run-search-full-request.jsonc[tag=knn]
 ----
 
-NOTE: If your database is running Couchbase Server version 7.6.2 and later, to return only results from your Vector Search query, do not include a `query` object with your Search request.
+NOTE: If your cluster is running Couchbase Server version 7.6.2 and later, to return only results from your Vector Search query, do not include a `query` object with your Search request.
 To run a hybrid query that uses regular Search Service parameters together with Vector Search to return results, see the <<query-object,Query Object>> section. 
 
 An object in the `knn` array can contain the following properties: 
@@ -169,9 +208,15 @@ An object in the `knn` array can contain the following properties:
 
 Enter the total number of results that you want to return from your Vector Search query. 
 
-The Search Service returns the `k` closest vectors to the vector given in `vector` or, if your database is running Couchbase Server version 7.6.2 or later, `vector_base64`.
+The Search Service returns the `k` closest vectors to the vector given in `vector` or, if your cluster is running Couchbase Server version 7.6.2 or later, `vector_base64`.
 
 NOTE: The <<size-limit,size or limit property>> overrides any value set in `k`.
+
+|params |Object |No a|
+
+Enter additional parameters to control how the Search Service compares vectors when running a Vector Search request. 
+
+For more information about the `params` object, see <<knn-params,>>.
 
 |field |String |Yes a|
 
@@ -189,7 +234,7 @@ For more information about the dimension value, see the xref:search-index-params
 
 |vector_base64 |Base64 Encoded String |Must have `vector` or `vector_base64` a|
 
-If your database is running Couchbase Server version 7.6.2 or later, enter a vector, encoded as a base64 string, that you want to compare to the vector data in `field`. 
+If your cluster is running Couchbase Server version 7.6.2 or later, enter a vector, encoded as a base64 string, that you want to compare to the vector data in `field`. 
 
 The Search Service uses the similarity metric defined in the xref:search-index-params.adoc#similarity[Search index definition] to return the `k` closest vectors from the Search index.
 
@@ -197,6 +242,45 @@ NOTE: The vector in your Search query must match the dimension of the vectors st
 If the dimensions do not match, your Search query does not return any results.
 For more information about the dimension value, see the xref:search-index-params.adoc#dims[dims property] or the xref:child-field-options-reference.adoc#dimension[Dimension option] in the UI. 
 
+|[[filter]]filter |Object |No a|
+
+Add a filter object to xref:vector-search:pre-filtering-vector-search.adoc[add pre-filtering], based on an additional query, to a Vector Search query. 
+
+The `filter` object can take properties from any of the query types supported by the <<query-object,>>.
+|====
+
+[#knn-params]
+=== Knn params Object 
+
+Use the `params` object inside a `knn` object to fine tune the probes and centroids the Search Services uses and searches while running a Vector Search request. 
+
+The `params` object can contain the following properties: 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|ivf_nprobe_pct |Number (percentage) |No a|
+
+Set the `ivf_nprobe_pct` value to control the percentage of probes, or the percentage of clusters, that the Search Service searches during a single Vector Search query.
+
+The Search Service automatically calculates a default `nprobe` percentage based on the vectors in a given partition of your Vector Search index.
+For more information about this calculation, see xref:vector-search:fine-tune-vector-search.adoc[].
+
+If you set the value of `ivf_nprobe_pct` higher than this default calculated value, the Search Service will search a higher percentage of clusters in your processed vectors.
+This can increase your accuracy and recall for Vector Search, but requires more compute time for each query. 
+
+In the example, the Search Service searches only `1%` of the total available clusters. 
+
+|ivf_max_codes_pct |Number (percentage out of 100) |No a|
+
+Set the `ivf_max_codes_pct` value to control the maximum number of centroids that the Search Service accesses during a single Vector Search query. 
+
+By default, this value is always 100%. 
+
+If you reduce your `ivf_max_codes_pct` value, the Search Service accesses fewer centroids, which reduces your Vector Search accuracy and recall, but gives faster compute times for your search. 
+
+In the example, the Search Service searches only `0.2%` of the available centroids in your vector data. 
 |====
 
 [#query-object]
@@ -459,7 +543,7 @@ For example, `parentField.childField`.
 The Query String syntax does not support SQL++ field syntax.
 For example, you cannot use `[*]` or `[3]` as array locations in a field name path. 
 
-If your database is running Couchbase Server version 7.6.2 or later and you want to search your document metadata, you must prefix the metadata field's name with `_$xattrs`.
+If your cluster is running Couchbase Server version 7.6.2 or later and you want to search your document metadata, you must prefix the metadata field's name with `_$xattrs`.
 a| 
 .Query String query for "pool" in the description field
 [source,json]
@@ -804,6 +888,15 @@ a| Set whether the Search Service should return documents that contain the exact
 If you set `inclusive_end` to `false`, only dates earlier than `end` count as a match to your Search query. 
 
 If you do not set the `inclusive_end` value, by default, `end` is exclusive to the range.
+
+| datetime_parser
+| String
+| No
+a| Set the specific date/time parser to use to interpret the date data in your `start` and `end` properties, and find matches in your documents.
+
+If you do not specify a date/time parser, the Search Service uses the xref:default-date-time-parsers-reference.adoc#datetimeoptional[dateTimeOptional] date/time parser. 
+
+For more information about date/time parsers, see xref:customize-index.adoc#date-time[Date/Time Parsers].
 
 |====
 
@@ -1725,7 +1818,7 @@ include::example$query-special.jsonc[tag=match_all]
 a| Use the `match_none` object as the only property in your `query` object to return no documents from the Search index in search results.
  
 If you add a <<knn,knn object>> and a `query` object with the `match_none` object to your request, your search returns only matches to the Vector Search query inside the `knn` object.
-If your database is running Couchbase Server version 7.6.2 and later, when running a xref:vector-search:vector-search.adoc[Vector Search] query without a `query` object, the Search Service automatically adds a `query` object with a `match_none` query object to your request.
+If your cluster is running Couchbase Server version 7.6.2 and later, when running a xref:vector-search:vector-search.adoc[Vector Search] query without a `query` object, the Search Service automatically adds a `query` object with a `match_none` query object to your request.
 
 a|
 .Return no documents from the Search index
@@ -1778,7 +1871,7 @@ include::example$query-boost.jsonc[tag=long]
 | String
 a| Specify a specific field name, using dot notation, where the Search Service should search for a match to your search query. 
 
-If your database is running Couchbase Server version 7.6.2 or later, and you want to search for document metadata held in XATTRs, you must add `_$xattrs` to the start of your metadata field's name. 
+If your cluster is running Couchbase Server version 7.6.2 or later, and you want to search for document metadata held in XATTRs, you must add `_$xattrs` to the start of your metadata field's name. 
 For example, `"_$xattrs.description"`.
 a| 
 .Search for documents where the pets_ok field is true
@@ -1839,7 +1932,8 @@ include::example$query-analytic.jsonc[tag=match_prefix_length]
 [#ctl]
 == Ctl Object 
 
-Use the `ctl` object to make sure that the Search Service runs your Search query against the latest version of the documents in your database. 
+Use the `ctl` object to make sure that the Search Service runs your Search query against the latest version of the documents in your cluster.
+As of Couchbase Server version 8.0 and later, you can also use it to control which replica partition the Search Service uses to find results for a query. 
 
 The `ctl` object and its properties cause the Search Service to run your query against the latest version of a document written to a xref:server:learn:buckets-memory-and-storage/vbuckets.adoc[vBucket].  
 The Search Service uses a consistency vector to synchronize the last document write to a vBucket from the Data Service with the Search index.
@@ -1849,7 +1943,9 @@ The Search Service uses a consistency vector to synchronize the last document wr
 include::example$run-search-full-request.jsonc[tag=ctl]
 ----
 
-The `ctl` object contains the following properties:
+In Couchbase Server 7.6.4 and later, you can also use the `ctl` object with the `validate` property to add an extra check to your queries and get help troubleshooting when a query does not return results. 
+
+The `ctl` object can contain the following properties:
 
 [cols="1,1,1,4"]
 |====
@@ -1867,6 +1963,51 @@ The query might return partial results if any index partitions responded before 
 An object that contains a `vectors` object and the `level` and `results` properties.
 
 For more information, see <<consistency,>>.
+
+|[[validate]]validate |Boolean |No a|
+
+[.status]#Couchbase Server 7.6.4#
+
+Add the `validate` property with a value of `true` to add extra validation checks to your Search query.
+
+For example, the Search Service can tell you through the Web Console or the REST API that a field in your Search query is not in your Search index: 
+
+----
+err: query_validate: field not indexed, field: ratings.Cleanliness, type: number
+----
+
+|[[global_scoring]]global_scoring |Boolean |No a|
+
+[.status]#Couchbase Server 8.0#
+
+Add the `global_scoring` property with a value of `true` to ensure consistent and stable result ordering with the xref:run-searches.adoc#bm25[bm25 scoring algorithm], when you have a large, partitioned Search index.
+`global_scoring` aggregates document scoring across partitions to help maintain relative scoring, but uses more compute resources and increases search times.
+If you do not use `global_scoring`, result ordering can change based on your Search index's partition count.
+
+You can only use `global_scoring` if you're using the xref:run-searches.adoc#bm25[bm25 scoring algorithm].
+The setting has no effect if your `scoring_model` is set to `tfidf`.
+
+|partition_selection |String |No a|
+
+[.status]#Couchbase Server 8.0#
+
+If your Search index is configured with partitions and replicas, add the `partition_selection` property to choose how the Search Service selects the partitions to search for your Search query: 
+
+* `""`: The Search Service targets only active partitions.
+Active partitions are the partitions currently being used to serve Search requests.
+This is the default setting.
+* `"local"`: The Search Service targets all active or replica partitions, local to the coordinator node. 
+If the required Search index partition for a query is not available on the coordinator node, the Search Service looks for the partition within the node's xref:manage:manage-groups/manage-groups.adoc[Server Group].
+If the Search Service still cannot find the partition, then it chooses a random node in the cluster that's running the Search Service, that contains the correct active or replica partition.
+* `"local_only"`: The Search Service targets all active or replica partitions, local to the coordinator node.
+If the required Search index partition for a query is not available on the coordinator node, the Search Service looks for the partition within the node's xref:manage:manage-groups/manage-groups.adoc[Server Group].
+If the Search Service still cannot find the partition, then the query returns partial results.
+* `"random"`: The Search Service chooses a random selection of partitions from local and remote nodes for the Search query.
+* `"random_balanced"`: The Search Service tries to choose a node that is not already serving a Search request.
+If the Search Service cannot find an available node, it defaults to a random node with the correct partition or replica.
+This mode is designed to keep the number of query handling partitions per node the same. 
+
+For more information about how to configure partitions and replicas on your Search index, see xref:set-advanced-settings.adoc[] or xref:search-index-params.adoc#planparams[planParams Object].
 
 |====
 
@@ -2090,13 +2231,15 @@ If the document's `field` value is later than `2023-12-31` but earlier than `202
  
 You can set both a `start` and `end` for a range, or just a `start` or `end`.
 
+You can also set a specific xref:customize-index.adoc#date-time[date/time parser] to use with the date/time data in your `start` and `end` values. 
+
 [cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description
 
 |name |String |Yes |The name for the date range. 
 
-|start |RFC-3339 formatted Date String |No a|
+|start |String |No a|
 
 The starting date value to compare against the value of the `field` in the <<facet-name,>>. 
 
@@ -2104,13 +2247,21 @@ If a document's value for the field is later than `start`, the Search Service in
 
 You can also define a `end` property to set an upper limit for your date range. 
 
-|end |RFC-3339 formatted Date String |No a|
+|end |String |No a|
 
 The ending date value to compare against the value of the `field` in the <<facet-name,>>. 
 
 If a document's value for the field is earlier than `end`, the Search Service increments the `count` value returned in the Search query results.
 
 You can also define a `start` property to set a lower limit for your date range.
+
+|datetime_parser |String |No a|
+
+Set the specific date/time parser to use to interpret the date data in your `start` and `end` properties, and find matches in your documents.
+
+If you do not specify a date/time parser, the Search Service uses the xref:default-date-time-parsers-reference.adoc#datetimeoptional[dateTimeOptional] date/time parser. 
+
+For more information about date/time parsers, see xref:customize-index.adoc#date-time[Date/Time Parsers].
 
 |====
 
@@ -2125,6 +2276,11 @@ The following `sort` object orders search results by the values in `field1`, the
 ----
 include::example$run-search-full-request.jsonc[tag=sort]
 ----
+
+TIP: For the best results with sorting and page navigation in search results, always include your document ID values (`_id` or `-_id`) as the final sort criteria in your `sort` object.
+
+This means that if 2 documents have the same value in `field1`, then the Search Service will sort them again based on their `field2` values.
+If they have the same value in `field2`, then sorting will happen again based on each document's score, and then finally the documents' ID values. 
 
 The `sort` object can contain the following string values: 
 

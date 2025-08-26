@@ -4,6 +4,7 @@
 :page-product-name: {product-name}
 :description: Use a JSON payload to control the settings for a Search index. 
 :page-toclevels: 2
+:stem:
 
 [abstract]
 {description}
@@ -80,6 +81,14 @@ For more information, see <<planparams,>>.
 |params |Object |Yes |An object that sets the Search index's type identifier, type mappings, and analyzers. 
 For more information, see <<params,>>.
 
+|store |Object |No a|
+
+An object that controls merge policy, concurrent persister behavior, and file format version for the Search index.
+
+The Search Service can automatically set these to reasonable default values, based on the other settings in your Search index definition.
+
+For more information, see <<store,>>.
+
 |====
 
 [#planparams]
@@ -101,13 +110,13 @@ The `planParams` object contains the following properties:
 |Property |Type |Required? |Description
 
 |maxPartitionsPerPIndex |n/a |No |This setting is deprecated. Use `indexPartitions`, instead.
-|indexPartitions |Number |Yes a|The number of partitions to split the Search index into, across the nodes you have available in your database with the Search Service enabled. 
+|indexPartitions |Integer |Yes a|The number of partitions to split the Search index into, across the nodes you have available in your cluster with the Search Service enabled. 
 Use index partitions to increase index and query performance on large datasets.
 
 NOTE: The scoring calculation for regular Search queries can be affected by the number of partitions in your Search index, and how the Search Service distributes documents across partitions.
 This is a limitation of the https://en.wikipedia.org/wiki/Tf%E2%80%93idf[tf-idf^] weighting scheme.
 
-|numReplicas |Number |Yes a|
+|numReplicas |Integer |Yes a|
 
 For high-availability, set the number of replicas the Search Service creates for the Search index.
 
@@ -157,13 +166,15 @@ The `doc_config` object is a child object of the <<params,>>. It contains the fo
 
 |mode |String |Yes a|
 
-Set a xref:customize-index.adoc#type-identifiers[type identifier] for the Search index to filter documents from search results: 
+Set a xref:customize-index.adoc#type-identifiers[type identifier] for the Search index to filter documents.
+Set the mode for your type identifier by setting this property to `"scope.collection.\{mode\}"` 
+You can choose from one of the following mode values: 
 
 * `type_field`: Use the value from a specific field in the documents. 
 * `docid_prefix_delim`: Use the leading characters in the documents' ID values, up to but not including a specified separator.
 * `docid_regexp`: Use a regular expression on the documents' ID values.
-
-NOTE: If you want your Search index to only include documents from a specific collection, the `mode` value must be `"scope.collection.\{mode\}"`.
+* `custom`: Use a custom document filter expression to filter documents based on specific values.
+See <<doc_filter,doc_filter>>.
 
 |docid_prefix_delim |String |Yes a|
 
@@ -171,17 +182,402 @@ If `mode` is `docid_prefix_delim`, set the separator character to use on a docum
 
 For example, to filter documents based on the characters before a `\_` in their ID values, set `docid_prefix_delim` to `_`.
 
+To use this filter later, you need to modify the name of the type mapping where you want to use the filter.
+
+For example, you could set a specific filter value of `hotel` on a type mapping.
+If `docid_prefix_delim` is set to `\_`, a document would have to have the string `hotel` before the character `_` in its ID value to pass the filter.
+To use the filter, set the <<scope-collection,`\{scope\}.\{collection\}` object>> name to `\{scope\}.\{collection\}.hotel`.
+If the document passes the filter, it's included in the type mapping, and your Search index.
+
 |docid_regexp |String |Yes a|
 
 If `mode` is `docid_regexp`, set the regular expression to use on a document's ID value to determine its type. 
 
-For example, to filter documents that contain the characters `\_40` in their ID value, set `docid_regexp` to `_[3-5]0`. 
+For example, to filter documents that contain the characters `\_40` in their ID value, set `docid_regexp` to `_[3-5]0`.
+
+To use this filter later, you need to modify the name of the type mapping where you want to use the filter.
+
+For example, you could set a specific filter value of `_40` on a type mapping.
+A document with the characters `_40` in its ID value would pass the filter.
+To use the filter, set the <<scope-collection,`\{scope\}.\{collection\}` object>> name to `\{scope\}.\{collection\}._40`.
+If the document passes the filter, it's included in the type mapping, and your Search index.
 
 |type_field |String |Yes a|
 
 If `mode` is `type_field`, set the name of the field to use to filter documents.
 
 For example, to filter documents based on the value of their `type` field, set `type_field` to `type`.
+
+To use this filter later, you need to modify the name of the type mapping where you want to use the filter.
+
+For example, you could use a field called `type` as your `type_field`.
+To use the filter, set your <<scope-collection,`\{scope\}.\{collection\}` object>> name to `\{scope\}.\{collection\}.landmark`.
+With `type` as the `type_field` and `landmark` as the configured filter, a document would have to have `landmark` in its `type` field to pass the filter.
+
+|[[doc_filter]]doc_filter |Object |Yes a| 
+
+[.status]#Couchbase Server 8.0#
+
+If `mode` is `custom`, provide an object that sets a custom document filter for a scope and collection in your Search index. 
+
+You can filter documents with custom filters based on the value of: 
+
+* <<boolean_filter,A boolean field>>.
+* <<date_range_filter,A date field, within a specific range>>.
+* <<numeric_range_filter,A numeric field, within a specific range>>.
+* <<term_filter,A term in a text field>>.
+* A <<conjunct_filter,conjunct>> or <<disjunct_filter,disjunct>> object that combines 2 or more of the available filters.
+
+You can add up to a maximum of 100 document filters on a single Search index.
+
+For more information about how to define each type of filter in your Search index definition, see <<doc_filter_obj,>>. 
+
+|====
+
+[#doc_filter_obj]
+==== Doc_filter Object 
+
+[.status]#Couchbase Server 8.0#
+
+The `doc_filter` object contains JSON objects for each document filter you want to apply to a type mapping in your Search index:
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=doc_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+You can add up to a maximum of 100 document filters on a single Search index.
+
+You can define the following types of document filters: 
+
+* <<boolean_filter,>>
+* <<date_range_filter,>>
+* <<numeric_range_filter,>>
+* <<term_filter,>>
+* <<conjunct_filter,>>
+* <<disjunct_filter,>>
+
+[#boolean_filter]
+===== Boolean Document Filters 
+
+[.status]#Couchbase Server 8.0#
+
+A boolean document filter adds or removes documents from a type mapping based on the value of a boolean field: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=boolean_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your boolean document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.free_breakfast_true`.
+
+A boolean document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|bool |Boolean |Yes a|
+
+Set `bool` to the value a document must have in your chosen boolean field for a document to pass the filter. 
+
+`bool` can be `true` or `false`.
+
+|field |String |Yes a|
+
+Enter the name of the field that contains a boolean value you want to use as a filter. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
+
+|====
+
+[#date_range_filter]
+===== Date Range Document Filters 
+
+[.status]#Couchbase Server 8.0#
+
+A date range document filter adds or removes documents from a type mapping based on the value of a date field and a specified range: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=date_range_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your date range document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.review_date_range`.
+
+A date range document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|start |Date and Time String |No a|
+
+Set the start date for the range you want to use as a filter.
+Dates occurring before your `start` value do not pass the filter.
+
+You can choose to set only a `start` value or only an `end` value for the filter.
+
+By default, the value for `start` is included in your date range filter.
+
+|end |Date and Time String |No a|
+
+Set the end date for the range you want to use as a filter.
+Dates occurring after your `end` value do not pass the filter.
+
+You can choose to set only a `start` value or only an `end` value for the filter.
+
+By default, the value for `end` is excluded from your date range filter.
+
+|inclusive_start |Boolean |No a|
+
+Set whether the value of `start` should be included or excluded from the range:
+
+* If `inclusive_start` is `true`, documents with the same date and time string as `start` pass the filter.
+* If `inclusive_start` is `false`, documents must have a date and time string that's later than the value of `start` to pass the filter.
+
+If you do not set a value for `inclusive_start`, by default, `start` is inclusive to your date range.
+
+|inclusive_end |Boolean |No a|
+
+Set whether the value of `end` should be included or excluded from the range:
+
+* If `inclusive_end` is `true`, documents with the same date and time string as `end` pass the filter.
+* If `inclusive_end` is `false`, documents must have a date and time string that's earlier than the value of `end` to pass the filter.
+
+If you do not set a value for `inclusive_end`, by default, `end` is not included in your date range.
+
+|field |String |Yes a|
+
+Enter the name of the field that contains a date value you want to use as a filter. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
+
+|datetime_parser |String |No a|
+
+Enter the name of the date/time parser you want to use to interpret your date and time strings. 
+
+You can use a xref:default-date-time-parsers-reference.adoc[default date/time parser] or reference a date/time parser from the <<date_time_parsers,>>.
+
+|====
+
+[#numeric_range_filter]
+===== Numeric Range Document Filters 
+
+[.status]#Couchbase Server 8.0#
+
+A numeric range document filter adds or removes documents from a type mapping based on the value of a numeric field and a specified range: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=numeric_range_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your numeric range document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.cleanliness_range`.
+
+A numeric range document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|min |Number |No a|
+
+Set the minimum value for the range you want to use as a filter.
+Values smaller than your `min` value do not pass the filter.
+
+You can choose to set only a `min` value or only a `max` value for the filter.
+
+By default, the value for `min` is included in your numeric range filter.
+
+|max |Number |No a|
+
+Set the maximum value for the range you want to use as a filter.
+Values larger than your `max` value do not pass the filter.
+
+You can choose to set only a `min` value or only a `max` value for the filter.
+
+By default, the value for `max` is excluded from your numeric range filter.
+
+|inclusive_min |Boolean |No a|
+
+Set whether the value of `min` should be included or excluded from the range:
+
+* If `inclusive_min` is `true`, documents with the same value as `min` pass the filter.
+* If `inclusive_min` is `false`, documents must have a value that's larger than the value of `min` to pass the filter.
+
+If you do not set a value for `inclusive_min`, by default, `min` is inclusive to your numeric range.
+
+|inclusive_max |Boolean |No a|
+
+Set whether the value of `max` should be included or excluded from the range:
+
+* If `inclusive_max` is `true`, documents with the same value as `max` pass the filter.
+* If `inclusive_max` is `false`, documents must have a value that's smaller than the value of `max` to pass the filter.
+
+If you do not set a value for `inclusive_max`, by default, `max` is not included in your numeric range.
+
+|field |String |Yes a|
+
+Enter the name of the field that contains a numeric value you want to use as a filter. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
+
+|====
+
+[#term_filter]
+===== Term Document Filters 
+
+[.status]#Couchbase Server 8.0#
+
+A term document filter adds or removes documents from a type mapping based on the existence of a term in a specified document field: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=term_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your term document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.name_hotel`.
+
+A term document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|term |String |Yes a|
+
+Enter a string that must exist inside `field` for a document to pass the filter.
+
+The string must be an exact match for a document to pass.
+
+|field |String |Yes a|
+
+Enter the name of the field where you want to search for the value of `term`. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
+
+|====
+
+[#conjunct_filter]
+===== Conjunct Document Filter
+
+[.status]#Couchbase Server 8.0#
+
+A conjunct document filter can contain any number of the other document filter types:
+
+* <<boolean_filter,>>
+* <<date_range_filter,>>
+* <<numeric_range_filter,>>
+* <<term_filter,>>
+* <<conjunct_filter,>>
+* <<disjunct_filter,>>
+
+A document must pass every filter inside the `conjuncts` array to pass a conjunct document filter and be included in a type mapping: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=conjunct_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your conjunct document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.free_parking_AND_vacancy`.
+
+A conjunct document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|conjuncts |Array of Objects |Yes a|
+
+Add an object to define each filter you want a document to pass before a document can be included in a type mapping. 
+
+The `conjuncts` array can contain any other document filter type, including additional conjunct and disjunct document filters. 
+You cannot nest more than 5 conjunct or disjunct document filters inside a single filter. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
+
+|====
+
+[#disjunct_filter]
+===== Disjunct Document Filter
+
+[.status]#Couchbase Server 8.0#
+
+A disjunct document filter can contain any number of the other document filter types:
+
+* <<boolean_filter,>>
+* <<date_range_filter,>>
+* <<numeric_range_filter,>>
+* <<term_filter,>>
+* <<conjunct_filter,>>
+* <<disjunct_filter,>>
+
+A document must pass at least the number of filters you specify as `min` from the `disjuncts` array to pass the filter and be included in a type mapping: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=disjunct_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your disjunct document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.location_OR_service`.
+
+A disjunct document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|disjuncts |Array of Objects |Yes a|
+
+Add an object to define each filter you want to run against a document for this disjunct document filter. 
+
+The `disjuncts` array can contain any other document filter type, including additional conjunct and disjunct document filters. 
+You cannot nest more than 5 conjunct or disjunct document filters inside a single filter. 
+
+|min |Number |Yes a|
+
+Set `min` to the minimum number of filters from `disjuncts` that a document must pass to be included in a type mapping. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
 
 |====
 
@@ -213,6 +609,7 @@ An object that contains the following child objects:
 * <<token_filters,>> 
 * <<token_maps,>>
 * <<date_time_parsers,>>
+* <<synonym_sources,>>
 
 |default_analyzer |String |Yes a|
 
@@ -220,7 +617,7 @@ The name of the default analyzer to use for the Search index.
 
 For more information about analyzers, see xref:customize-index.adoc#analyzers[Analyzers].
 
-|default_datetime_parser |String |Yes a|
+|[[default-date-time-parser]]default_datetime_parser |String |Yes a|
 The name of the default date/time parser to use for the Search index. 
 
 For more information about date/time parsers, see xref:customize-index.adoc#date-time[Date/Time Parsers].
@@ -240,6 +637,16 @@ This type mapping is included for compatibility only.
 
 For more information about the properties inside the `default_mapping` object, see <<default-mapping,>>.
 
+|default_synonym_source |String |No a| 
+
+[.status]#Couchbase Server 8.0#
+
+The name of the default synonym source to use for the Search index.
+
+The value of `default_synonym_source` must match a defined <<synonym_name,>> in your Search index definition.
+
+For more information about using synonyms with the Search Service, see xref:synonyms/synonyms-search.adoc[].
+
 |default_type |String |No |This setting is included for compatibility with earlier indexes only. 
 
 |docvalues_dynamic |Boolean |Yes a|
@@ -252,6 +659,19 @@ To exclude the values for an indexed field in the index, set `docvalues_dynamic`
 To index any fields in the Search index where `dynamic` is `true`, set `index_dynamic` to `true`.
 
 To exclude dynamic fields from the index, set `index_dynamic` to `false`.
+
+|scoring_model |String |Yes a|
+
+[.status]#Couchbase Server 8.0#
+
+Choose the specific scoring model you want to use for scoring search results for this Search index:
+
+* `tfidf`: The standard scoring model for the Search Service.
+A higher tf-idf score for a document places that document higher in your search results.
+* `bm25`: A scoring model better suited to hybrid searches with the Search Service.
+A hybrid Search query uses xref:vector-search:vector-search.adoc[Vector Search] together with a standard Search query.
+
+For more information about the calculations for scoring for each algorithm, see xref:run-searches.adoc#scoring[Scoring for Search Queries].
 
 |store_dynamic |Boolean |Yes a|
 
@@ -809,13 +1229,95 @@ It contains the following properties:
 |====
 |Property |Type |Required? |Description
 
-|type |String |Yes |The `type` is always `"flexiblego"`.
+|type |String |Yes a|
+
+The type of date/time parser you want to create and use in your Search index, based on a specific layout style: 
+
+* `flexiblego`
+* `isostyle`
+* `percentstyle`
+* `sanitizedgo`
+
+For more information about the available date/time layout styles, see xref:date-time-parser-layout-styles.adoc[].
 
 |layouts |Array |Yes a|
 
 An array of strings that contains layouts for date and time fields. 
 
-Use a layout from the https://pkg.go.dev/time#pkg-constants[Go Programming Language Time Package's Layout Constant^].
+For more information about how to format a date/time layout for a date/time parser, see xref:date-time-parser-layout-styles.adoc[].
+
+|====
+
+[#synonym_sources]
+== Synonym_sources Object
+
+[.status]#Couchbase Server 8.0#
+
+The `synonym_sources` object contains any synonym collections defined for a Search index: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=synonym_sources]
+----
+
+TIP: To view the entire JSON payload, click btn:[View]. 
+
+For more information about synonym searches, see xref:synonyms/synonyms-search.adoc[].
+
+The `synonym_sources` object is a child object of the <<analysis,analysis object>>. 
+It contains any number of <<synonym_name,{synonym_collection_name} objects>>: 
+
+[cols="2,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|\{synonym_collection_name\} |Object |Yes a|
+
+Set the name of this object to the name you want to use to identify your synonym collection in your Search index. 
+
+Reference the `\{synonym_collection_name\}` object in a text field definition to use synonym searches with that text field. 
+
+For more information about the properties in an `\{synonym_collection_name\}` object, see <<synonym_name,>>. 
+
+|====
+
+[#synonym_name]
+=== \{synonym_collection_name\} Object
+
+[.status]#Couchbase Server 8.0#
+
+The `\{synonym_collection_name\}` object defines a synonym collection on a Search index:
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=synonym_name]
+----
+
+For more information about synonym searches, see xref:synonyms/synonyms-search.adoc[].
+
+A `\{synonym_collection_name\}` object is a child object of the <<synonym_sources,>>. 
+It contains the following properties:
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|analyzer |String |Yes a|
+
+Enter the name of the analyzer to use for the synonym documents stored in this collection. 
+
+Set the analyzer for a synonym collection to the same analyzer you set in the <<fields,>> for a text field.
+You cannot use synonym searches on a field unless the <<synonym_source_field,synonym_source>> is set and the analyzers match.
+
+|collection |String |Yes a|
+
+Enter the name of the collection where your synonym documents are stored on your cluster.
+The synonym collection must be in the same bucket and scope as where you want to define your Search index.
+
+Synonym documents must have the proper syntax to be used by the Search Service.
+For more information, see xref:synonyms/create-synonym-collection-docs.adoc[].
+
+Do not add your synonym collections as a <<scope-collection,{scope\}.\{collection\} object>> in your Search index.
 
 |====
 
@@ -887,7 +1389,7 @@ TIP: To add a type identifier as an additional filter to your type mapping, add 
 [#scope-collection]
 === \{Scope\}.\{collection\} Objects, JSON Object Field Objects, and XATTRs Objects
 
-The `\{scope\}.\{collection\}` object defines a custom type mapping for a Search index, on a specific scope and collection in the database:
+The `\{scope\}.\{collection\}` object defines a custom type mapping for a Search index, on a specific scope and collection in the cluster:
 
 [source,json]
 ----
@@ -905,7 +1407,7 @@ A JSON object field object must:
 * Have a name that matches a JSON object child field in your documents.
 * Use the same property structure as a `\{scope\}.\{collection\}` object.
 
-If your database is running Couchbase Server version 7.6.2 and later, and you're adding Extended Attributes (XATTRs) from your document metadata to your Search index, your XATTRs mapping definition must: 
+If your cluster is running Couchbase Server version 7.6.2 and later, and you're adding Extended Attributes (XATTRs) from your document metadata to your Search index, your XATTRs mapping definition must: 
 
 * Be a child object of a `\{scope\}.\{collection\}` object.
 * Have the name `_$xattrs`.
@@ -932,8 +1434,10 @@ For more information, see xref:manage:manage-documents/manage-documents.adoc[].
 |dynamic |Boolean |Yes a|
 
 To index all fields under the specified scope and collection, JSON object, or all fields inside XATTRs, set `dynamic` to `true`.
+This creates a xref:customize-index.adoc#type-mappings[dynamic type mapping].
 
-To only index the fields you specify and enable the `properties` block, set `dynamic` to `false`. 
+To only index the fields you specify and enable the `properties` block, set `dynamic` to `false`.
+This creates a xref:customize-index.adoc#type-mappings[static type mapping].
 
 |enabled |Boolean |Yes a| 
 
@@ -941,9 +1445,35 @@ To enable the mapping and include any documents that match it in the Search inde
 
 To remove any documents that match this mapping from the Search index, set `enabled` to `false`.
 
+|default_analyzer |String |No a|
+
+The name of the default analyzer to use for any text field defined under this type mapping. 
+
+If the type mapping is dynamic, this analyzer applies to every text field for documents that match the type mapping.
+
+If the type mapping is static, this analyzer only applies to the text fields you add in the `properties` object that do not have a defined analyzer.
+
+The value of `default_analyzer` must match a defined <<analyzer-name,>> in your Search index definition, or xref:default-analyzers-reference.adoc[a default analyzer].
+
+For more information about analyzers, see xref:customize-index.adoc#analyzers[Analyzers].
+
+|default_synonym_source |String |No a|
+
+[.status]#Couchbase Server 8.0#
+
+The name of the default synonym source to use for any text fields defined under this type mapping.
+
+If the type mapping is dynamic, this synonym source applies to every text field for documents that match the type mapping.
+
+If the type mapping is static, this synonym source only applies to the text fields you add in the `properties` object that do not have a defined synonym source.
+
+The value of `default_synonym_source` must match a defined <<synonym_name,>> in your Search index definition.
+
+For more information about using synonyms with the Search Service, see xref:synonyms/synonyms-search.adoc[].
+
 |[[properties]]properties |Object |No a|
 
-The `properties` object is only enabled if `dynamic` is set to `false`. 
+The `properties` object is only enabled if `dynamic` is set to `false`.
 
 Specifies properties for the fields to index in the mapping.
 Contains any number of `\{field_name\}` objects. 
@@ -1014,7 +1544,7 @@ If the child field's `type` is `text`, set the analyzer to use for the child fie
 
 NOTE: If you want to use the default analyzer for the content of this child field, you don't need to include an `analyzer` property.  
 
-|[[dims]]dims |Number |Vector Only a|
+|[[dims]]dims |Integer |Vector Only a|
 
 include::partial$vector-search-field-descriptions.adoc[tag=dimension]
 
@@ -1060,6 +1590,19 @@ To include the content of the child field in the Search index and allow its cont
 
 To exclude the content of the child field from the index, set `store` to `false`.
 
+|[[synonym_source_field]]synonym_source |String |No a|
+
+[.status]#Couchbase Server 8.0#
+
+Enter the name of the <<synonym_name,>> you want to use for synonym searches on this field.
+The Search Service uses any synonym documents stored in this synonym collection for synonym searches on this field.
+
+You can only use synonym searches on a field with a `type` of `text`.
+
+The `analyzer` set on this field must match the `analyzer` set on the \{synonym_collection_name\} object.
+
+For more information about synonym searches, see xref:synonyms/synonyms-search.adoc[].
+
 |type |String |Yes a|
 
 The child field's type. Can be one of:
@@ -1077,8 +1620,140 @@ The child field's type. Can be one of:
 
 For more information about the available field data types, see xref:field-data-types-reference.adoc[].
 
-|vector_index_optimized_for |String |Vector Only a|
+|[#vector-index-optimized-param]#vector_index_optimized_for# |String |Vector Only a|
 
 include::partial$vector-search-field-descriptions.adoc[tag=optimized_for]
+
+|====
+
+[#store]
+== Store Object 
+
+The `store` object can change settings for merge policy, concurrent persister behavior, and file format version on your Search index.
+Depending on your performance needs and specific Search use case, you may want to adjust these values, or leave them as default. 
+
+You do not need to provide this object when creating a Search index.
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=store]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `store` object contains the following properties: 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|indexType |String |No |The `indexType` is always `scorch`.
+
+|scorchPersisterOptions |Object |No a|
+
+[.status]#Couchbase Server 8.0#
+
+An object that contains settings for in-memory buffer processing in your Search index.
+
+For more information, see <<scorch-persister,>>.
+
+|scorchMergePlanOptions |Object |No a|
+
+[.status]#Couchbase Server 8.0#
+
+An object that contains settings for background merging behavior in your Search index.
+
+For more information, see <<scorch-merge,>>.
+
+|segmentVersion |Integer |No |The `segmentVersion` is always `16`.
+
+|====
+
+[#scorch-persister]
+=== ScorchPersisterOptions Object
+
+[.status]#Couchbase Server 8.0#
+
+The `scorchPersisterOptions` object controls in-memory buffer processing on your Search index.
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=scorch_persister]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `scorchPersisterOptions` object contains the following properties: 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|[[max_size_memory_merge]]maxSizeInMemoryMergePerWorker |Integer |No |
+
+Set a value, in bytes, for how much data from the in-memory buffers each worker should process and flush to disk. 
+
+A higher value means healthier data flushing from memory to disk, but longer flushing times for each worker, because of the higher data volume.
+
+For a FTS Vector Index, set `maxSizeInMemoryMergePerWorker` to 400 MB.
+
+For a regular Search index, set `maxSizeInMemoryMergePerWorker` to 20 MB.
+
+You may want to change these recommended values based on your specific use case. 
+
+|numPersisterWorkers |Integer |No |
+
+Set a value for the total number of workers you want to use to process data from in-memory buffers. 
+
+More workers increases the rate of memory being flushed to disk, but increases the number of files on disk and your disk I/O. 
+
+For a FTS Vector Index, set `numPersisterWorkers` to `4`.
+
+For a regular Search index, set `numPersisterWorkers` to `4`.
+
+You may want to change these recommended values based on your specific use case.
+If you increase your workers, make sure to increase the <<floor_segment_size,floorSegmentFileSize>>, to keep your number of segment files low.
+
+|====
+
+[#scorch-merge]
+=== ScorchMergePlanOptions Object
+
+[.status]#Couchbase Server 8.0#
+
+The `scorchMergePlanOptions` object controls the background merging behavior for segment files in your Search index. 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=scorch_merge]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+The `scorchMergePlanOptions` object contains the following properties: 
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|[[floor_segment_size]]floorSegmentFileSize |Integer |No a|
+
+Set a value, in bytes, for the Search Service's minimum segment file size.
+The Search Service merges segments to improve query performance and storage.
+If a segment is smaller than this minimum file size, the Search Service will merge it during its background merging.
+
+A higher value for the minimum segment file size means more aggressive merging behavior and better query performance, at the cost of increased disk I/O and longer merge cycles, with more resource usage.
+
+For a FTS Vector Index, set `floorSegmentFileSize` to:
+
+stem:[(\m\a\x\SizeInMem\o\r\yMer\g\ePerW\o\r\ker)/3]
+
+If you want to improve I/O and indexing performance at the cost of query performance, set `floorSegmentFileSize` to: 
+
+stem:[(\m\a\x\SizeInMem\o\r\yMer\g\ePerW\o\r\ker)/6]
+
+For a regular Search index, set `floorSegmentFileSize` to the same value as <<max_size_memory_merge,maxSizeInMemoryMergePerWorker>>.
+
+You may want to change these recommended values based on your specific use case. 
 
 |====

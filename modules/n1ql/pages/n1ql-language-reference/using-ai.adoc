@@ -1,0 +1,297 @@
+= USING AI
+:page-status: Couchbase Server 8.0
+:page-topic-type: reference
+:description: The USING AI statement allows you to generate SQL++ queries from natural language prompts.
+
+[abstract]
+{description}
+
+== Purpose
+
+You can use the USING AI statement to input natural language queries through {sqlpp} interfaces such as the CBQ shell, REST APIs, and SDKs. 
+When executed, the statement passes the input to Large Language Models (LLMs), which interpret the request and return the equivalent {sqlpp} query. 
+
+For example, you can input prompts such as `How many airlines are based in Europe` or `List the names of all hotels in the same city as an airport`, and the statement will generate the corresponding SQL++ queries. 
+
+If USING AI generates a SELECT query, it automatically executes it and returns the results.
+For all other query types, it returns the generated query as a string without executing it.
+
+IMPORTANT: With the introduction of the USING AI statement, you might notice that AI is now recognized as a keyword.
+However, this change has been implemented in a way that does not break existing queries or applications where "ai" is used as a field name or identifier.
+For example, queries like `SELECT ai FROM XYZ` will continue to work without any issues.
+AI is treated as a keyword only when used in conjunction with the USING AI statement.
+
+== Prerequisites
+
+Before using the USING AI statement, make sure you have:
+
+* A Couchbase Capella account. 
+* Your Capella account credentials and organization ID readily available.
+
+NOTE: Although the USING AI statement requires a Capella account, you can use it with any Couchbase Server 8.0 instances. 
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/utility.ebnf[tag=using-ai]
+----
+
+image::n1ql-language-reference/using-ai.png["Syntax diagram: refer to source code listing", align=left]
+
+natural-language-request:: A natural language prompt that you want to convert into a SQL++ query.
+
+options::
+
+[Optional] A JSON object specifying additional <<optional-parameters,options>> to guide the statement execution.
+By default, the statement uses the `natural_orgid`, `natural_cred`, and `natural_context` request parameters to determine the organization ID, credentials, and keyspaces for the request.
+However, you can override these defaults by using the <<optional-parameters,options>> object.
+ 
+//TODO: Add links to `natural_orgid`, `natural_cred` and `natural_context` when available in the 8.0 documentation.
+
+[[optional-parameters]]
+=== Options
+
+[cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **creds** +
+__optional__
+| Credentials to authenticate the request.
+
+Can be one of the following:
+
+* A string in the username:password format, which matches the `natural_cred` specification. 
+//TODO: Add link to `natural_cred` when available in the 8.0 documentation.
+* An object with the fields `user` and `pass`, similar to the xref:n1ql:n1ql-manage/query-settings.adoc#Credentials[`creds`] parameter.
+
+If specified, this value overrides the `natural_cred` parameter, which by default contains your Capella credentials.
+
+| String or object
+
+| **keyspaces** +
+__optional__
+
+| One or more keyspaces for the request.
+
+Can be one of the following:
+
+* A string matching the `natural_keyspaces` specification. 
+//TODO: Add link to `natural_context` when available in the 8.0 documentation.
+* An array of comma-separated strings, which when joined, form the value.
+
+If specified, this value overrides the default `natural_context` parameter.
+
+| String or an array of strings 
+
+| **orgId** +
+__optional__
+
+| Organization ID for the request.
+
+If specified, this value overrides the `natural_orgid` parameter, which by default contains your Capella organization ID.
+//TODO: Add link to `natural_orgid` when available in the 8.0 documentation.
+
+| String
+
+| **execute** +
+__optional__
+
+| Indicates if the generated statement should be executed. 
+
+If `TRUE`, the generated statement is executed immediately and the results are returned.
+
+If `FALSE`, the generated statement is returned as a string without execution.
+
+*Default:* `TRUE`
+
+| Boolean
+|===
+
+=== Handling Passwords Securely
+
+Use `creds` and `natural_cred` parameters with caution to avoid exposing password information through history files or logs.
+When working with the cbq shell, avoid passing passwords directly on the command line. 
+Instead, use the `\set` command to specify only the username, and then enter the password at the terminal prompt.
+This ensures that the password is not recorded in the shell history.
+
+Similarly, if you are sending requests directly to a REST endpoint from a shell, be mindful of how you provide the password and whether it will be recorded in the shell history.
+Consider using a method like the following to prompt for the password:
+
+[source,sh]
+----
+echo -n "Enter your password: "
+read -s p
+echo
+curl -s -d "natural_cred=<your-username>:${p}" ...
+----
+
+If you choose to reuse the password by setting an evironment variable, note that it might be visible to other users on the system with sufficient privileges for process inspection (for example, through `/proc`).
+If security is a concern, consider using an HTTPS connection. 
+
+== Examples
+
+In the following examples, replace `natural_cred` and `natural_orgid` with your Capella credentials and organization ID, respectively.
+
+.Natural language prompt with default request parameters
+====
+Copy the following sequence and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell]. 
+Note that you must be using cbq shell version 8.0 or later.
+
+.Request
+[source, console]
+----
+\set -natural_context travel-sample.inventory.hotel;
+\set -natural_cred username@example.com:P@ssw0rd; 
+\set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab; 
+USING AI How many hotels provide free parking?; 
+----
+.Response
+[source,json]
+----
+{
+    "requestID": "097f9cbf-57f2-4832-986d-4f85041c91dc",
+    "generated_statement": "SELECT COUNT(*) FROM `travel-sample`.`inventory`.`hotel` 
+                        AS `h` WHERE `h`.`free_parking` = TRUE",
+    "signature": {
+        "$1": "number"
+    },
+    "results": [
+    {
+        "$1": 253
+    }
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "2.244083167s",
+        "executionTime": "55.577625ms",
+        "resultCount": 1,
+        "resultSize": 25,
+        "serviceLoad": 3,
+        "usedMemory": 16511,
+        "naturalLanguageProcessingTime": "2.188224375s"
+    }
+}
+----
+====
+
+.Natural language prompt with a custom keyspace 
+====
+Copy the following sequence and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell].
+Note that you must be using cbq shell version 8.0 or later.
+
+.Request
+[source, console]
+----
+\set -natural_cred username@example.com:P@ssw0rd;
+\set -natural_orgid 7a99d00c-f55b-4b39-bc72-1b4cc68ba894;
+USING AI WITH {"keyspaces":["travel-sample.inventory.airline"],"execute":false} \
+How many airlines are based in United Kingdom?;
+----
+
+.Response
+[source,json]
+----
+{
+    "requestID": "a6dfea34-6445-4e66-9127-9bdfbe5f7585",
+    "status": "success",
+    "generated_statement": "SELECT COUNT(*) AS `airlines_based_in_uk` FROM `travel-sample`.`inventory`.`airline` 
+                    AS `a` WHERE `a`.`country` = \"United Kingdom\"",
+    "metrics": {
+        "elapsedTime": "2.485615126s",
+        "executionTime": "0s",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "naturalLanguageProcessingTime": "2.484809668s"
+    }
+}
+----
+====
+
+.Natural language prompt with all parameters directly in the statement, overriding the default ones
+====
+Copy the following sequence and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell].
+Note that you must be using cbq shell version 8.0 or later.
+
+.Request
+[source, console]
+----
+USING AI WITH
+{
+  "creds": {
+    "user": "username@example.com",
+    "pass": "P@ssw0rd"
+  },
+  "orgId": "5c670d3e-12a3-456b-7c89-123456789ab",
+  "keyspaces": [
+    "travel-sample.inventory.hotel",
+    "travel-sample.inventory.airport"
+  ],
+  "execute": false
+}
+List the names of all hotels in the same city as an airport;
+
+----
+.Response
+[source, json]
+----
+{
+    "requestID": "e154f6d5-0fa0-4de3-8824-3ebb73cb49f2",
+    "status": "success",
+    "generated_statement": "SELECT `h`.`name` FROM `travel-sample`.`inventory`.`hotel` AS 
+              `h` JOIN `travel-sample`.`inventory`.`airport` AS `a` ON `h`.`city` = `a`.`city`",
+    "metrics": {
+        "elapsedTime": "4.032734417s",
+        "executionTime": "0s",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "naturalLanguageProcessingTime": "4.032041335s"
+    }
+}
+----
+====
+
+.Natural language prompt submitted directly to the Query REST API
+====
+.Request
+[source, sh]
+----
+echo -n "Enter your password: "
+read -s p
+echo
+curl -s -d "natural_cred=username@example.com:${p}" \
+     -d 'pretty=true&statement=USING AI WITH {"keyspaces":"travel-sample.inventory.landmark","orgId":"5c670d3e-12a3-456b-7c89-123456789ab"} \
+     How many landmarks are in the western hemisphere?' \
+     http://localhost:8093/query/service -u username:password 
+----
+.Response
+[source,json]
+----
+{
+    "requestID": "325457b8-9cf4-477b-aaf5-7609f2ae79bf",
+    "generated_statement": "SELECT COUNT(*) FROM `travel-sample`.`inventory`.`landmark` 
+                        AS `l` WHERE `l`.`geo`.`lon` \u003c 0",
+    "signature": {
+        "$1": "number"
+    },
+    "results": [
+    {
+        "$1": 4033
+    }
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "1.811586709s",
+        "executionTime": "73.500333ms",
+        "resultCount": 1,
+        "resultSize": 26,
+        "serviceLoad": 3,
+        "usedMemory": 659994,
+        "naturalLanguageProcessingTime": "1.736891542s"
+    }
+}
+----
+====

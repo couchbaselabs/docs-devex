@@ -2,32 +2,34 @@
 :page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
-:description: Run a Vector Search query from the Couchbase {page-ui-name} to preview and test the search results from a Vector Search index.
+:description: Run a Vector Search query from the Couchbase {page-ui-name} to preview and test the search results from an FTS Vector Index.
 
 [abstract]
 {description}
 
 For more information about how the Search Service scores documents in search results, see xref:run-searches.adoc#scoring[Scoring for Search Queries].
 
+include::partial$vector-search-no-windows.adoc[]
+
 == Prerequisites 
 
-* You have the Search Service enabled on a node in your database.
-For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
 
-* You have a bucket with scopes and collections in your database.
+* You have a bucket with scopes and collections in your cluster.
 For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[]. 
 
 * Your user account has the *Search Admin* or *Search Reader* role. 
 
-* You have created a Vector Search index. 
+* You have created an FTS Vector Index. 
 +
-For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[].
+For more information about how to create an FTS Vector Index, see xref:create-vector-search-index-ui.adoc[].
 +
 [TIP]
 --
 include::partial$download-sample-partial.adoc[]
 
-For the best results, consider using the sample Vector Search index from xref:create-vector-search-index-ui.adoc#example[Create a Vector Search Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create a Vector Search Index with the REST API and curl/HTTP]. 
+For the best results, consider using the sample FTS Vector Index from xref:create-vector-search-index-ui.adoc#example[Create an FTS Vector Index with the {page-ui-name}] or xref:create-vector-search-index-rest-api.adoc#example[Create an FTS Vector Index with the REST API and curl/HTTP]. 
 --
 
 * You have logged in to the Couchbase {page-ui-name}. 
@@ -75,6 +77,9 @@ If the same documents match the `knn` and `query` objects, the Search Service ra
 
 The document for the color `navy` should be the first result, followed by colors that are similar and match the `brightness` field query. 
 
+TIP: If you want to run a hybrid Search query on a large, partitioned Search index and your cluster is on Couchbase Server version 8.0 or later, use the `bm25` scoring model for your Search index.
+For more information, see xref:search:set-advanced-settings.adoc[].
+
 [#large]
 === Example: Running a Semantic Search Query with a Large Embedding Vector
 
@@ -105,7 +110,7 @@ Make sure you remove the lines for `// tag::partial[]` and `// end::partial[]`.
 [#base64]
 === Example: Running a Semantic Search Query with a base64 Encoded String 
 
-If your database is running Couchbase Server version 7.6.2 or later, you can use vectors encoded as base64 strings with Vector Search. 
+If your cluster is running Couchbase Server version 7.6.2 or later, you can use vectors encoded as base64 strings with Vector Search. 
 For example, the following document describes the color `navy`, with base64 encoded strings in the `embedding_vector_dot` and `colorvect_l2` fields instead of arrays: 
 
 [source,json]

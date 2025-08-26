@@ -15,10 +15,10 @@ Certain capabilities have been removed and are not supported in order to handle 
 
 Eventing Functions support the following features:
 
-* <<basic_bucket_accessors,Basic Keyspace Accessors>>
-* <<advanced_bucket_accessors,Advanced Keyspace Accessors>>
-* <<logging,Logging>>
-* <<n1ql_statements,{sqlpp} Statements>>
+* <<basic_bucket_accessors>>
+* <<advanced_bucket_accessors>>
+* <<logging>>
+* <<n1ql_statements>>
 
 [#basic_bucket_accessors]
 === Basic Keyspace Accessors
@@ -52,7 +52,7 @@ Replaces any existing value with the specified key.
 This operation throws an exception if the underlying bucket SET operation fails with an unexpected error.
 
 |DELETE
-|`operator[]` appears afer the JavaScript delete keyword.
+|`operator[]` appears after the JavaScript delete keyword.
 
 Deletes the provided key from the KV bucket that the variable is bound to.
 Returns a no-op if the object does not exist.
@@ -77,7 +77,7 @@ function OnUpdate(doc, meta) {
 Advanced Keyspace Accessors expose a larger set of options and operators than <<basic_bucket_accessors,Basic Keyspace Accessors>>.
 They have non-trivial argument sets and return values.
 
-See xref:eventing-advanced-keyspace-accessors.adoc[Advanced Keyspace Accessors] for more details.
+See xref:eventing-advanced-keyspace-accessors.adoc[] for more details.
 
 [#logging]
 === Logging
@@ -109,7 +109,7 @@ These operations are accessible through the returned iterable handle.
 {sqlpp} Query results, through the SELECT operation, are streamed in batches to the iterable handle as the iteration progresses through the result set.
 
 NOTE: To avoid recursion, an Eventing Function can listen for mutations in a bucket. 
-{sqlpp} DML statements canot manipulate documents in that same bucket.
+{sqlpp} DML statements cannot manipulate documents in that same bucket.
 To work around this, you can use the exposed data service KV map in your Eventing Function.
 
 The following Function has a feed boundary of *Everything*, which means the same {sqlpp} statement is executed 7,303 times.
@@ -196,10 +196,10 @@ To include comments in multiline statements, use `/* this format */` instead.
 
 The following features are not supported by Eventing Functions:
 
-* <<global_state,Global State>>
-* <<asynchrony,Asynchrony>>
-* <<browser_extensions,Browser and Other Extensions>>
-* <<library_imports,Library Imports>>
+* <<global-state>>
+* <<asynchrony>>
+* <<browser_extensions>>
+* <<library_imports>>
 
 [#global-state]
 === Global State
@@ -227,7 +227,7 @@ For example, a Constant alias of `debug` with a value of `true` or `false` behav
 Eventing Functions do not support asynchronous flows.
 
 Asynchrony creates a node-specific, long-running state that prevents persistence providers from capturing the entire state.
-This limits Eventing Functions to execute short-running, straight-line code without sleep and wakeups.
+This limits Eventing Functions to executing short-running, straight-line code without sleep and wake-ups.
 
 You can use Timers to add limited asynchrony back into your Function. 
 Timers are designed specifically to prevent a state from being node-specific.
@@ -264,12 +264,13 @@ The Eventing Service does not support importing libraries into Eventing Function
 
 Eventing Functions support the following built-in functions:
 
-* <<n1ql_call,`N1QL()`>>
-* <<analytics_call,`ANALYTICS()`>>
-* <<crc64_call,`crc64()`>>
-* <<base64_call,`base64()`>>
-* <<timers_general,`createTimer()` and `cancelTimer()`>>
-* <<curl_call,`curl()`>>
+* <<n1ql_call>>
+* <<analytics_call>>
+* <<crc64_call>>
+* <<crc_64_go_iso_call>>
+* <<base64_call>>
+* <<timers_general>>
+* <<curl_call>>
 
 [#n1ql_call]
 === `N1QL()`
@@ -290,7 +291,7 @@ The `N1QL()` function contains the following parameters:
 |The identified {sqlpp} statement. 
 This is passed to {sqlpp} through SDK to run as a prepared statement.
 
-All of the JavaScript variables referenced in the statement using the `$<variable>` notation are treated as named parameters.
+All the JavaScript variables referenced in the statement using the `$<variable>` notation are treated as named parameters.
 
 |`params`
 a|Can be a JavaScript array or a JavaScript map object.
@@ -375,9 +376,13 @@ The `close()` method on the iterable handle can throw an exception if the underl
 |===
 
 [#analytics_call]
-=== `ANALYTICS()`
+=== `couchbase.{zwsp}analyticsQuery({wj})`
 
-The `ANALYTICS()` function provides integration with {sqlpp} Analytics directly from the Eventing Service.
+ifeval::['{page-component-version}' == '7.6'] 
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+The `couchbase.analyticsQuery()` function provides integration with {sqlpp} Analytics directly from the Eventing Service.
 
 Integrating Eventing with Analytics:
 
@@ -385,38 +390,28 @@ Integrating Eventing with Analytics:
 * Simplifies Eventing code logic and improves code readability
 * Eliminates security and network latency issues with the `curl()` function
 
+The following example assumes that the Analytics collection (dataset) called `default` already exists.
+
 [source,javascript]
 ----
 function OnUpdate(doc, meta) {
-    // Ignore information we don't care about
-    if (doc.type !== 'airline') return;
+    var count = 0;
+    const limit = 4;
 
-    // Get the total routes per IATA
-    var route_cnt = 0;     
-    // Uses a true variable as a SQL++ parameter  
-    var airline = doc.iata;  
-
-    var results = ANALYTICS(
-        "SELECT COUNT(*) AS cnt
-        FROM `travel-sample`.`inventory`.`route`
-        WHERE type = \"route\" 
-		AND airline = $1", [doc.iata]
-    );
-
-    // Stream results using the 'for' iterator
-    for (var item of results) {   
-        route_cnt = item.cnt;
+    let query = couchbase.analyticsQuery('SELECT * FROM default LIMIT $limit;', {
+        "limit": limit
+    });
+    for (let row of query) {
+        ++count;
     }
 
-    // End the query and free the resources held
-    results.close();    
-
-    // Log the KEY, AIRLINE and ROUTE_CNT
-    log("key: " + meta.id + ", airline: " + doc.iata + ", route_cnt: " + route_cnt);
+    if (count === limit) {
+        dst_bucket[meta.id] = 'yes';
+    }
 }
 ----
 
-For more information about {sqlpp} Analytics, see xref:server:analytics:1_intro.adoc[What’s SQL++ for Analytics?].
+For more information about {sqlpp} Analytics, see xref:server:analytics:1_intro.adoc[].
 
 [#crc64_call]
 === `crc64()`
@@ -430,7 +425,7 @@ The `crc64()` function takes the object to checksum as its only parameter.
 The parameter can be any JavaScript object that can be encoded to JSON.
 
 The function returns the hash as a string. 
-The hash is sensitive to the order of the parameters in case of map objects.
+The hash is sensitive to the order of the parameters in the case of map objects.
 
 If multiple Eventing Functions share the same `crc64` checksum documents as the Sync Gateway, real mutations can be suppressed and missed.
 To prevent this from happening, you can make the checksum documents unique to each Eventing Function.
@@ -464,9 +459,42 @@ function OnUpdate(doc, meta) {
    // Business logic goes in here
 }
 ----
+.Translating strings
+[NOTE]
+====
+Bear in mind that using `crc64()` to convert strings will include any quotation marks as part of the conversion.
+If you want to translate the string [.underline]#without# including the enclosing quotes, then use the <<crc_64_go_iso_call, `crc_64_go_iso()`>> instead.
+
+This does not apply to any other data type (e.g., numeric data or JSON data types).
+====
+
+[#crc_64_go_iso_call]
+=== `crc_64_go_iso()`
+
+ifeval::['{page-component-version}' == '7.6'] 
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
+
+`crc_64_go_iso()` performs the same function as <<crc64_call,`crc64()`>>, but does not include the enclosing quotation marks from the parameter in the translation if its parameter type is `string`. 
+
+Other datatypes work the same as the `crc64()` call.
+
+
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    var crc_iso_str = couchbase.crc_64_go_iso(doc);
+    /// Code goes here
+}
+----
+
 
 [#base64_call]
 === `base64()`
+
+ifeval::['{page-component-version}' == '7.6'] 
+_(Introduced in Couchbase Server 7.6)_
+endif::[]
 
 The `base64()` functions let you pack large-dimensional arrays of floats as base64 encoded strings when you use the Eventing Service to generate vector embeddings.
 This encoding process stores and transmits arrays as text, ensuring data integrity and compatibility with text-based systems.
@@ -478,7 +506,7 @@ The following `base64()` functions are available:
 [source,javascript]
 ----
 function OnUpdate(doc, meta) {
-    var base_str = base64Encode(doc);
+    var base_str = couchbase.base64Encode(doc);
     /// Code goes here
 }
 ----
@@ -488,20 +516,20 @@ function OnUpdate(doc, meta) {
 [source,javascript]
 ----
 function OnUpdate(doc, meta) {
-    var base_str = base64Decode(doc);
+    var base_str = couchbase.base64Decode(doc);
     /// Code goes here
 }
 ----
 +
-* `base64Float32ArrayEncode()`, which takes a float32 number array and returns a base64 string.
-* `base64Float32ArrayDecode()`, which takes a base64 encoded string and returns a float32 number array.
-* `base64Float64ArrayEncode()`, which takes a float64 number array and returns a base64 string.
-* `base64Float64ArrayDecode()`, which takes a base64 encoded string and returns a float64 number array.
+* `couchbase.base64Float32ArrayEncode()`, which takes a float32 number array and returns a base64 string.
+* `couchbase.base64Float32ArrayDecode()`, which takes a base64 encoded string and returns a float32 number array.
+* `couchbase.base64Float64ArrayEncode()`, which takes a float64 number array and returns a base64 string.
+* `couchbase.base64Float64ArrayDecode()`, which takes a base64 encoded string and returns a float64 number array.
 
 [#timers_general]
 === `createTimer()` and `cancelTimer()`
 
-Timers are asynchronous compute.
+Timers are asynchronously computed.
 They allow Eventing Functions to execute in reference to wall-clock events.
 
 [#createtimer_call]
@@ -517,14 +545,14 @@ To cancel a Timer, you can do one of the following:
 * Call the `createTimer()` function again using a reference from the existing Timer you want to cancel.
 * Call the `cancelTimer()` function using `cancelTimer(callback, reference)`.
 
-For more information about Timers, see xref:eventing-timers.adoc[Timers].
+For more information about Timers, see xref:eventing-timers.adoc[].
 
 [#curl_call]
 === `curl()`
 
 The `curl()` function lets you interact with external entities through a REST endpoint from Eventing Functions, using either HTTP or HTTPS.
 
-For more information about the `curl()` function, see xref:eventing-curl-spec.adoc[cURL].
+For more information about the `curl()` function, see xref:eventing-curl-spec.adoc[].
 
 
 [#handler-signatures]
@@ -532,9 +560,9 @@ For more information about the `curl()` function, see xref:eventing-curl-spec.ad
 
 The Eventing Service calls the following JavaScript functions on events like mutations and fired Timers:
 
-* <<onupdate_handler,OnUpdate Handler>>
-* <<ondelete_handler,OnDelete Handler>>
-* <<timer_callback_handler,Timer Callback Handler>>
+* <<onupdate_handler>>
+* <<ondelete_handler>>
+* <<timer_callback_handler>>
 
 [#onupdate_handler]
 === OnUpdate Handler
@@ -623,7 +651,7 @@ function OnUpdate(doc, meta) {
 }
 ----
 
-For more information about Timers, see xref:eventing-timers.adoc[Timers].
+For more information about Timers, see xref:eventing-timers.adoc[].
 
 
 == Reserved Words

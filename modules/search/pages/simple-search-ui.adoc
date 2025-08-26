@@ -12,17 +12,17 @@ For more information about how the Search Service scores documents in search res
 
 == Prerequisites 
 
-* You have the Search Service enabled on a node in your database.
-For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
 
-* You have a bucket with scopes and collections in your database.
+* You have a bucket with scopes and collections in your cluster.
 For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[]. 
 
 * You have created a Search index. 
 +
 For more information about how to create a Search index, see xref:create-search-indexes.adoc[].
 
-* Your user account has the *Search Admin* or *Search Reader* role. 
+* Your user account has the xref:learn:security/roles.adoc#search-admin[`Search Admin`] or xref:learn:security/roles.adoc#search-reader[`Search Reader`] role. 
 
 * You have logged in to the Couchbase {page-ui-name}. 
 
@@ -43,7 +43,7 @@ To run a simple search with the Couchbase {page-ui-name}:
 For more information about the available parameters, see xref:search-request-params.adoc[].
 .. Click btn:[Execute].
 
-=== Example
+=== Example: Simple Text Search
 
 For example, the following query searches for the strings `view`, `food`, and `beach`:
 
@@ -58,10 +58,28 @@ It also returns all available fields in the index, and returns 10 results per pa
 TIP: Use a xref:index-aliases.adoc[Search index alias] to search multiple Search indexes in a single search query. 
 Use the xref:search-request-params.adoc#collections[`collections` parameter] in your request to specify an array of collections to search from the Search index.
 
+=== Example: Validate a Search Query
+
+[.status]#Couchbase Server 7.6.4#
+
+For example, the following query searches a Search index, `landmark-content-index`, using a xref:search-request-params.adoc#geopoint-queries-distance[Distance/Radius-Based Geopoint Query] on the `geo` field.
+The query includes the xref:search-request-params.adoc#ctl[ctl object] with the `validate` property to validate the query:
+
+[source,json]
+----
+include::example$run-search-validate-ui.jsonc[]
+----
+
+Since the `landmark-content-index` does not include a mapping for the `geo` field and the `validate` property is included in the query, the Web Console returns the following error: 
+
+----
+query_validate: field not indexed, name: geo, type: geopoint
+----
+
 == Next Steps 
 
 If you do not get the search results you were expecting, you can change the xref:search-request-params.adoc[JSON payload for your Search query].
-If your database is running Couchbase Server version 7.6.2 and later, you can edit the JSON payload directly in the UI by clicking *show advanced query settings*. 
+If your cluster is running Couchbase Server version 7.6.2 and later, you can edit the JSON payload directly in the UI by clicking *show advanced query settings*. 
 
 Run any changes to your JSON payload by clicking btn:[Execute].
 

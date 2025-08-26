@@ -1,0 +1,154 @@
+= FTS Vector Index Architecture
+:page-topic-type: concept
+:description: FTS Vector Indexes use features from traditional Search indexes, with unique indexing algorithms and features that allow you to compare vectors in nearest neighbor searches.
+:page-toclevels: 3
+
+[abstract]
+{description}
+
+include::partial$vector-search-no-windows.adoc[]
+
+An FTS Vector Index still relies on <<sync,>> and uses <<segments,>> to manage merging and persisting data to disk in your cluster.
+All changes from Database Change Protocol (DCP) and the Data Service are introduced to a Search index in batches, which are further managed by segments. 
+
+[#sync]
+== Synchronization with Database Change Protocol (DCP) and the Data Service
+
+The Search Service uses batches to process data that comes in from xref:server:learn:clusters-and-availability/intra-cluster-replication.adoc#database-change-protocol[DCP] and the xref:server:learn:services-and-indexes:services/data-service.adoc[Data Service].
+DCP and Data Service changes are introduced gradually, based on available memory on Search Service nodes, until reindexing operations for an index are complete.
+
+The Search Service can merge batches into a single batch before they're sent to the disk write queue, to reduce the resources required for batch processing. 
+
+The Search Service maintains index snapshots on each Search index partition.
+These snapshots contain a representation of document mutations on either a write queue, or in storage.
+
+If the Search Service loses connection to the Data Service, the Search Service compares its rollback sequence numbers in its snapshots with the Data Service when the connection is reestablished.
+If the index snapshots on the Search Service are too far ahead, the Search Service performs a full rollback to get back in sync with the Data Service. 
+
+[#segments]
+== Search Index Segments
+
+Search and FTS Vector Indexes in Couchbase Server are built with segments. 
+
+All Search indexes contain a root segment, which includes all data for the Search index but excludes any segments that might be stale.
+Stale segments are eventually removed by the Search Services's persister or merger routines.
+
+The persister reads in-memory segments from the disk write queue and flushes them to disk, completing batch operations as part of <<sync,>>.
+The merger works with the persister to consolidate flushed files and flush the consolidated results back through the persister - while purging the smaller, older files.
+
+The persister and merger interact to continuously flush and merge new in-memory segments to disk, and remove stale segments.
+
+Segments are marked as stale when they're replaced by a new merged segment created by the merger. 
+Stale segments are deleted when they're no longer used by any new queries. 
+
+As smaller segments are merged together through the merger routine, the Search Service automatically runs any needed retraining for FTS Vector Indexes.
+The segments for an FTS Vector Index can contain different index types and use a separate indexing pipeline, choosing the appropriate indexing algorithm based on the size of your available documents.
+
+== Vector Search and FAISS
+
+Vector Search specifically uses https://faiss.ai/index.html[FAISS^] indexes.
+Any vectors inside your documents are indexed using FAISS, to create a new query vector that can be searched for similar vectors inside your FTS Vector Index.
+
+Vector Search chooses the best https://github.com/facebookresearch/faiss/wiki/Faiss-indexes[FAISS index class^], or vector search algorithm, for your data, and automatically tunes parameters to provide a balance of recall and latency.
+You can choose to prioritize recall, latency, or memory efficiency with the xref:search:child-field-options-reference.adoc#optimized[Optimized For] setting on your index.
+You can also choose to xref:fine-tune-vector-search.adoc[fine tune your Vector Search queries] to override the default balancing for your index, and change the number of centroids or probes searched in a query. 
+
+The FAISS indexes created for your vector data can be: 
+
+* <<flat,>>
+* <<ivf,>>
+
+The specific type of index used depends on the number of vectors in your dataset: 
+
+|====
+| Vector Count | Index Types | Description
+
+| >=10,000 
+| IVF with scalar quantization
+a| Vectors are indexed with <<ivf,>> indexes and <<scalar-quant,>>.
+
+If xref:search:child-field-options-reference.adoc#optimized[Optimized For] is set to *recall* or *latency*, Vector Search uses 8bit scalar quantization.
+If set to *memory-efficient*, Vector Search uses 4bit scalar quantization.
+
+| >=1000
+| IVF with Flat
+| Vectors are indexed with <<ivf,>> combined with <<flat,>>. 
+Indexes do not use <<scalar-quant,>>. 
+
+| <1000
+| Flat
+| Vectors are indexed with <<flat,>>.
+Indexes do not use <<scalar-quant,>>. 
+|====
+
+[#flat]
+=== FLAT Indexes
+
+The most basic kind of index that Vector Search can use for your vectors is a flat index.
+
+Vector Search uses flat indexes for data that contains less than 1000 vectors.
+
+Flat indexes are a list of vectors. 
+Searches run on a nearest neighbor process, based on examining the query vector against each vector in the index and calculating the distance.
+Results for flat indexes are very accurate, but performance does not scale well as a dataset grows.
+
+If an FTS Vector Index uses only flat indexes, no training is required - IDs are mapped directly to vectors with exact vector comparisons, with no need for preprocessing or learning on the data.
+
+[#ivf]
+=== Inverted File Index (IVF)
+
+For reduced latency, Vector Search can also use Inverted File Indexes (IVF).
+
+Vector Search uses a combination of IVF and flat indexes for data that contains between 1000 and 9999 vectors.
+For even larger datasets, Vector Search uses IVF indexes with <<scalar-quant,>>.
+
+IVF creates partitions called Voronoi cells in an index. 
+The total number of cells is the *nlist* parameter. 
+
+Every cell has a centroid.
+Every vector in the processed dataset is assigned to a cell that corresponds to its nearest centroid. 
+
+In an IVF index, Vector Search first tries to find a centroid vector closest to the query vector.
+After finding this closest centroid vector, Vector Search uses the default `nprobe` and `max_codes` values to search over adjoining cells to the closest centroid and finds the top `k` number of vectors. 
+
+IVF index searches are not exhaustive searches.
+You can increase accuracy by changing the `max_nprobe_pct` parameter or `max_codes_pct` when you xref:fine-tune-vector-search.adoc[fine tune your Vector Search queries].
+
+The Search Service automatically trains larger IVF indexes to learn the data distribution of your vectors, and the centroids of cells in your dataset.
+The training data helps to encode and compress the vectors in your index with <<scalar-quant,>>.
+All training occurs during building and merging <<segments,>>.
+
+IVF indexes that also use flat indexing automatically train to determine the centroids of cells, but still use exact vector comparisons within each cell.
+Training still occurs while building and merging <<segments,>>. 
+
+[#scalar-quant]
+==== Scalar Quantization 
+
+Vector Search uses scalar quantization on large datasets to reduce the size of your indexes. 
+
+Scalar quantization is an important data compression technique that turns the floating point values that could be present in a large vector into low-dimensional integers.
+For example, a float32 value could be reduced to an int8 value. 
+
+Scalar quantization in Vector Search does not have a significant effect on the recall, or accuracy, of query results on large datasets.
+
+Vector Search uses both 8bit and 4bit scalar quantization for indexes, based on your xref:search:child-field-options-reference.adoc#optimized[Optimized For] setting.
+
+== Search Request Processing 
+
+The Search Service uses a scatter-gather process for running all Search queries, when there are multiple nodes in the cluster running the Search Service.
+
+The Search Service node that receives the Search request is assigned as the coordinating node.
+Using https://grpc.io/[gRPC^], the coordinating node scatters the request to all other partitions for the Search or FTS Vector Index in the request across other nodes.
+The coordinating node applies filters to the results received from the other partitions, and returns the final result set.
+
+Results are scored, and based on the xref:search:search-request-params.adoc#sort[Sort Object] provided in the Search request, returned in a list.
+
+For a Vector Search query, search results include the top `k` nearest neighbor vectors to the vector in the Search query. 
+For more information about how results are scored and returned for Search requests, see xref:search:run-searches.adoc#scoring[Scoring for Search Queries].
+
+== See Also
+
+* xref:fine-tune-vector-search.adoc[]
+* xref:search:search-request-params.adoc[]
+* xref:create-vector-search-index-rest-api.adoc[]
+* xref:create-vector-search-index-ui.adoc[]

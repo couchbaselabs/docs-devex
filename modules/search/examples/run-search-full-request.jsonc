@@ -9,7 +9,7 @@
                     "bool": false
                 },
                 {
-                    "field": "ratings.Cleanliness",
+                    "field": "reviews.ratings.Cleanliness",
                     "min": 1,
                     "max": 3,
                     "inclusive_min": true,
@@ -47,6 +47,10 @@
     "knn": [
         {
             "k": 10,
+            "params": {
+                "ivf_nprobe_pct": 1,
+                "ivf_max_codes_pct": 0.2
+            },
             "field": "vector_field",
             "vector": [ 0.707106781186548, 0, 0.707106781186548 ]
         }
@@ -55,6 +59,7 @@
     // tag::ctl[]
     "ctl": {
         "timeout": 10000,
+        "partition_selection": "local",
         // tag::consistency[]
         "consistency": {
             // tag::vectors[]
@@ -67,8 +72,10 @@
             // end::vectors[]
             "level": "at_plus",
             "results": "complete"
-        }
+        },
         // end::consistency[]
+        "validate": true,
+        "global_scoring": true
     },
     // end::ctl[]
     "size": 10,
@@ -121,12 +128,14 @@
                 {
                     "name": "old",
                     "start": "2020-12-31",
-                    "end": "2023-12-31"
+                    "end": "2023-12-31",
+                    "datetime_parser": "date"
                 },
                 {
                     "name": "new",
                     "start": "2023-12-31",
-                    "end": "2024-12-31"
+                    "end": "2024-12-31",
+                    "datetime_parser": "date"
                 }  
             ]
             // end::date_ranges[]
@@ -143,9 +152,9 @@
                 "by": "field",
                 "field": "field2",
                 "desc": false,
-                "mode": "max",
+                "mode": "default",
                 "missing": "last",
-                "type": "number"
+                "type": "string"
             },
             "-_score",
             "-_id"
@@ -154,8 +163,8 @@
     // end::sort[]
     "includeLocations": false,
     "score": "none",
-    "search_after": ["field1Value", "5", "10.033205341869529", "1234"],
-    "search_before": ["field1Value", "5", "10.033205341869529", "1234"],
+    "search_after": ["field1String", "field2String", "10.033205341869529", "hotel_1234"],
+    "search_before": ["field1String", "field2String", "10.033205341869529", "hotel_1234"],
     "limit": 10,
     "offset": 0,
     "collections": ["collection1", "collection2"]

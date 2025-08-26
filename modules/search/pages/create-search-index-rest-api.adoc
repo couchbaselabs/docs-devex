@@ -12,17 +12,17 @@ You must create a Search index before you can xref:simple-search-rest-api.adoc[r
 
 == Prerequisites 
 
-* You have the Search Service enabled on a node in your database.
-For more information about how to deploy a new node and Services on your database, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
 
-* You have a bucket with scopes and collections in your database.
+* You have a bucket with scopes and collections in your cluster.
 For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[]. 
 
-* Your user account has the *Search Admin* role for the bucket where you want to create the index. 
+* Your user account has the xref:learn:security/roles.adoc#search-admin[`Search Admin`] role for the bucket where you want to create the index. 
 
 * You have installed the Couchbase command-line tool (CLI).
 
-* You have the hostname or IP address for the node in your database where you're running the Search Service.
+* You have the hostname or IP address for the node in your cluster where you're running the Search Service.
 For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
 
 == Procedure 
@@ -55,7 +55,7 @@ Do not include the xref:search-index-params.adoc#uuid[uuid] or xref:search-index
 TIP: If you remove the xref:search-index-params.adoc#uuid[uuid] and xref:search-index-params.adoc#sourceuuid[sourceUUID] parameters, you can copy the Search index definition JSON payload from the Couchbase {page-ui-name} to use in your REST API call.
 For more information about how to create an index with the UI, see xref:create-search-index-ui.adoc[]. 
 
-=== Example
+=== Example: Simple Search Index with XATTRs
 
 In the following example, the JSON payload creates a simple index named `landmark-content-index` on the `travel-sample` bucket.
 It creates a type mapping for the `inventory.landmark` collection, with a child field, `content`, and adds a dynamic Extended Attributes (XATTRs) mapping for any available document metadata fields in the collection:
@@ -68,6 +68,43 @@ include::example$create-search-index-payload.sh[]
 IMPORTANT: XATTRs mappings are only available in Couchbase Server version 7.6.2 and later. 
 
 For more information about the available JSON properties for a Search index, see xref:search-index-params.adoc[].
+
+If the REST API call is successful, the Search Service returns a `200 OK` and the following JSON response:
+
+[source,json]
+----
+include::example$create-search-index-response.json[]
+----
+
+The `"uuid"` is randomly generated for each Search index you create. 
+Your own UUID might not match the value shown in the example.
+
+=== Example: Search Index with Custom Document Filter
+
+[.status]#Couchbase Server 8.0#
+
+In the following example, the JSON payload creates a Search index named `travel-sample-filter` on the `travel-sample` bucket.
+It has a custom document filter, `cleanliness_AND_free_breakfast`, which uses a xref:search-index-params.adoc#conjunct_filter[conjunct filter] to restrict the documents in the index.
+Only documents with a cleanliness rating between 3 and 5 and `free_breakfast` set to `true` are included from the `inventory.hotel` collection. 
+
+For documents that pass the filter, the index includes the `description`, `free_breakfast`, `name`, `reviews.content`, and `reviews.ratings.Cleanliness` fields:
+
+[source,console]
+----
+include::example$create-search-index-payload-filters.sh[]
+----
+
+For more information about the available JSON properties for a Search index, see xref:search-index-params.adoc[].
+
+If the REST API call is successful, the Search Service returns a `200 OK` and the following JSON response:
+
+[source,json]
+----
+include::example$create-search-index-response-filters.json[]
+----
+
+The `"uuid"` is randomly generated for each Search index you create. 
+Your own UUID might not match the value shown in the example.
 
 == Next Steps
 
