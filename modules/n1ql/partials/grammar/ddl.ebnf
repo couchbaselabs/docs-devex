@@ -37,7 +37,8 @@ other-statement ::= alter-bucket
  **************************/
 
 /* tag::create-bucket[] */
-create-bucket ::= 'CREATE' ( 'BUCKET' | 'DATABASE' ) name ( 'WITH' '{' with-fields '}' )?
+create-bucket ::= 'CREATE' ( 'BUCKET' | 'DATABASE' ) ( 'IF' 'NOT' 'EXISTS' )? name 
+                  ( 'WITH' '{' with-fields '}' )?
 /* end::create-bucket[] */
 
 /* tag::create-scope[] */
@@ -54,7 +55,7 @@ alter-bucket ::= 'ALTER' ( 'BUCKET' | 'DATABASE' ) name ( 'WITH' '{' with-fields
 /* end::alter-bucket[] */
 
 /* tag::drop-bucket[] */
-drop-bucket ::= 'DROP' ( 'BUCKET' | 'DATABASE' ) name
+drop-bucket ::= 'DROP' ( 'BUCKET' | 'DATABASE' ) ('IF' 'EXISTS' )? name
 /* end::drop-bucket[] */
 
 /* tag::drop-scope[] */
@@ -314,7 +315,7 @@ restart-with ::= 'RESTART' ( 'WITH' integer )?
  ********************/
 
 /* tag::create-user[] */
-create-user ::= 'CREATE' 'USER' username 'PASSWORD' '"' password '"' 
+create-user ::= 'CREATE' 'USER' ( 'IF' 'NOT' 'EXISTS' )? username 'PASSWORD' '"' password '"' 
                 ( 'WITH' '"' name '"' )? 
                 ( 'GROUP' group | 'GROUPS' group ( ',' group )* | 'NO' 'GROUPS' )?                
 /* end::create-user[] */
@@ -326,11 +327,12 @@ alter-user ::= 'ALTER' 'USER' username ( 'PASSWORD' '"' password '"' )?
 /* end::alter-user[] */
 
 /* tag::drop-user[] */
-drop-user ::= 'DROP' 'USER' username
+drop-user ::= 'DROP' 'USER' ( 'IF' 'EXISTS' )? username
 /* end::drop-user[] */
 
 /* tag::create-group[] */
-create-group ::= 'CREATE' 'GROUP' name ( 'WITH' '"' description '"' )? 
+create-group ::= 'CREATE' 'GROUP' ( 'IF' 'NOT' 'EXISTS' )? name 
+                 ( 'WITH' '"' description '"' )? 
                  ( 'ROLE' rbac-role | 'ROLES' rbac-role ( ',' rbac-role )* | 'NO' 'ROLES' )            
 /* end::create-group[] */
 
@@ -340,11 +342,11 @@ alter-group ::= 'ALTER' 'GROUP' name ( 'WITH' '"' description '"' )?
 /* end::alter-group[] */
 
 /* tag::rbac-role[] */
-rbac-role ::= role ( 'ON' target-keyspace )?       
+rbac-role ::= role ( 'ON' keyspace-ref )?       
 /* end::rbac-role[] */
 
 /* tag::drop-group[] */
-drop-group ::= 'DROP' 'GROUP' groupname
+drop-group ::= 'DROP' 'GROUP' ('IF' 'EXISTS' )? groupname
 /* end::drop-group[] */
 
 

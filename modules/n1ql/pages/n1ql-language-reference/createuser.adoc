@@ -9,11 +9,16 @@
 == Purpose
 
 Creating a user is an essential step in managing access to your Couchbase environment. 
-You can use the CREATE USER statement to define a new user within the Couchbase Server Role-Based Access Control (RBAC) system. 
-It lets you specify the user's basic attribute such as username, password, full name, and the group they belong to.
+You can use the CREATE USER statement to define a new local user in the Couchbase Server Role-Based Access Control (RBAC) system. 
+By default, Couchbase Server assigns the user to the local authentication domain.
 
-You can assign a user to one or more groups. 
+When you create a user, you can specify their basic attributes such as username, password, full name, and assign them to one or more groups. 
 If you do not specify a group, the user is not assigned to any group by default.
+
+== RBAC Privileges
+
+To execute the CREATE USER statement, you must have the Full Admin or Security Admin role.
+For more information about user roles, see xref:learn:security/authorization-overview.adoc[Authorization].
 
 == Syntax
 
@@ -26,7 +31,7 @@ image::n1ql-language-reference/create-user.png["Syntax diagram: refer to source 
 
 [horizontal]
 username::
-(Required) The unique identifier for the new user. 
+(Required) The unique identifier for the new local user. 
 
 password::
 (Required) A quoted string containing the user's password.
@@ -48,6 +53,15 @@ You can specify only one of these options per statement.
 * `NO GROUPS` creates a user without assigning any groups. 
 This option has no effect during user creation. 
 ====
+
+[[if-not-exists]]
+=== IF NOT EXISTS Clause
+
+The optional `IF NOT EXISTS` clause enables the statement to complete successfully when the specified user already exists.
+If a user with the same username already exists, then:
+
+* If this clause is not present, an error is generated.
+* If this clause is present, the statement does nothing and completes without error.
 
 == Examples
 

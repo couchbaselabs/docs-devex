@@ -3,11 +3,6 @@
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 
-:authorization-overview: xref:learn:security/authorization-overview.adoc
-:from: xref:n1ql-language-reference/from.adoc
-:from-keyspace-ref: {from}#from-keyspace-ref
-:as-clause: {from}#section_ax5_2nx_1db
-
 [abstract]
 {description}
 
@@ -18,6 +13,11 @@ You can specify the group's name, description, and assign it one or more roles.
 
 By creating groups, you can organize users and assign roles collectively.
 When you add users to a group, they automatically inherit the roles assigned to that group.
+
+== RBAC Privileges
+
+To execute the CREATE GROUP statement, you must have the Full Admin or Security Admin role.
+For more information about user roles, see xref:learn:security/authorization-overview.adoc[Authorization].
 
 == Syntax
 
@@ -50,6 +50,16 @@ You can specify only one of these options per statement.
 This option has no effect during group creation. 
 ====
 
+[[if-not-exists]]
+=== IF NOT EXISTS Clause
+
+The optional `IF NOT EXISTS` clause enables the statement to complete successfully when the specified group already exists.
+If a group with the same name already exists, then:
+
+* If this clause is not present, an error is generated.
+
+* If this clause is present, the statement does nothing and completes without error.
+
 [[roles]]
 === Add Roles
 
@@ -72,24 +82,7 @@ For the following roles, you can use their short forms as well:
 * `query_update` → `update`
 * `query_delete` → `delete`
 
-target-keyspace::
-<<target-keyspace,Target Keyspace>>
-
-[[target-keyspace]]
-=== Target Keyspace
-
-[source,ebnf]
-----
-include::partial$grammar/dml.ebnf[tag=target-keyspace]
-----
-
-image::n1ql-language-reference/target-keyspace.png["Syntax diagram: refer to source code listing", align=left]
-
-The update target is the keyspace which you want to add.
-
-[horizontal.compact]
 keyspace-ref:: <<keyspace-ref>> 
-alias:: <<update-alias>> 
 
 [[keyspace-ref]]
 ==== Keyspace Reference
@@ -115,17 +108,8 @@ include::partial$grammar/dql.ebnf[tag=keyspace-partial]
 
 image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
 
-Keyspace reference for the update target.
-For more information, see {from-keyspace-ref}[Keyspace Reference].
-
-[id="update-alias"]
-==== AS Alias
-
-Assigns another name to the keyspace reference.
-For more information, see {as-clause}[AS Clause].
-
-Assigning an alias to the keyspace reference is optional.
-If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
+Use keyspace reference to specify the target keyspace. 
+For more information about each element, see the xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference] section in the FROM clause.
 
 == Examples
 
@@ -133,7 +117,7 @@ If you assign an alias to the keyspace reference, the `AS` keyword may be omitte
 ====
 [source,sqlpp]
 ----
-CREATE GROUP sales ROLE query_select;
+CREATE GROUP sales ROLE query_select ON `travel-sample`.`inventory`.`airline`;
 ----
 ====
 
