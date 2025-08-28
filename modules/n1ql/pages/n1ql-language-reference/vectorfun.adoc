@@ -1,0 +1,400 @@
+= Vector Functions
+:description: Pattern-matching functions allow you to find regular expression patterns in strings or attributes.
+:page-topic-type: reference
+:example-caption!:
+:keywords: similarity
+
+{description}
+Regular expressions can formally represent various string search patterns using different special characters to indicate wildcards, positional characters, repetition, optional or mandatory sequences of letters, etc.
+{sqlpp} functions are available to find matching patterns, find position of matching pattern, or replace a pattern with a new string.
+
+For more information on all supported REGEX patterns, see https://golang.org/pkg/regexp/syntax[^].
+
+[[ann_distance,ANN_DISTANCE()]]
+== ANN_DISTANCE → see APPROX_VECTOR_DISTANCE
+
+Alias of <<approx_vector_distance>>.
+
+[[approx_vector_distance,APPROX_VECTOR_DISTANCE()]]
+== APPROX_VECTOR_DISTANCE(`vec`, `queryvec`, `metric` [,{nbsp}``nprobes`` [,{nbsp}``rerank`` [,{nbsp}``topNScan``]]])
+
+This function has an alias <<ann_distance>>.
+
+=== Description
+
+Finds the approximate distance between a provided vector and the content of a specified field that contains vector embeddings.
+
+This function is faster, but less precise than <<vector_distance>>.
+This function works with a hyperscale vector index or composite vector index that includes the field containing the vector embeddings.
+
+You should use this function in your production queries.
+
+=== Arguments
+
+vec:: The name of a field that contains vector embeddings.
+The field must contain an array of floating point numbers, or a base64 encoded string.
+
+queryvec:: An array of floating point numbers, or a base64 encoded string, representing the vector value to search for in the vector field.
+
+metric:: A string representing the distance metric to use when comparing the vectors.
+The distance metric should match the `similarity` setting that you used when you created the index.
++
+include::vector-index:partial$distance-metric-list.adoc[]
+
+nprobes:: [Optional] An integer representing the number of centroids to probe for matching vectors.
+If not specified, the function defaults to the `scan_nprobes` setting that you used when you created the index.
+If an invalid value is provided, defaults to `1`.
+
+rerank:: [Optional; can only be used when `nprobes` is specified]
+A boolean.
+If `false`, the function uses quantized vectors.
+It `true`, the function uses full vectors to reorder the results.
+The default is `false`.
+
+topNScan:: [Optional; can only be used when `nprobes` and `rerank` are specified]
+This option only applies if using a hyperscale vector index.
+A positive integer representing the number of results to return.
+The default is `0`, meaning the function uses the indexer default.
+
+=== Return Value
+
+Returns a numeric value representing the approximate vector distance.
+A lower value indicates greater similarity.
+
+=== Examples
+
+To try the examples in this section, you must install the `rgb` and `rgb-questions` collections, as described in xref:vector-index:hyperscale-vector-index.adoc#prerequisites[Prerequisites].
+
+The path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+.REGEXP_MATCHES() Example 1
+====
+The following query finds all words beginning with upper or lower case B.
+
+.Query
+[source,sqlpp]
+----
+SELECT REGEXP_MATCHES("So, 'twas better Betty Botter bought a bit of better butter",
+                      "\\b[Bb]\\w+"); -- <1>
+----
+
+<1> The backslash that introduces an escape sequence in the regular expression must itself be escaped by another backslash in the {sqlpp} query.
+So `\b` (word boundary) must be entered as `\\b` and `\w` (word character) must be entered as `\\w`.
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "better",
+      "Betty",
+      "Botter",
+      "bought",
+      "bit",
+      "better",
+      "butter"
+    ]
+  }
+]
+----
+====
+
+.REGEXP_MATCHES() Example 2
+====
+The following query finds sequences of two words beginning with upper or lower case B.
+
+.Query
+[source,sqlpp]
+----
+SELECT REGEXP_MATCHES("So, 'twas better Betty Botter bought a bit of better butter",
+                      "\\b[Bb]\\w+ \\b[Bb]\\w+");
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "better Betty",
+      "Botter bought", // <1>
+      "better butter"
+    ]
+  }
+]
+----
+
+<1> Note that `Betty Botter` is not found in this example, because `Betty` has already been found by the first match.
+====
+
+
+[[decode_vector,DECODE_VECTOR()]]
+== DECODE_VECTOR(`vector` [,{nbsp}``byte_order``])
+
+This function has an alias <<vector_decode>>.
+
+=== Description
+
+Reverses the encoding done by the <<encode_vector>> function.
+
+=== Arguments
+
+vector:: String, or any {sqlpp} expression that evaluates to a string, representing the base64 encoding of a vector value.
+
+byte_order:: [Optional] A boolean which determines the byte order of the vector value.
+If `true`, it is big-endian.
+If `false`, it is little-endian.
+The default is `false`.
+
+=== Return Value
+
+An array of float32 values.
+
+=== Examples
+
+.REGEXP_REPLACE() Example 1
+====
+.Query
+[source,sqlpp]
+----
+SELECT DECODE_VECTOR("zczMPc3MTD6amZk+zczMPg==") AS vector;
+----
+
+.Results
+[source,json]
+----
+[{
+    "vector": [
+        0.10000000149011612,
+        0.20000000298023224,
+        0.30000001192092896,
+        0.4000000059604645
+    ]
+}]
+----
+====
+
+.REGEXP_REPLACE() Example 2
+====
+In this example, the query retrieves first 4 documents and replaces the pattern of repeating n with emphasized NNNN.
+
+.Query
+[source,sqlpp]
+----
+SELECT DECODE_VECTOR("PczMzT5MzM0+mZmaPszMzQ==", true) AS vector;
+----
+
+.Results
+[source,json]
+----
+[{
+    "vector": [
+        0.10000000149011612,
+        0.20000000298023224,
+        0.30000001192092896,
+        0.4000000059604645
+    ]
+}]
+----
+====
+
+[[encode_vector,ENCODE_VECTOR()]]
+== ENCODE_VECTOR(`vector` [,{nbsp}``byte_order``])
+
+This function has an alias <<vector_encode>>.
+
+=== Description
+
+Returns the https://en.wikipedia.org/wiki/Base64[base64] encoding of a vector value.
+
+=== Arguments
+
+vector:: An array of float32 values, or any {sqlpp} expression that evaluates to an array of float32 values.
+
+byte_order:: [Optional] A boolean which determines the byte order of the vector value.
+If `true`, it is big-endian.
+If `false`, it is little-endian.
+The default is `false`.
+
+=== Return Value
+
+A string representing the base64 encoding of the input expression.
+
+=== Example
+
+====
+The following query finds positions of first occurrence of vowels in each word of the _name_ attribute.
+
+.Query
+[source,sqlpp]
+----
+SELECT ENCODE_VECTOR([0.1, 0.2, 0.3, 0.4]) AS base64;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "base64": "zczMPc3MTD6amZk+zczMPg=="
+  }
+]
+----
+====
+
+====
+The following query finds positions of first occurrence of vowels in each word of the _name_ attribute.
+
+.Query
+[source,sqlpp]
+----
+SELECT ENCODE_VECTOR([0.1, 0.2, 0.3, 0.4], true) AS base64;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "base64": "PczMzT5MzM0+mZmaPszMzQ=="
+  }
+]
+----
+====
+
+[[isvector,ISVECTOR()]]
+== ISVECTOR(`vec`, `dimension`, `float32`)
+
+// This function has no alias
+
+=== Description
+
+
+
+=== Arguments
+
+vec:: String, or any {sqlpp} expression that evaluates to a string.
+
+dimension:: String representing a supported regular expression.
+
+float32:: String representing a supported regular expression.
+
+=== Return Value
+
+Returns TRUE if the string value contains any sequence that matches the regular expression pattern.
+
+=== Example
+
+include::ROOT:partial$query-context.adoc[tag=section]
+
+====
+.Query
+[source,sqlpp]
+----
+SELECT name
+FROM landmark
+WHERE REGEXP_CONTAINS(name, "In+.*")
+LIMIT 5;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "name": "Beijing Inn"
+  },
+  {
+    "name": "Sportsman Inn"
+  },
+  {
+    "name": "In-N-Out Burger"
+  },
+  {
+    "name": "Mel's Drive-In"
+  },
+  {
+    "name": "Inverness Castle"
+  }
+]
+----
+====
+
+[[knn_distance,KNN_DISTANCE()]]
+== KNN_DISTANCE → see VECTOR_DISTANCE
+
+Alias of <<vector_distance>>.
+
+[[vector_decode,VECTOR_DECODE()]]
+== VECTOR_DECODE → see DECODE_VECTOR
+
+Alias of <<decode_vector>>.
+
+[[vector_distance,VECTOR_DISTANCE()]]
+== VECTOR_DISTANCE(`vec`, `queryvec`, `metric`)
+
+This function has an alias <<knn_distance>>.
+
+=== Description
+
+Finds the exact distance between a provided vector and the content of a specified field that contains vector embeddings.
+
+This function is slower, but more precise than <<approx_vector_distance>>.
+This function does not use a hyperscale vector index or composite vector index to perform the comparison.
+Instead, it performs a brute-force search for similar vectors.
+
+You should use this function to check the accuracy of your production queries, and adjust the index and query settings to improve the recall accuracy.
+
+=== Arguments
+
+vec:: The name of a field that contains vector embeddings.
+The field must contain an array of floating point numbers, or a base64 encoded string.
+
+queryvec:: An array of floating point numbers, or a base64 encoded string, representing the vector value to search for in the vector field.
+
+metric:: A string representing the distance metric to use when comparing the vectors.
++
+include::vector-index:partial$distance-metric-list.adoc[]
+
+=== Return Value
+
+Returns a numeric value representing the vector distance.
+A lower value indicates greater similarity.
+
+=== Example
+
+To try the examples in this section, you must install the `rgb` and `rgb-questions` collections, as described in xref:vector-index:hyperscale-vector-index.adoc#prerequisites[Prerequisites].
+
+The path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+====
+This example finds 10 colors from the `rgb` collection whose descriptions are most similar to the following presupplied question:
+
+> What is the color that is often linked to feelings of peace and tranquility, and is reminiscent of the clear sky on a calm day?
+
+.Query
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=exact-query]
+----
+
+. The `vector` field in the `rgb-questions` collection contains the embedded vectors associated with the presupplied questions. @/couchbase_search_query.knn/
+
+. The `embedding_vector_dot` field in the `rgb` collection contains the embedded vectors associated with the color descriptions. @/embedding_vector_dot/
+
+The query returns 10 colors where the embedded vector associated with the color description is most similar to the embedded vector associated with the presupplied question.
+
+.Results
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=exact-query-results]
+----
+
+For more details and examples, see xref:vector-index:vector-index-best-practices.adoc#recall-accuracy[Determine Recall Rate].
+====
+
+[[vector_encode,VECTOR_ENCODE()]]
+== VECTOR_ENCODE → see ENCODE_VECTOR
+
+Alias of <<encode_vector>>.
