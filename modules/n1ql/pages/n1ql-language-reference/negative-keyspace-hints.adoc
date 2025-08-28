@@ -30,10 +30,6 @@ It directs the optimizer not to use a specific secondary index for a keyspace.
 You can add one or more secondary indexes in the hint.
 If you do not specify this hint, the optimizer selects the optimal available index. 
 
-NOTE: For this hint to work effectively, you must specify at least one index.
-The optimizer ignores the hint if you do not specify any indexes.
-This is because Couchbase does not currently support full table scans.
-
 === Simple Syntax
 
 [source,ebnf]
@@ -47,6 +43,9 @@ With the simple syntax, this hint specifies a single keyspace expression along w
 You can either use `NO_INDEX` or `AVOID_INDEX` as the hint keyword.
 You can also use this hint multiple times within a hint comment to apply it to more than one keyspace.
 
+NOTE: For this hint to work effectively, you must specify at least one index.
+The optimizer ignores the hint if you do not specify any indexes.
+
 ==== Arguments
 
 keyspace::
@@ -55,10 +54,8 @@ The keyspace or alias to which this hint applies.
 index::
 A secondary index that the optimizer must not use for the given keyspace.
 This argument is optional. 
-+
-NOTE: For this hint to work effectively, you must specify at least one index.
-The optimizer ignores the hint if you do not specify any indexes.
-This is because Couchbase does not currently support full table scans.
+However, you must specify at least one index.
+Otherwise, the optimizer ignores the hint.
 
 === JSON Syntax
 
@@ -191,10 +188,6 @@ It directs the optimizer not to use a specific full-text index for a keyspace.
 You can add one or more full-text indexes in the hint. 
 If you do not specify this hint, the optimizer selects the optimal available index. 
 
-NOTE: For this hint to work effectively, you must specify at least one index.
-The optimizer ignores the hint if you do not specify any indexes.
-This is because Couchbase does not currently support full table scans.
-
 === Simple Syntax
 
 [source,ebnf]
@@ -208,6 +201,9 @@ With the simple syntax, this hint specifies a single keyspace expression along w
 You can either use `NO_INDEX_FTS` or `AVOID_INDEX_FTS` as the hint keyword.
 You can also use this hint multiple times within a hint comment to apply it to more than one keyspace.
 
+NOTE: For this hint to work effectively, you must specify at least one index.
+The optimizer ignores the hint if you do not specify any indexes.
+
 ==== Arguments
 
 keyspace::
@@ -216,10 +212,8 @@ The keyspace or alias to which this hint applies.
 index::
 A full-text index that the optimizer must not use for the given keyspace.
 This argument is optional.
-+
-NOTE: For this hint to work effectively, you must specify at least one index.
-The optimizer ignores the hint if you do not specify any indexes.
-This is because Couchbase does not currently support full table scans.
+However, you must specify at least one index.
+Otherwise, the optimizer ignores the hint.
 
 === JSON Syntax
 
@@ -328,7 +322,7 @@ It directs the optimizer not to use a nested loop join for a specified keyspace.
 This hint must be specified on the keyspace on the right-hand side of the join. 
 If not specified, the optimizer selects the optimal join method.
 
-NOTE: Currently, this hint is only supported in xref:n1ql-language-reference/selectclause.adoc[SELECT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements. 
+NOTE: This hint is only available in xref:n1ql-language-reference/selectclause.adoc[SELECT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements. 
 
 === Simple Syntax
 
@@ -457,7 +451,7 @@ If you do not specify this hint, the optimizer selects the optimal join method.
 Unlike xref:n1ql-language-reference/keyspace-hints.adoc#use_hash[USE_HASH], this hint does not allow you to specify whether the keyspace should appear on the build or probe side of the hash join.
 Instead, you can only specify the keyspace name or alias to which this hint applies. 
 
-NOTE: Currently, this hint is only supported in xref:n1ql-language-reference/selectclause.adoc[SELECT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements. 
+NOTE: This hint is only available in xref:n1ql-language-reference/selectclause.adoc[SELECT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements. 
 
 === Simple Syntax
 
@@ -569,7 +563,7 @@ include::example$select/no-use-hash-hint.n1ql[tag=query]
 ----
 
 If you examine the plan for this query, you can see that the optimizer avoids using a hash join and considers other join methods. 
-In this case, the optimizer has selected the generic join method.
+In this case, the optimizer has selected the lookup join method.
 
 .Explain plan
 [source,json,indent=0]

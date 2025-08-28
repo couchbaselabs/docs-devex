@@ -230,10 +230,10 @@ When the optimizer follows a simple hint, the hint is shown in the explain plan.
 .Explain plan for <<ex-simple-hint>>
 [source,sqlpp]
 ----
-EXPLAIN 
-UPDATE /*+ INDEX(airport def_inventory_airport_city) */ airport 
-SET updated = true 
-WHERE city = "San Jose";
+EXPLAIN SELECT /*+ INDEX(airport def_inventory_airport_city) */
+               airportname, faa
+FROM airport
+WHERE city = "San Francisco";
 ----
 
 .Result
@@ -243,7 +243,7 @@ WHERE city = "San Jose";
   {
     "optimizer_hints": {
       "hints_followed": [
-        "INDEX(`airport` `def_inventory_airport_city`)"
+        "INDEX(airport def_inventory_airport_city)"
       ]
     },
 // ...
@@ -408,6 +408,66 @@ WHERE a.city = "San Francisco";
       "invalid_hints": [
         "INDEX_SS(a def_inventory_airport_city): Invalid hint name"
       ]
+    },
+// ...
+  }
+]
+----
+====
+
+[#ex-update-hint-explain]
+.Explain plan for UPDATE with a simple index hint
+====
+When the optimizer follows a simple hint in an UPDATE query, the hint is shown in the explain plan.
+
+.Explain plan
+[source,sqlpp]
+----
+EXPLAIN 
+UPDATE /*+ INDEX(airport def_inventory_airport_city) */ airport 
+SET updated = true 
+WHERE city = "San Jose";
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "optimizer_hints": {
+      "hints_followed": [
+        "INDEX(airport def_inventory_airport_city)"
+      ]
+    },
+// ...
+  }
+]
+----
+====
+
+[#ex-delete-hint-explain]
+.Explain plan for DELETE with a simple index hint
+====
+When the optimizer follows a simple hint in a DELETE query, the hint is shown in the explain plan.
+
+.Explain plan
+[source,sqlpp]
+----
+EXPLAIN
+DELETE /*+ INDEX (hotel def_inventory_hotel_city) */ 
+FROM `hotel`
+WHERE city = "San Francisco";
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "optimizer_hints": {
+        "hints_followed": [
+            "INDEX(`hotel` `def_inventory_hotel_city`)"
+        ]
     },
 // ...
   }
