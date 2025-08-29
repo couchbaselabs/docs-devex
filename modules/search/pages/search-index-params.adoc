@@ -27,13 +27,24 @@ include::example$simple-search-index-payload.jsonc[tag=json-snippet]
 
 TIP: To view the entire JSON payload, click btn:[View].
 
+When you xref:create-search-index-alias-rest-api.adoc[], the properties in this section are the only properties you need to include in your alias definition.
+
 All Search index payloads have the following properties: 
 
 [cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description
 
-|name |String |Yes |The name of the Search index. A Search index name must be unique for each cluster.
+|name |String |Yes a|
+
+The name of the Search index or index alias. 
+
+For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope.
+You cannot have 2 indexes with the same name inside the same bucket and scope.
+
+For index aliases, names must be unique within the same bucket and scope if you're using the scoped endpoint.
+Global index aliases must not share a name with another alias.
+For more information about Search index aliases, see xref:index-aliases.adoc[].
 
 |type |String |Yes a|
 
@@ -41,25 +52,33 @@ The type of index you want to create:
 
 * `fulltext-index`: Create a Search index.
 * `fulltext-alias`: Create an alias for a Search index. 
-For more information about Search index aliases, see xref:index-aliases.adoc[].
+For more information about creating Search index aliases, see xref:create-search-index-alias-rest-api.adoc[].
 
 |[[uuid]]uuid |String |No a|
 
-The UUID for the Search index. 
+The UUID for the Search index or index alias. 
 
-The Search Service automatically generates a UUID for a Search index. 
+The Search Service automatically generates a UUID for a Search index or index alias. 
 
-If you use an existing UUID, the Search Service updates the existing Search index. 
-Do not include the `uuid` property when you want to copy an index to a different cluster or create a new index.
+If you use an existing UUID, the Search Service updates the existing Search index or index alias. 
+Do not include the `uuid` property when you want to copy an index to a different cluster or create a new index or alias.
 
 View the UUID for an existing index from the Couchbase {page-ui-name} by selecting an existing index, and clicking btn:[Edit Index]. 
 The UUID displays in the Index Definition Preview on the Edit Index page. 
 
 You can also use the xref:rest-api:rest-fts-indexing.adoc[Index Definition] endpoints provided by the Search REST API.
 
-|sourceType |String |Yes |The `sourceType` is always `"gocbcore"`.
+|sourceType |String |Yes a|
 
-|sourceName |String |Yes |The name of the bucket where you want to create the Search index. 
+When you create a Search index, the `sourceType` is always `"gocbcore"`.
+
+When you create an index alias, the `sourceType` is always `"nil"`.
+
+|sourceName |String |Yes a|
+
+The name of the bucket where you want to create the Search index. 
+
+You do not need to include a value for this parameter when creating an index alias. 
 
 |[[sourceuuid]]sourceUUID |String |No a|
 
@@ -69,16 +88,27 @@ The Search Service automatically finds the UUID for the bucket.
 
 Do not include the `sourceUUID` property when you want to copy an index to a different cluster, or create a new index.
 
+You do not need to include a value for this parameter when creating an index alias.
+
 |sourceParams |Object |No a|
 
 This object contains advanced settings for index behavior.
 
 Do not add content into this object unless instructed by Couchbase Support.
 
-|planParams |Object |Yes |An object that sets the Search index's partitions and replications. 
+|planParams |Object |Yes a|
+
+An object that sets the Search index's partitions and replications. 
 For more information, see <<planparams,>>.
 
-|params |Object |Yes |An object that sets the Search index's type identifier, type mappings, and analyzers. 
+For an index alias, set this to an empty object.
+
+|params |Object |Yes a|
+
+An object that sets the Search index's type identifier, type mappings, and analyzers. 
+
+For an index alias, this sets the target Search indexes to include in the alias. 
+
 For more information, see <<params,>>.
 
 |store |Object |No a|
@@ -143,6 +173,22 @@ For more information, see <<doc-config,>>.
 
 |mapping |Object |Yes |An object that sets the analyzers and type mappings for a Search index. 
 For more information, see <<mapping,>>.
+
+|targets |Object |Index Alias Only a|
+
+When creating an index alias, an object that lists each Search index you want to include in the alias. 
+
+The `targets` object should include a named object for each Search index you want to include in the alias. 
+Make sure to use the scoped index name for each Search index.
+
+For example: 
+
+[source,json]
+----
+include::example$create-search-alias-targets-example.json[]
+----
+
+For more information about creating aliases, see xref:create-search-index-alias.adoc[] or xref:create-search-index-alias-rest-api.adoc[].
 
 |====
 
@@ -1275,7 +1321,7 @@ It contains any number of <<synonym_name,{synonym_collection_name} objects>>:
 
 Set the name of this object to the name you want to use to identify your synonym collection in your Search index. 
 
-Reference the `\{synynom_collection_name\}` object in a text field definition to use synonym searches with that text field. 
+Reference the `\{synonym_collection_name\}` object in a text field definition to use synonym searches with that text field. 
 
 For more information about the properties in an `\{synonym_collection_name\}` object, see <<synonym_name,>>. 
 
