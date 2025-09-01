@@ -92,74 +92,21 @@ You can specify a real number between 0 and 1 indicating the percentage match (o
 The default value is 0.6, which means two documents are considered similar if 60% of the top-level attributes are the same.
 
 [[infer-flags]]
-[.var]`flags`:: A set of flags that control the behavior of the INFER statement.
-The following flags are supported: 
+[.var]`flags`:: Flags control the behavior of the INFER statement. 
+It can be a string or an array of strings.
+You can specify one or more of the following flags:
 +
 [cols="1,2", options="header"]
 |===
 | Flag | Description
 
-| `NO_FLAGS`
-| No specific flags are set.
+| `allow_dups`
+| Allows including duplicate documents in the infer analysis.
 
-| `SINGLE_INDEX`
-| Restricts the operation to use only a single index.
+| `include_xattrs`
+| Includes extended attributes (xattrs) in the output.
 
-| `LIMIT_2_INDEXES`
-| Limits the operation to use at most two indexes.
-
-| `LIMIT_5_INDEXES`
-| Limits the operation to use at most five indexes.
-
-| `NO_RANDOM_ENTRY`
-| Disables the use of random entries in the operation.
-
-| `NO_PRIMARY_INDEX`
-| Excludes the primary index from being used.
-
-| `NO_SECONDARY_INDEX`
-| Excludes secondary indexes from being used.
-
-| `NO_RANDOM_INDEX_SAMPLE`
-| Disables random sampling of indexes.
-
-| `ALLOW_DUPLICATED_LEADING_KEY`
-| Allows duplicate leading keys in the operation.
-
-| `ALLOW_ARRAY_INDEXES`
-| Enables the use of array indexes.
-
-| `NO_LIMIT_RANDOM`
-| Removes any limit on random sampling.
-
-| `ALLOW_CONDITIONAL`
-| Enables conditional logic in the operation.
-
-| `ALLOW_SUPERSET_CONDITIONS`
-| Allows superset conditions in the operation.
-
-| `CACHE_KEYS`
-| Enables caching of keys during the operation.
-
-| `RANDOM_ENTRY_LAST`
-| Ensures that random entries are processed last.
-
-| `NO_RANDOM_SCAN`
-| Disables random scanning of documents.
-
-| `SAMPLE_ALL_DOCS`
-| Samples all documents in the dataset.
-
-| `SAMPLE_ALLOW_EXTRA`
-| Allows additional documents to be included in the sample beyond the specified limit.
-
-| `FULL_SCAN`
-| Forces a full scan of the dataset.
-
-| `ALLOW_DUPS`
-| Allows duplicate documents to be included in the operation.
-
-| `INCLUDE_KEY`
+| `include_key`
 | Includes the `~meta` attribute in the output, which contains the `id` property describing document keys.
 |===
 
@@ -220,10 +167,20 @@ Details for Documents and Subdocuments::
 [.out]`$schema`;; Specifies the version of the JSON Schema standard.
 [.out]`Flavor`;; Specifies the flavor of a document or sub-document.
 
-NOTE: From Couchbase Server 8.0 onwards, the `~meta` attribute is included in the output of the INFER statement by default. 
-This attribute contains the `id` property that describes the document keys.
-However, if you use the `flags` option to customize the behavior of the INFER analysis, you must explicitly set the `INCLUDE_KEY` flag to include the `~meta` attribute in the output. 
+Metadata Details:: 
+[.out]`~meta`;; Contains the `id` property that holds the document keys.
++
+By default, the INFER statement includes this attribute in the output. 
+However, you can control this behavior using the `flags` option in the WITH clause.
++
+--
+* If you do not use the `flags` option, INFER automatically includes the `~meta` attribute.
+* If you use the `flags` option, INFER will not return `~meta` unless you specify the `include_key` flag.
+--
++
 For more information about the available flags, see <<infer-flags,flags>>.
++
+NOTE: The `~meta` attribute is only available in Couchbase Server 8.0 and later.
 
 == Examples
 
