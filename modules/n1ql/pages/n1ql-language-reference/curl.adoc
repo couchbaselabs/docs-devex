@@ -21,18 +21,18 @@ For example, you can use the CURL function with the INSERT-SELECT statement to i
 
 == Syntax
 
-[subs=normal]
-....
-CURL(__url__, [__options__])
-....
+[source,ebnf]
+----
+curl-function ::= 'CURL' '(' url (',' options)? ')'
+----
 
 === Arguments
 
-`url`:: A string representing the URL of the data source.
+url:: A string representing the URL of the data source.
 The URL needs to point to a JSON endpoint and must be either `http://` or `https://` only.
 No other protocol is supported.
-The redirection of URL is not allowed.
-`options`:: An optional JSON object representing various supported options.
+The redirection of URLs is not allowed.
+options:: An optional JSON object representing various supported options.
 This includes options and parameters to be sent to the URL source endpoint.
 
 === Options
@@ -42,38 +42,84 @@ This includes options and parameters to be sent to the URL source endpoint.
 |===
 | Option | Description | Value
 
-| `user`
-| Server user name and password.
-| USERNAME[:PASSWORD]
+| *user*
+| Server user name and password, in the form `USERNAME[:PASSWORD]`
+| String
 
-| `basic`
+| *basic*
 | Use HTTP Basic Authentication.
 | Boolean
 
-| `insecure`
+| *insecure*
 | Allow connections to SSL sites without certificates (H).
 | Boolean
 
-| `anyauth`
+| *anyauth*
 a|
 CURL to figure out authentication method by itself, and use the most secure one.
 
 NOTE: This supports only basic authentication.
 | Boolean
 
-| `cacert`
+| *cacert*
 a|
-Specify CA signed certificate file name.
+The CA signed certificate file name.
 Certificates should be stored on the local machine, on each query node within a cluster.
 
-* To store certificates, access [.path]_/Couchbase/var/lib/couchbase/n1qlcerts_.
+* To store certificates, access [.path]`/Couchbase/var/lib/couchbase/n1qlcerts`.
 This is not visible to the user.
 * The file name cannot contain a path.
-* If the certificate is not a match to the existing contents of [.path]_n1qlcerts_ directory, the function returns an error.
+* If the certificate is not a match to the existing contents of [.path]`n1qlcerts` directory, the function returns an error.
 * All expired and invalid certificates return an error.
-| FILENAME
+* When you add a new node, the `cacert` file must be copied to the new node and must have read access.
+* If this option is omitted, the `insecure` option must be true.
 
 For example, this is the certificate `.pem` file for AWS.
+| String
+
+| *cert*
+a|
+The chain certificate file name.
+Certificates should be stored on the local machine, on each query node within a cluster.
+
+* To store certificates, access [.path]`/Couchbase/var/lib/couchbase/n1qlcerts`.
+This is not visible to the user.
+* The file name cannot contain a path.
+* If the certificate is not a match to the existing contents of [.path]`n1qlcerts` directory, the function returns an error.
+* All expired and invalid certificates return an error.
+* When you add a new node, the `cert` file must be copied to the new node and must have read access.
+* If this option is omitted, the `insecure` option must be true.
+
+Example: `"chain.pem"`
+| String
+
+| *key*
+a|
+The client key file name.
+Key files should be stored on the local machine, on each query node within a cluster.
+
+If the key file is encrypted, it should use PKS8 v2, and you must supply the passphrase to decrypt it.
+
+* To store key files, access [.path]`/Couchbase/var/lib/couchbase/n1qlcerts`.
+This is not visible to the user.
+* The file name cannot contain a path.
+* If the key file is not a match to the existing contents of [.path]`n1qlcerts` directory, the function returns an error.
+* All expired and invalid certificates return an error.
+* When you add a new node, the `key` file must be copied to the new node and must have read access.
+* If this option is omitted, the `insecure` option must be true.
+
+Example: `"client.key"`
+| String
+
+| *passphrase*
+a|
+The the passphrase to decrypt the key file.
+Owing to its sensitive nature, you are recommended to use a named parameter for this option.
+
+The parameter name should start and end with an underscore `_` to mask the parameter value in request catalogs, cbq shell history, query logs, and so on.
+
+Example: `$&lowbar;passphrase&lowbar;`
+| String
 |===
 
 .Transfer-related Options
@@ -81,78 +127,75 @@ For example, this is the certificate `.pem` file for AWS.
 |===
 | Option | Description | Value
 
-| `get`
-| The Get request for CURL.
-| BOOLEAN
+| *get*
+| If true, perform a GET request.
 
-Example: `{"get": true}`
+Example: `true`
+| Boolean
 
-| `request`
+| *request*
 | Sets the request method.
 This only accepts GET or POST requests.
 This is case sensitive.
+
+Example: `"POST"`
 | String
 
-Example: `{"request":"POST"}`
-
-| `connect-timeout`
+| *connect-timeout*
 | The maximum time allowed for connection in seconds.
+
+Example: `30`
 | Integer
 
-Example: `{"connect-timeout":30}`
-
-| `max-time`
+| *max-time*
 | The maximum time allowed for the transfer in seconds.
+
+Example: `30`
 | Integer
 
-Example: `{"max-time":30}`
-
-| `data`
+| *data*
 | POST data to be sent to the HTTP/REST service.
 The string data should be formatted exactly same as HTTP POST data.
-| String or [\...string, string….]
 
-Example: `{"data":"address=Half+Moon+Bay"}`
+Examples: `"address=Half+Moon+Bay"`
 
-`{"data":"address=Half+Moon+Bay,california"}`
+`"address=Half+Moon+Bay,california"`
+| String or array of strings
 
-| `header`
+| *header*
 | Passes custom header line to the server.
-| String or [\...string, string….]
+To send the user-agent string to the server, add the value to this parameter.
 
-Example: `{"header":"Content-Type: application/json"}`
+Examples: `"Content-Type: application/json"`
 
-`{"header":["Content-Type: application/json", "Content-Length: 115"]}`
+`["Content-Type: application/json", "Content-Length: 115"]`
 
-| `show-error`
-| Displays error message.
+`["user-agent: bsmith","Content-Type: application/json"]`
+| String or array of strings
+
+| *show-error*
+| If true, display error message.
+
+Example: `true`
 | Boolean
 
-Example: `{"show-error": true}`
+| *silent*
+| If true, use silent mode.
 
-| `silent`
-| The silent mode.
+Example: `false`
 | Boolean
 
-Example: `{"silent": false}`
-
-| `keepalive-time`
+| *keepalive-time*
 | The number of seconds to wait between the `keepalive` probes.
+
+Example: `20`
 | Integer
 
-Example: `{"keepalive-time":20}`
+| *data-urlencode*
+| Like the `data` option, but URL-encodes the data.
 
-| `user-agent`
-| The value for the user-agent to send it to the server.
-| String
-
-Example: `{"header":[ "user-agent: bsmith","Content-Type: application/json"]}`
-
-| `data-urlencode`
-| Encode the data and send it to the server.
-
-This is a test \=> this%20is%20a%20test
-| String or [\...string, string….]
+For example, `this is a test` is encoded as `this%20is%20a%20test`
+| String or array of strings
 |===
 
 === Return Value
