@@ -21,18 +21,18 @@ For example, you can use the CURL function with the INSERT-SELECT statement to i
 
 == Syntax
 
-[subs=normal]
-....
-CURL(__url__, [__options__])
-....
+[source,ebnf]
+----
+curl-function ::= 'CURL' '(' url (, options)? ')'
+----
 
 === Arguments
 
-`url`:: A string representing the URL of the data source.
+url:: A string representing the URL of the data source.
 The URL needs to point to a JSON endpoint and must be either `http://` or `https://` only.
 No other protocol is supported.
-The redirection of URL is not allowed.
-`options`:: An optional JSON object representing various supported options.
+The redirection of URLs is not allowed.
+options:: An optional JSON object representing various supported options.
 This includes options and parameters to be sent to the URL source endpoint.
 
 === Options
@@ -43,8 +43,8 @@ This includes options and parameters to be sent to the URL source endpoint.
 | Option | Description | Value
 
 | `user`
-| Server user name and password.
-| USERNAME[:PASSWORD]
+| Server user name and password, in the form `USERNAME[:PASSWORD]`
+| String
 
 | `basic`
 | Use HTTP Basic Authentication.
@@ -66,14 +66,14 @@ a|
 Specify CA signed certificate file name.
 Certificates should be stored on the local machine, on each query node within a cluster.
 
-* To store certificates, access [.path]_/Couchbase/var/lib/couchbase/n1qlcerts_.
+* To store certificates, access [.path]`/Couchbase/var/lib/couchbase/n1qlcerts`.
 This is not visible to the user.
 * The file name cannot contain a path.
-* If the certificate is not a match to the existing contents of [.path]_n1qlcerts_ directory, the function returns an error.
+* If the certificate is not a match to the existing contents of [.path]`n1qlcerts` directory, the function returns an error.
 * All expired and invalid certificates return an error.
-| FILENAME
 
 For example, this is the certificate `.pem` file for AWS.
+| String
 |===
 
 .Transfer-related Options
@@ -83,76 +83,73 @@ For example, this is the certificate `.pem` file for AWS.
 
 | `get`
 | The Get request for CURL.
-| BOOLEAN
 
-Example: `{"get": true}`
+Example: `true`
+| Boolean
 
 | `request`
 | Sets the request method.
 This only accepts GET or POST requests.
 This is case sensitive.
-| String
 
-Example: `{"request":"POST"}`
+Example: `"POST"`
+| String
 
 | `connect-timeout`
 | The maximum time allowed for connection in seconds.
-| Integer
 
-Example: `{"connect-timeout":30}`
+Example: `30`
+| Integer
 
 | `max-time`
 | The maximum time allowed for the transfer in seconds.
-| Integer
 
-Example: `{"max-time":30}`
+Example: `30`
+| Integer
 
 | `data`
 | POST data to be sent to the HTTP/REST service.
 The string data should be formatted exactly same as HTTP POST data.
-| String or [\...string, string….]
 
-Example: `{"data":"address=Half+Moon+Bay"}`
+Examples: `"address=Half+Moon+Bay"`
 
-`{"data":"address=Half+Moon+Bay,california"}`
+`"address=Half+Moon+Bay,california"`
+| String or array of strings
 
 | `header`
 | Passes custom header line to the server.
-| String or [\...string, string….]
+To send the user-agent string to the server, add the value to this parameter.
 
-Example: `{"header":"Content-Type: application/json"}`
+Examples: `"Content-Type: application/json"`
 
-`{"header":["Content-Type: application/json", "Content-Length: 115"]}`
+`["Content-Type: application/json", "Content-Length: 115"]`
+
+`["user-agent: bsmith","Content-Type: application/json"]`
+| String or array of strings
 
 | `show-error`
 | Displays error message.
-| Boolean
 
-Example: `{"show-error": true}`
+Example: `true`
+| Boolean
 
 | `silent`
 | The silent mode.
-| Boolean
 
-Example: `{"silent": false}`
+Example: `false`
+| Boolean
 
 | `keepalive-time`
 | The number of seconds to wait between the `keepalive` probes.
+
+Example: `20`
 | Integer
 
-Example: `{"keepalive-time":20}`
-
-| `user-agent`
-| The value for the user-agent to send it to the server.
-| String
-
-Example: `{"header":[ "user-agent: bsmith","Content-Type: application/json"]}`
-
 | `data-urlencode`
-| Encode the data and send it to the server.
+| Like the `data` option, but URL-encodes the data.
 
-This is a test \=> this%20is%20a%20test
-| String or [\...string, string….]
+For example, `this is a test` is encoded as `this%20is%20a%20test`
+| String or array of strings
 |===
 
 === Return Value
