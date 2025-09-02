@@ -2,6 +2,7 @@
 :page-status: Couchbase Server 8.0
 :page-topic-type: reference
 :description: The USING AI statement allows you to generate SQL++ queries from natural language prompts.
+:example-note: Copy the following sequence and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell]. Note that you must be using cbq shell version 8.0 or later.
 
 [abstract]
 {description}
@@ -39,7 +40,7 @@ include::partial$grammar/utility.ebnf[tag=using-ai]
 
 image::n1ql-language-reference/using-ai.png["Syntax diagram: refer to source code listing", align=left]
 
-natural-language-request:: A natural language prompt that you want to convert into a SQL++ query.
+natural-language-request:: [Required] A natural language prompt that you want to convert into a SQL++ query.
 
 options::
 
@@ -48,6 +49,12 @@ By default, the statement uses the `natural_orgid`, `natural_cred`, and `natural
 However, you can override these defaults by using the <<optional-parameters,options>> object.
  
 //TODO: Add links to `natural_orgid`, `natural_cred` and `natural_context` when available in the 8.0 documentation.
+
+=== FLEXINDEX / FTS
+
+[Optional] Use the `FLEXINDEX` or `FTS` keyword to generate a query that uses an FTS or flex index.
+This hint appends a `USE INDEX (USING FTS)` clause to all `FROM` keyspaces in the generated query. 
+//See <<Examples,Example: Natural language prompt with a custom output type>> for its usage.
 
 [[optional-parameters]]
 === Options
@@ -111,19 +118,33 @@ If `FALSE`, the generated statement is returned as a string without execution.
 | **output** +
 __optional__
 | A string specifying the type of output to generate.
-Possible values are:
-* `sql` - Generates a standard SQL++ query 
-* `jsudf` - Generates a CREATE FUNCTION statement for a JavaScript UDF.
-* `ftssql` - Generates a SQL++ query with a hint to use FTS or flex indexing for the query. If the option is specified, all the from keyspaces are followed by USE INDEX (USING FTS) clause. That way a generated query can pick a flex index if available.
 
-If you specify any other value other than the ones listed above, the statement returns an error.
+Possible values are:
+--
+* `sql` - Generates a standard SQL++ query.
+* `jsudf` - Generates a CREATE FUNCTION statement.
+You can use this to create a SQL++ managed JavaScript user-defined function.
+* `ftssql` - Generates a SQL++ query optimized for FTS or flex indexes. 
+If specified, the Query Service automatically adds a `USE INDEX (USING FTS)` clause to all `FROM` keyspaces in the generated query.
+This allows the query to use a flex index if one is available. 
+--
+If you specify any other value, the Query Service returns an error.
 
 *Default:* `sql`
 | String
 
 |===
 
-=== Handling Passwords Securely
+== Result
+
+A JSON object containing the generated statement, execution status, and metrics.
+
+If generated statement is a SELECT query and the `execute` option is `TRUE` (default), the output includes the query results as well.
+
+TIP: You can directly use EXPLAIN or ADVISE as a prefix to the USING AI statement to get the query plan or optimization advice for the generated query.
+For an example of its usage, see <<example-8>>.
+
+== Handling Passwords Securely
 
 Use `creds` and `natural_cred` parameters with caution to avoid exposing password information through history files or logs.
 When working with the cbq shell, avoid passing passwords directly on the command line. 
@@ -148,10 +169,10 @@ If security is a concern, consider using an HTTPS connection.
 
 In the following examples, replace `natural_cred` and `natural_orgid` with your Capella credentials and organization ID, respectively.
 
+[[example-1]]
 .Natural language prompt with default request parameters
 ====
-Copy the following sequence and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell]. 
-Note that you must be using cbq shell version 8.0 or later.
+{example-note}
 
 .Request
 [source, console]
@@ -190,10 +211,10 @@ USING AI How many hotels provide free parking?;
 ----
 ====
 
+[[example-2]]
 .Natural language prompt with a custom keyspace 
 ====
-Copy the following sequence and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell].
-Note that you must be using cbq shell version 8.0 or later.
+{example-note}
 
 .Request
 [source, console]
@@ -224,10 +245,10 @@ How many airlines are based in United Kingdom?;
 ----
 ====
 
+[[example-3]]
 .Natural language prompt with all parameters directly in the statement, overriding the default ones
 ====
-Copy the following sequence and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell].
-Note that you must be using cbq shell version 8.0 or later.
+{example-note}
 
 .Request
 [source, console]
@@ -268,6 +289,7 @@ List the names of all hotels in the same city as an airport;
 ----
 ====
 
+[[example-4]]
 .Natural language prompt submitted directly to the Query REST API
 ====
 .Request
@@ -309,3 +331,255 @@ curl -s -d "natural_cred=username@example.com:${p}" \
 }
 ----
 ====
+
+[[example-5]]
+.USING AI with flex index hint
+====
+{example-note}
+
+.Request
+[source, console]
+----
+\set -natural_cred username@example.com:P@ssw0rd;
+\set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab;
+USING AI FOR FLEXINDEX WITH {"keyspaces":["travel-sample.inventory.hotel"]} \
+How many hotels are located in California?;
+----
+.Response
+[source,json]
+----
+{
+    "requestID": "d5746585-4589-4703-a4cd-5acac3897c6f",
+    "generated_statement": "SELECT COUNT(*) 
+                            FROM `travel-sample`.`inventory`.`hotel` AS `h` 
+                            USE INDEX (USING FTS) WHERE `h`.`state` = \"California\"",
+    "signature": {
+        "$1": "number"
+    },
+    "results": [
+    {
+        "$1": 361
+    }
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "2.528830585s",
+        "executionTime": "67.032959ms",
+        "resultCount": 1,
+        "resultSize": 25,
+        "serviceLoad": 3,
+        "naturalLanguageProcessingTime": "2.46060671s"
+    }
+}
+----
+====
+
+[[example-6]]
+.USING AI with output type `ftssql`
+====
+{example-note}
+
+.Request
+[source, console]
+----
+\set -natural_cred username@example.com:P@ssw0rd;
+\set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab;
+USING AI WITH {"keyspaces":["travel-sample.inventory.hotel"], "output":"ftssql"} \
+How many hotels are located in California?;
+----
+
+.Response
+[source,json]
+----
+{
+    "requestID": "c6fcaed5-23fa-4dc5-936c-febc6b5cb222",
+    "generated_statement": "SELECT COUNT(*) 
+                        FROM `travel-sample`.`inventory`.`hotel` AS `h` 
+                        USE INDEX (USING FTS) WHERE `h`.`state` = \"California\"",
+    "signature": {
+        "$1": "number"
+    },
+    "results": [
+    {
+        "$1": 361
+    }
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "2.921005918s",
+        "executionTime": "29.772792ms",
+        "resultCount": 1,
+        "resultSize": 25,
+        "serviceLoad": 3,
+        "naturalLanguageProcessingTime": "2.889671542s"
+    }
+}
+----
+====
+
+[[example-7]]
+.USING AI with output type `jsudf`
+====
+{example-note}
+
+.Request
+[source, console]
+----
+\set -natural_cred username@example.com:P@ssw0rd;
+\set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab;
+USING AI WITH {"keyspaces":["travel-sample.inventory.hotel"], "output":"jsudf"} \
+Create a function to list all hotels in California;
+----
+
+.Response
+[source,json]
+----
+{
+    "requestID": "731a896e-f4b8-4b3b-893a-2fbf38dfedc8",
+    "status": "success",
+    "generated_statement": "CREATE FUNCTION listHotelsInCalifornia() 
+                    LANGUAGE JAVASCRIPT AS 'function listHotelsInCalifornia() { 
+                    /* Define the query to select hotels in California */ 
+                    var q = SELECT `name`, `city`, `state`, `country` 
+                            FROM `travel-sample`.`inventory`.`hotel` 
+                            AS `h` WHERE `h`.`state` = \"CA\"; 
+                    /* Initialize an empty array to store the results */ 
+                    var res = []; 
+                    /* Iterate over the query results and push each hotel into the results array */ 
+                    for (const doc of q) {
+                    var hotel = {}; 
+                    hotel.name = doc.name; 
+                    hotel.city = doc.city;
+                    hotel.state = doc.state; 
+                    hotel.country = doc.country; 
+                    res.push(hotel); 
+                    } 
+                    /* Return the array of hotels in California */ 
+                    return res;
+                    }'",
+    "metrics": {
+        "elapsedTime": "4.10252771s",
+        "executionTime": "0s",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "naturalLanguageProcessingTime": "4.102134168s"
+    }
+}
+----
+====
+
+[[example-8]]
+.Using EXPLAIN with USING AI
+====
+{example-note}
+
+.Request
+[source, console]
+----
+\set -natural_cred rakhi.prathap@couchbase.com:Couchbase123#;
+\set -natural_orgid 7a99d00c-f55b-4b39-bc72-1b4cc68ba894;
+EXPLAIN USING AI WITH {"keyspaces":["travel-sample.inventory.hotel"]} \
+List the names and cities of hotels with a rating greater than 4;
+----
+
+.Response
+[source,json]
+----
+{
+    "requestID": "98ea3e33-7ad9-4606-ae95-26b68463498e",
+    "generated_statement": "explain SELECT `h`.`name`, `h`.`city` 
+                        FROM `travel-sample`.`inventory`.`hotel` AS `h` 
+                        WHERE ANY `review` IN `h`.`reviews` 
+                        SATISFIES `review`.`rating` \u003e 4 END",
+    "signature": "json",
+    "results": [
+    {
+        "plan": {
+            "#operator": "Sequence",
+            "~children": [
+                {
+                    "#operator": "PrimaryScan3",
+                    "as": "h",
+                    "bucket": "travel-sample",
+                    "index": "def_inventory_hotel_primary",
+                    "index_projection": {
+                        "primary_key": true
+                    },
+                    "keyspace": "hotel",
+                    "namespace": "default",
+                    "optimizer_estimates": {
+                        "cardinality": 917,
+                        "cost": 303.73468119182434,
+                        "fr_cost": 12.318140328453461,
+                        "size": 11
+                    },
+                    "scope": "inventory",
+                    "using": "gsi"
+                },
+                {
+                    "#operator": "Fetch",
+                    "as": "h",
+                    "bucket": "travel-sample",
+                    "early_projection": [
+                        "city",
+                        "name",
+                        "reviews"
+                    ],
+                    "keyspace": "hotel",
+                    "namespace": "default",
+                    "optimizer_estimates": {
+                        "cardinality": 917,
+                        "cost": 6989.182886677501,
+                        "fr_cost": 31.59561928754362,
+                        "size": 4377
+                    },
+                    "scope": "inventory"
+                },
+                {
+                    "#operator": "Parallel",
+                    "~child": {
+                        "#operator": "Sequence",
+                        "~children": [
+                            {
+                                "#operator": "Filter",
+                                "condition": "any `review` in (`h`.`reviews`) 
+                                              satisfies (4 \u003c (`review`.`rating`)) end"
+                            },
+                            {
+                                "#operator": "InitialProject",
+                                "discard_original": true,
+                                "preserve_order": true,
+                                "result_terms": [
+                                    {
+                                        "expr": "(`h`.`name`)"
+                                    },
+                                    {
+                                        "expr": "(`h`.`city`)"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "text": "SELECT `h`.`name`, `h`.`city` 
+                FROM `travel-sample`.`inventory`.`hotel` AS `h` 
+                WHERE ANY `review` IN `h`.`reviews` 
+                SATISFIES `review`.`rating` \u003e 4 END"
+    }
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "2.524200293s",
+        "executionTime": "7.078542ms",
+        "resultCount": 1,
+        "resultSize": 2825,
+        "serviceLoad": 3,
+        "naturalLanguageProcessingTime": "2.516578959s"
+    }
+}
+----
+====
+
