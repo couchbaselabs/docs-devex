@@ -81,6 +81,10 @@ An object with one or more of the following properties to guide the INFER statem
 The default sample size is 1000 documents.
 If a keyspace contains fewer documents than the specified [.var]`sample_size`, then all the documents in the keyspace will be used.
 
+[.var]`array_sample_size`:: Specifies the number of array elements to sample when inferring an array attribute.
+If set to a non-negative value, the statement trims the array samples to this value when their length exceeds it.
+The resulting array includes a `sampleSize` field indicating that this option was applied.
+
 [.var]`num_sample_values`:: Specifies the number of sample values for each attributes to be returned.
 The sample values provide examples of the data format.
 The default value is 5.
@@ -89,6 +93,31 @@ The default value is 5.
 The `similarity_metric` is the degree of similarity that two schemas must have to be considered part of the same flavor.
 You can specify a real number between 0 and 1 indicating the percentage match (of attributes) required to establish similarity between two documents.
 The default value is 0.6, which means two documents are considered similar if 60% of the top-level attributes are the same.
+
+[.var]`max_nesting_depth`:: Specifies the maximum depth of nested fields to explore during schema inference.
+If set to a non-negative value, the statement skips fields that are at a nesting depth greater than or equal to this value.
+The resulting field includes a `nestingDepth` property indicating the depth of the field, with `0` indicating a top-level field.
+
+[[infer-flags]]
+[.var]`flags`:: An array of strings representing flags that can control the behavior of the INFER statement. 
+You can specify one or more of the following flags:
++
+[cols="1,2", options="header"]
+|===
+| Flag | Description
+
+| `allow_dups`
+| Allows including duplicate documents in the infer analysis.
+
+When multiple retrieval methods (such as secondary index, primary index, sequential scan, random scan, or random entry provider) are used, this flag prevents deduplication and ensures all retrieved documents are included, even if they share the same key. 
+
+| `include_xattrs`
+| Includes schema information for the extended attributes (xattrs) of each document in the output.
+
+| `include_key`
+| Includes schema information for the document keys in the output. 
+If specified, it adds a `~meta` attribute, which contains the `id` property representing the document keys.
+|===
 
 [.var]`dictionary_threshold`:: Sometimes JSON documents follow the dictionary pattern, where a field has sub-fields that are key-value pairs, instead of general field-name and value pairs.
 For example, consider a sub-document called "ratings", where the name of each rating object is a user ID:
@@ -147,6 +176,19 @@ Details for Documents and Subdocuments::
 [.out]`$schema`;; Specifies the version of the JSON Schema standard.
 [.out]`Flavor`;; Specifies the flavor of a document or sub-document.
 
+Details for Document Keys:: 
+[.out]`~meta`;; Contains the `id` property that holds the document keys.
++
+By default, the INFER statement includes this attribute in the output. 
+However, you can control this behavior using the `flags` option in the WITH clause.
++
+--
+* If you do not use `flags`, INFER automatically includes the `~meta` attribute.
+* If you add any value for `flags`, INFER will not return `~meta` unless you explicitly specify the `include_key` flag.
+For more information about the available flags, see <<infer-flags,flags>>.
+--
+NOTE: The `~meta` attribute is only available in Couchbase Server 8.0 and later.
+
 == Examples
 
 [[ex-1]]
@@ -158,151 +200,340 @@ include::ROOT:partial$query-context.adoc[tag=example]
 [source,sqlpp]
 ----
 INFER route
-WITH {"sample_size": 10000, "num_sample_values": 2, "similarity_metric": 0.1};
+WITH {"sample_size": 1000, "num_sample_values": 2, "similarity_metric": 0.1};
 ----
 
 .Results
 [source,json]
 ----
 [
-  [
-    {
-      "#docs": 10000,
-      "$schema": "http://json-schema.org/draft-06/schema",
-      "Flavor": "`type` = \"route\"",
-      "properties": {
-        "airline": {
-          "#docs": 10000,
-          "%docs": 100,
-          "samples": [
-            "DL",
-            "WS"
-          ],
-          "type": "string"
-        },
-        "airlineid": {
-          "#docs": 10000,
-          "%docs": 100,
-          "samples": [
-            "airline_2009",
-            "airline_5416"
-          ],
-          "type": "string"
-        },
-        "destinationairport": {
-          "#docs": 10000,
-          "%docs": 100,
-          "samples": [
-            "DFW",
-            "JFK"
-          ],
-          "type": "string"
-        },
-        "distance": {
-          "#docs": 10000,
-          "%docs": 100,
-          "samples": [
-            682.2052742100271,
-            2819.371084516147
-          ],
-          "type": "number"
-        },
-        "equipment": {
-          "#docs": [
-            9,
-            9991
-          ],
-          "%docs": [
-            0.09,
-            99.91
-          ],
-          "samples": [
-            [
-              null
-            ],
-            [
-              "738",
-              "ERJ"
-            ]
-          ],
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "id": {
-          "#docs": 10000,
-          "%docs": 100,
-          "samples": [
-            20436,
-            64755
-          ],
-          "type": "number"
-        },
-        "schedule": {
-          "#docs": 10000,
-          "%docs": 100,
-          "items": {
-            "#docs": 210598,
-            "$schema": "http://json-schema.org/draft-06/schema",
-            "properties": {
-              "day": {
-                "type": "number"
-              },
-              "flight": {
+    [{
+        "#docs": 1000,
+        "$schema": "http://json-schema.org/draft-06/schema",
+        "Flavor": "`stops` = 0, `type` = \"route\"",
+        "properties": {
+            "airline": {
+                "#docs": 1000,
+                "%docs": 100,
+                "nestingDepth": 0,
+                "samples": [
+                    "AS",
+                    "DY"
+                ],
                 "type": "string"
-              },
-              "utc": {
-                "type": "string"
-              }
             },
-            "type": "object"
-          },
-          "maxItems": 34,
-          "minItems": 9,
-          "samples": [
-            [
-              {
-                "day": 0,
-                "flight": "DL070",
-                "utc": "07:46:00"
-              },
-              ...
-            ],
-            ...
-          ],
-          "type": "array"
+            "airlineid": {
+                "#docs": 1000,
+                "%docs": 100,
+                "nestingDepth": 0,
+                "samples": [
+                    "airline_3737",
+                    "airline_439"
+                ],
+                "type": "string"
+            },
+            "destinationairport": {
+                "#docs": 1000,
+                "%docs": 100,
+                "nestingDepth": 0,
+                "samples": [
+                    "ANC",
+                    "PDX"
+                ],
+                "type": "string"
+            },
+            "distance": {
+                "#docs": 1000,
+                "%docs": 100,
+                "nestingDepth": 0,
+                "samples": [
+                    527.1102210477263,
+                    787.4315848714039
+                ],
+                "type": "number"
+            },
+            "equipment": {
+                "#docs": [
+                    1,
+                    999
+                ],
+                "%docs": [
+                    0.1,
+                    99.9
+                ],
+                "nestingDepth": 0,
+                "samples": [
+                    [
+                        null
+                    ],
+                    [
+                        "DH4",
+                        "SF3"
+                    ]
+                ],
+                "type": [
+                    "null",
+                    "string"
+                ]
+            },
+            "id": {
+                "#docs": 1000,
+                "%docs": 100,
+                "nestingDepth": 0,
+                "samples": [
+                    11629,
+                    12027
+                ],
+                "type": "number"
+            },
+            "schedule": {
+                "#docs": 1000,
+                "%docs": 100,
+                "items": {
+                    "#docs": 21104,
+                    "$schema": "http://json-schema.org/draft-06/schema",
+                    "properties": {
+                        "day": {
+                            "nestingDepth": 2,
+                            "type": "number"
+                        },
+                        "flight": {
+                            "nestingDepth": 2,
+                            "type": "string"
+                        },
+                        "utc": {
+                            "nestingDepth": 2,
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "maxItems": 31,
+                "minItems": 9,
+                "nestingDepth": 0,
+                "sampleSize": 0,
+                "samples": [
+                    [{
+                            "day": 0,
+                            "flight": "AS801",
+                            "utc": "02:11:00"
+                        },
+                        {
+                            "day": 0,
+                            "flight": "AS337",
+                            "utc": "22:04:00"
+                        },
+                        {
+                            "day": 0,
+                            "flight": "AS194",
+                            "utc": "00:57:00"
+                        },
+                        {
+                            "day": 1,
+                            "flight": "AS415",
+                            "utc": "13:27:00"
+                        },
+                        {
+                            "day": 1,
+                            "flight": "AS036",
+                            "utc": "08:47:00"
+                        },
+                        {
+                            "day": 1,
+                            "flight": "AS787",
+                            "utc": "06:06:00"
+                        },
+                        {
+                            "day": 2,
+                            "flight": "AS054",
+                            "utc": "09:31:00"
+                        },
+                        {
+                            "day": 2,
+                            "flight": "AS629",
+                            "utc": "11:16:00"
+                        },
+                        {
+                            "day": 3,
+                            "flight": "AS662",
+                            "utc": "05:27:00"
+                        },
+                        {
+                            "day": 3,
+                            "flight": "AS025",
+                            "utc": "15:24:00"
+                        },
+                        {
+                            "day": 4,
+                            "flight": "AS671",
+                            "utc": "09:52:00"
+                        },
+                        {
+                            "day": 4,
+                            "flight": "AS391",
+                            "utc": "18:28:00"
+                        },
+                        {
+                            "day": 5,
+                            "flight": "AS624",
+                            "utc": "21:10:00"
+                        },
+                        {
+                            "day": 5,
+                            "flight": "AS162",
+                            "utc": "14:11:00"
+                        },
+                        {
+                            "day": 6,
+                            "flight": "AS547",
+                            "utc": "16:24:00"
+                        },
+                        {
+                            "day": 6,
+                            "flight": "AS154",
+                            "utc": "05:07:00"
+                        }
+                    ],
+                    [{
+                            "day": 0,
+                            "flight": "AS844",
+                            "utc": "23:22:00"
+                        },
+                        {
+                            "day": 0,
+                            "flight": "AS611",
+                            "utc": "22:13:00"
+                        },
+                        {
+                            "day": 0,
+                            "flight": "AS181",
+                            "utc": "16:33:00"
+                        },
+                        {
+                            "day": 1,
+                            "flight": "AS944",
+                            "utc": "16:11:00"
+                        },
+                        {
+                            "day": 2,
+                            "flight": "AS855",
+                            "utc": "01:18:00"
+                        },
+                        {
+                            "day": 3,
+                            "flight": "AS763",
+                            "utc": "22:32:00"
+                        },
+                        {
+                            "day": 3,
+                            "flight": "AS463",
+                            "utc": "21:54:00"
+                        },
+                        {
+                            "day": 3,
+                            "flight": "AS010",
+                            "utc": "09:15:00"
+                        },
+                        {
+                            "day": 3,
+                            "flight": "AS186",
+                            "utc": "06:48:00"
+                        },
+                        {
+                            "day": 4,
+                            "flight": "AS652",
+                            "utc": "18:43:00"
+                        },
+                        {
+                            "day": 5,
+                            "flight": "AS204",
+                            "utc": "15:30:00"
+                        },
+                        {
+                            "day": 5,
+                            "flight": "AS450",
+                            "utc": "09:03:00"
+                        },
+                        {
+                            "day": 6,
+                            "flight": "AS135",
+                            "utc": "04:46:00"
+                        },
+                        {
+                            "day": 6,
+                            "flight": "AS673",
+                            "utc": "23:17:00"
+                        },
+                        {
+                            "day": 6,
+                            "flight": "AS436",
+                            "utc": "02:48:00"
+                        },
+                        {
+                            "day": 6,
+                            "flight": "AS174",
+                            "utc": "03:47:00"
+                        }
+                    ]
+                ],
+                "type": "array"
+            },
+            "sourceairport": {
+                "#docs": 1000,
+                "%docs": 100,
+                "nestingDepth": 0,
+                "samples": [
+                    "DLG",
+                    "STS"
+                ],
+                "type": "string"
+            },
+            "stops": {
+                "#docs": 1000,
+                "%docs": 100,
+                "nestingDepth": 0,
+                "samples": [
+                    0
+                ],
+                "type": "number"
+            },
+            "type": {
+                "#docs": 1000,
+                "%docs": 100,
+                "nestingDepth": 0,
+                "samples": [
+                    "route"
+                ],
+                "type": "string"
+            },
+            "~meta": {
+                "#docs": 1000,
+                "%docs": 100,
+                "nestingDepth": 0,
+                "properties": {
+                    "id": {
+                        "#docs": 1000,
+                        "%docs": 100,
+                        "nestingDepth": 1,
+                        "samples": [
+                            "route_11629",
+                            "route_12027"
+                        ],
+                        "type": "string"
+                    }
+                },
+                "samples": [{
+                        "id": "route_11629"
+                    },
+                    {
+                        "id": "route_12027"
+                    }
+                ],
+                "type": "object"
+            }
         },
-        "sourceairport": {
-          "#docs": 10000,
-          "%docs": 100,
-          "samples": [
-            "CLE",
-            "YVR"
-          ],
-          "type": "string"
-        },
-        "stops": {
-          "#docs": 10000,
-          "%docs": 100,
-          "samples": [
-            0,
-            1
-          ],
-          "type": "number"
-        },
-        "type": {
-          "#docs": 10000,
-          "%docs": 100,
-          "samples": [
-            "route"
-          ],
-          "type": "string"
-        }
-      },
-      "type": "object"
-    }
-  ]
+        "type": "object"
+    }]
 ]
 ----
 ====
@@ -316,153 +547,159 @@ include::ROOT:partial$query-context.adoc[tag=unset]
 [source,sqlpp]
 ----
 INFER `beer-sample`
-WITH {"sample_size": 10000, "num_sample_values": 5, "similarity_metric": 0.0};
+WITH {"sample_size": 1500, "num_sample_values": 5, "similarity_metric": 0.0};
 ----
 
 .Results
 [source,json]
 ----
 [
-    [
-        {
-            "#docs": 823,
-            "$schema": "http://json-schema.org/draft-06/schema",
-            "Flavor": "type = \"beer\"",
-            "properties": {
-                "abv": {
-                    "#docs": 823,
-                    "%docs": 100,
-                    "samples": [
-                        0,
-                        9,
-                        9.5,
-                        8,
-                        7.7
-                    ],
-                    "type": "number"
-                },
-                "brewery_id": {
-                    "#docs": 823,
-                    "%docs": 100,
-                    "samples": [
-                        "san_diego_brewing",
-                        "drake_s_brewing",
-                        "brouwerij_de_achelse_kluis",
-                        "niagara_falls_brewing",
-                        "brasserie_des_cimes"
-                    ],
-                    "type": "string"
-                  },
-                  "category": {
-                      "#docs": 612,
-                      "%docs": 74.36,
-                      "samples": [
-                          "North American Ale",
-                          "British Ale",
-                          "German Lager",
-                          "Belgian and French Ale",
-                          "Irish Ale"
-                      ],
-                      "type": "string"
-                  },
-                  "description": {
-                      "#docs": 823,
-                      "%docs": 100,
-                      "samples": [
-                          "Robust, Dark and Smooth, ho...",
-                          "\"Pride of Milford\" is a very s...",
-                          "Mogul is a complex blend of 5 ...",
-                          "Just like our Porter but multi...",
-                          ""
-                      ],
-                      "type": "string"
-                  },
-                  "ibu": {
-                      "#docs": 823,
-                      "%docs": 100,
-                      "samples": [
-                          0,
-                          55,
-                          35,
-                          20
-                      ],
-                      "type": "number"
-                  },
-                  "name": {
-                      "#docs": 823,
-                      "%docs": 100,
-                      "samples": [
-                          "Old 395 Barleywine",
-                          "Jolly Roger",
-                          "Trappist Extra",
-                          "Maple Wheat",
-                          "Yeti"
-                      ],
-                      "type": "string"
-                  },
-                  "srm": {
-                      "#docs": 823,
-                      "%docs": 100,
-                      "samples": [
-                          0,
-                          6,
-                          45,
-                          30
-                      ],
-                      "type": "number"
-                  },
-                  "style": {
-                      "#docs": 612,
-                      "%docs": 74.36,
-                      "samples": [
-                          "American-Style Pale Ale",
-                          "Classic English-Style Pale Ale",
-                          "American-Style India Pale Ale",
-                          "German-Style Pilsener",
-                          "Other Belgian-Style Ales"
-                      ],
-                      "type": "string"
-                  },
-                  "type": {
-                      "#docs": 823,
-                      "%docs": 100,
-                      "samples": [
-                          "beer"
-                      ],
-                      "type": "string"
-                  },
-                  "upc": {
-                      "#docs": 823,
-                      "%docs": 100,
-                      "samples": [
-                          0,
-                          2147483647
-                      ],
-                      "type": "number"
-                  },
-                  "updated": {
-                      "#docs": 823,
-                      "%docs": 100,
-                      "samples": [
-                          "2010-07-22 20:00:20",
-                          "2010-12-13 19:33:36",
-                          "2011-05-17 03:27:08",
-                          "2011-04-17 12:25:31",
-                          "2011-04-17 12:33:50"
-                      ],
-                      "type": "string"
-                  }
-              }
+  [
+    {
+      "#docs": 1500,
+      "$schema": "http://json-schema.org/draft-06/schema",
+      "Flavor": "",
+      "properties": {
+        "abv": {
+          "#docs": 1209,
+          "%docs": 80.6,
+          "samples": [0, 4, ...],
+          "type": "number"
+        },
+        "address": {
+          "#docs": 291,
+          "%docs": 19.4,
+          "samples": [["1201 First Avenue South"], ...],
+          "type": "array"
+        },
+        "brewery_id": {
+          "#docs": 1209,
+          "%docs": 80.6,
+          "samples": ["boston_beer_company", ...],
+          "type": "string"
+        },
+        "category": {
+          "#docs": 914,
+          "%docs": 60.93,
+          "samples": ["British Ale", ...],
+          "type": "string"
+        },
+        "geo": {
+          "#docs": 261,
+          "%docs": 17.4,
+          "properties": {
+            "accuracy": {
+              "#docs": 261,
+              "%docs": 100,
+              "samples": ["APPROXIMATE", ...],
+              "type": "string"
+            },
+            "lat": {
+              "#docs": 261,
+              "%docs": 100,
+              "samples": [8.4841, ...],
+              "type": "number"
+            },
+            "lon": {
+              "#docs": 261,
+              "%docs": 100,
+              "samples": [-122.445, ...],
+              "type": "number"
+            }
           },
-          {
-              "#docs": 177,
-              "$schema": "http://json-schema.org/draft-06/schema",
-              "Flavor": "type = \"brewery\"",
-              "properties": {
-                  ...
-              }
-          }
-      ]
+          "type": "object"
+        },
+        "name": {
+          "#docs": 1500,
+          "%docs": 100,
+          "samples": ["Eldridge, Pope and Co.", ...],
+          "type": "string"
+        },
+        "style": {
+          "#docs": 914,
+          "%docs": 60.93,
+          "samples": ["American-Style Amber/Red Ale", ...],
+          "type": "string"
+        },
+        "type": {
+          "#docs": 1500,
+          "%docs": 100,
+          "samples": ["beer", "brewery"],
+          "type": "string"
+        },
+        "~meta": {
+          "#docs": 1500,
+          "%docs": 100,
+          "properties": {
+            "id": {
+              "samples": ["eldridge_pope_and_co", ...],
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        ...
+      },
+      "type": "object"
+    }
+  ]
+]
+----
+====
+
+[[ex-3]]
+.Infer metadata for a keyspace using flags
+====
+include::ROOT:partial$query-context.adoc[tag=unset]
+[source,sqlpp]
+----
+INFER `beer-sample`
+WITH {"sample_size": 1500, "num_sample_values": 10, "similarity_metric": 0.0, 
+      "flags": ["allow_dups", "include_xattrs"]};
+----
+.Results
+[source,json]
+----
+[
+  [
+    {
+      "#docs": 1500,
+      "$schema": "http://json-schema.org/draft-06/schema",
+      "properties": {
+        "abv": {
+          "#docs": 1199,
+          "%docs": 79.93,
+          "samples": [0, 3.5, 5, 5.3, 5.5, ...],
+          "type": "number"
+        },
+        "brewery_id": {
+          "#docs": 1199,
+          "%docs": 79.93,
+          "samples": ["anchor_brewing", "brasserie_duyck", ...],
+          "type": "string"
+        },
+        "name": {
+          "#docs": 1500,
+          "%docs": 100,
+          "samples": ["All Saints Belgian Golden Ale", "Cornhusker Lager", ...],
+          "type": "string"
+        },
+        "type": {
+          "#docs": 1500,
+          "%docs": 100,
+          "samples": ["beer", "brewery"],
+          "type": "string"
+        },
+        "xattrs": {
+          "#docs": 1500,
+          "%docs": 100,
+          "samples": [null, null, ...],
+          "type": "missing"
+        }
+      },
+      "type": "object"
+    }
+  ]
 ]
 ----
 ====
