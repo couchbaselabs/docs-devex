@@ -33,10 +33,10 @@ Hyperscale Vector Indexes have the following requirements:
 * You must have the Index Service enabled on at least one node in your cluster. 
 For more information about how to deploy a new node and Services on your database, see xref:manage:manage-nodes/node-management-overview.adoc[].
 
-* You must have a bucket with scopes and collections in your database. 
-For more information about how to create a bucket, see xref:manage:manage-buckets/create-bucket.adoc[].
-
 * Your account must have the xref:learn:security:roles.adoc#query-manage-index[Query Manage Index] or an administrator role to be able to create an index.
+
+* You must have a bucket your database. 
+For more information about how to create a bucket, see xref:manage:manage-buckets/create-bucket.adoc[].
 
 * You have documents in a collection that contain one or more vector embeddings.
 You can add a single vector to a Hyperscale Vector Index.
@@ -61,7 +61,7 @@ For example,  OpenAI API's `text-embedding-ada-002` embedding model creates vect
 
 * You must decide what distance metric and quantization you want your index to use. 
 The metrics affect how the index compares vectors. 
-The quantization  determines how much memory your index uses and the amount of processing Couchbase {product-name} must perform to train and search them.
+The quantization determines how much memory your index uses and the amount of processing Couchbase {product-name} must perform to train and search them.
 See xref:vector-index:vectors-and-indexes-overview.adoc#vector_similarity[Vector Similarity Metrics] and xref:vector-index:vectors-and-indexes-overview.adoc#quantization[Quantization] for more information.
 
 [#create-index]
@@ -79,29 +79,30 @@ This statement is similar to the `CREATE INDEX` statement that you use to create
 See xref:guides:create-index.adoc[] for an overview of creating indexes.
 You must also supply a `WITH` clause to set some additional information about the vector column that the Hypsercale index needs. 
 
-
-The following syntax for the `CREATE VECTOR INDEX` shows the minimum required parameters. 
-For the full syntax, see CREATE VECTOR INDEX in the SQL++ for Query Reference.
-
-// FIXME: Link goes here
+The following syntax shows the minimum required parameters to create a Hyperscale Vector index:
 
 [source,sqlpp]
 ----
 CREATE VECTOR INDEX `<index-name>`
-       ON `<collection>`(`<column-name>` VECTOR)
+       ON `<collection>`(`<key-name>` VECTOR)
        WITH {  "dimension":<dimensions> , 
-               "similarity":<similarity-metric>, 
+               "similarity":<distance-metric>, 
                "description":<centroids-and-quantization>
         }; 
 ----
+
+NOTE: This syntax for the `CREATE VECTOR INDEX` shows the minimum required parameters to get you started. 
+For the full syntax, see xref:n1ql:n1ql-language-reference/createvectorindex.adoc[`CREATE VECTOR INDEX`] in the SQL++ for Query Reference.
+
+The parameters in this statement are:
 
 * `index-name` is a string that sets the name of the index.
 * `collection` is the path of the collection to index.
 * `key-name` is the name of the key containing the vector that you want to index.
 The key value must be an array of floating point numbers or a base64 encoded string. 
-* `dimensions` is an integer value that sets the number of dimensions in the vector.
+* `dimensions` The number of dimensions in the vector as an integer.
 The embedded model you use to embed the vectors determines the number of dimensions in the vector.
-* `similarity-metric` is a string that sets the distance metric to use when comparing vectors during index creation.
+* `distance-metric` is a string that sets the distance metric to use when comparing vectors during index creation.
 +
 include::partial$distance-metric-list.adoc[]
 
@@ -111,7 +112,6 @@ For the greatest accuracy, use the distance metric you plan to use to query the 
 See <<#algo_settings>> in the next section for more information.
 
 include::partial$index-algorithm-settings.adoc[]
-
 
 
 [#examples]
@@ -237,17 +237,16 @@ include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=query-rgb-with-s
 In this example, the `APPROX_VECTOR_DISTANCE` function compares the vector in the `couchbase_search_query.knn.vector` attribute to the vectors in the index.
 The parameters the example passes to this function are:
 
-* The  `embedding-vector-dot` is the name of the indexed vector key in the collection.
-* The `couchbase_search_query.knn[0].vector`` is the vector search value to compare to the vectors in the index.
+* The `embedding-vector-dot` is the name of the indexed vector key in the collection.
+* The `couchbase_search_query.knn[0].vector` is the vector search value to compare to the vectors in the index.
 This value is the result of the subquery that gets the vector from the `rgb-questions` collection.
 * `l2` is the distance metric to use.
 * `4` is the number of centroids to probe for matching vectors. 
 This value defaults to `1`.
-This example sets this value to `4`` because the dataset is small.
+This example sets this value to `4` because the dataset is small.
 In a small dataset, it's more likely that relevant vectors are not associated with the same centroid. 
 This parameter broadens the search beyond a single centroid to find more relevant vectors.
-If you re-run the query with the default value of `1``, you'll see that the results are less relevant.
-
+If you re-run the query with the default value of `1`, you'll see that the results are less relevant.
 
 The result of running the query is:
 

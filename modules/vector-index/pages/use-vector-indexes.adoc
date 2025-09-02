@@ -79,58 +79,69 @@ When choosing which type of index to use, you must consider:
 
 The following table summarizes the differences between the three types of vector indexes:
 
+
 [%autowidth]
 |===
-| Index Type | Available in Version | Dataset Size | Uses | Strength | Limitations
+| | Hyperscale Vector Index | Composite Vector Index | FTS Vector Index
 
-| *Hyperscale Vector Index* 
-| 8.0
-| Billions of documents
-a| 
-* Pure vector searches
+| *First Available in Version* 
+| 8.0 
+| 8.0 
+| 7.6
+
+| *Dataset Size* 
+| Tens of millions to billions of documents 
+| Tens of millions to billion 
+| Tens of millions
+
+| *Uses* 
+a| * Pure vector searches
 * Content discovery or recommendations
 a| 
-* High performance for pure vector searches
+* Searches combining vector and scalar values where scalar values are less selective (20% or less)
+* Searches where scalars should exclude vectors, such as compliance uses
+a| 
+* Hybrid searches combining vector and keywords or geospatial
+
+| *Strengths*
+a| * High performance for pure vector searches
+* Higher accuracy at lower quantizations (fewer bits per vector) 
 * Low memory footprint
 * Lowest TCO for huge datasets
 * Best option for concurrent updates and searches
-* Scalars in query do not override the vector values 
-a| 
-* Indexing can take longer relative to other index types
-* Not as efficient as Composite Vector indexes when using scalar values to filter large portions of dataset
-
-| *Composite Vector Index*
-| 8.0
-| Tens of millions to billion
-| Searches combining vector and scalar values
+* Scalars and vector values compared at the same time
 a| 
 * Scalar values pre-filter data to reduce the scope of vector searches
+* Efficient when scalar values have low selectivity (exclude less than 20% of dataset)
 * Can restrict searches based on scalars for use cases such as compliance
-* Based on familiar Global Secondary indexes (GSI)
-* Good option for extreme filtering of dataset before performing a vector search
+* Based on familiar Global Secondary Indexes (GSI)
 a| 
-* Accuracy suffers in huge datasets compared to Hyperscale Vector index
-* Scalar values always override vector values in queries, potentially missing relevant results
-
-| *FTS Vector Index*
-| 7.6
-| Tens of millions
-| Hybrid searches combining vector and keywords or geospatial
-a| 
-* Combines semantic and Full-Text search and geospatial search in a single pass
+* Combines semantic and Full-Text Search and geospatial search in a single pass
 * Uses familiar Search indexes
+
+| *Limitations*
+a| * Indexing can take longer relative to other index types
+a| 
+* Lower accuracy than Hyperscalar when when using lower quantizations (fewer bits per vector) 
+* Scalar values filter data before vector search, potentially missing relevant results (see <<scalar-handling,note>>)
 a| 
 * Not as efficient as Composite Vector indexes if the search includes purely numeric or scalar values
 * Does not scale to the extent of the other index types
 Limited to approximately 100 million documents
+
 |===
 
+[#scalar-handling]
+NOTE: A key difference between Hyperscale and Composite Vector indexes is how they handle scalar values in queries.
+Hyperscale Vector indexes compare vectors and scalar values at the same time.
+Composite Vector indexes always apply scalar filters first, and only perform vector searches on the results. 
+This behavior means Composite Index searches can exclude relevant vectors from the search result.
+However, it's useful for cases where you must exclude some vectors (even the nearest neighbors) based on scalar values. For example, it's useful when meeting compliance requirements.
 
 When choosing which type of index to use, consider the following:
 
 * In most cases, test using a Hyperscale Vector index.
 If you find that the performance is not what you need, you can try using one of the other index types.
-* If your index searches include scalar values that filter out large portions of the dataset, consider using a Composite Vector index.
 * If your dataset will not grow beyond 100 million documents and you need to perform hybrid searches that combine vector searches with Full-Text Search or geospatial searches, use an FTS Vector index.
 
 == Applications for Vector Indexes
@@ -155,7 +166,7 @@ Chatbot context for workflows like retreival-augmented generation (RAG) requires
 The large dataset gives the chatbot a depth of knowledge that's not necessary in simpler applications.
 
 Anomaly detection::
-Anomaly detection applications such as those used in Internet of Things (IoT) sensor networks, require huge datasets to find deviations from expected patterns.
+Anomaly detection applications, such as those used in Internet of Things (IoT) sensor networks, require huge datasets to find deviations from expected patterns.
 Hyperscale Vector indexes can handle the large datasets and perform these vector searches fast.
 
 === Hyperscale Vector Index Application Workflow
@@ -240,12 +251,12 @@ Travel recommendations::
 Users often want to search for hotels using multiple criteria:
 
 +
-* Limiting searches to a specific area (for example, "walking distance to the Louvre") which relies on geospacial data. 
+* Limiting searches to a specific area (for example, "walking distance to the Louvre") which relies on geospatial data. 
 * Specific keywords for features they want, such as "quiet", "romantic", or "gym", which requires Full-Text Search.
-* Semantic searches of descriptions and reviews for searches that do not rely on literal text matches, such as "modern beach resort with chic décor", which requires vector searches.
+* Semantic searches of descriptions and reviews for searches that do not rely on literal text matches, such as "modern beach resort with chic décor," which requires vector searches.
 
 +
-An FTS vector index can combine geospacial, keyword, and semantic searches into a single index.
+An FTS vector index can combine geospatial, keyword, and semantic searches into a single index.
 
 Real estate searches::
 Real estate applications can use FTS Vector indexes to find properties within a search region and have floor plan similar to an uploaded image.
@@ -266,8 +277,8 @@ The steps shown in the diagram are:
 . It sends the data and the vector to Couchbase {product-name} for storage.
 . The Data Service sends the embedded vector along with scalar fields to the Search Service for inclusion in the FTS Vector index.
 . When your application needs to perform a search that includes a vector, it uses the same embedding model to generate a vector for the search value.
-. It sends the search vector and text, geospacial, and other search values as part of a search request to the Couchbase {product-name} Search Service.
-. The Search Service performs an index scan in the FTS Vector index to find documents that match the text or geospacial portions of the query. 
+. It sends the search vector and text, geospatial, and other search values as part of a search request to the Couchbase {product-name} Search Service.
+. The Search Service performs an index scan in the FTS Vector index to find documents that match the text or geospatial portions of the query. 
 Then it performs a vector similarity search on the results using the search vector.
 . The Search Service returns results to your application.
 

@@ -8,7 +8,7 @@
 
 [abstract]
 {description}
-Couchbase has performed testing to determine how index creation and query options affect the performance of Hyperscale and Composite Vector indexes.
+Couchbase has tested vector indexes to determine how index creation and query settings affect the performance of Hyperscale and Composite Vector indexes.
 The following sections describe the results of the testing and recommendations based on these results. 
 
 NOTE: Most of the tests were performed using the Hyperscale Vector index.
@@ -25,29 +25,45 @@ Each has the potential to affect the performance of creating the index and the s
 The `nList` setting controls the number of clusters (centroids) in the index. 
 You set the `nList` by supplying a value after the `IVF` in the `description` parameter when you create your index.
 This value affects the accuracy of the index and the speed of queries that use it.
-The default value for this value depends on the size of your dataset.
-For datasets with less than 1 million vectors, the default value is the number of vectors divided by 1000.
-For datasets with more than 1 million vectors, the default value is the square root of the number of vectors.
+The `nList` setting defaults to the number of vectors in the dataset divided by 1000.
 
 
-Tests show that increasing `nList` beyond the default does not affect the build time of the index. 
+
+For Composite Vector indexes, tests show that increasing `nList` beyond the default does not affect the build time of the index. 
 However, it does improve the queries per second (QPS) that the index can handle.
 It also lowers the latency of queries that use the index.
 
+Hyperscale Vector indexes tend to perform better with larger centroids (smaller `nList` values).
+This performance gain has to be balanced against tyhe possibility of increased disk I/O due to centroids having more vectors associated with them.
 
-*Recommendation:* if you find that your query throughput and latency is not meeting your needs, you can try rebuilding the index with a larger `nList` value.
+*Recommendation:* The best practice for the `nList` depend on your vector index type:
+
+* If you find that your Composite Vector index query throughput and latency is not meeting your needs, you can try rebuilding the index with a larger `nList` value. 
+
+* For Hyperscale Vector indexes, decrease the `nList` value if your working dataset fits into the bucket's memory quota.
+You can also try decreasing the `nList` value if you have fast storage such as NVME connected to a high-speed PCIe interface.
 
 === TrainList
 
 The `TrainList` setting controls the number of vectors that Couchbase {product-name} considers when searching for centroids in the dataset.
 You set it using the `trainlist` key in the `WITH` clause when you create your index.
-The default value is approximately 50 times the number of centroids in the index.
+The default value depends on the size of the dataset:
 
+* If there are less than 10,000 vectors, Couchbase Server samples all of the vectors.
+* If there are 10,000 or more vectors, Couchbase {product-name} samples the number of vectors divided by 10 or 10 times the number of centroids, whichever is larger.
+Couchbase {product-name} limits the trainlist to a maximum of 1 million vectors.
 
 Tests show that increasing the `trainlist` improves QPS and reduces latency, but slightly increases memory usage for the index.
-
  
-*Recommendation:* if you find that increasing the `nList` does not improve your query performance, you can try increasing the `trainlist` value.
+*Recommendation:* if you find that increasing the `nList` does not improve your query performance, you can try increasing the `train_list` value.
+
+The following example demonstrates how to set the `train_list` value when creating a Hyperscale Vector index:
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=train-list]
+----
+
 
 === Partitions
 
@@ -81,7 +97,7 @@ Couchbase {product-name} supports two quantization methods: xref:vector-index:ve
 You set the quantization method using the `description` parameter in the `WITH` clause when you create your index.
 
 
-Couchbase tested different quantization settings using datasets that differed in size and number of dimensions.  
+Couchbase tested different quantization settings using datasets that differed in size and number of dimensions.
 The results of these tests appear in the following table:
 
 
@@ -140,7 +156,6 @@ The following list describes the parameters you can set in the function:
 You optionally set this value as the fourth parameter in the `APPROX_VECTOR_DISTANCE` function call in your query.
 The default value for this value is 1, which only searches for similar vectors in the centroid that's closest to the search vector.
 
-
 Tests show that increasing `nProbes` beyond the default improves the accuracy of results non-linearly (larger values show diminishing improvements). 
 However, it caused a linear decrease in QPS and increase in latency.
 
@@ -175,7 +190,6 @@ Based on the results of this comparison, you can decide whether you need to adju
 IMPORTANT: The `VECDOR_DISTANCE` function is very expensive to run because it compares all vectors in the dataset. 
 You should only use it on a testing system with a smaller dataset.
 
-
 For example, suppose you run the following query against a Hyperscale Vector index:
 
 [source,sqlpp]
@@ -208,7 +222,7 @@ include::vector-index:example$hyperscale-idx-data.json[tag=exact-query-results]
 
 You can see the results of the two queries share only a few common results. 
 You can perform a more complex query that determines the common results between the two queries and calculates the recall rate. 
-The following example executes both of the previous queries as subqueries, then finsd the intersection of the results.
+The following example executes both of the previous queries as subqueries, then finds the intersection of the results.
 It calculates the recall rate based on the 10 results the queries return (called the recall@10 due to the sample size):
 
 [source,sqlpp]
@@ -244,12 +258,12 @@ include::vector-index:example$hyperscale-idx-data.json[tag=tuned-query-results]
 
 The results look more similar to the results of the exact query.
 To verify, you can re-run the recall rate query using the new `nProbes` value.
-The following example shows the recall rate query with the `APPROX_VECTOR_DISTANCE` function call wupdated with the new `nProbes` value:
+The following example shows the recall rate query with the `APPROX_VECTOR_DISTANCE` function call updated with the new `nProbes` value:
 
 [source,sqlpp]
 ----
 include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=recall-rate-tuned]
-----    
+----
 
 The result of this update are:
 

@@ -13,11 +13,10 @@
 A Hyperscale Vector index has a single column that indexes the vector. 
 However, you can include scalar values in the index that you can use to filter the vector search.
 The index stores these included values along with the vector, but they're not indexed.
-Because they're not indexed, using scalars to filter out large portions of the dataset in a query of a Hyperscale Vector index may be less efficient than Composite Vector index.
 
 In your queries that use a Hypserscale Vector index, you add the included scalar values as predicates in the `WHERE` clause.
-During the index scan, Couchbase {propduct-name} uses the included scalar values to filter out vectors that do not meet the filter restriction.
-If the filter matches the vector entry, Couchbase {product-name} performs the more expensive vector comparison operation to see if the vector matches the search vector.
+During the index scan, Couchbase {product-name} uses the included scalar values to filter out vectors that do not meet the filter restriction.
+If the filter matches the entry, Couchbase {product-name} performs the more expensive vector comparison operation to determine the distance between the vector value and the search vector.
 
 == Creating a Hyperscale Vector Index with Included Scalar Values
 
@@ -34,10 +33,10 @@ include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-idx-brigh
 
 This example is the same as the example from xref:vector-index:hyperscale-vector-index.adoc#examples[Create Hyperscale Vector Index Example], except that it adds the `INCLUDE` clause to add the `brightness` key.
 
-=== Querying a Hyperscale Vector Index with Included Scalar Values
+== Querying a Hyperscale Vector Index with Included Scalar Values
 
 When you query a Hyperscale Vector index, you can use the included scalar values as predicates in the `WHERE` clause of your query.
-When your query adds predicate, Couchbase {product-name} uses it to filter the results before performing the vector index scan.
+Couchbase {product-name} uses the predicates to filter the results before performing the vector comparison.
 
 The following example performs the same query as the example from xref:vector-index:hyperscale-vector-index.adoc#example[Query with a Hyperscale Vector Index], but adds the `brightness` key as a predicate in the `WHERE` clause:
 
@@ -55,4 +54,4 @@ include::vector-index:example$hyperscale-idx-data.json[tag=query-rgb-brightness]
 
 Querying with the `brightness` attribute changes makes `sky blue` the top result compared to the results from the example in  xref:vector-index:hyperscale-vector-index.adoc#query-example[Query with a Hyperscale Vector Index].
 The restriction can also make the query faster.
-On a system running a three-node cluster in Docker containers, the query ran in (43{nbsp}ms verses 219{nbsp}ms for the query without the filter. 
+On a laptop running a three-node cluster in Docker containers, the query ran in (43{nbsp}ms verses 219{nbsp}ms for the query without the filter. 

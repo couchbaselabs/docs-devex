@@ -1,13 +1,13 @@
-= Vectors and Vector Indexes Overview
+= Vectors and Vector Indexes
 :page-topic-type: concept
 :page-ui-name: {ui-name}
 :stem: latexmath
 :page-product-name: {product-name}
-:description: This page is a high-level overview of vectors and adding vector values to indexes.
+:description: This page is a high-level overview of vectors and how they work in indexes.
 :page-toclevels: 3
 
+[abstract]  
 {description}
-
 Couchbase {product-name} supports several types of vector indexes.
 These indexes let you add similarity searches to your applications without relying on external services.
 This page provides an overview of vectors.
@@ -45,7 +45,7 @@ They may:
 image::vector-space-example.svg["Three-dimensional plot showing two vectors that are close by and parallel and a third vector that's away and points in another direction"]
 
 Because the first two articles are about cats, their vectors point in a similar direction and are in a similar location in space. 
-The third article, despite using the word "cat" as frequently as the two other articles, has a vector that  has significant differences from the other two.
+The third article, despite using the word "cat" as frequently as the two other articles, has a vector that has significant differences from the other two.
 
 NOTE: Some diagrams in this document (and in other discussions available on the web) show vectors in three dimensions. 
 These diagrams are a simplification. 
@@ -119,9 +119,9 @@ Each metric works best for certain applications and types of data.
 Couchbase {product-name} supports four metrics:
 
 [#euclidean]
-=== Euclidean Distance (also known as L2)
+=== Euclidean Distance 
 
-Euclidean distance calculates the geometric distance between two vectors by finding the distance between the individual dimensions in the vectors.
+Euclidean Distance (also known as L2) calculates the geometric distance between two vectors by finding the distance between the individual dimensions in the vectors.
 This method is most sensitive to the distance between the vectors in space, rather than their alignment. 
 It's also sensitive to the scale of the vectors, where the length of one vector verses the other affects the relationship between the vectors.
 Use this method when the actual distance of the vectors and their magnitudes are important.
@@ -139,9 +139,10 @@ NOTE: Only Hyperscale Vector and Composite Vector indexes support this metric.
 FTS Vector indexes do not support it.
 
 [#euclidean-squared]
-=== Euclidean Squared Distance (also known as L2 Squared or L2^2^)
+=== Euclidean Squared Distance 
 
-This method is similar to Euclidean Distance, but it does not take the square root of the sum distances between the vectors:
+
+Euclidean Squared Distance (also known as L2 Squared or L2^2^) is similar to Euclidean Distance, but it does not take the square root of the sum distances between the vectors:
 
 
 Euclidean Distance Formula::
@@ -154,7 +155,7 @@ latexmath:[L2^2(x, y) = \sum_{i=1}^n (x_i - y_i)^2]
 
 Because it does not take the square root of the sums, Euclidean Squared Distance is faster to calculate than Euclidean Distance.
 However, it does not represent the actual distance between the vectors. 
-The results of a vector search using  L2 Squared as a metric always returns the same rankings that an L2 search returns. 
+The results of a vector search using L2 Squared as a metric always returns the same rankings that an L2 search returns. 
 In cases where the dimensions of the vectors represent real-world values, L2 is more intuitive to use because it returns the actual distance between the vectors.
 
 Use this method when you need higher performance than Euclidean Distance. 
@@ -190,7 +191,7 @@ For example:
 * Targeting ads based on a user's interests and previous interactions with the service.
 
 [#cosine]
-=== Cosine Similarity::
+=== Cosine Similarity
 
 This metric is similar to the dot product. 
 However, it normalizes the vectors (making them the same length) during comparison.
@@ -407,4 +408,4 @@ After Couchbase {product-name} builds and trains the new index, you can drop the
 
 You should consider the need to retrain your indexes when choosing which quantization to use. 
 For example, the PQ quantization requires more resources to train than SQ. 
-If your dataset evolves rapidly, you may choose to not use PQ because you'll need to perform more frequent retraining.  
+If your dataset evolves rapidly, you may choose to not use PQ because you'll need to perform more frequent retraining.
