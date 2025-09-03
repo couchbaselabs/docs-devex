@@ -2,7 +2,7 @@
 :page-status: Couchbase Server 8.0
 :page-topic-type: reference
 :description: The USING AI statement allows you to generate SQL++ queries from natural language prompts.
-:example-note: Copy the following sequence and paste it into the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell]. Note that you must be using cbq shell version 8.0 or later.
+:example-note: Copy the following sequence and paste it into a xref:n1ql:n1ql-intro/cbq.adoc[cbq shell] with version 8.0 or later.
 
 [abstract]
 {description}
@@ -40,21 +40,23 @@ include::partial$grammar/utility.ebnf[tag=using-ai]
 
 image::n1ql-language-reference/using-ai.png["Syntax diagram: refer to source code listing", align=left]
 
-natural-language-request:: [Required] A natural language prompt that you want to convert into a SQL++ query.
+prompt:: 
+[Required] A natural language request that you want to convert into a SQL++ query.
 
 options::
-
 [Optional] A JSON object specifying additional <<optional-parameters,options>> to guide the statement execution.
-By default, the statement uses the `natural_orgid`, `natural_cred`, and `natural_context` request parameters to determine the organization ID, credentials, and keyspaces for the request.
-However, you can override these defaults by using the <<optional-parameters,options>> object.
++
+By default, the statement uses the `natural_orgid`, `natural_cred`, and `natural_context` parameters.
+These parameters determine the organization ID, credentials, and keyspaces for the request.
+You can override them by using the <<optional-parameters,options>> object.
  
 //TODO: Add links to `natural_orgid`, `natural_cred` and `natural_context` when available in the 8.0 documentation.
 
 === FLEXINDEX / FTS
 
-[Optional] Use the `FLEXINDEX` or `FTS` keyword to generate a query that uses an FTS or flex index.
+Use the optional `FLEXINDEX` or `FTS` keyword to generate a query that uses an FTS or flex index.
 This hint appends a `USE INDEX (USING FTS)` clause to all `FROM` keyspaces in the generated query. 
-//See <<Examples,Example: Natural language prompt with a custom output type>> for its usage.
+Refer to <<example-5>>.
 
 [[optional-parameters]]
 === Options
@@ -125,10 +127,11 @@ Possible values are:
 * `jsudf` - Generates a CREATE FUNCTION statement.
 You can use this to create a SQL++ managed JavaScript user-defined function.
 * `ftssql` - Generates a SQL++ query optimized for FTS or flex indexes. 
-If specified, the Query Service automatically adds a `USE INDEX (USING FTS)` clause to all `FROM` keyspaces in the generated query.
-This allows the query to use a flex index if one is available. 
+The Query Service appends a `USE INDEX (USING FTS)` clause to all `FROM` keyspaces in the generated query.
+This enables the query to use a flex index if it's available. 
 --
-If you specify any other value, the Query Service returns an error.
+
+If you specify a value not included in this list, the Query Service returns an error.
 
 *Default:* `sql`
 | String
@@ -141,8 +144,8 @@ A JSON object containing the generated statement, execution status, and metrics.
 
 If generated statement is a SELECT query and the `execute` option is `TRUE` (default), the output includes the query results as well.
 
-TIP: You can directly use EXPLAIN or ADVISE as a prefix to the USING AI statement to get the query plan or optimization advice for the generated query.
-For an example of its usage, see <<example-8>>.
+TIP: You can directly use EXPLAIN or ADVISE as a prefix to a USING AI statement to get the query plan or index recommendations for the generated query.
+Refer to <<example-8>>.
 
 == Handling Passwords Securely
 
@@ -231,7 +234,8 @@ How many airlines are based in United Kingdom?;
 {
     "requestID": "a6dfea34-6445-4e66-9127-9bdfbe5f7585",
     "status": "success",
-    "generated_statement": "SELECT COUNT(*) AS `airlines_based_in_uk` FROM `travel-sample`.`inventory`.`airline` 
+    "generated_statement": "SELECT COUNT(*) AS `airlines_based_in_uk` 
+                    FROM `travel-sample`.`inventory`.`airline` 
                     AS `a` WHERE `a`.`country` = \"United Kingdom\"",
     "metrics": {
         "elapsedTime": "2.485615126s",
@@ -275,8 +279,10 @@ List the names of all hotels in the same city as an airport;
 {
     "requestID": "e154f6d5-0fa0-4de3-8824-3ebb73cb49f2",
     "status": "success",
-    "generated_statement": "SELECT `h`.`name` FROM `travel-sample`.`inventory`.`hotel` AS 
-              `h` JOIN `travel-sample`.`inventory`.`airport` AS `a` ON `h`.`city` = `a`.`city`",
+    "generated_statement": "SELECT `h`.`name` 
+                FROM `travel-sample`.`inventory`.`hotel` AS `h` 
+                JOIN `travel-sample`.`inventory`.`airport` AS `a` 
+                ON `h`.`city` = `a`.`city`",
     "metrics": {
         "elapsedTime": "4.032734417s",
         "executionTime": "0s",
@@ -299,9 +305,10 @@ echo -n "Enter your password: "
 read -s p
 echo
 curl -s -d "natural_cred=username@example.com:${p}" \
-     -d 'pretty=true&statement=USING AI WITH {"keyspaces":"travel-sample.inventory.landmark","orgId":"5c670d3e-12a3-456b-7c89-123456789ab"} \
-     How many landmarks are in the western hemisphere?' \
-     http://localhost:8093/query/service -u username:password 
+  -d 'pretty=true&statement=USING AI WITH {"keyspaces":"travel-sample.inventory.landmark",
+  "orgId":"5c670d3e-12a3-456b-7c89-123456789ab"} \
+  How many landmarks are in the western hemisphere?' \
+  http://localhost:8093/query/service -u username:password 
 ----
 .Response
 [source,json]
@@ -378,6 +385,8 @@ How many hotels are located in California?;
 .USING AI with output type `ftssql`
 ====
 {example-note}
+
+This example uses the same prompt as <<example-5>> but specifies the `output` option instead of the `FLEXINDEX` keyword.
 
 .Request
 [source, console]
