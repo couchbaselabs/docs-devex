@@ -77,7 +77,7 @@ endif::[]
 Use the `CREATE VECTOR INDEX` statement to create a Hyperscale Vector Index.
 This statement is similar to the `CREATE INDEX` statement that you use to create Global Secondary Indexes (GSI). 
 See xref:guides:create-index.adoc[] for an overview of creating indexes.
-You must also supply a `WITH` clause to set some additional information about the vector column that the Hypsercale index needs. 
+You must also supply a `WITH` clause to set some additional information about the vector column that the Hyperscale index needs. 
 
 The following syntax shows the minimum required parameters to create a Hyperscale Vector index:
 
@@ -161,7 +161,7 @@ In most cases, you'll not use these settings in a production environment.
 == Query with a Hyperscale Vector Index
 
 To use your Hyperscale Vector index, use the `SELECT` statement with a `ORDER BY` clause containing a call to the  `APPROX_VECTOR_DISTANCE` function.
-This function performs the vector search using the Hyperscale Vector index.
+This function uses the Hyperscale Vector index when you query the vector key the index covers.
 
 A typical query looks like this:
 
@@ -173,11 +173,14 @@ SELECT <fields>
                 <collection-vector-column>, 
                 <search-vector-value>, 
                 <distance-metric>, 
-                [<centroids-to-probe>]
+                <centroids-to-probe>]
         ) LIMIT <number-of-results>;
 ----
 
-The parameters in the `APPROX_VECTOR_DISTANCE` function are:
+NOTE: The previous query example shows just a subset of the most common parameters for the `APPROX_VECTOR_DISTANCE` function.
+See  xref:n1ql:n1ql-language-reference:vectorfun.adoc#approx_vector_distance[APPROX_VECTOR_DISTANCE] for the full set of parameters available in this function.
+
+The `APPROX_VECTOR_DISTANCE` parameters shown in the example are:
 
 * `collection-vector-column` is the name of the key containing the vector in the collection.
 * `search-vector-value` is the vector value to search for in the collection column.
@@ -187,11 +190,8 @@ This value should match the distance metric you used when you created the index.
 * `centroids-to-probe` is an optional integer value that sets the number of centroids to probe for matching vectors.
 By default, the vector search only probes a single centroid.
 
-For the full syntax, see `APPROX_VECTOR_DISTANCE` in the SQL++ reference.
 
-// FIXME: add link when available.
-
-NOTE: You can also call the function `VECTOR_DISTANCE` to find similar vectors. 
+NOTE: You can also call the function xref:n1ql:n1ql-language-reference:vectorfun.adoc#vector_distance[`VECTOR_DISTANCE`] to find similar vectors. 
 However, this function does not use the Hyperscale Vector index to perform the vector search. 
 Instead, it performs a brute-force search for similar vectors.
 It's useful to measure the recall of your Hyperscale Vector index. 
@@ -204,9 +204,9 @@ The query pushes the `LIMIT` clause down into the index scan so that the scan en
 === Hyperscale Vector Index Query Example
 
 You must supply a vector value in your query that Couchbase {product-name} can compare to the vectors in the index.
-In actual use, your application  generates a vector for the query value using the same embedding model it used to embed the vectors in your documents.
+In actual use, your application generates a vector for the query value using the same embedding model it used to embed the vectors in your documents.
 
-To avoid the complication of calling an embedding mopdel, this example uses embedded vectors in the `rgb_questions.json` file that's included in `color_data_2vectors.zip`.
+To avoid the complication of calling an embedding model, this example uses embedded vectors in the `rgb_questions.json` file that's included in `color_data_2vectors.zip`.
 For this example, the contents of this file are loaded into a collection named `vector-sample.color.rgb-questions`.
 This collection contains a `question` attribute which is a search prompt for a particular color. 
 The `couchbase_search_query.knn.vector` attribute contains the embedded vector for the `question` attribute.
