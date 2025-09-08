@@ -696,6 +696,100 @@ FROM system:completed_requests;
 ----
 ====
 
+[[hashbytes,HASHBYTES()]]
+== HASHBYTES(`input`, [ `options` ])
+
+[.status]#Couchbase Server 8.0#
+
+=== Description
+
+This function returns a binary hash value for a given input using a specified hashing algorithm. 
+By using this function, you can verify or compare data quickly, or protect your data by masking its original form while still allowing verification or comparison. 
+
+=== Arguments
+
+input:: A binary object or any {sqlpp} data type.
+The JSON marshalled value of the data is used as the input.
+
+options::  [Optional]
+An object that specifies the hashing algorithm and other options for the function.
+If omitted, the default hashing algorithm is `sha256`.
+
+=== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **algorithm** +
+__required__
+| Specifies the hashing algorithm to be used.
+
+Supported algorithms are: `crc32`, `md4`, `md5`, `sha224`, `sha256`, `sha384`, `sha512`, `sha512/224`, and `sha512/256`. 
+| String
+
+| **polynomial** +
+__optional__
+| The polynomial to use.
+This only applies if the algorithm is `crc32`.
+This property may have one of the following values:
+
+* `ieee` (the default value)
+* `castagnoli`
+* `koopman`
+* A valid 32-bit integer, provided either as a JSON number (decimal) or a string that can be parsed as a numeric value (supports hexadecimal with a "0x" prefix)
+
+*Default:* `ieee`
+| String or integer
+|===
+
+=== Return Value
+
+A binary hash value. 
+The size or length of the value depends on the algorithm you choose. 
+
+=== Examples
+
+[[hashbytes-ex1,HASHBYTES() Example 1]]
+
+.Find the hash value using the `sha256` algorithm 
+====
+.Query
+[source,sqlpp]
+----
+SELECT HASHBYTES('Hello World', {"algorithm":"sha256"});
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e"
+  }
+]
+----
+====
+
+[[hashbytes-ex2,HASHBYTES() Example 2]]
+
+.Find the hash value using the `crc32` algorithm
+====
+.Query
+[source,sqlpp]
+----
+SELECT HASHBYTES("hello world", {"algorithm":"crc32", "polynomial":"koopman"});
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": "df373d3c"
+  }
+]
+----
+====
+
 [[len,LEN()]]
 == LEN(`expression`)
 
