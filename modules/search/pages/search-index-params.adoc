@@ -191,13 +191,15 @@ The `doc_config` object is a child object of the <<params,>>. It contains the fo
 
 |mode |String |Yes a|
 
-Set a xref:customize-index.adoc#type-identifiers[type identifier] for the Search index to filter documents from search results: 
+Set a xref:customize-index.adoc#type-identifiers[type identifier] for the Search index to filter documents.
+Set the mode for your type identifier by setting this property to `"scope.collection.\{mode\}"` 
+You can choose from one of the following mode values: 
 
 * `type_field`: Use the value from a specific field in the documents. 
 * `docid_prefix_delim`: Use the leading characters in the documents' ID values, up to but not including a specified separator.
 * `docid_regexp`: Use a regular expression on the documents' ID values.
-
-NOTE: If you want your Search index to only include documents from a specific collection, the `mode` value must be `"scope.collection.\{mode\}"`.
+* `custom`: Use a custom document filter expression to filter documents based on specific values.
+See <<doc_filter,doc_filter>>.
 
 |docid_prefix_delim |String |Yes a|
 
@@ -205,17 +207,395 @@ If `mode` is `docid_prefix_delim`, set the separator character to use on a docum
 
 For example, to filter documents based on the characters before a `\_` in their ID values, set `docid_prefix_delim` to `_`.
 
+To use this filter later, you need to modify the name of the type mapping where you want to use the filter.
+
+For example, you could set a specific filter value of `hotel` on a type mapping.
+If `docid_prefix_delim` is set to `\_`, a document would have to have the string `hotel` before the character `_` in its ID value to pass the filter.
+To use the filter, set the <<scope-collection,`\{scope\}.\{collection\}` object>> name to `\{scope\}.\{collection\}.hotel`.
+If the document passes the filter, it's included in the type mapping, and your Search index.
+
 |docid_regexp |String |Yes a|
 
 If `mode` is `docid_regexp`, set the regular expression to use on a document's ID value to determine its type. 
 
 For example, to filter documents that contain the characters `\_40` in their ID value, set `docid_regexp` to `_[3-5]0`.
 
+To use this filter later, you need to modify the name of the type mapping where you want to use the filter.
+
+For example, you could set a specific filter value of `_40` on a type mapping.
+A document with the characters `_40` in its ID value would pass the filter.
+To use the filter, set the <<scope-collection,`\{scope\}.\{collection\}` object>> name to `\{scope\}.\{collection\}._40`.
+If the document passes the filter, it's included in the type mapping, and your Search index.
+
 |type_field |String |Yes a|
 
 If `mode` is `type_field`, set the name of the field to use to filter documents.
 
 For example, to filter documents based on the value of their `type` field, set `type_field` to `type`.
+
+To use this filter later, you need to modify the name of the type mapping where you want to use the filter.
+
+For example, you could use a field called `type` as your `type_field`.
+To use the filter, set your <<scope-collection,`\{scope\}.\{collection\}` object>> name to `\{scope\}.\{collection\}.landmark`.
+With `type` as the `type_field` and `landmark` as the configured filter, a document would have to have `landmark` in its `type` field to pass the filter.
+
+|[[doc_filter]]doc_filter |Object |Yes a| 
+
+[.status]#Couchbase Server 8.0#
+
+If `mode` is `custom`, provide an object that sets a custom document filter for a scope and collection in your Search index. 
+
+You can filter documents with custom filters based on the value of: 
+
+* <<boolean_filter,A boolean field>>.
+* <<date_range_filter,A date field, within a specific range>>.
+* <<numeric_range_filter,A numeric field, within a specific range>>.
+* <<term_filter,A term in a text field>>.
+* A <<conjunct_filter,conjunct>> or <<disjunct_filter,disjunct>> object that combines 2 or more of the available filters.
+You can add up to a maximum of 100 document filters on a single Search index.
+
+For more information about how to define each type of filter in your Search index definition, see <<doc_filter_obj,>>. 
+
+|====
+
+[#doc_filter_obj]
+==== Doc_filter Object 
+
+[.status]#Couchbase Server 8.0#
+
+The `doc_filter` object contains JSON objects for each document filter you want to apply to a type mapping in your Search index:
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=doc_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+You can add up to a maximum of 100 document filters on a single Search index.
+
+You can define the following types of document filters: 
+
+* <<boolean_filter,>>
+* <<date_range_filter,>>
+* <<numeric_range_filter,>>
+* <<term_filter,>>
+* <<conjunct_filter,>>
+* <<disjunct_filter,>>
+
+[#boolean_filter]
+===== Boolean Document Filters 
+
+[.status]#Couchbase Server 8.0#
+
+A boolean document filter adds or removes documents from a type mapping based on the value of a boolean field: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=boolean_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your boolean document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.free_breakfast_true`.
+
+A boolean document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|bool |Boolean |Yes a|
+
+Set `bool` to the value a document must have in your chosen boolean field for a document to pass the filter. 
+
+`bool` can be `true` or `false`.
+
+|field |String |Yes a|
+
+Enter the name of the field that contains a boolean value you want to use as a filter. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
+
+|====
+
+[#date_range_filter]
+===== Date Range Document Filters 
+
+[.status]#Couchbase Server 8.0#
+
+A date range document filter adds or removes documents from a type mapping based on the value of a date field and a specified range: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=date_range_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your date range document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.review_date_range`.
+
+A date range document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|start |Date and Time String |No a|
+
+Set the start date for the range you want to use as a filter.
+Dates occurring before your `start` value do not pass the filter.
+
+You can choose to set only a `start` value or only an `end` value for the filter.
+
+By default, the value for `start` is included in your date range filter.
+
+|end |Date and Time String |No a|
+
+Set the end date for the range you want to use as a filter.
+Dates occurring after your `end` value do not pass the filter.
+
+You can choose to set only a `start` value or only an `end` value for the filter.
+
+By default, the value for `end` is excluded from your date range filter.
+
+|inclusive_start |Boolean |No a|
+
+Set whether the value of `start` should be included or excluded from the range:
+
+* If `inclusive_start` is `true`, documents with the same date and time string as `start` pass the filter.
+* If `inclusive_start` is `false`, documents must have a date and time string that's later than the value of `start` to pass the filter.
+If you do not set a value for `inclusive_start`, by default, `start` is inclusive to your date range.
+
+|inclusive_end |Boolean |No a|
+
+Set whether the value of `end` should be included or excluded from the range:
+
+* If `inclusive_end` is `true`, documents with the same date and time string as `end` pass the filter.
+* If `inclusive_end` is `false`, documents must have a date and time string that's earlier than the value of `end` to pass the filter.
+If you do not set a value for `inclusive_end`, by default, `end` is not included in your date range.
+
+|field |String |Yes a|
+
+Enter the name of the field that contains a date value you want to use as a filter. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
+
+|datetime_parser |String |No a|
+
+Enter the name of the date/time parser you want to use to interpret your date and time strings. 
+
+You can use a xref:default-date-time-parsers-reference.adoc[default date/time parser] or reference a date/time parser from the <<date_time_parsers,>>.
+
+|====
+
+[#numeric_range_filter]
+===== Numeric Range Document Filters 
+
+[.status]#Couchbase Server 8.0#
+
+A numeric range document filter adds or removes documents from a type mapping based on the value of a numeric field and a specified range: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=numeric_range_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your numeric range document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.cleanliness_range`.
+
+A numeric range document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|min |Number |No a|
+
+Set the minimum value for the range you want to use as a filter.
+Values smaller than your `min` value do not pass the filter.
+
+You can choose to set only a `min` value or only a `max` value for the filter.
+
+By default, the value for `min` is included in your numeric range filter.
+
+|max |Number |No a|
+
+Set the maximum value for the range you want to use as a filter.
+Values larger than your `max` value do not pass the filter.
+
+You can choose to set only a `min` value or only a `max` value for the filter.
+
+By default, the value for `max` is excluded from your numeric range filter.
+
+|inclusive_min |Boolean |No a|
+
+Set whether the value of `min` should be included or excluded from the range:
+
+* If `inclusive_min` is `true`, documents with the same value as `min` pass the filter.
+* If `inclusive_min` is `false`, documents must have a value that's larger than the value of `min` to pass the filter.
+If you do not set a value for `inclusive_min`, by default, `min` is inclusive to your numeric range.
+
+|inclusive_max |Boolean |No a|
+
+Set whether the value of `max` should be included or excluded from the range:
+
+* If `inclusive_max` is `true`, documents with the same value as `max` pass the filter.
+* If `inclusive_max` is `false`, documents must have a value that's smaller than the value of `max` to pass the filter.
+If you do not set a value for `inclusive_max`, by default, `max` is not included in your numeric range.
+
+|field |String |Yes a|
+
+Enter the name of the field that contains a numeric value you want to use as a filter. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
+
+|====
+
+[#term_filter]
+===== Term Document Filters 
+
+[.status]#Couchbase Server 8.0#
+
+A term document filter adds or removes documents from a type mapping based on the existence of a term in a specified document field: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=term_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your term document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.name_hotel`.
+
+A term document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|term |String |Yes a|
+
+Enter a string that must exist inside `field` for a document to pass the filter.
+
+The string must be an exact match for a document to pass.
+
+|field |String |Yes a|
+
+Enter the name of the field where you want to search for the value of `term`. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
+
+|====
+
+[#conjunct_filter]
+===== Conjunct Document Filter
+
+[.status]#Couchbase Server 8.0#
+
+A conjunct document filter can contain any number of the other document filter types:
+
+* <<boolean_filter,>>
+* <<date_range_filter,>>
+* <<numeric_range_filter,>>
+* <<term_filter,>>
+* <<conjunct_filter,>>
+* <<disjunct_filter,>>
+A document must pass every filter inside the `conjuncts` array to pass a conjunct document filter and be included in a type mapping: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=conjunct_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your conjunct document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.free_parking_AND_vacancy`.
+
+A conjunct document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|conjuncts |Array of Objects |Yes a|
+
+Add an object to define each filter you want a document to pass before a document can be included in a type mapping. 
+
+The `conjuncts` array can contain any other document filter type, including additional conjunct and disjunct document filters. 
+You cannot nest more than 5 conjunct or disjunct document filters inside a single filter. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
+
+|====
+
+[#disjunct_filter]
+===== Disjunct Document Filter
+
+[.status]#Couchbase Server 8.0#
+
+A disjunct document filter can contain any number of the other document filter types:
+
+* <<boolean_filter,>>
+* <<date_range_filter,>>
+* <<numeric_range_filter,>>
+* <<term_filter,>>
+* <<conjunct_filter,>>
+* <<disjunct_filter,>>
+A document must pass at least the number of filters you specify as `min` from the `disjuncts` array to pass the filter and be included in a type mapping: 
+
+[source,json]
+----
+include::example$simple-search-index-payload.jsonc[tag=disjunct_filter]
+----
+
+TIP: To view the entire JSON payload, click btn:[View].
+
+Set the name of your disjunct document filter object to the name you want for your filter.
+Use this name to use the filter on a <<scope-collection,`\{scope\}.\{collection\}` object>>.
+For example, `\{scope\}.\{collection\}.location_OR_service`.
+
+A disjunct document filter can have the following properties: 
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|disjuncts |Array of Objects |Yes a|
+
+Add an object to define each filter you want to run against a document for this disjunct document filter. 
+
+The `disjuncts` array can contain any other document filter type, including additional conjunct and disjunct document filters. 
+You cannot nest more than 5 conjunct or disjunct document filters inside a single filter. 
+
+|min |Number |Yes a|
+
+Set `min` to the minimum number of filters from `disjuncts` that a document must pass to be included in a type mapping. 
+
+|order |Number |Yes a|
+
+include::partial$order-doc-filter-description.adoc[]
 
 |====
 
