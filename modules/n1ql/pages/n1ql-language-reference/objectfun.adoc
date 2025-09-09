@@ -283,6 +283,171 @@ LIMIT 1;
 ----
 ====
 
+
+[[fn-obj-filter,OBJECT_FILTER()]]
+== OBJECT_FILTER(`expression` [, `options`])
+
+[.status]#Couchbase Server 8.0#
+
+=== Description
+This function extracts and returns nested fields from an input object that match a specified pattern, while retaining their original hierarchical path structure in the output. 
+This is particularly useful when working with complex objects, as it allows you to filter fields based on patterns using either regular expressions or exact matches.
+
+=== Arguments
+expression:: An expression representing an object.
+
+options:: [Optional] A JSON object specifying options for the function.
+
+=== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **pattern** +
+__optional__
+
+| The pattern to match. 
+This can be a regular expression or a simple string, depending on the `regex` parameter.
+| String
+
+| **regex** +
+__optional__
+| If `TRUE`, the pattern is treated as a regular expression.
+
+If `FALSE`, the pattern is treated as a simple string.
+
+*Default:* `TRUE`
+| Boolean
+
+| **arraysubscript** +
+__optional__
+| Specifies whether array subscripts are included in field names before applying the filter.
+
+If `TRUE`, array subscripts are included. 
+
+If `FALSE`, array subscripts are replaced by `*`.
+
+*Default:* `TRUE`
+
+| Boolean
+
+| **composites** +
+__optional__
+| Specifies whether the pattern should match field names that contain values requiring further processing, such as nested objects or arrays.
+
+If `TRUE`, the pattern is matched against every level of nested fields. 
+
+If `FALSE`, the pattern is matched only against the deepest level of nested fields. 
+
+*Default:* `TRUE`
+| Boolean
+
+| **patternspace** +
+__optional__
+| A string literal with two possible values. 
+
+`"field"`: The pattern is matched against individual field names. 
+
+`"path"`: The pattern is matched against composite path names.
+
+*Default:* `"path"`
+| String
+
+| **exact** +
+__optional__
+| Specifies whether the provided pattern must be an exact match for the field or path (as determined by the `patternspace` parameter). 
+
+This is a short-cut for the regular expression start (^) and end ($) anchors, and can be used even when `regex` is set to `false`.
+
+If `TRUE`, the pattern must be an exact match.
+
+If `FALSE`, the pattern does not need to be an exact match.
+
+*Default:* `FALSE`
+| Boolean
+
+| **ignorecase** +
+__optional__
+| If `TRUE`, the pattern matching is case-sensitive.
+
+If `FALSE`, the pattern matching ignores case. 
+
+*Default:* `FALSE`
+| Boolean
+|===
+
+=== Return Value
+An object containing only the fields that match the specified pattern.
+Non-matching fields are excluded from the output.
+
+=== Examples
+
+[[obj-filter-ex1,OBJECT_FILTER() Example 1]]  
+.Filtering by field name
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_FILTER(t, {"pattern":"Business service"})  
+FROM `travel-sample`.`inventory`.`hotel` t 
+WHERE type = 'hotel' 
+LIMIT 2;
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": {
+      "reviews": [
+        {
+          "ratings": {
+            "Business service (e.g., internet access)": 4
+          }
+        }
+      ]
+    }
+  },
+  {
+    "$1": null
+  }
+]
+----
+====
+
+[[obj-filter-ex2,OBJECT_FILTER() Example 2]]
+.Filtering by full path
+You can use <<fn-obj-paths,OBJECT_PATHS()>> to generate the full path to a field, and then use that path in the `pattern` parameter. 
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_FILTER(t, { "pattern": "reviews[1].ratings.Service", "regex": false }) 
+FROM `travel-sample`.`inventory`.`hotel` t 
+WHERE type = 'hotel' 
+LIMIT 1;
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": {
+      "reviews": [
+        {
+          "ratings": {
+            "Service": 3
+          }
+        }
+      ]
+    }
+  }
+]
+----
+====
+
+
 [[fn-obj-inner-pairs,OBJECT_INNER_PAIRS()]]
 == OBJECT_INNER_PAIRS(`expression`)
 
@@ -827,13 +992,6 @@ If FALSE, only the deepest possible nested fields are returned.
 *Default:* `FALSE`
 | Boolean
 
-| **pattern** +
-__optional__
-| A regular expression used to filter the returned paths.
-The pattern is matched against the composite path names, not the individual field names.
-
-| String
-
 | **types** +
 __optional__
 | Determines whether to return field types or values.
@@ -844,6 +1002,71 @@ If FALSE, the function returns the name and value of each field.
 
 *Default:* `FALSE`
 | Boolean
+
+| **pattern** +
+__optional__
+| The pattern used to filter the returned paths.
+
+It can be a regular expression or a simple string, depending on the `regex` parameter.
+
+| String
+
+| **regex** +
+__optional__
+| If `TRUE`, the pattern is treated as a regular expression.
+
+If `FALSE`, the pattern is treated as a simple string.
+
+*Default:* `TRUE`
+| Boolean
+
+| **patternspace** +
+__optional__
+| A string literal with two possible values. 
+
+`"field"`: The pattern is matched against individual field names. 
+
+`"path"`: The pattern is matched against composite path names.
+
+*Default:* `"path"`
+| String
+
+| **exact** +
+__optional__
+| Determines whether the provided pattern must be an exact match for the field or path (as determined by the `patternspace` parameter). 
+
+This is a short-cut for the regular expression start (^) and end ($) anchors, and can be used even when `regex` is set to `false`.
+
+If `TRUE`, the pattern must be an exact match.
+
+If `FALSE`, the pattern does not need to be an exact match.
+
+*Default:* `FALSE`
+| Boolean
+
+| **ignorecase** +
+__optional__
+| If `TRUE`, the pattern matching is case-sensitive.
+
+If `FALSE`, the pattern matching ignores case. 
+
+*Default:* `FALSE`
+| Boolean
+
+| **report** +
+__optional__
+
+| Controls the output of the `name` field, allowing selection between the full path or the final field name.
+
+Possible values are:
+
+`"field"`: Outputs only the final field name. 
+
+`"path"`: Outputs the full path to the field. 
+
+*Default:* `"path"`
+
+| String
 |===
 
 === Return Value
@@ -888,7 +1111,10 @@ WITH input AS ({
 SELECT OBJECT_PAIRS_NESTED(input) AS nested_pairs,
        OBJECT_PAIRS_NESTED(input, {"composites": true}) AS nested_pairs_comp,
        OBJECT_PAIRS_NESTED(input, {"pattern": "name"}) AS nested_pairs_pattern,
-       OBJECT_PAIRS_NESTED(input, {"types": true}) AS nested_pairs_types;
+       OBJECT_PAIRS_NESTED(input, {"types": true}) AS nested_pairs_types,
+       OBJECT_PAIRS_NESTED(input, {"pattern": "number", "patternspace":"field"}) AS filtered_fields,
+       OBJECT_PAIRS_NESTED(input, {"pattern": "-name$", "patternspace":"field", "regex":true}) 
+                                   AS filtered_fields_regex;
 ----
 
 .Results
@@ -937,6 +1163,18 @@ SELECT OBJECT_PAIRS_NESTED(input) AS nested_pairs,
       {
         "name": "attribute.flight-number",
         "type": "number"
+      }
+    ],
+    "filtered_fields": [
+      {
+        "name": "attribute.flight-number",
+        "val": 737
+      }
+    ],
+    "filtered_fields_regex": [
+      {
+        "name": "attribute.flight-name",
+        "val": "AI444"
       }
     ]
   }
@@ -1065,31 +1303,86 @@ A field in this context may be any attribute or element, nested at any level wit
 
 object:: An expression representing an object.
 
-options:: [Optional] An object containing the following possible parameters:
+options:: [Optional] An object containing the following possible parameters. 
 
-composites;; A boolean.
-If `true`, every level of every nested field is displayed; if `false`, only the deepest possible nested fields are returned.
-Default `true`.
+=== Options
 
-arraysubscript;; A boolean.
-If `true`, array subscripts are returned; if `false`, array subscripts are replaced by `*`.
-Default `true`.
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
 
-unique;; A boolean.
-If `true`, duplicate field names are collapsed to single unique field name; if `false`, all duplicate field names are returned.
+| **composites** +
+__optional__
+| If `TRUE`, every level of every nested field is displayed. 
+
+If `FALSE`, only the deepest possible nested fields are returned.
+ 
+*Default:* `TRUE`
+| Boolean
+
+| **arraysubscript** +
+__optional__
+| If `TRUE`, array subscripts are returned. 
+
+If `FALSE`, array subscripts are replaced by `*`.
+
+*Default:* `TRUE`
+| Boolean
+
+| **unique** +
+__optional__
+| If `TRUE`, duplicate field names are collapsed to single unique field name. 
+
+If `FALSE`, all duplicate field names are returned.
+
 Typically used when arrays are expanded and array subscripts are not returned.
-Default `true`.
 
-pattern;; A regular expression used to filter the returned paths.
-Used in conjunction with the following setting.
+*Default:* `TRUE`
+| Boolean
 
-patternspace;; A string literal with two possible values.
-Default `"path"`.
-+
-[horizontal]
-`"field"`::: The pattern is matched against individual field names.
+| **pattern** +
+__optional__
+| A regular expression used to filter the returned paths. 
+Used in conjunction with the `patternspace` setting.
 
-`"path"`::: The pattern is matched against composite path names.
+| String
+
+| **patternspace** +
+__optional__
+
+| A string literal with two possible values.
+
+`"field"`: The pattern is matched against individual field names.
+
+`"path"`: The pattern is matched against composite path names.
+
+*Default:* `"path"`
+
+| String
+
+| **exact** +
+__optional__
+| Determines whether the provided pattern must be an exact match for the field or path (as determined by the `patternspace` parameter). 
+
+This is a short-cut for the regular expression start (^) and end ($) anchors, and can be used even when `regex` is set to `false`.
+
+If `TRUE`, the pattern must be an exact match.
+
+If `FALSE`, the pattern does not need to be an exact match.
+
+*Default:* `FALSE`
+| Boolean
+
+| **ignorecase** +
+__optional__
+| If `TRUE`, the pattern matching is case-sensitive.
+
+If `FALSE`, the pattern matching ignores case. 
+
+*Default:* `FALSE`
+| Boolean
+
+|===
 
 === Return Value
 
@@ -1181,7 +1474,7 @@ SELECT
 [[obj-paths-ex3,OBJECT_PATHS() Example 3]]
 .Pattern matching and pattern space
 ====
-This example searches for strings beginning with "n" in the given object paths.
+This example searches for strings beginning with "n" and also fields that exactly match "name". 
 
 .Query
 [source,sqlpp]
@@ -1195,7 +1488,9 @@ SELECT
   OBJECT_PATHS(input, {"pattern": "^n", "patternspace": "field"})
     AS field_starts_with_n,
   OBJECT_PATHS(input, {"pattern": "^n", "patternspace": "path"})
-    AS path_starts_with_n;
+    AS path_starts_with_n,
+  OBJECT_PATHS(input, {"pattern": "name", "patternspace": "field", "exact": true})
+    AS exact_field_name; 
 ----
 
 .Results
@@ -1210,7 +1505,10 @@ SELECT
     "field_starts_with_n": [
       "attribute.name"
     ],
-    "path_starts_with_n": []
+    "path_starts_with_n": [],
+    "exact_field_name": [
+      "attribute.name"
+    ]
   }
 ]
 ----
