@@ -590,11 +590,21 @@ If the date string does not explicitly declare the value of a component, then th
 * The month and day default to 1.
 * The century (when not specified by year) defaults to 19 if year is greater than or equal to 69, or 20 otherwise.
 * All other numeric components default to 0.
-* The time zone defaults to the local local system time zone.
+* The time zone defaults to the local system time zone.
 
 In cases where the timezone is not specified, the local system time is assumed.
 
 For example, `2016-02-07` is equivalent to `2016-02-07T00:00:00` and parsing just `16` as the year is equivalent to `2016-01-01T00:00:00` in the local system time zone.
+====
+
+[NOTE#tzn-date-format]
+.TZN Date Format
+====
+In addition to the date formats listed <<date-string,here>>, Couchbase Server 8.0 and later also supports the `TZN` (Time Zone Name) format.
+This format parses date strings in the same way as `TZD` but outputs the time zone name instead of the offset.
+For example, the `TZN` representation of the "Australia/Darwin" time zone is `ACST`.
+
+For an example of its usage, refer to the <<ex-str-to-tz,STR_TO_TZ()>> function.
 ====
 
 [#manipulating-components]
@@ -1300,7 +1310,7 @@ WHERE reviews[0].date BETWEEN "2013-01-01 %" AND "2014-01-01 %";
 NOTE: When querying between two dates, you must specify the full date (with time and time zone) or use the wildcard character (%).
 
 [#fn-date-format-str]
-== DATE_FORMAT_STR(date1, fmt)
+== DATE_FORMAT_STR(date1, [input-fmt,] fmt)
 
 === Description
 
@@ -1312,6 +1322,14 @@ date1::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a date in a <<date-string,supported date format>>.
 +
 If this argument is not a valid date string then `null` is returned.
+
+input-fmt::
+The format of the input string, `date1`.
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string. 
++
+*Optional argument*.
+Only required if `date1` is not in a standard format or if the input and output formats are different.
+Available in clusters running Couchbase Server 8.0 and later.
 
 fmt::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
@@ -1329,7 +1347,8 @@ A date string in the format specified.
 ----
 SELECT DATE_FORMAT_STR('2016-05-15T00:00:23+00:00', '1111-11-11') as full_to_short,
        DATE_FORMAT_STR('2016-05-15', '1111-11-11T00:00:00+00:00') as short_to_full,
-       DATE_FORMAT_STR('01:10:05', '1111-11-11T01:01:01Z') as time_to_full;
+       DATE_FORMAT_STR('01:10:05', '1111-11-11T01:01:01Z') as time_to_full,
+       DATE_FORMAT_STR('15-MAY-2016', 'DD-MON-YYYY', 'YYYY-MM-DD') as month_to_numeric;
 ----
 
 .Results
@@ -1338,8 +1357,9 @@ SELECT DATE_FORMAT_STR('2016-05-15T00:00:23+00:00', '1111-11-11') as full_to_sho
 [
   {
     "full_to_short": "2016-05-15",
-    "short_to_full": "2016-05-15T00:00:00-07:00",
-    "time_to_full": "0000-01-01T01:10:05-08:00"
+    "short_to_full": "2016-05-15T00:00:00Z",
+    "time_to_full": "0000-01-01T01:10:05Z",
+    "month_to_numeric": "2016-05-15"
   }
 ]
 ----
@@ -1799,15 +1819,15 @@ SELECT DATE_TRUNC_MILLIS(1463284740000, 'day') as day,
 [
   {
     "day": 1463270400000,
-    "month": 1462147200000,
-    "year": 1451696400000
+    "month": 1462060800000,
+    "year": 1451606400000
   }
 ]
 ----
 ====
 
 [#fn-date-trunc-str]
-== DATE_TRUNC_STR(date1, part)
+== DATE_TRUNC_STR(date1, part [,fmt])
 
 === Description
 
@@ -1827,6 +1847,14 @@ This function accepts the components `millennium`, `century`, `decade`, `year`, 
 +
 If an invalid part is specified, then `null` is returned.
 
+fmt::
+The format of the input string, `date1`.
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string. 
++
+*Optional argument*.
+Only required if `date1` is not in a standard format.
+Available in clusters running Couchbase Server 8.0 and later.
+
 === Return Value
 
 A date string representing the truncated date.
@@ -1838,7 +1866,8 @@ A date string representing the truncated date.
 ----
 SELECT DATE_TRUNC_STR('2016-05-18T03:59:00Z', 'day') as day,
        DATE_TRUNC_STR('2016-05-18T03:59:00Z', 'month') as month,
-       DATE_TRUNC_STR('2016-05-18T03:59:00Z', 'year') as year;
+       DATE_TRUNC_STR('2016-05-18T03:59:00Z', 'year') as year,
+       DATE_TRUNC_STR('05/18/2016 03:59:00', 'month', 'MM/DD/YYYY HH24:MI:SS') as month_custom;
 ----
 
 .Results
@@ -1848,7 +1877,8 @@ SELECT DATE_TRUNC_STR('2016-05-18T03:59:00Z', 'day') as day,
   {
     "day": "2016-05-18T00:00:00Z",
     "month": "2016-05-01T00:00:00Z",
-    "year": "2016-01-01T00:00:00Z"
+    "year": "2016-01-01T00:00:00Z",
+    "month_custom": "05/01/2016 00:00:00"
   }
 ]
 ----
@@ -2594,12 +2624,13 @@ AS Milliseconds;
 ====
 
 [#fn-date-str-to-utc]
-== STR_TO_UTC(date1)
+== STR_TO_UTC(date1 [, [input-fmt,] fmt])
 
 === Description
 
 Converts a date string into the equivalent date in UTC.
-The output date format follows the date format of the date passed as input.
+By default, the output date format follows the date format of the date passed as input.
+In clusters running Couchbase Server 8.0 and later, you can specify a different output format if needed.
 
 === Arguments
 
@@ -2608,6 +2639,20 @@ A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which
 This is the date to convert to UTC.
 +
 If this argument is not a valid date format, then `null` is returned.
+
+input-fmt::
+The format of the input string, `date1`. 
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string. 
++
+*Optional argument*.
+Only required if `date1` is not in a standard format or if the input and output formats are different. 
+
+fmt::
+The format of the resulting UTC date. 
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, and must be a <<date-string,supported date format>>.
++
+*Optional argument*.
+If not specified, the output date format follows the date format of the input string, `date1`.
 
 === Return Value
 
@@ -2619,7 +2664,8 @@ A single date string representing the date string converted to UTC.
 [source,sqlpp]
 ----
 SELECT STR_TO_UTC('1111-11-11T00:00:00+08:00') as full_date,
-STR_TO_UTC('1111-11-11') as short_date;
+       STR_TO_UTC('1111-11-11') as short_date,
+       STR_TO_UTC('1111-11-11', 'YYYY-MM-DD', 'YYYY-MM-DD HH:MI:SS') as utc_date;
 ----
 
 .Results
@@ -2628,19 +2674,21 @@ STR_TO_UTC('1111-11-11') as short_date;
 [
   {
     "full_date": "1111-11-10T16:00:00Z",
-    "short_date": "1111-11-11"
+    "short_date": "1111-11-11",
+    "utc_date": "1111-11-11 12:00:00"
   }
 ]
 ----
 ====
 
 [#fn-date-str-to-tz]
-== STR_TO_TZ(date1, tz)
+== STR_TO_TZ(date1, tz [, [input-fmt,] fmt]) 
 
 === Description
 
 Converts a date string to its equivalent in the specified timezone.
-The output date format follows the date format of the date passed as input.
+By default, the output date format follows the date format of the date passed as input.
+In clusters running Couchbase Server 8.0 and later, you can specify a different output format if needed.
 
 === Arguments
 
@@ -2655,10 +2703,25 @@ A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which
 +
 If this argument is not a valid timezone, then `null` is returned.
 
+input-fmt::
+The format of the input string, `date1`. 
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string. 
++
+*Optional argument*.
+Only required if `date1` is not in a standard format or if the input and output formats are different.
+
+fmt::
+The format of the output date. 
+This can be a string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, and must be a <<date-string,supported date format>>.
++
+*Optional argument*.
+If not specified, the output date format follows the date format of the input string, `date1`.
+
 === Return Value
 
 A single date string representing the date string converted to the specified timezone.
 
+[[ex-str-to-tz]]
 === Examples
 
 ====
@@ -2666,7 +2729,10 @@ A single date string representing the date string converted to the specified tim
 ----
 SELECT STR_TO_TZ('1111-11-11T00:00:00+08:00', 'America/New_York') as est,
     STR_TO_TZ('1111-11-11T00:00:00+08:00', 'UTC') as utc,
-    STR_TO_TZ('1111-11-11', 'UTC') as utc_short;
+    STR_TO_TZ('1111-11-11', 'UTC') as utc_short,
+    STR_TO_TZ('1111-11-11', 'UTC', 'YYYY-MM-DD', 'YYYY-MM-DD HH:MI:SS') as utc_datetime, 
+    STR_TO_TZ('1111-11-11T00:00:00+07:00', 'Europe/Paris', 
+              "YYYY-MM-DDThh:mm:ssTZD", "YYYY-MM-DDThh:mm:ssTZN") as tzn;
 ----
 
 .Results
@@ -2674,9 +2740,11 @@ SELECT STR_TO_TZ('1111-11-11T00:00:00+08:00', 'America/New_York') as est,
 ----
 [
   {
-    "est": "1111-11-10T11:00:00-05:00",
+    "est": "1111-11-10T11:03:58-04:56",
     "utc": "1111-11-10T16:00:00Z",
-    "utc_short": "1111-11-11"
+    "utc_short": "1111-11-11",
+    "utc_datetime": "1111-11-11 12:00:00",
+    "tzn": "1111-11-10T17:09:21LMT"
   }
 ]
 ----
