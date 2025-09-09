@@ -9,24 +9,19 @@
 
 == Purpose
 
-You can use the USING AI statement to input natural language queries through {sqlpp} interfaces such as the CBQ shell, REST APIs, and SDKs. 
+You can use the USING AI statement to convert a natural language prompt into a {sqlpp} query.
 When executed, the statement passes the input to Large Language Models (LLMs), which interpret the request and return the equivalent {sqlpp} query. 
 
-For example, you can input prompts such as `How many airlines are based in Europe` or `List the names of all hotels in the same city as an airport`, and the statement will generate the corresponding SQL++ queries. 
+For example, you can input prompts such as `How many airlines are based in Europe` or `List the names of all hotels in the same city as an airport`, and the statement will generate the corresponding SQL++ query. 
 
-If USING AI generates a SELECT query, it automatically executes it and returns the results.
-For all other query types, it returns the generated query as a string without executing it.
+If the generated statement is a SELECT query, the Query Service automatically executes it and returns the results.
+For all other query types, it returns the generated statement as a string without executing it. 
+You can control this behavior by using the <<syntax, execute>> option.
 
-[IMPORTANT]
-====
-* With the introduction of the USING AI statement, you might notice that AI is now recognized as a keyword.
+IMPORTANT: With the introduction of the USING AI statement, you might notice that AI is now recognized as a keyword.
 However, this change has been implemented in a way that does not break existing queries or applications where "ai" is used as a field name or identifier.
 For example, queries like `SELECT ai FROM XYZ` will continue to work without any issues.
 AI is treated as a keyword only when used in conjunction with the USING AI statement.
-
-* Currently, the Couchbase Server Web Console does not support the USING AI statement. 
-You can execute it only through the CBQ shell, REST APIs, or SDKs.
-====
 
 == Prerequisites
 
@@ -37,6 +32,7 @@ Before using the USING AI statement, make sure you have:
 
 NOTE: Although the USING AI statement requires a Capella account, you can use it with any Couchbase Server 8.0 instances. 
 
+[[syntax]]
 == Syntax
 
 [source,ebnf]
@@ -50,19 +46,13 @@ prompt::
 [Required] A natural language request that you want to convert into a SQL++ query.
 
 options::
-[Optional] A JSON object specifying additional <<optional-parameters,options>> to guide the statement execution.
-+
-By default, the statement uses the `natural_orgid`, `natural_cred`, and `natural_context` parameters.
-These parameters determine the organization ID, credentials, and keyspaces for the request.
-You can override them by using the <<optional-parameters,options>> object.
- 
-//TODO: Add links to `natural_orgid`, `natural_cred` and `natural_context` when available in the 8.0 documentation.
+[Optional] A JSON object specifying additional <<optional-parameters,options>> for the statement.
 
 === FLEXINDEX / FTS
 
 Use the optional `FLEXINDEX` or `FTS` keyword to generate a query that uses an FTS or flex index.
 This hint appends a `USE INDEX (USING FTS)` clause to all `FROM` keyspaces in the generated query. 
-Refer to <<example-6>>.
+See <<example-6>>.
 
 [[optional-parameters]]
 === Options
@@ -77,11 +67,11 @@ __optional__
 
 Can be one of the following:
 
-* A string in the username:password format, which matches the `natural_cred` specification. 
+* A string in the username:password format. 
 //TODO: Add link to `natural_cred` when available in the 8.0 documentation.
 * An object with the fields `user` and `pass`, similar to the xref:n1ql:n1ql-manage/query-settings.adoc#Credentials[`creds`] parameter.
 
-If specified, this value overrides the `natural_cred` parameter, which by default contains your Capella credentials.
+If specified, this value overrides the `natural_cred` parameter.
 
 | String or object
 
@@ -113,13 +103,13 @@ If specified, this value overrides the `natural_orgid` parameter, which by defau
 | **execute** +
 __optional__
 
-| Indicates if the generated statement should be executed immediately. 
+| Indicates if the generated statement should be executed automatically. 
 
 If `TRUE`, the Query Service executes the generated statement and returns the results. 
 
 This applies only if the statement is a SELECT query.
 For other statement types, such as INSERT, UPDATE, DELETE, UPSERT, or CREATE FUNCTION, the Query Service returns the statement without executing it, even if `execute` is `TRUE`.
-Refer to <<example-5>>.
+See <<example-5>>.
 
 If `FALSE`, the Query Service returns the generated statement as a string without executing it.
 
@@ -154,7 +144,37 @@ The Query Service returns an error if you specify a value not included in this l
 |===
 
 TIP: You can prefix a USING AI statement with EXPLAIN or ADVISE to get the query plan or index recommendations for your generated query.
-Refer to <<example-9>>.
+See <<example-9>>.
+
+[[usage]]
+== Usage
+
+To use a USING AI statement, you must provide the following parameters:
+
+* `natural_cred` - Your Capella account credentials.
+* `natural_orgid` - Your Capella organization ID.
+* `natural_context` - One or more keyspaces to use for the request.
+
+You can set these parameters in two ways: by setting them as request-level parameters, or by including them directly in the statement.
+
+=== Setting Parameters at the Request Level
+
+You can set `natural_cred`, `natural_orgid`, and `natural_context` as request-level parameters, outside the USING AI statement.
+When set, these parameters apply to all subsequent USING AI statements in that session.
+
+For example:
+
+* In cbq shell, you can set these parameters using the `\set` command. See <<example-1>>.
+* In the Query Workbench, you can set these parameters in the xref:server:tools/query-workbench.adoc#query-preferences[Run-Time Preferences] window as named parameters (without the $ prefix). 
+
+Once configured, you do not need to specify `creds`, `orgId`, or `keyspaces` in the WITH clause.
+
+For more information on how to set request-level parameters, see xref:n1ql:n1ql-manage/query-settings.adoc#section_nnj_sjk_k1b[Configure Queries].
+
+=== Setting Parameters Within the Statement
+
+You can override the default `natural_cred`, `natural_orgid`, and `natural_context` parameters by specifying the `creds`, `orgId`, and `keyspaces` options in the `WITH` clause of the USING AI statement. 
+See <<example-3>>.
 
 == Result
 
@@ -162,6 +182,10 @@ A JSON object containing the generated statement, execution status, and metrics.
 
 If the generated statement is a SELECT query and the `execute` option is `TRUE` (default), the output includes the query results as well.
 
+IMPORTANT: Currently, when you run a USING AI statement from the Query Workbench, it does not show you the generated SQL++ statement. 
+Instead, it returns only the executed results of the generated statement. 
+
+[[handling-passwords]]
 == Handling Passwords Securely
 
 Use `creds` and `natural_cred` parameters with caution to avoid exposing password information through history files or logs.
@@ -172,7 +196,7 @@ This ensures that the password is not recorded in the shell history.
 Similarly, if you are sending requests directly to a REST endpoint from a shell, be mindful of how you provide the password and whether it will be recorded in the shell history.
 Consider using a method like the following to prompt for the password:
 
-[source,sh]
+[source,console]
 ----
 echo -n "Enter your password: "
 read -s p
@@ -193,7 +217,7 @@ In the following examples, replace `natural_cred` and `natural_orgid` with your 
 {example-note}
 
 .Request
-[source, console]
+[source, sh]
 ----
 \set -natural_context travel-sample.inventory.hotel;
 \set -natural_cred username@example.com:P@ssw0rd; 
@@ -235,7 +259,7 @@ USING AI How many hotels provide free parking?;
 {example-note}
 
 .Request
-[source, console]
+[source,sh]
 ----
 \set -natural_cred username@example.com:P@ssw0rd;
 \set -natural_orgid 7a99d00c-f55b-4b39-bc72-1b4cc68ba894;
@@ -270,7 +294,7 @@ How many airlines are based in United Kingdom?;
 {example-note}
 
 .Request
-[source, console]
+[source, sh]
 ----
 USING AI WITH
 {
@@ -314,7 +338,7 @@ List the names of all hotels in the same city as an airport;
 .Natural language prompt submitted directly to the Query REST API
 ====
 .Request
-[source, sh]
+[source, console]
 ----
 echo -n "Enter your password: "
 read -s p
@@ -359,7 +383,7 @@ curl -s -d "natural_cred=username@example.com:${p}" \
 {example-note}
 
 .Request
-[source, console]
+[source, sh]
 ----
 \set -natural_cred rakhi.prathap@couchbase.com:Couchbase123#;
 \set -natural_orgid 7a99d00c-f55b-4b39-bc72-1b4cc68ba894;
@@ -400,7 +424,7 @@ This is because the Query Service executes the generated statement only if it is
 {example-note}
 
 .Request
-[source, console]
+[source, sh]
 ----
 \set -natural_cred username@example.com:P@ssw0rd;
 \set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab;
@@ -444,7 +468,7 @@ How many hotels are located in California?;
 This example uses the same prompt as <<example-5>> but specifies the `output` option instead of the `FLEXINDEX` keyword.
 
 .Request
-[source, console]
+[source, sh]
 ----
 \set -natural_cred username@example.com:P@ssw0rd;
 \set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab;
@@ -487,7 +511,7 @@ How many hotels are located in California?;
 {example-note}
 
 .Request
-[source, console]
+[source, sh]
 ----
 \set -natural_cred username@example.com:P@ssw0rd;
 \set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab;
@@ -539,7 +563,7 @@ Create a function to list all hotels in California;
 {example-note}
 
 .Request
-[source, console]
+[source, sh]
 ----
 \set -natural_cred rakhi.prathap@couchbase.com:Couchbase123#;
 \set -natural_orgid 7a99d00c-f55b-4b39-bc72-1b4cc68ba894;
@@ -644,5 +668,18 @@ List the names and cities of hotels with a rating greater than 4;
         "naturalLanguageProcessingTime": "2.516578959s"
     }
 }
+----
+====
+
+[[example-10]]
+.Running USING AI in Query Workbench with pre-set parameters
+====
+Before executing the USING AI statement from the Query Workbench, you must set the required parameters in the xref:server:tools/query-workbench.adoc#query-preferences[Run-Time Preferences] window.
+For more information, see the <<usage>> section.
+
+.Request
+[source, sqlpp]
+----
+USING AI How many hotels provide free parking?;
 ----
 ====
