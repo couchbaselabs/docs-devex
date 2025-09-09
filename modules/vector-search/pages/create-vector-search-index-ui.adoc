@@ -38,9 +38,66 @@ include::partial$download-sample-partial.adoc[]
 
 == Procedure 
 
-To create an FTS Vector Index with Quick Mode in Capella:
+To create an FTS Vector Index in Capella:
 
 . On the *Operational Clusters* page, select the operational cluster where you want to create a Search index.
+. Do 1 of the following: 
+.. Use the <<vector-indexes-flow,Vector Index creation flow>>. 
+.. Use the <<search-flow,Search creation flow>>.
+
+NOTE: If you use the <<vector-indexes-flow,Vector Index creation flow>>, you cannot add fields other than vector fields to your index during your initial index creation.
+
+[#vector-indexes-flow]
+=== Create a FTS Vector Index from Vector Indexes 
+
+To use the *Vector Indexes* creation flow to create a new FTS Vector Index: 
+
+. Go to menu:Data Tools[Vector Indexes].
+. On the *Vector Indexes* page, click btn:[+ Create Vector Index].
+. Click btn:[Hybrid Search Vector Index].
+. In the *Index Name* field, enter a name for the FTS Vector Index. 
++
+[NOTE]
+====
+Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
+
+For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope. You cannot have 2 indexes with the same name inside the same bucket and scope.
+====
+. In the *Bucket* and *Scope* lists, choose the bucket and scope where you want to create your Search index.
+. In the *Collections* list, select the collection or collections that contain documents with vector embeddings. 
+. Under *Type Mappings*, in your document schema, expand a collection that contains these documents. 
+. In your document schema, select the child field that contains your vector embeddings. 
+. Configure the options for the child field as follows:
+.. In the *Type* list, select 1 of the following: 
+... If your child field contains vector embeddings as an array, click *vector*. 
++
+Vector embeddings formatted as arrays appear as `\{field-name} [ number ]` in the Capella Quick Mode editor.
+... (Couchbase Server version 7.6.2 or later) If your child field contains vector embeddings formatted as a base64 encoded string, click *vector_base64*.
++
+Vector embeddings formatted as base64 strings appear as `\{field-name} [ string ]` in the Capella Quick Mode editor.
+.. In the *Dimension* field, check that the value matches the total number of elements in your vector embeddings array. 
++
+The Search Service supports arrays up to 2048 elements.
+Capella automatically fills in the dimension value for your selected child field when you choose the *vector* or *vector_base64* type.
+.. In the *Similarity metric* list, choose the method to use to calculate the similarity between search term and Search index vectors.
++ 
+For more information, see xref:search:type-mapping-options.adoc#field[Field Type Mapping Options].
+.. In the *Optimized for* list, choose whether the Search Service should optimize Search queries for accuracy (*recall*) or speed (*latency*).
++
+For more information, see xref:search:type-mapping-options.adoc#field[Field Type Mapping Options].
+. Click btn:[Add To Index].
+. Click btn:[Review Index].
+. Click btn:[Create Index].
+
+TIP: After you create your FTS Vector Index, click the index name to go back into the editor and add additional collections or child field type mappings to your index.
+For example, you could add the text field that you used to generate your vector embeddings.
+For more information, see xref:search:create-search-index-ui.adoc#add-mapping[Add Type Mappings and Mappings].
+
+[#search-flow]
+=== Create a FTS Vector Index from Search
+
+To use the *Search* creation flow to create a new FTS Vector Index: 
+
 . Go to menu:Data Tools[Search].
 . Click btn:[Create Search Index].
 . In the *Index Name* field, enter a name for the FTS Vector Index. 
@@ -56,7 +113,7 @@ For Couchbase Server version 7.6 and later, your index name must be unique insid
 . Under *Type Mappings*, in your document schema, expand a collection that contains these documents. 
 . In your document schema, select the child field that contains your vector embeddings. 
 . Configure the options for the child field as follows:
-.. In the *Type* list, select one of the following: 
+.. In the *Type* list, select 1 of the following: 
 ... If your child field contains vector embeddings as an array, click *vector*. 
 +
 Vector embeddings formatted as arrays appear as `\{field-name} [ number ]` in the Capella Quick Mode editor.
