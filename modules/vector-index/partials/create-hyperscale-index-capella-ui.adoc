@@ -17,23 +17,17 @@ You cannot have 2 indexes with the same name inside the same bucket and scope.
 ====
 . In the *Bucket*, *Scope*, and *Collection* lists, select the bucket, scope, and collection where you have documents that contain a vector field.
 . Under *Vector Field*, in the *Select Field* list, select the vector field to use in your HyperScale Vector index.
-. In the *Filter Field* lists, do the following:
+. (Optional) To add a field to use as a filter on the data included in your Composite Vector index, click btn:[+ Add Filter Field].
 .. Under *Filter Fields*, select the field you want to use to filter your documents before running vector comparisons.
 .. Under *Include in Index*, choose whether the previously selected field should be included in your index and returned in search results.
 .. Under *Partition by Hash*, choose whether the previously selected field should be used to partition your index, based on the values in your documents.
 +
 For example, you could partition your HyperScale Vector index based on the value of a `supplier` field in your documents.
 If you choose *No*, you can still filter using a `WHERE` clause, but your index will not be partitioned based on field values.
-.. (Optional) Under *Add where clause*, enter the specific values, separated by commas (`,`) that a document must contain in your filter field to be included in your index.
+.. (Optional) Under *Add WHERE clause*, enter a clause for the specific values that a document must contain in your filter field to be included in your index.
 +
-For example, you could filter your index so that only documents with a `supplier` value of `HP` are included.
-. Under *Index Configuration*, choose an option to automatically configure additional settings for your HyperScale Vector index: 
-+
-* *High Accuracy*: Choose when you need high precision and accuracy in your vectors.
-* *Low Latency*: Choose when you need fast query performance over accuracy.
-* *Balanced*: Choose when you need your index to be both fast and accurate.
-+
-You can also configure the following settings manually:
+For example, you could filter your index so that only documents with `supplier = "HP"` or `brightness > 0.5` are included.
+. Under *Index Configuration*, choose options to configure additional settings for your HyperScale Vector index: 
 
 .. In the *Similarity Distance* list, select the similarity metric that you want to use for comparing vectors in your index.
 For the best accuracy, use the same similarity that you plan to use to query your data.
@@ -45,15 +39,40 @@ For more information about quantization, see xref:vector-index:vectors-and-index
 For more information about how to choose quantization on your index, see xref:vector-index:vectors-and-indexes-overview.adoc#choosing_quantization[Choosing Quantization] and xref:vector-index:vector-index-best-practices.adoc#quantization[Tuning Index Creation - Quantization].
 .. In the *Dimensions* field, enter the exact dimension of the vectors in your data.
 +
-Your embedding model determines this value.
+Your embedding model determines this value, and Capella automatically configures it based on your chosen *Vector Field*.
 .. In the *Number of replicas* list, select the number of replicas you want to create for your index.
 +
 Replicas affect the query throughput, memory footprint, and fault tolerance for your HyperScale Vector index.
 More replicas increase the required memory for your index, but can increase query throughput.
-.. In the *Number of Training List* list, select the number of vectors to consider when searching for centroids in your data.
+.. In the *Training List* field, enter or select the number of vectors to consider when searching for centroids in your data.
 +
-By default, your training list value should be 50 times the number of centroids in the index.
-Higher values can increase your query throughput and reduce latency, but increase memory usage.
+If you have less than 10,000 vectors in your index, set the *Training List* value to your number of vectors.
+If you have more than 10,000 vectors, use either 10% of your total number of vectors or 10 times your number of centroids - whichever value is higher, up to a maximum of 1,000,000.
+.. In the *Probes to scan* field, enter or select the number of centroids to check for similar vectors for each query.
++
+A higher value increases search times, but also increases accuracy.
+
+.. In the *Number of clusters* field, enter or select the number of centroids to create in your index.
++
+A larger value creates smaller centroids.
+By default, set the *Number of clusters* to the number of vectors in your data divided by 1000.
+For more information about how to set this value, see xref:vector-index:hyperscale-vector-index.adoc#number-of-centroids[Number of Centroids].
+
+.. To store full vectors in the index, select *Persist Full Vector*.
++
+This increases the storage required for your index but increases accuracy.
 . Click btn:[Review Index].
 . Confirm your HyperScale Vector Index configuration. 
 . Click btn:[Create Index] or copy the {sqlpp} syntax to create your index with the Query Workbench.
+
+=== Resolve Index Creation Errors 
+
+If an error occurs while Capella tries to create your HyperScale Vector index, on the *Vector Indexes* page, the *Status* of your index changes to *Error*. 
+
+To view the details of the error: 
+
+. Click the *Error* status to open the Query Workbench.
+. Click btn:[Run] to rebuild the index.
+. In the query results, find the error details. 
+
+Depending on the error, you might need to try recreating your index with a new configuration. 
