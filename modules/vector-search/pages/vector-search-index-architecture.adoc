@@ -26,13 +26,17 @@ If the index snapshots on the Search Service are too far ahead, the Search Servi
 [#segments]
 == Search Index Segments
 
-Search and Vector Search indexes in Couchbase Server are built with segments. 
+Search and Vector Search indexes are built with index snapshots, which contain data segments. 
 
-All Search indexes contain a root segment, which includes all data for the Search index but excludes any segments that might be stale.
-Stale segments are eventually removed by the Search Service's persister or merger routines.
+All Search indexes contain a root index snapshot. 
+This snapshot maps to all segments that contain the latest version of data for your Search index.
+The data in newer segments can overwrite the data in older segments.
+The Search Service maintains time-spaced snapshots to support partial index rollbacks, in case of data sync issues between the Data Service and the Search Service.
+
+The stale segments in a snapshot are eventually removed by the Search Service's persister or merger routines -- unless these segments are needed to restore an index snapshot.
 
 The persister reads in-memory segments from the disk write queue and flushes them to disk, completing batch operations as part of <<sync,>>.
-The merger works with the persister to consolidate flushed files and flush the consolidated results back through the persister - while purging the smaller, older files.
+The merger flushes consolidated files to disk and updates the root index snapshot.
 
 The persister and merger interact to continuously flush and merge new in-memory segments to disk, and remove stale segments.
 
@@ -46,6 +50,7 @@ The segments for a Vector Search index can contain different index types and use
 
 Vector Search specifically uses https://faiss.ai/index.html[FAISS^] indexes.
 Any vectors inside your documents are indexed using FAISS, to create a new query vector that can be searched for similar vectors inside your Vector Search index.
+These FAISS indexes are embedded within segments alongside any text indexes and other data structures. 
 
 Vector Search chooses the best https://github.com/facebookresearch/faiss/wiki/Faiss-indexes[FAISS index class^], or vector search algorithm, for your data, and automatically tunes parameters to provide a balance of recall and latency.
 You can choose to prioritize recall, latency, or memory efficiency with the xref:search:type-mapping-options.adoc#optimized[Optimized For] setting on your index.
