@@ -76,6 +76,8 @@ Can be one of the following:
 
 If specified, this value overrides the xref:n1ql-rest-query:index.adoc#Request[natural_cred] parameter.
 
+To ensure your credentials are passed securely, see <<handling-passwords, Handling Passwords>>.
+
 | String or object
 
 | **keyspaces** +
@@ -107,12 +109,11 @@ __optional__
 | Indicates if the generated statement should be executed automatically. 
 
 If `TRUE`, the Query Service executes the generated statement and returns the results. 
-
 This applies only if the statement is a SELECT query.
 For other statement types, such as INSERT, UPDATE, DELETE, UPSERT, or CREATE FUNCTION, the statement is not executed, even if `execute` is `TRUE`.
 See <<example-5>>.
 
-If `FALSE`, generated statement is returned, but not executed.
+If `FALSE`, the generated statement is returned, but not executed.
 
 *Default:* `TRUE`
 
@@ -130,7 +131,7 @@ Generates a standard SQL++ query.
 * `jsudf` &mdash;
 Generates a CREATE FUNCTION statement.
 You can use this to create a SQL++ managed JavaScript user-defined function.
-The Query Service does not execute the CREATE FUNCTION, even if `execute` is `TRUE`.
+Note that the Query Service does not execute the CREATE FUNCTION, even if `execute` is `TRUE`.
 You must run the generated statement separately to create the function.
 
 * `ftssql` &mdash;
@@ -152,31 +153,32 @@ See <<example-9>>.
 [[usage]]
 == Usage
 
-To use a USING AI statement, you must provide the following details: your Capella credentials, Capella organization ID, and one or more keyspaces. 
-
+To use a USING AI statement, you must provide your Capella credentials, Capella organization ID, and one or more keyspaces. 
 You can provide these details in two ways: 
 
-* By setting them as request-level parameters using the `natural_cred`, `natural_orgid`, and `natural_context` parameters. 
-* By including them directly in the statement using the `creds`, `orgId`, and `keyspaces` parameters.
+* <<request-level-parameters, As request-level parameters>> 
+* <<inline-parameters, Inline within the statement>> 
 
-=== Setting Parameters at the Request Level
+[[request-level-parameters]]
+=== Set Parameters at the Request Level
 
 You can set `natural_cred`, `natural_orgid`, and `natural_context` as request-level parameters, outside the USING AI statement.
 When set, these parameters apply to all subsequent USING AI statements in that session.
 
 For example:
 
-* In cbq shell, you can set these parameters using the `\set` command. 
+* In the cbq shell, you can set these parameters using the `\set` command. 
 See <<example-1>>.
-* In the Query Workbench, you can set these parameters in the xref:tools:query-workbench.adoc#query-preferences[Run-Time Preferences] window as named parameters (without the $ prefix). 
+* In the Query Workbench, you can set these parameters in the xref:tools:query-workbench.adoc#query-preferences[Run-Time Preferences] window as named parameters, without the $ prefix. 
 
 For more information about how to set request-level parameters, see xref:n1ql:n1ql-manage/query-settings.adoc#section_nnj_sjk_k1b[Configure Queries].
 
-Once configured, you need not specify `creds`, `orgId`, or `keyspaces` in the WITH clause.
+Once configured, you do not need to specify `creds`, `orgId`, or `keyspaces` in the WITH clause.
 
-=== Setting Parameters Inline
+[[inline-parameters]]
+=== Set Parameters Inline
 
-You can specify the `creds`, `orgId`, and `keyspaces` options directly in the `WITH` clause of the USING AI statement. 
+You can set the `creds`, `orgId`, and `keyspaces` options directly in the `WITH` clause of the USING AI statement. 
 If specified, these values override the `natural_cred`, `natural_orgid`, and `natural_context` parameters. 
 See <<example-3>>.
 
@@ -208,7 +210,7 @@ echo
 curl -s -d "natural_cred=<your-username>:${p}" ...
 ----
 
-If you choose to reuse the password by setting an evironment variable, note that it might be visible to other users on the system with sufficient privileges for process inspection (for example, through `/proc`).
+If you choose to reuse the password by setting an environment variable, note that it might be visible to other users on the system with sufficient privileges for process inspection (for example, through `/proc`).
 If security is a concern, consider using an HTTPS connection. 
 
 == Examples
@@ -233,7 +235,8 @@ USING AI How many hotels provide free parking?;
 ----
 {
     "requestID": "097f9cbf-57f2-4832-986d-4f85041c91dc",
-    "generated_statement": "SELECT COUNT(*) FROM `travel-sample`.`inventory`.`hotel` 
+    "generated_statement": "SELECT COUNT(*) 
+                        FROM `travel-sample`.`inventory`.`hotel` 
                         AS `h` WHERE `h`.`free_parking` = TRUE",
     "signature": {
         "$1": "number"
@@ -258,7 +261,7 @@ USING AI How many hotels provide free parking?;
 ====
 
 [[example-2]]
-.USING AI with execution disabled and keyspace specified within the statement 
+.USING AI with keyspace specified within the statement and execute set to FALSE
 ====
 {example-note}
 
@@ -358,7 +361,8 @@ curl -s -d "natural_cred=username@example.com:${p}" \
 ----
 {
     "requestID": "325457b8-9cf4-477b-aaf5-7609f2ae79bf",
-    "generated_statement": "SELECT COUNT(*) FROM `travel-sample`.`inventory`.`landmark` 
+    "generated_statement": "SELECT COUNT(*) 
+                        FROM `travel-sample`.`inventory`.`landmark` 
                         AS `l` WHERE `l`.`geo`.`lon` \u003c 0",
     "signature": {
         "$1": "number"
@@ -418,12 +422,12 @@ Insert a new hotel named "Sunset Inn" in "Miami, Florida" with a rating of 4;
     }
 }
 ----
-If you examine the `hotel` keyspace, you'll see that this document is not inserted, even though `execute` was set to `TRUE`.
-This is because the Query Service executes the generated statement only if it's a SELECT statement.
+If you examine the `hotel` keyspace, you'll see that this document was not inserted, even though `execute` was set to `TRUE`.
+This is because the Query Service executes the generated statement only if it's a SELECT query.
 ====
 
 [[example-6]]
-.USING AI with flex index hint
+.USING AI with the flex index hint
 ====
 {example-note}
 
@@ -469,7 +473,7 @@ How many hotels are located in California?;
 ====
 {example-note}
 
-This example uses the same prompt as <<example-5>> but specifies the `output` option instead of the `FLEXINDEX` keyword.
+This example uses the same prompt as <<example-5>>, but specifies the `output` option instead of the `FLEXINDEX` keyword.
 
 .Request
 [source, sh]
@@ -486,7 +490,8 @@ How many hotels are located in California?;
 {
     "requestID": "c6fcaed5-23fa-4dc5-936c-febc6b5cb222",
     "generated_statement": "SELECT COUNT(*) 
-                        FROM `travel-sample`.`inventory`.`hotel` AS `h` 
+                        FROM `travel-sample`.`inventory`.`hotel` 
+                        AS `h` 
                         USE INDEX (USING FTS) WHERE `h`.`state` = \"California\"",
     "signature": {
         "$1": "number"
@@ -537,7 +542,8 @@ Create a function to list all hotels in California;
                             AS `h` WHERE `h`.`state` = \"CA\"; 
                     /* Initialize an empty array to store the results */ 
                     var res = []; 
-                    /* Iterate over the query results and push each hotel into the results array */ 
+                    /* Iterate over the query results and 
+                    push each hotel into the results array */ 
                     for (const doc of q) {
                     var hotel = {}; 
                     hotel.name = doc.name; 
@@ -636,7 +642,8 @@ List the names and cities of hotels with a rating greater than 4;
                             {
                                 "#operator": "Filter",
                                 "condition": "any `review` in (`h`.`reviews`) 
-                                              satisfies (4 \u003c (`review`.`rating`)) end"
+                                              satisfies (4 \u003c (`review`.`rating`)) 
+                                              end"
                             },
                             {
                                 "#operator": "InitialProject",
@@ -678,7 +685,7 @@ List the names and cities of hotels with a rating greater than 4;
 [[example-10]]
 .Running USING AI from the Query Workbench using request-level parameters
 ====
-Before executing this statement, you must set the required parameters in the xref:server:tools/query-workbench.adoc#query-preferences[Run-Time Preferences] window.
+Before executing the following statement, you must set the `natural_cred`, `natural_orgid`, and `natural_context` parameters in the xref:tools:query-workbench.adoc#query-preferences[Run-Time Preferences] window.
 For more information, see the <<usage>> section.
 
 .Request
@@ -699,7 +706,7 @@ When you execute a USING AI statement from the Query Workbench, it returns only 
 [[example-11]]
 .Running USING AI from the Query Workbench with all parameters inline
 ====
-This is the same as <<example-10>>, but it specifies all parameters directly in the USING AI statement.
+This is equivalent to <<example-10>>, but specifies all parameters directly in the statement, instead of setting them at the request-level.
 
 .Request
 [source, sqlpp]
