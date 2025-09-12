@@ -7,9 +7,9 @@ Using it, you control how the index subdivides the dataset to improve performanc
 
 The `description` parameter is a string in the following format:
 
-[source,sqlpp]
+[source,ebnf]
 ----
-'IVF[<number_of_centroids>],{PQ|SQ}<quantization_setting>'
+description ::= '"' 'IVF' number-of-centroids? ',' ('SQ' sq-settings | 'PQ' pq-settings) '"'
 ----
 
 The following sections describe the settings for centroids and quantization.
@@ -30,7 +30,7 @@ It sets the number of centroids to the number of vectors in the dataset divided 
 You can manually set the number of centroids for the index by adding an integer value after the `IVF` in the `description` parameter.
 The number of centroids you set manually must be less than the number of vectors in the dataset.
 
-ifeval::['{index-name}' == 'Composite Vector index'] 
+ifeval::['{index-name}' == 'Composite Vector index']
 The number of centroids affects the performance of your {index-name} index in two ways:
 
 * If the index has fewer centroids, each centroid is larger (has more vectors associated with it).
@@ -41,7 +41,7 @@ However, having fewer centroids decreases the processing required to train the i
 This increase is due to the training process having to search for more data cluster to identify more centroids. 
 However, it reduces the number of vectors associated with each centroid.
 This reduction makes search faster by limiting the number of vector comparisons during a search.
-endif::[] 
+endif::[]
 
 ifeval::['{index-name}' == 'Hyperscale Vector index']
 {index-name-plural} perform better with larger centroids (fewer centroids in the index). 
@@ -57,8 +57,7 @@ Another option is to have the fastest possible storage such as a fast NVME conne
 
 * If your working data set is much larger than the bucket's memory quota, choose a larger number of centroids for the index. 
 This setting reduces the number of vectors associated with each centroid, which can reduce disk I/O during searches.
-
-endif::[] 
+endif::[]
 
 You may need to experiment with different numbers of centroids to find the best setting for your dataset and queries.
 
@@ -125,9 +124,9 @@ A smaller value results in a smaller index that returns less accurate results.
 
 The format for the PQ settings is:
 
-[source,sqlpp]
+[source,ebnf]
 ----
-PQ<subquantizers>x<number of bits>
+pq-settings ::= 'PQ' subquantizers 'x' number-of-bits
 ----
 
 For example, `PQ32x8` has PQ break the vector's dimensions into 32 subspaces, each of which has 256 centroids. 
