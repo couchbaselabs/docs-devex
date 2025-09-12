@@ -1,9 +1,10 @@
 = CREATE INDEX
 :page-topic-type: reference
+:page-partial:
+:page-toclevels: 2
 :imagesdir: ../../assets/images
 :keywords: secondary, index, placement
-:description: The CREATE INDEX statement allows you to create a secondary index. \
-Secondary indexes contain a filtered or a full set of keys in a given keyspace.
+:description: The CREATE INDEX statement allows you to create secondary indexes and composite vector indexes.
 
 :authorization-overview: xref:server:learn:security/authorization-overview.adoc
 :index-replication: xref:indexes:index-replication.adoc#index-replication
@@ -13,44 +14,67 @@ Secondary indexes contain a filtered or a full set of keys in a given keyspace.
 :identifiers: xref:n1ql-language-reference/identifiers.adoc
 :expression: xref:n1ql-language-reference/index.adoc
 :aggregatefun: xref:n1ql:n1ql-language-reference/aggregatefun.adoc
+:flatten-keys: xref:n1ql:n1ql-language-reference/metafun.adoc#flatten_keys
+:base64-decode: xref:n1ql:n1ql-language-reference/metafun.adoc#base64-decode
 :indexing-arrays: xref:n1ql-language-reference/indexing-arrays.adoc
 :index-partitioning: xref:n1ql-language-reference/index-partitioning.adoc
 :indexing-meta-info: xref:n1ql-language-reference/indexing-meta-info.adoc
 :operator-pushdowns: xref:indexes:index_pushdowns.adoc#operator-pushdowns
 :logical-hierarchy: xref:n1ql:n1ql-intro/queriesandresults.adoc#logical-hierarchy
 :querying-indexes: xref:n1ql-intro/sysinfo.adoc#querying-indexes
+:create-vector-index: xref:n1ql-language-reference/createvectorindex.adoc
+:index-training: xref:vector-index:vectors-and-indexes-overview.adoc#index-training
+:composite-vector-index: xref:vector-index:composite-vector-index.adoc
+:algo-settings: {composite-vector-index}#algo_settings
+:prerequisites: {composite-vector-index}#prerequisites
 
 // TEMP
 include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
-The `CREATE INDEX` statement allows you to create a secondary index.
+The `CREATE INDEX` statement allows you to create secondary indexes.
 Secondary indexes contain a filtered or a full set of keys in a given keyspace.
 Secondary indexes are optional but increase query efficiency on a keyspace.
 
+In clusters running Couchbase Server 8.0 and later, the `CREATE INDEX` statement also allows you to create composite vector indexes.
+To create hyperscale vector indexes, use the {create-vector-index}[CREATE VECTOR INDEX] statement.
+
+//tag::purpose[]
 == Purpose
 
-`CREATE INDEX` allows you to make multiple concurrent index creation requests.
+`{doctitle}` allows you to make multiple concurrent index creation requests.
 The command starts a task to create the index definition in the background.
 If there is an index creation task already running, the Index Service queues the incoming index creation request.
-`CREATE INDEX` returns as soon as the index creation phase is complete.
+`{doctitle}` returns as soon as the index creation phase is complete.
 
 By default, when the index creation phase is complete, the Index Service triggers the index build phase.
 If you lose connectivity, the index build operation continues in the background.
 You can defer the index build phase using the `defer_build` clause.
-In deferred build mode, `CREATE INDEX` creates the index definition, but does not trigger the index build phase.
+In deferred build mode, `{doctitle}` creates the index definition, but does not trigger the index build phase.
 You can then build the index using the {build-index}[BUILD INDEX] command.
 
 You can create multiple identical secondary indexes on a keyspace and place them on separate nodes for better index availability.
 The recommended way to do this is using the `num_replica` option.
+See <<index-with,WITH Clause>> for more details.
 
+Hyperscale vector indexes and composite vector indexes require a codebook for the vector field.
+The codebook is the result of sampling the dataset and is saved as part of the index metadata.
+
+The codebook is created as part of the {build-index}[BUILD INDEX] process, and is not incrementally updated.
+If the data set changes dramatically, you must drop and rebuild the index to update the codebook.
+//end::purpose[]
+
+//tag::prerequisites[]
 == Prerequisites
 
 [discrete]
 ===== RBAC Privileges
 
-User executing the CREATE INDEX statement must have the _Query Manage Index_ privilege granted on the keyspace.
+To execute the {doctitle} statement, you must have the _Query Manage Index_ privilege granted on the keyspace.
 For more details about user roles, see
 {authorization-overview}[Authorization].
+
+include::partial$n1ql-language-reference/vector-index-no-windows.adoc[]
+//end::prerequisites[]
 
 == Syntax
 
@@ -71,29 +95,24 @@ The minimum length of an index name is 1 character and there is no maximum lengt
 When querying, if the index name contains a `&num;` or `&lowbar;` character, you must enclose the index name within backticks.
 
 keyspace-ref:: (Required) Specifies the keyspace where the index is created.
-Refer to <<keyspace-ref>> below.
+See <<keyspace-ref>>.
 
-index-key:: (Required) Specifies an index key.
-Refer to <<index-key>> below.
-
-lead-key-attribs:: (Optional) Specifies attributes for the leading index key.
-Refer to <<index-key-attrib>> below.
-
-key-attribs:: (Optional) Specifies attributes for a non-leading index key.
-Refer to <<index-key-attrib>> below.
+index-keys-and-attribs:: (Required) Specifies the index keys and index key attributes.
+See <<index-keys-and-attribs>>.
 
 index-partition:: (Optional) Specifies index partitions.
-Refer to <<index-partition>> below.
+See <<index-partition>>.
 
 where-clause:: (Optional) Specifies filters for a partial index.
-Refer to <<where-clause>> below.
+See <<where-clause>>.
 
 index-using:: (Optional) Specifies the index type.
-Refer to <<index-using>> below.
+See <<index-using>>.
 
 index-with:: (Optional) Specifies options for the index.
-Refer to <<index-with>> below.
+See <<index-with>>.
 
+//tag::if-not-exists[]
 [[if-not-exists]]
 === IF NOT EXISTS Clause
 
@@ -103,7 +122,9 @@ If an index with the same name already exists within the specified keyspace, the
 * If this clause is not present, an error is generated.
 
 * If this clause is present, the statement does nothing and completes without error.
+//end::if-not-exists[]
 
+//tag::keyspace-ref[]
 [[keyspace-ref]]
 === Keyspace Reference
 
@@ -118,7 +139,7 @@ Specifies the keyspace for which the index needs to be created.
 The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
 
 NOTE: If there is a hyphen (-) inside any part of the keyspace reference, you must wrap that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+See the examples on this page.
 
 [[keyspace-path,keyspace path]]
 ==== Keyspace Path
@@ -176,9 +197,33 @@ collection::
 ====
 For example, `airline` indicates the `airline` collection, assuming the query context is set.
 ====
+//end::keyspace-ref[]
+
+[[index-keys-and-attribs]]
+=== Index Keys and Attributes
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=index-keys-and-attribs]
+----
+
+image::n1ql-language-reference/index-keys-and-attribs.png["Syntax diagram: refer to source code listing", align=left]
+
+Secondary indexes and composite vector indexes can have many keys.
+Each key may have index attributes, which define the behavior of the index key.
+
+[horizontal]
+index-key:: (Required) Specifies an index key.
+See <<index-key>>.
+
+lead-key-attribs:: (Optional) Specifies attributes for the leading index key.
+See <<index-key-attrib>>.
+
+key-attribs:: (Optional) Specifies attributes for a non-leading index key.
+See <<index-key-attrib>>.
 
 [[index-key]]
-=== Index Key
+==== Index Key
 
 [source,ebnf]
 ----
@@ -187,21 +232,30 @@ include::partial$grammar/ddl.ebnf[tag=index-key]
 
 image::n1ql-language-reference/index-key.png["Syntax diagram: refer to source code listing", align=left]
 
-Refers to an attribute name or a scalar function or an ARRAY expression on the attribute.
-This constitutes an index-key for the index.
+The index key is a {sqlpp} {expression}[expression] referring to a field in the document, or an ARRAY expression on the field.
+
+For a composite vector index, one index key must refer to a vector field in the document.
+The index key that refers to a vector field may be the only index key.
+If there are multiple index keys, the index key referring to the vector field may be any of the index keys, including the leading index key.
 
 [horizontal#index-key-args]
 expr::
-A {sqlpp} {expression}[expression] over any fields in the document.
+A field name or a scalar function over any field in the document.
 This cannot use constant expressions, aggregate functions, or sub-queries.
++
+For a vector field, the expression may be the field name, or a {base64-decode}[BASE64_DECODE()] function on the vector field --
+this is necessary if the embedded vectors are stored as a base64-encoded string.
 
 array-expr::
 An array expression.
 Array indexing enables you to create global indexes on array elements and optimize the execution of queries involving array elements.
-For details, refer to {indexing-arrays}[Array Indexing].
++
+For a vector field, only ALL ARRAY is supported.
+The {flatten-keys}[FLATTEN_KEYS()] function is supported, but more than one key in {flatten-keys}[FLATTEN_KEYS()] is not permitted.
+For details, see {indexing-arrays}[].
 
 [[index-key-attrib]]
-=== Index Key Attributes
+==== Index Key Attributes
 
 [source,ebnf]
 ----
@@ -220,14 +274,17 @@ image::n1ql-language-reference/key-attribs.png["Syntax diagram: refer to source 
 Specifies attributes for the index key.
 
 [horizontal]
-index-order:: (Optional) All index keys may include an index order clause.
-Refer to <<index-order>> below.
+index-order:: (Optional) Any index key on a non-vector field may include an index order clause.
+See <<index-order>>.
 
-include-missing:: (Optional) The leading index key may also include `INCLUDE MISSING` clause.
-Refer to <<include-missing>> below.
+include-missing:: (Optional) If the leading index key is a non-vector field, it may also include the `INCLUDE MISSING` clause.
+See <<include-missing>>.
+
+include-vector:: (Optional) In a composite vector index, one index key must include the `VECTOR` keyword.
+See <<include-vector>>.
 
 [[index-order]]
-==== Index Order
+===== Index Order
 
 [source,ebnf]
 ----
@@ -237,6 +294,7 @@ include::partial$grammar/ddl.ebnf[tag=index-order]
 image::n1ql-language-reference/index-order.png["Syntax diagram: refer to source code listing", align=left]
 
 Specifies the sort order of the index key.
+For non-vector fields only.
 
 [horizontal]
 `ASC`::
@@ -248,7 +306,7 @@ The index key is sorted in descending order.
 This clause is optional; if omitted, the default is `ASC`.
 
 [[include-missing]]
-==== INCLUDE MISSING Clause
+===== INCLUDE MISSING Clause
 
 [source,ebnf]
 ----
@@ -260,16 +318,35 @@ image::n1ql-language-reference/include-missing.png["Syntax diagram: refer to sou
 The optional `INCLUDE MISSING` clause ensures that documents which do not include the index key field are indexed regardless.
 If this clause is not present, then documents without the index key field are not indexed.
 
-The `INCLUDE MISSING` clause can only be applied to the leading index key.
+The `INCLUDE MISSING` clause can only be applied to the leading index key for non-vector fields.
 The `INCLUDE MISSING` clause may be included before or after the `ASC` or `DESC` keyword.
 
+[[include-vector]]
+===== VECTOR Keyword
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=index-vector]
+----
+
+image::n1ql-language-reference/index-vector.png["Syntax diagram: refer to source code listing", align=left]
+
+Indicates that the index key is a vector field.
+
+//tag::index-partition[]
 [[index-partition]]
 === PARTITION BY HASH Clause
 
 Used to partition the index.
 Index partitioning helps increase the query performance by dividing and spreading a large index of documents across multiple nodes, horizontally scaling out an index as needed.
-For details, refer to {index-partitioning}[Index Partitioning].
+For details, see {index-partitioning}[Index Partitioning].
 
+With hyperscale vector indexes and composite vector indexes, training is done for each index node independently, and the codebook is provided to all partitions on that node.
+If there are multiple partitions for an index on a node, training is only done once for all partitions.
+See {index-training}[The Importance of Index Training].
+//end::index-partition[]
+
+//tag::where-clause[]
 [[where-clause]]
 === WHERE Clause
 
@@ -283,7 +360,9 @@ image::n1ql-language-reference/where-clause.png["Syntax diagram: refer to source
 [horizontal#where-clause-args]
 cond::
 Specifies WHERE clause predicates to qualify the subset of documents to include in the index.
+//end::where-clause[]
 
+//tag::index-using[]
 [[index-using]]
 === USING Clause
 
@@ -296,7 +375,9 @@ image::n1ql-language-reference/index-using.png["Syntax diagram: refer to source 
 
 The index type for a secondary index must be Global Secondary Index (GSI).
 The `USING GSI` keywords are optional and may be omitted.
+//end::index-using[]
 
+//tag::index-with[]
 [[index-with]]
 === WITH Clause
 
@@ -324,7 +405,7 @@ __optional__
 include::partial$n1ql-language-reference/file-based-index-rebalance-note.adoc[]
 
 You can specify multiple nodes to distribute replicas of an index across nodes running the indexing service: for example, `WITH {"nodes": ["node1:8091", "node2:8091", "node3:8091"]}`.
-For details and examples, refer to {index-replication}[Index Replication].
+For details and examples, see {index-replication}[Index Replication].
 
 If specifying both [.var]`nodes` and [.var]`num_replica`, the number of nodes in the array must be one greater than the specified number of replicas otherwise the index creation will fail.
 
@@ -362,12 +443,101 @@ If the value of this property is not less than the number of index nodes in the 
 
 **Default:** `1`
 |Integer
+//end::index-with[]
 |===
 
+Composite vector indexes support the following additional options.
+
+[options="header", cols="1a,4a,1a"]
+|===
+|Name|Description|Schema
+//tag::index-with[]
+
+|**dimension** +
+__required__
+| The number of dimensions in the vector.
+The embedded model you use to embed the vectors determines the number of dimensions in the vector.
+|Integer
+
+|**similarity** +
+__required__
+| Sets the distance metric to use when comparing vectors during index creation.
+
+Couchbase {product-name} uses the following strings to represent the distance metrics:
+
+[horizontal.compact]
+COSINE:: xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
+DOT:: xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
+L2::
+EUCLIDEAN:: xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
+L2_SQUARED::
+EUCLIDEAN_SQUARED:: xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean Squared Distance]
+
+For the greatest accuracy, use the distance metric you plan to use to query the data.
+|String
+
+|**description** +
+__required__
+| The settings for the quantization and index algorithms.
+The string is made up of the following settings:
+
+[horizontal.compact]
+IVF:: The number of centroids allocated for the index.
+SQ:: For scalar quantization -- the number of bits used to store the centroid for each bin.
+PQ:: For product quantization -- the number of subquantizers, and the number of bits in the centroid's index value.
+
+For more information, see {algo-settings}[Quantization and Centroid Settings].
+
+**Pattern:** `^IVF[0-9]*,(SQ[468]&vert;PQ[0-9]+x[0-9]+)$`
+|String
+
+|**scan_nprobes** +
+__optional__
+| The number of cells to search for each scan.
+
+**Default:** `1`
+|Integer
+
+|**train_list** +
+__optional__
+| The size of the sample set of vectors to be used for index training.
+
+If the index count is <{nbsp}10000, the default is to sample everything.
+
+Otherwise, the default value is 10% of the index count, or 10{nbsp}&times; the number of centroids, whichever is higher.
+
+**Maximum:** `1000000`
+|Integer
+
+ifeval::["{docname}" == "createvectorindex"]
+|**persist_full_vector** +
+__optional__
+| If `true` (the default), the index stores the full vector value in addition to the quantized value.
+This significantly increases the size of the index.
+
+Set to `false` if you do not plan to use reranking.
+For more information, see {hyperscale-reranking}[].
+
+**Default:** `true`
+|Boolean
+endif::[]
+|===
+
+Partitioned indexes support further options.
+See {index-partitioning}[].
+//end::index-with[]
+
+//tag::usage[]
 == Usage
 
-NOTE: It is not recommended to create (or drop) secondary indexes when any node with a secondary index role is down, as this may result in duplicate index names.
+[IMPORTANT]
+.Attention
+====
+Do not create (or drop) secondary indexes, composite vector indexes, or hyperscale vector indexes when any Index service node is down, as this may result in duplicate index names.
+====
+//end::usage[]
 
+//tag::monitoring-indexes[]
 === Monitoring Indexes
 
 Index metadata provides a state field.
@@ -388,19 +558,21 @@ include::example$n1ql-language-reference/build-idx-error.jsonc[]
 If the Index Service still cannot create the index after the maximum number of retries, the index state is marked as `offline`.
 You must drop the failed index using the `DROP INDEX` command.
 ====
+//end::monitoring-indexes[]
 
 [[indexing-metadata]]
-=== Using the `meta().id` Function
+=== Indexing Metadata
 
-You can create indexes on metadata information.
-For details, refer to {indexing-meta-info}[Indexing Meta Info].
+You can create indexes on metadata using the `META()` function.
+For details, see {indexing-meta-info}[].
 
 [[index-aggregates]]
 === Using Indexes for Aggregates
 
 If you have an index on a simple expression, such as `geo.alt`, you can use that index to satisfy a query on an {aggregatefun}[aggregate] of that expression, such as `MIN(geo.alt)` or `MAX(geo.alt)`.
-For details and examples, refer to {operator-pushdowns}[Operator Pushdowns].
+For details and examples, see {operator-pushdowns}[Operator Pushdowns].
 
+//tag::index-replicas[]
 [[index-replicas]]
 === Index Replicas
 
@@ -419,6 +591,11 @@ The system automatically load-balances an index scan across the index and all it
 Adding index replicas enables you to scale scan throughput, in addition to providing high availability.
 ====
 
+With hyperscale vector indexes and composite vector indexes, training is done by each replica index independently, and the codebook is stored as part of index metadata.
+See {index-training}[The Importance of Index Training].
+//end::index-replicas[]
+
+//tag::defer-index-builds-by-default[]
 ifdef::flag-devex-rest-api[]
 === Defer Index Builds by Default
 
@@ -432,6 +609,7 @@ If you change the default setting for `defer_build` to `true`, index creation op
 To change the default setting for deferred builds, use the Index Settings REST API to set the `indexer.settings.defer_build` property.
 For an example, see xref:index-rest-settings:index.adoc#ex-defer-build[Defer Index Builds by Default].
 endif::flag-devex-rest-api[]
+//end::defer-index-builds-by-default[]
 
 == Examples
 
@@ -537,6 +715,48 @@ The following statement will index all airports, even if the `district` field is
 ----
 include::example$n1ql-language-reference/create-idx-include.n1ql[]
 ----
-====
 
 For more examples of indexes where the leading key may be missing, see xref:n1ql:n1ql-language-reference/selectintro.adoc#index-selection[Index Selection].
+====
+
+[[eex-create-rgb-idx]]
+.Create a composite vector index
+====
+For this example, you must install the vector sample data as described in {prerequisites}[Prerequisites].
+The path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a composite vector index that indexes the vector field named `colorvect_l2`, as well as the scalar `color` and `brightness` fields.
+
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-vectors-idx]
+----
+====
+
+[[ex-create-vectors-idx]]
+.Create a composite vector index using embedded vectors
+====
+For this example, you must install the vector sample data as described in {prerequisites}[Prerequisites].
+The path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a composite vector index that indexes the vector field named `embedding-vector-dot`, as well as the scalar `color` and `brightness` fields.
+
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-vectors-idx]
+----
+====
+
+== Related Links
+
+* xref:indexes:indexing-overview.adoc[]
+* xref:vector-index:composite-vector-index.adoc[]
+* xref:vector-index:hyperscale-vector-index.adoc[]
+* xref:n1ql:n1ql-language-reference/createprimaryindex.adoc[CREATE PRIMARY INDEX]
+| xref:n1ql:n1ql-language-reference/createvectorindex.adoc[CREATE VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/build-index.adoc[BUILD INDEX]
+* xref:n1ql:n1ql-language-reference/alterindex.adoc[ALTER INDEX]
+| xref:n1ql:n1ql-language-reference/altervectorindex.adoc[ALTER VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/dropprimaryindex.adoc[DROP PRIMARY INDEX]
+| xref:n1ql:n1ql-language-reference/dropindex.adoc[DROP INDEX]
+| xref:n1ql:n1ql-language-reference/dropvectorindex.adoc[DROP VECTOR INDEX]

@@ -1,5 +1,6 @@
 = CREATE PRIMARY INDEX
 :page-topic-type: reference
+:page-toclevels: 2
 :imagesdir: ../../assets/images
 :keywords: primary, index, placement
 :description: The CREATE PRIMARY INDEX statement allows you to create a primary index. \
@@ -19,7 +20,7 @@ include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 The `CREATE PRIMARY INDEX` statement allows you to create a primary index.
 Primary indexes contain a full set of keys in a given keyspace.
-Primary indexes are optional and are only required for running ad hoc queries on a keyspace that is not supported by a secondary index.
+Primary indexes are optional -- they enable you to run ad hoc queries on a keyspace that is not supported by a secondary index.
 
 == Purpose
 
@@ -36,14 +37,14 @@ You can then build the index using the {build-index}[BUILD INDEX] command.
 
 You can create multiple identical primary indexes on a keyspace and place them on separate nodes for better index availability.
 The recommended way to do this is using the `num_replicas` option.
-Refer to <<index-with,WITH Clause>> below for more details.
+See <<index-with,WITH Clause>> for more details.
 
 == Prerequisites
 
 [discrete]
 ===== RBAC Privileges
 
-Users executing the `CREATE PRIMARY INDEX` statement must have the _Query Manage Index_ privilege granted on the keyspace.
+To execute the `CREATE PRIMARY INDEX` statement, you must have the _Query Manage Index_ privilege granted on the keyspace.
 For more details about user roles, see
 {authorization-overview}[Authorization].
 
@@ -61,23 +62,20 @@ image::n1ql-language-reference/create-primary-index.png["Syntax diagram: refer t
 [horizontal]
 index-name::
 (Optional) A unique name that identifies the index.
-If a name is not specified, the default name of `#primary` is applied. [small]##[<<note-index-name>>]##
+If a name is not specified, the default name of `#primary` is applied.
 +
 Valid GSI index names can contain any of the following characters: `A-Z` `a-z` `0-9` `&num;` `&lowbar;`, and must start with a letter, [`A-Z` `a-z`].
 The minimum length of an index name is 1 character and there is no maximum length set for an index name.
 When querying, if the index name contains a `&num;` or `&lowbar;` character, you must enclose the index name within backticks.
 
 keyspace-ref:: [Required] Specifies the keyspace where the index is created.
-Refer to <<keyspace-ref>> below.
+See <<keyspace-ref>>.
 
 index-using:: (Optional) Specifies the index type.
-Refer to <<index-using>> below.
+See <<index-using>>.
 
 index-with:: (Optional) Specifies options for the index.
-Refer to <<index-with>> below.
-
-[[note-index-name,note]]
-NOTE: You can drop unnamed primary indexes using the `DROP PRIMARY INDEX` statement, and named primary indexes using the `DROP INDEX` statement.
+See <<index-with>>.
 
 [[if-not-exists]]
 === IF NOT EXISTS Clause
@@ -103,7 +101,7 @@ Specifies the keyspace for which the index needs to be created.
 The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
 
 NOTE: If there is a hyphen (-) inside any part of the keyspace reference, you must wrap that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+See the examples on this page.
 
 [[keyspace-path,keyspace path]]
 ==== Keyspace Path
@@ -350,3 +348,17 @@ include::example$n1ql-language-reference/check-pri-online.n1ql[]
 
 The output from `system:indexes` shows that the index has now been created.
 ====
+
+== Related Links
+
+* xref:indexes:indexing-overview.adoc[]
+* xref:vector-index:composite-vector-index.adoc[]
+* xref:vector-index:hyperscale-vector-index.adoc[]
+* xref:n1ql:n1ql-language-reference/createindex.adoc[CREATE INDEX]
+| xref:n1ql:n1ql-language-reference/createvectorindex.adoc[CREATE VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/build-index.adoc[BUILD INDEX]
+* xref:n1ql:n1ql-language-reference/alterindex.adoc[ALTER INDEX]
+| xref:n1ql:n1ql-language-reference/altervectorindex.adoc[ALTER VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/dropprimaryindex.adoc[DROP PRIMARY INDEX]
+| xref:n1ql:n1ql-language-reference/dropindex.adoc[DROP INDEX]
+| xref:n1ql:n1ql-language-reference/dropvectorindex.adoc[DROP VECTOR INDEX]

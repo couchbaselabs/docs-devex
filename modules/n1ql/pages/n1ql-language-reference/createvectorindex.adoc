@@ -1,0 +1,231 @@
+= CREATE VECTOR INDEX
+:page-topic-type: reference
+:page-status: Couchbase Server 8.0
+:page-toclevels: 2
+:imagesdir: ../../assets/images
+:keywords: secondary, index, placement
+:description: The CREATE VECTOR INDEX statement allows you to create hyperscale vector indexes.
+
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:index-replication: xref:indexes:index-replication.adoc#index-replication
+:console-indexes: xref:manage:manage-ui/manage-ui.adoc#console-indexes
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+:build-index: xref:n1ql-language-reference/build-index.adoc
+:identifiers: xref:n1ql-language-reference/identifiers.adoc
+:expression: xref:n1ql-language-reference/index.adoc
+:aggregatefun: xref:n1ql:n1ql-language-reference/aggregatefun.adoc
+:flatten-keys: xref:n1ql:n1ql-language-reference/metafun.adoc#flatten_keys
+:base64-decode: xref:n1ql:n1ql-language-reference/metafun.adoc#base64-decode
+:indexing-arrays: xref:n1ql-language-reference/indexing-arrays.adoc
+:index-partitioning: xref:n1ql-language-reference/index-partitioning.adoc
+:indexing-meta-info: xref:n1ql-language-reference/indexing-meta-info.adoc
+:operator-pushdowns: xref:indexes:index_pushdowns.adoc#operator-pushdowns
+:logical-hierarchy: xref:n1ql:n1ql-intro/queriesandresults.adoc#logical-hierarchy
+:querying-indexes: xref:n1ql-intro/sysinfo.adoc#querying-indexes
+:create-index: xref:n1ql-language-reference/createindex.adoc
+:index-training: xref:vector-index:vectors-and-indexes-overview.adoc#index-training
+:hyperscale-vector-index: xref:vector-index:hyperscale-vector-index.adoc
+:hyperscale-filter: xref:vector-index:hyperscale-filter.adoc
+:hyperscale-reranking: xref:vector-index:hyperscale-reranking.adoc
+:algo-settings: {hyperscale-vector-index}#algo_settings
+:prerequisites: {hyperscale-vector-index}#prerequisites
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+The `CREATE VECTOR INDEX` statement allows you to create hyperscale vector indexes.
+
+To create secondary indexes or composite vector indexes, use the {create-index}[CREATE INDEX] statement.
+
+include::createindex.adoc[tags=purpose]
+
+include::createindex.adoc[tags=prerequisites]
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=create-vector-index]
+----
+
+image::n1ql-language-reference/create-vector-index.png["Syntax diagram: refer to source code listing", align=left]
+
+// TODO: Automatic links in EBNF.
+
+[horizontal#index-name, reftext="index-name"]
+index-name:: (Required) A unique name that identifies the index.
++
+Valid GSI index names can contain any of the following characters: `A-Z` `a-z` `0-9` `&num;` `&lowbar;`, and must start with a letter, [`A-Z` `a-z`].
+The minimum length of an index name is 1 character and there is no maximum length set for an index name.
+When querying, if the index name contains a `&num;` or `&lowbar;` character, you must enclose the index name within backticks.
+
+keyspace-ref:: (Required) Specifies the keyspace where the index is created.
+See <<keyspace-ref>>.
+
+index-key-and-attrib:: (Required) Specifies the index key and index key attribute.
+See <<index-key-and-attrib>>.
+
+index-include:: (Optional) Specifies non-key fields to include in the index.
+See <<index-include>>.
+
+index-partition:: (Optional) Specifies index partitions.
+See <<index-partition>>.
+
+where-clause:: (Optional) Specifies filters for a partial index.
+See <<where-clause>>.
+
+index-using:: (Optional) Specifies the index type.
+See <<index-using>>.
+
+index-with:: (Optional) Specifies options for the index.
+See <<index-with>>.
+
+include::createindex.adoc[tags=if-not-exists]
+
+include::createindex.adoc[tags=keyspace-ref]
+
+[[index-key-and-attrib]]
+=== Index Key and Attribute
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tags=index-key-and-attrib]
+----
+
+image::n1ql-language-reference/index-key-and-attrib.png["Syntax diagram: refer to source code listing", align=left]
+
+Hyperscale vector indexes only have one key, which must be a vector field.
+The index key takes one attribute, the VECTOR keyword.
+
+[horizontal]
+index-key:: (Required) Specifies an index key.
+See <<index-key>>.
+
+index-vector:: (Required) Specifies an attribute for the index key.
+See <<include-vector>>.
+
+[[index-key]]
+==== Index Key
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=index-key]
+----
+
+image::n1ql-language-reference/index-key.png["Syntax diagram: refer to source code listing", align=left]
+
+The index key is a {sqlpp} {expression}[expression] referring to a vector field, or an ARRAY expression on the vector field.
+
+[horizontal#index-key-args]
+expr::
+The name of a vector field in the document, or a {base64-decode}[BASE64_DECODE()] function on the vector field --
+this is necessary if the embedded vectors are stored as a base64-encoded string.
+
+array-expr::
+An array expression on a vector field in the document.
+Only ALL ARRAY is supported.
+The {flatten-keys}[FLATTEN_KEYS()] function is supported, but more than one key in {flatten-keys}[FLATTEN_KEYS()] is not permitted.
+For details, see {indexing-arrays}[].
+
+[[include-vector]]
+==== VECTOR Keyword
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=index-vector]
+----
+
+image::n1ql-language-reference/index-vector.png["Syntax diagram: refer to source code listing", align=left]
+
+Indicates that the index key is a vector field.
+
+[[index-include]]
+=== INCLUDE Clause
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=index-include]
+----
+
+image::n1ql-language-reference/index-include.png["Syntax diagram: refer to source code listing", align=left]
+
+Used to include scalar fields in the index, which you can use to filter the vector search.
+The INCLUDE clause cannot include a vector field.
+For details, see {hyperscale-filter}[].
+
+[horizontal#index-include-args]
+expr::
+A {sqlpp} {expression}[expression] referring to any scalar field in the document.
+
+include::createindex.adoc[tags=index-partition]
+
+include::createindex.adoc[tags=where-clause]
+
+include::createindex.adoc[tags=index-using]
+
+include::createindex.adoc[tags=index-with]
+
+include::createindex.adoc[tags=usage]
+
+include::createindex.adoc[tags=monitoring-indexes]
+
+include::createindex.adoc[tags=index-replicas]
+
+include::createindex.adoc[tags=defer-index-builds-by-default]
+
+== Examples
+
+To try the examples in this section, you must install the vector sample data as described in {prerequisites}[Prerequisites].
+
+[[ex-create-rgb-idx]]
+.Create a hyperscale vector index
+====
+For this example, the path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a hyperscale vector index for the vector column named `embedding-vector-dot`.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-rgb-idx]
+----
+====
+
+[[ex-create-idx-brightness]]
+.Create a hyperscale vector index with included scalar values
+====
+For this example, the path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a hyperscale vector index for the vector column named `embedding-vector-dot`, including the scalar `brightness` field.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-idx-brightness]
+----
+====
+
+[[ex-create-rgb-no-persist]]
+.Create a hyperscale vector index with no reranking
+====
+For this example, the path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a hyperscale vector index from the example RGB dataset that does not persist the full vector value.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-rgb-no-persist]
+----
+====
+
+== Related Links
+
+* xref:indexes:indexing-overview.adoc[]
+* xref:vector-index:composite-vector-index.adoc[]
+* xref:vector-index:hyperscale-vector-index.adoc[]
+* xref:n1ql:n1ql-language-reference/createprimaryindex.adoc[CREATE PRIMARY INDEX]
+| xref:n1ql:n1ql-language-reference/createindex.adoc[CREATE INDEX]
+* xref:n1ql:n1ql-language-reference/build-index.adoc[BUILD INDEX]
+* xref:n1ql:n1ql-language-reference/alterindex.adoc[ALTER INDEX]
+| xref:n1ql:n1ql-language-reference/altervectorindex.adoc[ALTER VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/dropprimaryindex.adoc[DROP PRIMARY INDEX]
+| xref:n1ql:n1ql-language-reference/dropindex.adoc[DROP INDEX]
+| xref:n1ql:n1ql-language-reference/dropvectorindex.adoc[DROP VECTOR INDEX]

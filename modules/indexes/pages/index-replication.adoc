@@ -40,7 +40,7 @@ This ensures:
 * _Availability_: If one Index-Service node is lost, the other continues to provide access to replicated indexes.
 * _High Performance_: If original and replica copies are available, incoming queries are load-balanced across them.
 
-Index-replicas can be created with the {sqlpp} `CREATE INDEX` statement.
+Index-replicas can be created with the {sqlpp} `CREATE INDEX` or `CREATE VECTOR INDEX` statement.
 Note that whenever a given number of index-replicas is specified for creation, the number must be less than the number of cluster-nodes currently running the {index-service}[Index Service].
 If it is not, the index creation fails.
 Note also that if, following creation of the maximum number of copies, the number of nodes running the Index Service decreases, Couchbase Capella progressively assigns replacement index-replicas to any and all Index-Service nodes subsequently be added to the cluster, until the required number of index-replicas again exists for each replicated index.
@@ -70,10 +70,10 @@ include::example$replication-num.n1ql[]
 Note that if `nodes` and `num_replica` are both specified in the `WITH` clause, the specified number of nodes must be _one greater_ than `num_replica`.
 
 ifdef::flag-devex-rest-api[]
-* Specifying a number of index-replicas to be created by the Index Service whenever `CREATE INDEX` is invoked.
+* Specifying a number of index-replicas to be created by the Index Service whenever `CREATE INDEX` or `CREATE VECTOR INDEX` is invoked.
 The default is `0`.
 If the default is changed to, say, `2`, creation of a single index is henceforth accompanied by the creation of two replicas, which are automatically distributed across the nodes of the cluster running the Index Service.
-No explicit specification within the `CREATE INDEX` statement is required.
+No explicit specification within the `CREATE INDEX` or `CREATE VECTOR INDEX` statement is required.
 +
 With credentials that provide appropriate authorization, this default can be changed by means of the `curl` command, as follows:
 +
@@ -84,10 +84,10 @@ curl -X POST -u 'Administrator:password' \
 -d 'numReplica=2'
 ----
 +
-Here, `numReplica` is an integer that establishes the default number of replicas that must be created whenever `CREATE INDEX` is invoked.
+Here, `numReplica` is an integer that establishes the default number of replicas that must be created whenever `CREATE INDEX` or `CREATE VECTOR INDEX` is invoked.
 Note that this call only succeeds if the cluster contains enough Index Service nodes to host each new index and its replicas: for example, if `2` is specified as the default number of replicas, the Index Service must have been established on at least 3 nodes.
 +
-Note also that whenever explicit specification of replica-numbers is made within the `CREATE INDEX` statement, this explicit specification takes precedence over any established default.
+Note also that whenever explicit specification of replica-numbers is made within the `CREATE INDEX` or `CREATE VECTOR INDEX` statement, this explicit specification takes precedence over any established default.
 
 You can change index replication settings via the {index-storage-mode}[UI] or the {index-settings-via-rest}[REST API].
 For further information on using {sqlpp}, refer to {query}[Query Fundamentals].
