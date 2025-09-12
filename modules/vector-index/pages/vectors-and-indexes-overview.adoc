@@ -127,7 +127,13 @@ Use this method when the actual distance of the vectors and their magnitudes are
 This method is useful if the distance between vectors represents a real-world value.
  
 image::euclidean-distance-example.svg["Three-dimensional plot showing two vectors with points along each vector joined by dotted lines, indicating the summing of corresponding points."]
- 
+
+NOTE: When you select Euclidean Distance or L2 as the metric for a vector index, Couchbase {product-name} internally uses the <<#euclidean-squared>> metric (explained in the sext section) to perform vector comparisons. 
+This approach improves performance because it avoids performing a computationally expensive square root operation.
+Vector searches using the Euclidean Squared metric return the same relevant vectors and ranking of results as Euclidean Distance.
+If your query materializes or projects the actual distance between vectors, Couchbase {product-name} calculates the actual Euclidean Distance.
+For example, if your query returns the distance between vectors as a column, Couchbase {product-name} calculates the square root of the Euclidean Squared distance to return the actual Euclidean Distance.
+
 Euclidean Distance is useful for tasks such as:
 
 * 3D motion capture where you're detecting similar positions or trajectories of joints, objects, where finding real-world values for thresholds is important. 
@@ -135,13 +141,14 @@ Euclidean Distance is useful for tasks such as:
 * Other cases where you use the results as filters in calculations that require the actual distance between the vectors.
 
 NOTE: Only Hyperscale Vector and Composite Vector indexes support this metric.
-FTS Vector indexes do not support it.
+Search Vector Indexes do not support it.
 
 [#euclidean-squared]
 === Euclidean Squared Distance 
 
 
-Euclidean Squared Distance (also known as L2 Squared or L2^2^) is similar to Euclidean Distance, but it does not take the square root of the sum distances between the vectors:
+Euclidean Squared Distance (also known as L2 Squared or L2^2^) is similar to Euclidean Distance.
+However, it does not take the square root of the sum distances between the vectors:
 
 
 Euclidean Distance Formula::
@@ -169,7 +176,7 @@ For example:
 * Locating similar genomic and biological sequences in a dataset, such as related gene profiles.
 
 NOTE: Only Hyperscale Vector and Composite Vector indexes support this metric.
-FTS Vector indexes do not support it.
+Search Vector Indexes do not support it.
 
 [#dot]
 === Dot Product
@@ -226,7 +233,7 @@ However, searching a flat index is inefficient.
 The search must compare every vector in the index to find matches.
 You should only use it for small data sets or for testing. 
 
-NOTE: FTS Vector indexes use a flat index when indexing datasets with 1000 or fewer vectors.
+NOTE: Search Vector Indexes use a flat index when indexing datasets with 1000 or fewer vectors.
 Hyperscale Vector and Composite Vector indexes only support the next algorithm, IVF.
 
 [#IVF]
@@ -256,7 +263,7 @@ This graph connects related centroids together so that a similarity search can q
 Hyperscale also adds other proprietary optimizations that allow it to scale to billions of vectors.
 
 
-FTS Vector indexes automatically uses IVF when the indexing datasets larger than 1000 vectors.
+Search Vector Indexes automatically uses IVF when the indexing datasets larger than 1000 vectors.
 
 [#quantization]
 == Quantization
@@ -313,7 +320,7 @@ Use PQ quantization when:
 
 
 Hyoerscale Vector and Composite Vector indexes support PQ quantization.
-FTS Vector indexes do not support it.   
+Search Vector Indexes do not support it.   
 
 [#sq]
 === Scalar Quantization (SQ)
@@ -359,11 +366,11 @@ All three types of vector indexes support SQ quantization.
 
 === Choosing a Quantization Method
 
-You do not choose a quantization method for FTS vector indexes.
+You do not choose a quantization method for Search Vector Indexes.
 Instead, they automatically choose whether to use quantization:
 
-* FTS Vector indexes do not use quantization for datasets smaller than 10000 vectors.
-* FTS Vector indexes automatically use 8-bit SQ quantization for datasets with 10000 vectors or larger.
+* Search Vector Indexes do not use quantization for datasets smaller than 10000 vectors.
+* Search Vector Indexes automatically use 8-bit SQ quantization for datasets with 10000 vectors or larger.
 
 When creating a Hyperscale Vector or Composite Index, you choose which quantization method to use when creating the index. 
 When deciding, consider the following:
