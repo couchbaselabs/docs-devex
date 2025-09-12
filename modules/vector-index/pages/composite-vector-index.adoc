@@ -28,11 +28,11 @@ For more information about how to deploy a new node and Services on your databas
 * You must have a bucket with scopes and collections in your database. 
 For more information about how to create a bucket, see xref:manage:manage-buckets/create-bucket.adoc[].
 
-* Your account must have the xref:learn:security:roles.adoc#query-manage-index[Query Manage Index] or an administrator role to be able to create an index.
+* Your account must have the xref:learn:security/roles.adoc#query-manage-index[Query Manage Index] or an administrator role to be able to create an index.
 
 * You have documents in a collection that contain one or more vector embeddings.
 You can add a single vector to a Composite Vector index.
-If your documents contain multiple embedded vectors, you can create multiple indexes---one for each vector attribute.
+If your documents contain multiple embedded vectors, you can create multiple indexes -- one for each vector attribute.
 +
 Embeddings can be an array of floating point numbers or a base64 encoded string.
 Couchbase {product-name} does not embed vectors itself. 
@@ -54,28 +54,27 @@ See xref:vector-index:vectors-and-indexes-overview.adoc#vector_similarity[Vector
 
 
 [#create-index]
-ifeval::['{product-name}' == 'Capella']
-include::vector-index:partial$create-composite-index-capella-ui.adoc[]
+// TODO: For uptake in Couchbase Capella
+////
+include::vector-index:partial$create-composite-index-capella-ui.adoc[opts=optional]
 
 == Create a Composite Vector Index Using SQL++
-endif::[] 
-ifeval::['{product-name}' == 'Server']
-== Create a Hyperscale Vector Index
-endif::[] 
+////
+== Create a Composite Vector Index
 
 Creating a Composite Vector index is similar to creating a non-vector GSI index.
 See xref:guides:create-index.adoc[] for an overview of creating indexes.
 In the `CREATE INDEX` statement to create the Composite Vector index, add the `VECTOR` lead key attribute after the vector's key name to declare it as an embedded vector.
 
-You must also use the xref:n1ql:n1ql-language-reference/createindex.adoc#index-with[`WITH`] clause to specify some additional information for the vector column. 
+You must also use the xref:n1ql:n1ql-language-reference/createindex.adoc#index-with[WITH] clause to specify some additional information for the vector column. 
 The format for this clause with the most commonly used parameters is:
 
 [source,sqlpp]
 ----
-WITH {  "dimension":<dimensions> , 
-        "similarity":<similarity-metric>, 
-        "description":<centroids-and-quantization>
-     }; 
+WITH {"dimension": <dimensions>,
+      "similarity": <similarity_metric>,
+      "description": <centroids_and_quantization>
+     };
 ----
 
 NOTE: The `WITH` clause can contain other parameters that affect how the index processes vectors.
@@ -83,13 +82,13 @@ For a full list of these parameters, see xref:n1ql:n1ql-language-reference/creat
 
 * `dimensions` is an integer value that sets the number of dimensions in the vector.
 This value is set by the embedded model you used to embed the vectors.
-* `similarity-metric` is a string that sets the distance metric to use when comparing vectors during index creation.
+* `similarity_metric` is a string that sets the distance metric to use when comparing vectors during index creation.
 +
 include::partial$distance-metric-list.adoc[]
 
 +
 For the greatest accuracy, use the distance function you plan to use when querying vector data.
-* `centroids-and-quantization` is a string containing the settings for the quantization and index algorithms. 
+* `centroids_and_quantization` is a string containing the settings for the quantization and index algorithms. 
 See <<#algo_settings>> in the next section for more information.
 
 For a full list of the parameters that affect a Composite Vector index, see xref:n1ql:n1ql-language-reference/createindex.adoc[].
@@ -134,7 +133,7 @@ In this example:
 * The similarity function is `L2`. 
 This function works well to find related vectors which are close by the search vector.
 In this example, finding similar colors depends more on proximity than the magnitude or alignment of the vectors.
-See xref:gsi-with-vectors.adoc##vector_similarity[Vector Similarity] for a comparison of similarity functions.
+See xref:vectors-and-indexes-overview.adoc#vector_similarity[Vector Similarity] for a comparison of similarity functions.
 * The `description` lets Couchbase {product-name} decide the number of centroids for the IVF algorithm.
 It also chooses to use Scalar Quantization with an 8-bit index, splitting each dimension into 256 bins.
 This setting does not actually save any space in the index, as each of the RGB dimensions are already 8-bit values. 
@@ -358,19 +357,10 @@ It appears here with most of the 1536 vectors omitted:
 
 [source,sqlpp]
 ----
-include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-vectors-idx-truncated]
+include::vector-index:example$query-vectors-idx-whole.sqlpp[tags=!query-vectors-idx-truncated]
 ----
 
-You can expand the following section to see and copy the entire query with all the vectors:
-
-.Show full example
-[%collapsible]
-====
-[source,sqlpp]
-----
-include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-vectors-idx-whole]
-----
-====
+You can click the btn:[View] button to see and copy the entire query with all the vectors.
 
 Another option is to import the `rgb_questions.json` file into another collection in the `vector-sample` bucket's `color` scope named `rgb-questions`.
 Then you can use a subquery to get the vectors for the question and use it in your query of the `rgb` collection's `embedding_vector_dot` attribute:
@@ -431,19 +421,10 @@ The truncated version of the query is:
 
 [source,sqlpp]
 ----
-include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-vectors-idx-filtered-truncated]
+include::vector-index:example$query-vectors-idx-filtered-whole.sqlpp[tags=!query-vectors-idx-filtered-truncated]
 ----
 
-You can expand the Show full example section to see and copy the entire query with all the vectors:
-
-.Show full example
-[%collapsible]
-====
-[source,sqlpp]
-----
-include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-vectors-idx-filtered-whole]
-----
-====
+You can click the btn:[View] button to see and copy the entire query with all the vectors.
 
 The results of this query moves the papaya whip entry to the top. 
 
