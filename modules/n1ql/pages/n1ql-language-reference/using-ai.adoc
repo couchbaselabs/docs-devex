@@ -28,7 +28,7 @@ AI is treated as a keyword only when used in conjunction with the USING AI state
 Before using the USING AI statement, make sure you have:
 
 * A Couchbase Capella account. 
-* Your Capella account credentials and organization ID readily available.
+* Your Capella account credentials and organization ID readily available. 
 
 NOTE: Although the USING AI statement requires a Capella account, you can use it with any Couchbase Server 8.0 instances. 
 
@@ -100,6 +100,11 @@ __optional__
 | Couchbase Capella organization ID for the request.
 
 If specified, this value overrides the xref:n1ql-rest-query:index.adoc#Request[natural_orgid] parameter.
+
+To find your organization ID, log in to your Couchbase Capella account and check the URL in your web browser.
+The organization ID is the `oid` parameter in the URL.
+
+For example, in the URL https://cloud.couchbase.com/databases?oid=5c670d3e-12a3-456b-7c89-123456789ab, the organization ID is `5c670d3e-12a3-456b-7c89-123456789ab`.
 
 | String
 
@@ -188,9 +193,6 @@ A JSON object containing the generated statement, execution status, and metrics.
 
 If the generated statement is a SELECT query and the `execute` option is `TRUE` (default), the output includes the query results as well.
 
-IMPORTANT: Currently, when you run a USING AI statement from the Query Workbench, it does not return the generated SQL++ statement. 
-Instead, it returns only the executed results of the generated statement. 
-
 [[handling-passwords]]
 == Handling Passwords Securely
 
@@ -198,6 +200,24 @@ Use `creds` and `natural_cred` parameters with caution to avoid exposing passwor
 When working with the cbq shell, avoid passing passwords directly on the command line. 
 Instead, use the `\set` command to specify only the username, and then enter the password at the terminal prompt.
 This ensures that the password is not recorded in the shell history.
+
+For example: 
+
+[source, sh]
+----
+cbq> \set -natural_cred username@example.com;
+Enter password for "natural_cred": <enter password>
+
+cbq> \set;
+ Query Parameters : 
+ Parameter name : natural_cred
+ Value : [username@example.com:***]
+
+ Parameter name : profile
+ Value : ["timings"]
+ 
+ ...
+----
 
 Similarly, if you're sending requests directly to a REST endpoint from a shell, be mindful of how you provide the password and whether it will be recorded in the shell history.
 Consider using a method like the following to prompt for the password:
@@ -680,50 +700,4 @@ List the names and cities of hotels with a rating greater than 4;
     }
 }
 ----
-====
-
-[[example-10]]
-.Running USING AI from the Query Workbench using request-level parameters
-====
-Before executing the following statement, you must set the `natural_cred`, `natural_orgid`, and `natural_context` parameters in the xref:tools:query-workbench.adoc#query-preferences[Run-Time Preferences] window.
-For more information, see the <<usage>> section.
-
-.Request
-[source, sqlpp]
-----
-USING AI How many hotels provide free parking?;
-----
-.Response
-[source,json]
-----
-[{
-    "$1": 253
-}]
-----
-When you execute a USING AI statement from the Query Workbench, it returns only the results of the executed query and not the generated SQL++ statement itself.
-====
-
-[[example-11]]
-.Running USING AI from the Query Workbench with all parameters inline
-====
-This is equivalent to <<example-10>>, but specifies all parameters directly in the statement, instead of setting them at the request-level.
-
-.Request
-[source, sqlpp]
-----
-USING AI WITH {
-"creds":"username@example.com:P@ssw0rd", 
-"orgId":"5c670d3e-12a3-456b-7c89-123456789ab",
-"keyspaces":"travel-sample.inventory.hotel"
-} How many hotels provide free parking?;
-----
-
-.Response
-[source,json]
-----
-[{
-    "$1": 253
-}]
-----
-When you execute a USING AI statement from the Query Workbench, it returns only the results of the executed query and not the generated SQL++ statement itself.
 ====
