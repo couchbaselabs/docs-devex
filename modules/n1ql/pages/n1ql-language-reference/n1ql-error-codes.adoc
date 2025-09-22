@@ -6,18 +6,18 @@
 {description}
 
 ////
-    {
-      "applies_to": "cbq-shell",
-      "code": 100,
-      "description": "A connection was refused.",
-      "reason": [
-        "A connection the cbq-shell was trying to make was refused by the remote partner."
-      ],
-      "user_action": [
-        "Verify the connection URL and try again."
-      ],
-      "user_error": "Yes"
-    },
+/* Use this SQL++ query to generate finderr.json */
+
+WITH errors AS (ARRAY_FLATTEN((SELECT RAW finderr(".*")), 1))
+SELECT code,
+       description,
+       ARRAY CASE WHEN ISARRAY(v) THEN CONCAT2(" ", v)
+             ELSE v END
+       FOR v IN reason END AS reason,
+       ARRAY CASE WHEN ISARRAY(w) THEN CONCAT2(" ", w)
+             ELSE w END
+       FOR w IN user_action END AS user_action
+FROM errors;
 ////
 
 == 1xx Codes (shell)
