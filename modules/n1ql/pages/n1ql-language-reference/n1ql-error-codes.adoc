@@ -8,7 +8,8 @@
 ////
 /* Use this SQL++ query to generate finderr.json */
 
-WITH errors AS (ARRAY_FLATTEN((SELECT RAW finderr(".*")), 1))
+WITH errors AS (ARRAY_FLATTEN((SELECT RAW finderr(".*")), 1)),
+     footnotes AS ([1040, 5500])
 SELECT code,
        description,
        ARRAY CASE WHEN ISARRAY(v) THEN CONCAT2(" ", v)
@@ -16,7 +17,9 @@ SELECT code,
        FOR v IN reason END AS reason,
        ARRAY CASE WHEN ISARRAY(w) THEN CONCAT2(" ", w)
              ELSE w END
-       FOR w IN user_action END AS user_action
+       FOR w IN user_action END AS user_action,
+       CASE WHEN code IN footnotes THEN true
+       ELSE MISSING END AS footnote
 FROM errors;
 ////
 
