@@ -18,10 +18,9 @@ If the generated statement is a SELECT query, the Query Service automatically ex
 For all other query types, it returns the generated statement as a string without executing it. 
 However, you can modify this behavior by using the <<optional-parameters, execute>> option.
 
-IMPORTANT: With the introduction of the USING AI statement, you might notice that AI is now recognized as a keyword.
-However, this change has been implemented in a way that does not break existing queries or applications where "ai" is used as a field name or identifier.
-For example, queries like `SELECT ai FROM XYZ` will continue to work without any issues.
-AI is treated as a keyword only when used in conjunction with the USING AI statement.
+IMPORTANT: The word `AI` is recognized as a keyword, but only when used as part of the `USING AI` statement.
+When used by itself as a field name or identifier, you do not need to escape the word `AI` by enclosing it in backticks.
+For example, in a query like `SELECT ai FROM XYZ`, you can use `ai` as a field name without needing to escape it.
 
 == Prerequisites
 
@@ -43,12 +42,12 @@ include::partial$grammar/utility.ebnf[tag=using-ai]
 image::n1ql-language-reference/using-ai.png["Syntax diagram: refer to source code listing", align=left]
 
 prompt:: 
-[Required] A natural language request that you want to convert into a SQL++ query.
+[Required] A natural language request that you want to convert into a {sqlpp} query.
 
 options::
 [Optional] A JSON object specifying additional <<optional-parameters,options>> for the statement.
 +
-By default, the statement uses the xref:n1ql-rest-query:index.adoc#Request[natural_orgid], xref:n1ql-rest-query:index.adoc#Request[natural_cred], and xref:n1ql-rest-query:index.adoc#Request[natural_context] parameters.
+By default, the statement uses the xref:n1ql-rest-query:index.adoc#natural_orgid[natural_orgid], xref:n1ql-rest-query:index.adoc#natural_cred[natural_cred], and xref:n1ql-rest-query:index.adoc#natural_context[natural_context] request-level parameters.
 These parameters determine the organization ID, credentials, and keyspaces for the request.
 You can override them by specifying the relevant parameters in the <<optional-parameters,options>> object.
 
@@ -72,9 +71,9 @@ __optional__
 Can be one of the following:
 
 * A string in the username:password format. 
-* An object with the fields `user` and `pass`, similar to the xref:n1ql:n1ql-manage/query-settings.adoc#Credentials[creds] parameter.
+* An object with the fields `user` and `pass`, similar to the xref:n1ql:n1ql-manage/query-settings.adoc#Credentials[creds] request-level parameter.
 
-If specified, this value overrides the xref:n1ql-rest-query:index.adoc#Request[natural_cred] parameter.
+If specified, this value overrides the xref:n1ql-rest-query:index.adoc#natural_cred[natural_cred] request-level parameter.
 
 To ensure your credentials are passed securely, see <<handling-passwords, Handling Passwords>>.
 
@@ -87,10 +86,10 @@ __optional__
 
 Can be one of the following:
 
-* A string matching the xref:n1ql-rest-query:index.adoc#Request[natural_context] specification. 
+* A string matching the xref:n1ql-rest-query:index.adoc#natural_context[natural_context] specification. 
 * An array of comma-separated strings.
 
-If specified, this value overrides the xref:n1ql-rest-query:index.adoc#Request[natural_context] parameter.
+If specified, this value overrides the xref:n1ql-rest-query:index.adoc#natural_context[natural_context] request-level parameter.
 
 | String or an array of strings 
 
@@ -99,12 +98,12 @@ __optional__
 
 | Couchbase Capella organization ID for the request.
 
-If specified, this value overrides the xref:n1ql-rest-query:index.adoc#Request[natural_orgid] parameter.
+If specified, this value overrides the xref:n1ql-rest-query:index.adoc#natural_orgid[natural_orgid] request-level parameter.
 
 To find your organization ID, log in to your Couchbase Capella account and check the URL in your web browser.
 The organization ID is the `oid` parameter in the URL.
 
-For example, in the URL https://cloud.couchbase.com/databases?oid=5c670d3e-12a3-456b-7c89-123456789ab, the organization ID is `5c670d3e-12a3-456b-7c89-123456789ab`.
+For example, in the URL `+++https://cloud.couchbase.com/databases?oid=5c670d3e-12a3-456b-7c89-123456789ab+++`, the organization ID is `5c670d3e-12a3-456b-7c89-123456789ab`.
 
 | String
 
@@ -203,7 +202,6 @@ This ensures that the password is not recorded in the shell history.
 
 For example: 
 
-[source, sh]
 ----
 cbq> \set -natural_cred username@example.com;
 Enter password for "natural_cred": <enter password>
@@ -222,7 +220,6 @@ cbq> \set;
 Similarly, if you're sending requests directly to a REST endpoint from a shell, be mindful of how you provide the password and whether it will be recorded in the shell history.
 Consider using a method like the following to prompt for the password:
 
-[source,console]
 ----
 echo -n "Enter your password: "
 read -s p
