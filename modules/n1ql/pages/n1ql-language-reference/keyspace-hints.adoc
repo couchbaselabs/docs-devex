@@ -21,6 +21,9 @@ If the keyspace is _not_ given an explicit alias in the query, the hint must ref
 There are two possible formats for each optimizer hint: simple syntax and JSON syntax.
 Note that you cannot mix simple syntax and JSON syntax in the same hint comment.
 
+TIP: While most keyspace hints guide the optimizer to use certain indexes or join methods, you can also use negative hints to instruct the optimizer what not to use.
+For more information, see xref:n1ql-language-reference/negative-keyspace-hints.adoc[Negative Keyspace Hints].
+
 == INDEX
 
 This hint directs the optimizer to consider one or more specified secondary indexes.
@@ -62,6 +65,7 @@ With the JSON syntax, this hint takes the form of an `index` property.
 You may only use this property once within the hint comment.
 The value of this property may be an <<index-array>> or an <<index-object>>.
 
+// tag::index-array[]
 [#index-array]
 ==== Index Array
 
@@ -126,7 +130,7 @@ A secondary index that the optimizer should consider for the given keyspace.
 
 An array of _index_ strings::
 An array of secondary indexes that the optimizer should consider for the given keyspace.
-
+// end::index-array[]
 [#index-examples,reftext="INDEX Examples"]
 === Examples
 
@@ -178,6 +182,25 @@ include::example$select/index-hint.jsonc[tag=index]
 ----
 ====
 
+.INDEX hint in an UPDATE statement
+====
+
+The following query hints that the optimizer should use the index `def_inventory_airport_city` for the keyspace `airport` when updating documents.
+
+[source,sqlpp]
+----
+include::example$dml/update-optimizer-hint.n1ql[]
+----
+
+If you examine the plan for this query, you can see that the query uses the suggested index.
+
+.Explain plan
+[source,json,indent=0]
+----
+include::example$dml/update-optimizer-hint.jsonc[tag=index]
+----
+====
+
 === Legacy Equivalent
 
 This hint is equivalent to the legacy `USE INDEX (USING GSI)` clause.
@@ -185,6 +208,195 @@ For more details, refer to xref:n1ql-language-reference/hints.adoc#use-index-cla
 
 Note that you cannot use a hint comment and the `USE` clause to specify optimizer hints on the same keyspace.
 If you do this, the hint comment and the `USE` clause are marked as erroneous and ignored by the optimizer.
+
+== INDEX_ALL
+
+This hint directs the optimizer to consider all specified secondary indexes. 
+
+When you apply the hint on a keyspace, the optimizer performs an intersect scan across all specified indexes.
+This process differs from a typical intersect scan and does not end early even when enough document IDs are found.
+Instead, it waits for all index scans to complete before intersecting the documents IDs. 
+
+Furthermore, the hint operates on an all-or-nothing basis.
+The optimizer uses this hint only if all specified indexes are usable.
+If even one of the indexes is not usable (for example, due to the lack of necessary predicates on index keys), the optimizer ignores the hint entirely and reverts to the standard index selection process.
+It does not attempt to use only a subset of the indexes.
+
+If you do not specify this hint, the optimizer selects the optimal available index.
+
+[NOTE]
+====
+
+To use the INDEX_ALL hint effectively:
+
+* You must specify at least two indexes for the hint to be valid.
+
+* You can only use GSI indexes. 
+The hint does not support FTS indexes. 
+
+* You cannot mix INDEX_ALL with other index hints for the same keyspace.
+It must be the only index hint present. 
+
+* You can use the hint on a keyspace on the right-hand side of an ANSI JOIN or ANSI NEST.
+
+* You cannot use it on a keyspace on the inner side of a legacy JOIN or NEST, like LOOKUP JOIN/NEST or INDEX JOIN/NEST.
+
+* INDEX_COMBINE is an alias for INDEX_ALL. 
+You can use either as the hint keyword.
+
+* Negative hints are not available for INDEX_ALL.
+====
+
+=== Simple Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=gsi-all-hint-simple]
+----
+
+image::n1ql-language-reference/gsi-all-hint-simple.png["Syntax diagram: refer to source code listing", align=left]
+
+With the simple syntax, this hint specifies a single keyspace expression along with zero, one, or more indexes. 
+You can use this hint multiple times within the hint comment to specify hints for more than one keyspace.
+
+NOTE: You must specify at least two indexes. 
+The hint is invalid if you provide zero or one index.
+
+==== Arguments
+
+keyspace::
+The keyspace or alias to which this hint applies.
+
+index::
+A secondary index that the optimizer should consider for the given keyspace.
+This argument is optional. 
+If omitted, the optimizer considers all secondary indexes available in the given keyspace.
+
+=== JSON Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=gsi-all-hint-json]
+----
+
+image::n1ql-language-reference/gsi-all-hint-json.png["Syntax diagram: refer to source code listing", align=left]
+
+With the JSON syntax, this hint takes the form of an `index_all` property.
+You may only use this property once within the hint comment.
+The value of this property may be an <<index-array-all>> or an <<index-object-all>>.
+
+[#index-array-all]
+==== Index Array
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=index-array]
+----
+
+image::n1ql-language-reference/index-array.png["Syntax diagram: refer to source code listing", align=left]
+
+Use this array to specify indexes for multiple keyspaces.
+Each element must be an <<index-object-all>>.
+
+[#index-object-all]
+==== Index Object
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=index-object]
+----
+
+image::n1ql-language-reference/index-object.png["Syntax diagram: refer to source code listing", align=left]
+
+Use this object to specify indexes for a single keyspace.
+It must contain a <<keyspace-property-all>> and an <<indexes-property-all>>.
+The order of the properties within the object is not significant.
+
+[#keyspace-property-all]
+==== Keyspace Property
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=keyspace-property]
+----
+
+image::n1ql-language-reference/keyspace-property.png["Syntax diagram: refer to source code listing", align=left]
+
+Synonym for `"keyspace"`: `"alias"`
+
+The value of this property is the keyspace or alias to which this hint applies.
+
+[#indexes-property-all]
+==== Indexes Property
+
+[source,ebnf]
+----
+include::partial$grammar/hints.ebnf[tag=indexes-property]
+----
+
+image::n1ql-language-reference/indexes-property.png["Syntax diagram: refer to source code listing", align=left]
+
+The value of this property may be:
+
+[horizontal]
+null::
+The optimizer considers all secondary indexes available in the given keyspace.
+
+An index string::
+A secondary index that the optimizer should consider for the given keyspace.
+
+An array of index strings::
+An array of secondary indexes that the optimizer should consider for the given keyspace.
+
+[#index-all-examples,reftext="INDEX_ALL Examples"]
+=== Examples
+
+{cbo-preamble}
+
+include::ROOT:partial$query-context.adoc[tag=section]
+
+[#ex-index-all-opt]
+.Optimized index selection
+====
+The following query does not include an index hint.
+
+.Query
+[source,sqlpp]
+----
+include::example$select/index-opt.n1ql[tag=query]
+----
+
+If you examine the plan for this query, you can see that the optimizer has selected the index `def_inventory_route_sourceairport`, which is installed with the travel sample dataset.
+
+.Explain plan
+[source,json,indent=0]
+----
+include::example$select/index-opt.jsonc[tag=index]
+----
+====
+
+[#ex-index-all-hint]
+.INDEX_ALL hint
+====
+The following query hints that the optimizer should select indexes `def_inventory_route_route_src_dst_day` and `def_inventory_route_sourceairport` for the keyspace `route`.
+
+.Query
+[source,sqlpp]
+----
+include::example$select/index-all-hint.n1ql[tag=query]
+----
+<.> The keyspace is not given an explicit alias in the query.
+You must therefore refer to the keyspace using the keyspace name or implicit alias -- in this case, `route`.
+<.> The implicit alias is the last element in the keyspace path.
+
+If you examine the plan for this query, you can see that the query uses the suggested index.
+
+.Explain plan
+[source,json,indent=0]
+----
+include::example$select/index-all-hint.jsonc[tag=index]
+----
+====
 
 == INDEX_FTS
 
@@ -327,6 +539,8 @@ If you do this, the hint comment and the `USE` clause are marked as erroneous an
 This hint directs the optimizer to consider a nested-loop join for the specified keyspace.
 This hint must be specified on the keyspace on the right-hand side of the join.
 If not specified, the optimizer selects the optimal join method.
+
+NOTE: This hint is only available in xref:n1ql-language-reference/selectclause.adoc[SELECT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements. 
 
 === Simple Syntax
 
@@ -473,7 +687,11 @@ Typically, this means you want the build side to be used on the smaller of the t
 This hint enables you specify whether the right side of the join should be the build side or the probe side.
 If you specify that the right side of the join is the build side, then the left side will be the probe side, and vice versa.
 
-NOTE: For Couchbase Server Community Edition (CE), only nested-loop join is considered by the optimizer, and any specified `USE_HASH` hint will be silently ignored.
+[NOTE]
+====
+* This hint is only available in xref:n1ql-language-reference/selectclause.adoc[SELECT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements.
+* For Couchbase Server Community Edition (CE), only nested-loop join is considered by the optimizer, and any specified `USE_HASH` hint will be silently ignored.
+====
 
 === Simple Syntax
 
@@ -685,3 +903,4 @@ If you do this, the optimizer hints and the `USE` clause are both marked as erro
 * xref:n1ql-language-reference/cost-based-optimizer.adoc[]
 * xref:n1ql-language-reference/optimizer-hints.adoc[]
 * xref:n1ql-language-reference/query-hints.adoc[]
+* xref:n1ql-language-reference/negative-keyspace-hints.adoc[]

@@ -74,9 +74,8 @@ WHERE city = "San Francisco";
 
 == Placement
 
-Currently, a hint comment is only supported in the `SELECT` statement.
-The hint comment must be located immediately after the `SELECT` keyword.
-For details, refer to xref:n1ql-language-reference/selectclause.adoc[SELECT Clause].
+In Couchbase Server 8.0 and later, a hint comment is supported in `SELECT`, `DELETE`, `UPDATE`, and `MERGE` statements only.
+The hint comment must be located immediately after the statement keyword.
 
 There can only be one hint comment in a query block.
 If there is more than one hint comment, a syntax error is generated.
@@ -261,9 +260,10 @@ When the optimizer follows a JSON hint, the hint is shown in the explain plan in
 .Explain plan for <<ex-json-hint>>
 [source,sqlpp]
 ----
-EXPLAIN SELECT /*+ {"index": {"keyspace": "airport",
-                              "indexes": "def_inventory_airport_city"}} */
-               airportname, faa
+EXPLAIN
+SELECT /*+ {"index": {"keyspace": "airport",
+                      "indexes": "def_inventory_airport_city"}} */
+       airportname, faa
 FROM airport
 WHERE city = "San Francisco";
 ----
@@ -417,13 +417,78 @@ WHERE a.city = "San Francisco";
 ----
 ====
 
+[#ex-update-hint-explain]
+.Explain plan for UPDATE with a simple index hint
+====
+When the optimizer follows a simple hint in an UPDATE query, the hint is shown in the explain plan.
+
+.Explain plan
+[source,sqlpp]
+----
+EXPLAIN 
+UPDATE /*+ INDEX(airport def_inventory_airport_city) */ airport 
+SET updated = true 
+WHERE city = "San Jose";
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "optimizer_hints": {
+      "hints_followed": [
+        "INDEX(airport def_inventory_airport_city)"
+      ]
+    },
+// ...
+  }
+]
+----
+====
+
+[#ex-delete-hint-explain]
+.Explain plan for DELETE with a simple index hint
+====
+When the optimizer follows a simple hint in a DELETE query, the hint is shown in the explain plan.
+
+.Explain plan
+[source,sqlpp]
+----
+EXPLAIN
+DELETE /*+ INDEX (hotel def_inventory_hotel_city) */ 
+FROM `hotel`
+WHERE city = "San Francisco";
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "optimizer_hints": {
+        "hints_followed": [
+            "INDEX(`hotel` `def_inventory_hotel_city`)"
+        ]
+    },
+// ...
+  }
+]
+----
+====
+
 == Further Details
 
 Refer to the following pages for details of individual optimizer hints:
 
 * xref:n1ql-language-reference/query-hints.adoc[] apply to an entire query block.
 * xref:n1ql-language-reference/keyspace-hints.adoc[] apply to a specific keyspace.
+* xref:n1ql:n1ql-language-reference/negative-keyspace-hints.adoc[] apply to a specific keyspace, but instruct the optimizer not to use certain options.
 
 == Related Links
 
 * xref:n1ql-language-reference/cost-based-optimizer.adoc[Cost-Based Optimizer]
+* xref:n1ql-language-reference/selectclause.adoc[SELECT]
+* xref:n1ql-language-reference/delete.adoc[DELETE]
+* xref:n1ql-language-reference/update.adoc[UPDATE]
+* xref:n1ql-language-reference/merge.adoc[MERGE]

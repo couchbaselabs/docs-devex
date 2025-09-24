@@ -1,0 +1,156 @@
+[{
+  "cardinality": 0.0000059464345178630886,
+  "cost": 12.220073379662029,
+  "optimizer_hints": {
+      "hints_followed": [
+          "INDEX_ALL(`route` `def_inventory_route_route_src_dst_day` `def_inventory_route_sourceairport`)"
+      ]
+  },
+  "plan": {
+      "#operator": "Sequence",
+      "~children": [{
+              "#operator": "Sequence",
+              "~children": [{
+                      "#operator": "IntersectScan",
+                      "all_scan": true,
+                      "limit": "1",
+                      "optimizer_estimates": {
+                          "cardinality": 0.0000059464345178630886,
+                          "cost": 12.196267064485678,
+                          "fr_cost": 12.196267064485678,
+                          "size": 11
+                      },
+                      "scans": [{
+                              "#operator": "DistinctScan",
+                              "optimizer_estimates": {
+                                  "cardinality": 0.14285714285714285,
+                                  "cost": 12.196267064485678,
+                                  "fr_cost": 12.196267064485678,
+                                  "size": 11
+                              },
+// tag::index[]
+                              "scan": {
+                                  "#operator": "IndexScan3",
+                                  "bucket": "travel-sample",
+                                  "index": "def_inventory_route_route_src_dst_day",
+                                  "index_id": "6c6a9ea47d763bf1",
+                                  "index_projection": {
+                                      "primary_key": true
+                                  },
+                                  "keyspace": "route",
+                                  "namespace": "default",
+                                  "optimizer_estimates": {
+                                      "cardinality": 1,
+                                      "cost": 12.172539443450269,
+                                      "fr_cost": 12.172539443450269,
+                                      "size": 11
+                                  },
+                                  "scope": "inventory",
+                                  "spans": [{
+                                      "exact": true,
+                                      "range": [{
+                                          "high": "\"SFO\"",
+                                          "inclusion": 3,
+                                          "index_key": "`sourceairport`",
+                                          "low": "\"SFO\""
+                                      }]
+                                  }],
+                                  "using": "gsi"
+                              }
+                          },
+                          {
+                              "#operator": "IndexScan3",
+                              "bucket": "travel-sample",
+                              "index": "def_inventory_route_sourceairport",
+                              "index_id": "f1b4c81456c850f0",
+                              "index_projection": {
+                                  "primary_key": true
+                              },
+                              "keyspace": "route",
+                              "namespace": "default",
+                              "optimizer_estimates": {
+                                  "cardinality": 1,
+                                  "cost": 12.171488093767262,
+                                  "fr_cost": 12.171488093767262,
+                                  "size": 11
+                              },
+                              "scope": "inventory",
+                              "spans": [{
+                                  "exact": true,
+                                  "range": [{
+                                      "high": "\"SFO\"",
+                                      "inclusion": 3,
+                                      "index_key": "`sourceairport`",
+                                      "low": "\"SFO\""
+                                  }]
+                              }],
+                              "using": "gsi"
+                          }
+// end::index[]
+
+                      ]
+                  },
+                  {
+                      "#operator": "Fetch",
+                      "bucket": "travel-sample",
+                      "early_projection": [
+                          "id",
+                          "sourceairport"
+                      ],
+                      "keyspace": "route",
+                      "namespace": "default",
+                      "optimizer_estimates": {
+                          "cardinality": 0.0000059464345178630886,
+                          "cost": 12.19634547643713,
+                          "fr_cost": 12.19634547643713,
+                          "size": 563
+                      },
+                      "scope": "inventory"
+                  },
+                  {
+                      "#operator": "Parallel",
+                      "~child": {
+                          "#operator": "Sequence",
+                          "~children": [{
+                                  "#operator": "Filter",
+                                  "condition": "((`route`.`sourceairport`) = \"SFO\")",
+                                  "optimizer_estimates": {
+                                      "cardinality": 0.0000059464345178630886,
+                                      "cost": 12.196345617531875,
+                                      "fr_cost": 12.196345617531875,
+                                      "size": 563
+                                  }
+                              },
+                              {
+                                  "#operator": "InitialProject",
+                                  "discard_original": true,
+                                  "optimizer_estimates": {
+                                      "cardinality": 0.0000059464345178630886,
+                                      "cost": 12.19634575862662,
+                                      "fr_cost": 12.19634575862662,
+                                      "size": 563
+                                  },
+                                  "preserve_order": true,
+                                  "result_terms": [{
+                                      "expr": "(`route`.`id`)"
+                                  }]
+                              }
+                          ]
+                      }
+                  }
+              ]
+          },
+          {
+              "#operator": "Limit",
+              "expr": "1",
+              "optimizer_estimates": {
+                  "cardinality": 0.0000059464345178630886,
+                  "cost": 12.220073379662029,
+                  "fr_cost": 12.220073379662029,
+                  "size": 563
+              }
+          }
+      ]
+  },
+  "text": "\n/* tag::query[] */\nSELECT /*+ INDEX_ALL(route def_inventory_route_route_src_dst_day def_inventory_route_sourceairport) */ id -- \u003c.\u003e\nFROM route -- \u003c.\u003e\nWHERE sourceairport = \"SFO\"\nLIMIT 1;\n/* end::query[] */"
+}]

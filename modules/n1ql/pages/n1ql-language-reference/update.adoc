@@ -81,6 +81,7 @@ image::n1ql-language-reference/update.png["Syntax diagram: refer to source code 
 // TODO: Automatic links from EBNF
 
 [horizontal.compact]
+hint-comment:: <<hint-comment>> icon:caret-down[]
 target-keyspace:: <<update-target>> icon:caret-down[]
 use-keys:: <<update-hint>> icon:caret-down[]
 set-clause:: <<set-clause>> icon:caret-down[]
@@ -88,6 +89,18 @@ unset-clause:: <<unset-clause>> icon:caret-down[]
 where-clause:: <<where-clause>> icon:caret-down[]
 limit-clause:: <<limit-clause>> icon:caret-down[]
 returning-clause:: <<returning-clause>> icon:caret-down[]
+
+[[hint-comment]]
+=== Optimizer Hints
+
+[.status]#Couchbase Server 8.0#
+
+You can supply hints to the optimizer within a specially formatted hint comment. 
+For more information, see xref:n1ql-language-reference/optimizer-hints.adoc[].
+
+NOTE: UPDATE statements support only index hints. 
+Other hints, such as join hints and ORDERED hints, are not supported.
+For an example of using an optimizer hint, see <<example-12>>.
 
 [[update-target]]
 === Update Target
@@ -142,10 +155,13 @@ Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
 
 [[update-hint]]
-=== Update Hint
+=== USE KEYS Clause
 
 You can use a `USE KEYS` hint on the update target to specify the keys of the data items to be updated.
 For details, refer to {use-keys-clause}[USE KEYS Clause].
+
+NOTE: You cannot specify a hint for the same update target using both the USE KEYS clause and an <<hint-comment,optimizer hint>>.
+If you do this, the USE KEYS clause and the <<hint-comment,optimizer hint>> are both marked as erroneous and ignored by the optimizer.
 
 [[set-clause]]
 === SET Clause
@@ -456,3 +472,24 @@ include::example$dml/set-xattr.jsonc[]
 include::example$dml/unset-xattr.n1ql[]
 ----
 ====
+
+[[example-12]]
+.Update with an optimizer hint
+====
+
+The following query hints the optimizer to use the index `def_inventory_airport_city` for the keyspace `airport`.
+
+[source,sqlpp]
+----
+include::example$dml/update-optimizer-hint.n1ql[]
+----
+
+If you examine the plan for this query, you can see that it uses the suggested index.
+
+.Result
+[source,json,indent=0]
+----
+include::example$dml/update-optimizer-hint.jsonc[tag=index]
+----
+====
+

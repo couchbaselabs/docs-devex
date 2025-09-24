@@ -14,6 +14,7 @@
 
 // TEMP
 include::partial$n1ql-language-reference/horizontal-style.adoc[]
+include::partial$n1ql-language-reference/collapsible-style.adoc[]
 
 {description}
 
@@ -62,12 +63,25 @@ image::n1ql-language-reference/delete.png["Syntax diagram: refer to source code 
 // TODO: Automatic links from EBNF
 
 [horizontal.compact]
+hint-comment:: <<hint-comment>> icon:caret-down[]
 target-keyspace:: <<delete-target>> icon:caret-down[]
-use-keys-clause:: <<delete-hint>> icon:caret-down[]
+use-keys-clause:: <<use-keys-clause>> icon:caret-down[]
 where-clause:: <<where-clause>> icon:caret-down[]
 limit-clause:: <<limit-clause>> icon:caret-down[]
 offset-clause:: <<offset-clause>> icon:caret-down[]
 returning-clause:: <<returning-clause>> icon:caret-down[]
+
+[[hint-comment]]
+=== Optimizer Hints
+
+[.status]#Couchbase Server 8.0#
+
+You can supply hints to the optimizer within a specially formatted hint comment. 
+For more information, see xref:n1ql-language-reference/optimizer-hints.adoc[].
+
+NOTE: DELETE statements support only index hints. 
+Other hints, such as join hints and ORDERED hints, are not supported.
+For an example of using an optimizer hint, see <<ex-delete-opt-hint>>.
 
 [[delete-target]]
 === Delete Target
@@ -121,11 +135,14 @@ For details, refer to {as-clause}[AS Clause].
 Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
 
-[[delete-hint]]
-=== Delete Hint
+[[use-keys-clause]]
+=== USE KEYS Clause
 
 You can use a `USE KEYS` hint on the delete target to specify the keys of the data items to be deleted.
 For details, refer to {use-keys-clause}[USE KEYS Clause].
+
+NOTE: You cannot specify a hint for the same keyspace using both the USE KEYS clause and an <<hint-comment,optimizer hint>>. 
+If you do this, the USE KEYS clause and the <<hint-comment,optimizer hint>> are both marked as erroneous and ignored by the optimizer.
 
 [[where-clause]]
 === WHERE Clause
@@ -309,4 +326,24 @@ include::example$dml/delete-offset.jsonc[]
 
 <.> Documents with the first 10 ids--the offset--remain in the airline collection.
 <.> After deleting 10 documents--the limit--1 more document remains in the collection.
+====
+
+[[ex-delete-opt-hint]]
+.Delete query with an optimizer hint
+====
+
+The following query hints the optimizer to use the index, `def_inventory_hotel_city`. 
+
+[source,sqlpp]
+----
+include::example$dml/delete-optimizer-hint.n1ql[]
+----
+
+If you examine the plan for this query, you can see that the query uses the suggested index.
+
+.Results
+[source,json,indent=0]
+----
+include::example$dml/delete-optimizer-hint.jsonc[tag=index]
+----
 ====
