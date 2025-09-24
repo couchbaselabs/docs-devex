@@ -74,10 +74,22 @@ image::n1ql-language-reference/merge.png["Syntax diagram: refer to source code l
 // TODO: Automatic links from EBNF
 
 [horizontal.compact]
+hint-comment:: <<hint-comment>> icon:caret-down[]
 ansi-merge:: <<ansi-merge>> icon:caret-down[]
 lookup-merge::  <<lookup-merge>> icon:caret-down[]
 limit-clause:: <<limit-clause>> icon:caret-down[]
 returning-clause:: <<returning-clause>> icon:caret-down[]
+
+[[hint-comment]]
+=== Optimizer Hints
+[.status]#Couchbase Server 8.0#
+
+You can supply hints to the optimizer within a specially formatted hint comment. 
+For more information, see xref:n1ql-language-reference/optimizer-hints.adoc[].
+
+NOTE: Optimizer hints are available only in <<ansi-merge>>.
+You can use both hash and join hints, but ORDERED hints are not supported.
+For an example of using an optimizer hint, see <<example-5>>.
 
 [[ansi-merge]]
 == ANSI Merge
@@ -154,8 +166,15 @@ If you assign an alias to the keyspace reference, the `AS` keyword may be omitte
 You can use a `USE INDEX` hint on the merge target to specify that the merge should use a particular index.
 For details, refer to {use-index-clause}[USE INDEX Clause].
 
-NOTE: The `USE INDEX` hint is the only hint allowed on the target.
+[NOTE]
+====
+The `USE INDEX` hint is the only hint allowed on the target.
 You cannot specify a `USE KEYS` hint or a join hint (`USE NL` or `USE HASH`) on the target of a merge statement.
+
+In Couchbase Server 8.0 and later, you can also use <<hint-comment, optimizer hints>> on the merge target. 
+However, you cannot specify a hint for the same keyspace using both the USE clause and an optimizer hint. 
+If you do this, the USE clause and the optimizer hint are both marked as erroneous and ignored by the optimizer.
+====
 
 [[ansi-merge-source]]
 === ANSI Merge Source
@@ -307,6 +326,10 @@ If omitted, the default hint is `USE NL`.
 
 If you are using a nested-loop join, i.e. `USE NL` is specified or no join hint is specified, the target keyspace reference must have an appropriate secondary index defined for the join to work.
 If such an index cannot be found an error will be returned.
+
+In Couchbase Server 8.0 and later, you can also use <<hint-comment, optimizer hints>> on the merge source. 
+However, you cannot specify a hint for the same keyspace using both the USE clause and an optimizer hint. 
+If you do this, the USE clause and the optimizer hint are both marked as erroneous and ignored by the optimizer.
 --
 
 [[ansi-merge-predicate]]
@@ -747,6 +770,25 @@ include::example$dml/ansi-merge-expire.n1ql[]
 ----
 
 Note that it is possible to preserve the document expiration using the request-level {preserve_expiry}[preserve_expiry] parameter.
+====
+
+[[example-5]]
+.ANSI merge with an optimizer hint
+====
+
+The following query hints the optimizer to use a hash join for the keyspace `airport`.
+
+[source,sqlpp]
+----
+include::example$dml/ansi-merge-hint.n1ql[]
+----
+
+If you examine the query plan, you can see that it uses the suggested join method.
+
+[source,json,indent=0]
+----
+include::example$dml/ansi-merge-hint.jsonc[tag=hint]
+----
 ====
 
 .Lookup merge with expression source
