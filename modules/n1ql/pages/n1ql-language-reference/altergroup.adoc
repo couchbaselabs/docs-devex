@@ -1,0 +1,142 @@
+= ALTER GROUP
+:description: The ALTER GROUP statement enables you to update an existing group.
+:page-topic-type: reference
+:page-status: Couchbase Server 8.0
+:imagesdir: ../../assets/images
+
+:from: xref:n1ql-language-reference/from.adoc
+:from-keyspace-ref: {from}#from-keyspace-ref
+
+[abstract]
+{description}
+
+== Purpose
+
+Use the ALTER GROUP statement to modify an existing group within the Couchbase Server Role-Based Access Control (RBAC) system.
+You can update the group's description and its roles.
+You can either add new roles or remove all the existing ones.
+When you update a role for a group, all users in the group inherit the updated permissions automatically.
+
+CAUTION: When you add new roles to a group, the ALTER GROUP statement replaces the group's existing role assignments with the new ones you provide.
+It updates the entire role list, so any existing roles not included in the new list will be removed.
+If you want to add or remove specific roles without affecting the others, use the xref:n1ql:n1ql-language-reference/grant.adoc[GRANT] and xref:n1ql:n1ql-language-reference/revoke.adoc[REVOKE] statements instead.
+
+== RBAC Privileges
+
+To execute the ALTER GROUP statement, you must have either the Full Admin or the Security Admin role.
+For more information about user roles, see xref:learn:security/authorization-overview.adoc[Authorization].
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=alter-group]
+----
+
+image::n1ql-language-reference/alter-group.png["Syntax diagram: refer to source code listing", align=left]
+
+[horizontal]
+name::
+(Required) The unique identifier of the group you want to update.
+
+description::
+(Optional) A quoted string containing the updated description for the group.
+
+rbac-role::
+(Optional)
+<<roles,Update Roles>> 
+
+[NOTE]
+====
+When altering a group, you can update its roles using one of the following options: `ROLE`, `ROLES`, or `NO ROLES`. 
+You can specify only one of these options per statement. 
+
+* `ROLE` assigns a single role to the group.
+* `ROLES` assigns multiple roles to group (the names must be separated by commas).
+* `NO ROLES` removes all roles from the group.
+====
+
+[[roles]]
+=== Update Roles
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=rbac-role]
+----
+
+image::n1ql-language-reference/rbac-role.png["Syntax diagram: refer to source code listing", align=left]
+
+[horizontal]
+
+role::
+One of the xref:learn:security/authorization-overview.adoc[RBAC role names predefined] by Couchbase Server.
++
+The following roles have short forms that can be used as well:
+
+* `query_select` → `select`
+* `query_insert` → `insert`
+* `query_update` → `update`
+* `query_delete` → `delete`
+
+keyspace-ref:: <<keyspace-ref>> 
+
+[[keyspace-ref]]
+==== Keyspace Reference
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=keyspace-ref]
+----
+
+image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: refer to source code listing", align=left]
+
+[source#keyspace-path,ebnf,reftext="keyspace path"]
+----
+include::partial$grammar/dql.ebnf[tag=keyspace-path]
+----
+
+image::n1ql-language-reference/keyspace-path.png["Syntax diagram: refer to source code listing", align=left]
+
+[source#keyspace-partial,ebnf,reftext="keyspace partial"]
+----
+include::partial$grammar/dql.ebnf[tag=keyspace-partial]
+----
+
+image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
+
+Use keyspace reference to specify the target for the update. 
+For more information about each element, see the xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference] section in the FROM clause. 
+
+== Examples
+
+.Alter a group and update its description
+====
+[source,sqlpp]
+----
+ALTER GROUP support WITH "Support team for customer queries";
+----
+====
+
+.Alter a group and add new roles
+====
+[source,sqlpp]
+----
+ALTER GROUP support 
+ROLES 
+query_select ON `travel-sample`.`inventory`.`airline`, 
+query_insert ON `travel-sample`.`inventory`.`airline`;
+----
+====
+
+.Alter a group and remove all roles
+====
+[source,sqlpp]
+----
+ALTER GROUP support NO ROLES WITH "Currently unused group";
+----
+====
+
+== Related Links
+* To create a group, see xref:n1ql-language-reference/creategroup.adoc[].
+* To delete a group, see xref:n1ql-language-reference/altergroup.adoc[].
+* To create a new user, see xref:n1ql-language-reference/createuser.adoc[].
