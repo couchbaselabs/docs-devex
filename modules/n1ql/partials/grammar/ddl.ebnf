@@ -10,6 +10,9 @@ create-statement ::= create-scope
                    | create-index
                    | create-function
                    | create-sequence
+                   | create-user
+                   | create-group
+                   | create-bucket
 
 drop-statement ::= drop-scope
                  | drop-collection
@@ -17,16 +20,27 @@ drop-statement ::= drop-scope
                  | drop-index
                  | drop-function
                  | drop-sequence
+                 | drop-user
+                 | drop-group
+                 | drop-bucket
 
-other-statement ::= alter-index
+other-statement ::= alter-bucket
+                  | alter-group
+                  | alter-index
                   | alter-sequence
+                  | alter-user
                   | build-index
                   | execute-function
 
 
 /**************************
- * Scopes and Collections *
+ * Buckets, Scopes, and Collections *
  **************************/
+
+/* tag::create-bucket[] */
+create-bucket ::= 'CREATE' ( 'BUCKET' | 'DATABASE' ) ( 'IF' 'NOT' 'EXISTS' )? name 
+                  ( 'WITH' with-fields )?
+/* end::create-bucket[] */
 
 /* tag::create-scope[] */
 create-scope ::= 'CREATE' 'SCOPE' ( namespace ':' )? bucket '.' scope ( 'IF' 'NOT' 'EXISTS' )?
@@ -36,6 +50,14 @@ create-scope ::= 'CREATE' 'SCOPE' ( namespace ':' )? bucket '.' scope ( 'IF' 'NO
 create-collection ::= 'CREATE' 'COLLECTION' ( ( namespace ':' )? bucket '.' scope '.' )?
                       collection ( 'IF' 'NOT' 'EXISTS' )? ( 'WITH' expr )?
 /* end::create-collection[] */
+
+/* tag::alter-bucket[] */
+alter-bucket ::= 'ALTER' ( 'BUCKET' | 'DATABASE' ) name ( 'WITH' with-fields )?
+/* end::alter-bucket[] */
+
+/* tag::drop-bucket[] */
+drop-bucket ::= 'DROP' ( 'BUCKET' | 'DATABASE' ) ('IF' 'EXISTS' )? name
+/* end::drop-bucket[] */
 
 /* tag::drop-scope[] */
 drop-scope ::= 'DROP' 'SCOPE' ( namespace ':' )? bucket '.' scope ( 'IF' 'EXISTS' )?
@@ -288,3 +310,45 @@ alter-sequence-options ::= ( restart-with
 /* tag::restart-with[] */
 restart-with ::= 'RESTART' ( 'WITH' integer )?
 /* end::restart-with[] */
+
+/********************
+ * Users and Groups *
+ ********************/
+
+/* tag::create-user[] */
+create-user ::= 'CREATE' 'USER' ( 'IF' 'NOT' 'EXISTS' )? username 'PASSWORD' password 
+                ( 'WITH' name )? 
+                ( 'GROUP' group | 'GROUPS' group ( ',' group )* | 'NO' 'GROUPS' )?
+/* end::create-user[] */
+
+/* tag::alter-user[] */
+alter-user ::= 'ALTER' 'USER' username ( 'PASSWORD' password )? 
+                ( 'WITH' name )? 
+                ( 'GROUP' group | 'GROUPS' group ( ',' group )* | 'NO' 'GROUPS' )?
+/* end::alter-user[] */
+
+/* tag::drop-user[] */
+drop-user ::= 'DROP' 'USER' ( 'IF' 'EXISTS' )? username
+/* end::drop-user[] */
+
+/* tag::create-group[] */
+create-group ::= 'CREATE' 'GROUP' ( 'IF' 'NOT' 'EXISTS' )? name 
+                 ( 'WITH' description )? 
+                 ( 'ROLE' rbac-role | 'ROLES' rbac-role ( ',' rbac-role )* | 'NO' 'ROLES' )
+/* end::create-group[] */
+
+/* tag::alter-group[] */
+alter-group ::= 'ALTER' 'GROUP' name ( 'WITH' description )? 
+                ( 'ROLE' rbac-role | 'ROLES' rbac-role (',' rbac-role )* | 'NO' 'ROLES' )?
+/* end::alter-group[] */
+
+/* tag::rbac-role[] */
+rbac-role ::= role ( 'ON' keyspace-ref )?
+/* end::rbac-role[] */
+
+/* tag::drop-group[] */
+drop-group ::= 'DROP' 'GROUP' ('IF' 'EXISTS' )? groupname
+/* end::drop-group[] */
+
+
+
