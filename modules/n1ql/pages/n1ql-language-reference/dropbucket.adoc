@@ -1,0 +1,84 @@
+= DROP BUCKET
+:description: The DROP BUCKET statement enables you to delete a bucket.
+:page-topic-type: reference
+:page-status: Couchbase Server 8.0
+:imagesdir: ../../assets/images
+
+:identifier: xref:n1ql-language-reference/identifiers.adoc
+:roles: xref:learn:security/roles.adoc
+:bucket-parameters: xref:rest-api:rest-bucket-create.adoc#parameter-groups
+:buckets: xref:learn:buckets-memory-and-storage/buckets.adoc
+:manage-buckets: xref:manage:manage-buckets/bucket-management-overview.adoc
+:buckets-api: xref:rest-api:rest-bucket-intro.adoc
+:couchbase-cli-bucket-delete: xref:cli:cbcli/couchbase-cli-bucket-edit.adoc
+
+[abstract]
+{description}
+
+== Purpose
+
+Use the DROP BUCKET statement to permanently delete an existing bucket from your Couchbase cluster.
+Dropping a bucket deletes all data in the bucket, including documents, scopes, and collections.
+It also deletes all associated indexes, metadata, and other bucket resources.
+
+WARNING: This operation is irreversible, so use this statement with caution.
+
+== RBAC Privileges
+
+Only administrators with the following roles can execute the DROP BUCKET statement:
+
+* Full Admin
+* Cluster Admin
+* Bucket Admin (if privileges are extended to the specific bucket or all buckets on the cluster)
+
+For more information about roles and privileges, see {roles}[Roles].
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=drop-bucket]
+----
+
+image::n1ql-language-reference/drop-bucket.png["Syntax diagram: refer to source code listing", align=left]
+
+The `BUCKET` and `DATABASE` keywords are synonyms.
+You can use either of them.
+
+[horizontal]
+name:: 
+(Required) An {identifier}[identifier] that represents the name of the bucket that you want to delete.
+
+[[if-exists]]
+=== IF EXISTS Clause
+
+The optional `IF EXISTS` clause enables the statement to complete successfully when the specified bucket doesn't exist.
+If a bucket with the same name does not exist, then:
+
+* If this clause is not present, an error is generated.
+
+* If this clause is present, the statement does nothing and completes without error.
+
+== Examples
+
+.Drop a bucket named `student-records`
+====
+[source,sqlpp]
+----
+DROP BUCKET `student-records`;
+----
+====
+
+.Drop a bucket named `custom-bucket` if it exists
+====
+[source,sqlpp]
+----
+DROP BUCKET IF EXISTS `custom-bucket`;
+----
+====
+
+== Related Links
+
+* For an overview of buckets, see {buckets}[Buckets].
+* For step-by-step procedures for bucket management, see {manage-buckets}[Manage Buckets].
+* For managing buckets with the REST API, see {buckets-api}[Buckets API].
