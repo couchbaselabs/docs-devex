@@ -9,22 +9,22 @@
 == Overview
 
 Automatic Workload Repository (AWR) is a feature that captures and maintains performance statistics for queries executed on your Couchbase cluster.
-It acts as a centralized repository for query performance data, enabling you to monitor and analyze query activity and workload over time.
+It acts as a centralized repository for query performance data, enabling you to track query activities, analyze workload trends, and identify performance bottlenecks.
 
-By providing a historical view of query behavior, AWR makes it easier to identify trends and performance bottlenecks. 
 For example, some queries may run efficiently with minimal overhead, while others may consume more resources or take longer to complete. 
 With AWR, you can understand these differences and optimize your queries accordingly.
+It also allows you to generate reports to compare query performances over time.
 
 When enabled, AWR automatically gathers detailed metrics from the Query Service for every query that you run on your cluster. 
 This includes metrics such as execution time, CPU usage, memory consumption, number of executions, and more.
 It then aggregates this data into <<snapshots, snapshots>> and stores them in a <<workload-repository, workload repository>>.
 
-You can access the collected data by directly querying the <<workload-repository, workload repository>> or by using Couchbase's report generation tool to generate reports and compare query performance across different time periods.
+You can access the collected data by directly querying the repository or by using Couchbase's report generation tool.
 For more information, see <<view-awr-data-and-reports, View AWR Data and Reports>>.
 
 == Use Cases
 
-Here are some scenarios where AWR can be effectively utilized to enhance query performance and workload:
+Here are some use cases of AWR: 
 
 * **Troubleshooting Real-Time Issues**:
 You can quickly identify slow running queries or instances of high resource usage. 
@@ -32,7 +32,6 @@ You can extract the SQL ID of the problematic query from the AWR report and use 
 
 * **Analyzing Performance**: 
 When rolling out changes, such as introducing new microservices, AWR lets you compare query performance before and after the update. 
-This helps you identify affected queries and optimize their performance accordingly. 
 
 * **Analyzing Upgrade Impacts**:
 You can assess query performance before and after a cluster upgrade to identify queries impacted by the new version. 
@@ -40,10 +39,19 @@ You can assess query performance before and after a cluster upgrade to identify 
 [#workload-repository]
 == Workload Repository 
 
-The workload repository is a centralized storage location where all snapshots are collected and maintained.
-It is a user-defined location that can be a bucket or a collection, but not a scope.
+The workload repository is a centralized storage location where all AWR data is collected and maintained.
+Before it can start collecting data, you must configure this location in the <<system-awr, system:awr>> catalog.
 
-Before AWR can start collecting data, you must configure the repository location in the <<system-awr, system:awr>> catalog.
+The repository can be a bucket or a collection, but not a scope.
+If the bucket or collection does not exist, you must create it. 
+For example, a valid location is `travel-sample._default.awr`, and you can use the following query to create this collection: 
+
+[source,sqlpp]
+----
+CREATE COLLECTION `travel-sample`._default.awr;
+----
+
+AWR checks the availability of repository location at the start of each reporting interval.
 Until this specified location is available, AWR remains in a quiescent (inactive) state.
 Once the location becomes accessible, AWR transitions to an active state and begins collecting data. 
 If the location becomes unavailable at any point, AWR returns to the quiescent state and resumes activity only when the location is accessible again. 
@@ -69,7 +77,7 @@ Instead, you need to configure a Time-To-Live (TTL) or expiration for the AWR lo
 The TTL specifies how long the documents remain in that location before the system automatically purges them.
 
 For example, setting a TTL of 180 days on a given bucket ensures that all snapshot documents older than 180 days within the bucket are automatically deleted.
-This mechanism allows you to manage storage usage effectively while retaining relevant history of query performance data. 
+This allows you to manage storage usage effectively while retaining relevant history of query performance data. 
 For more information about configuring the TTL, see xref:server:learn:data/expiration.adoc[Expiration].
 
 [#enable-configure-awr]
@@ -84,7 +92,7 @@ You can manage these settings through the <<system-awr, system:awr>> catalog.
 === system:awr 
 
 This catalog determines how AWR functions including where it stores snapshots, how often it collects statistics, and which queries to include in the report. 
-You can adjust the AWR settings at any time to align with your monitoring needs. 
+You can adjust the AWR settings using an UPDATE query. 
 
 NOTE: Only admins or users with the `query_manage_system_catalog` role can modify settings in `system:awr`. 
 For more information, see xref:n1ql:n1ql-intro/sysinfo.adoc#authentication-and-client-privileges[Authentication and Client Privileges].
@@ -104,12 +112,11 @@ The catalog consists of the following attributes:
 
 | **location** +
 | The target keyspace (repository) where the snapshots are stored. 
+
 This can only be a path to a bucket or collection; it cannot be a scope.
-For more information about the repository, see <<workload-repository, Workload Repository>>.
+For more information, see <<workload-repository, Workload Repository>>.
 
-AWR checks the availability of the location only once per interval.
-
-*Example*: `"bucket1.scope1.collection1"`
+*Example*: `"travel-sample._default.awr"` or `"travel-sample"`, in which case it uses the default scope and default collection.
 
 | String
 
@@ -160,14 +167,16 @@ The default value and maximum allowable value for `queue_len` are internally cal
 
 .Enable AWR and set the repository location
 ====
-The following query enables AWR and sets the repository location to `default.s1.awr`. 
+The following query enables AWR and sets the repository location to `travel-sample._default.awr`. 
 It also sets the reporting interval to 1 minute and threshold to 0 seconds.
 
 [source,sqlpp]
 ----
-UPDATE system:awr SET enabled = true, location = "default.s1.awr",
+UPDATE system:awr SET enabled = true, location = "`travel-sample`._default.awr",
 interval = "1m", threshold = "0s";
 ----
+If you execute this query in the Query Workbench, you'll get a warning about running an UPDATE query without specifying a WHERE clause or USE KEYS. 
+You can ignore this warning and run the query.
 ====
 
 .Retrieve current AWR settings
@@ -207,27 +216,23 @@ It provides comprehensive and user-friendly reports by executing SQL++ queries a
 For optimal query performance with the this tool, it is recommended to create an index on the document key (`META().id`) in your configured AWR location.
 If this index is not present, the tool will use sequential scans, which can impact performance.
 
-For example, if the snapshots are stored in the `default:bucket1.scope1.awr` keyspace, you can create the recommended index as follows:
+For example, if the target location is `travel-sample._default.awr`, create an index as follows:
 
 [source,sqlpp]
 ----
-CREATE INDEX idx_awr ON default:bucket1.scope1.awr(META().id);
+CREATE INDEX idx_awr ON `travel-sample`._default.awr(META().id);
 ----
-
-This index enables the `cbqueryreportgen` tool to efficiently query and retrieve AWR data for generating reports.
 //For more information about the tool and its usage, see cbqueryreportgen.
 // TODO: Add link to the CLI Reference section.  
 
 [#query-awr-data-directly]
 === Querying AWR Data Directly
 
-You can also query AWR data directly from the workload repository using SQL++ queries.
-When doing so, it is important to understand the data format, which is optimized to minimize the storage size.
+You can query AWR data directly from the workload repository using SQL++ queries. 
 
-To query AWR data, access the specific target keyspace where the snapshots are stored. 
 The document keys (IDs) of the snapshot documents include the timestamp of the reporting interval's start time.
-This allows you to filter documents based on time ranges without requiring additional indexes, as sequential scans support range-based key patterns.
-However, if needed, you can define and add indexes to further optimize your queries.
+This allows you to filter documents based on time ranges without requiring additional indexes (as sequential scans support range-based key patterns).
+However, you can add indexes to further optimize your queries, if needed.
 
 Each document contains the following fields: 
 
@@ -474,5 +479,9 @@ LETTING
 
 == Limitations
 
-When working with Couchbase transactions, AWR collects performance statistics for all individual statements, and you may notice that the COMMIT statement often shows the highest elapsed time.  
-However, from the AWR report alone, you will not be able to get insights into why the COMMIT statement took so long to execute. 
+* In AWR reports, COMMIT statements may often show the highest elapsed time.  
+But from the report alone, you will not be able to get insights into why the statement took so long to execute. 
+* AWR does not capture SQL++ statements that contain sensitive information, such as CREATE USER and ALTER USER.
+* In some cases, SQL++ statements may appear truncated in reports or snapshot documents.
+To find the complete statement, use its `sqlID` to look for entries in xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-completed-req[completed_requests] that have the same `sqlID`.
+Then use one of those entries to get the full statement text.
