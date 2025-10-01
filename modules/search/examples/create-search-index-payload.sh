@@ -29,7 +29,7 @@ curl -s -XPUT -H "Content-Type: application/json" \
           "default_type": "_default",
           "docvalues_dynamic": false,
           "index_dynamic": true,
-          "scoring_model": "tfidf",
+          "scoring_model": "tf-idf",
           "store_dynamic": false,
           "type_field": "_type",
           "types": {
