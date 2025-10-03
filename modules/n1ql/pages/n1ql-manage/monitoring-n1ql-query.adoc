@@ -1,26 +1,26 @@
 = Manage and Monitor Queries
 :example-caption!:
-:description: Monitoring and profiling {sqlpp} queries, query service nodes, and corresponding system resources is very important for smoother operational performance and efficiency of the system.
+:description: Monitoring and profiling {sqlpp} queries, Query Service nodes, and corresponding system resources is important for smoother operational performance and efficiency of the system.
 :page-aliases: monitoring:monitoring-n1ql-query, manage:monitor/monitoring-n1ql-query
 
 [abstract]
 {description}
-In fact, often it is vital for diagnosing and troubleshooting issues such as query performance, resource bottlenecks, and overloading of various services.
+In fact, often it's vital for diagnosing and troubleshooting issues such as query performance, resource bottlenecks, and overloading of various services.
 
 include::ROOT:partial$component-signpost.adoc[]
 
-System keyspaces provide various monitoring details and statistics about individual queries and the Query service.
+System keyspaces provide various monitoring details and statistics about individual queries and the Query Service.
 When running on a cluster with multiple query nodes, stats about all queries on all query nodes are collected in the Query management and monitoring system keyspaces.
 
 For example, this can help identify:
 
 * The top 10 slow or fast queries running on a particular query node or the cluster.
-* Resource usage statistics of the query service, or resources used for a particular query.
+* Resource usage statistics of the Query Service, or resources used for a particular query.
 * Details about the active, completed, and prepared queries.
 * Find long running queries that are running for more than 2 minutes.
 
 These system keyspaces are transient in nature, and are not persisted to disk or permanent storage.
-Hence, the information in the keyspaces pertains to the current instantiation of the Query service.
+Hence, the information in the keyspaces pertains to the current instantiation of the Query Service.
 
 You can access the Query management and monitoring system keyspaces using any of the following:
 
@@ -33,7 +33,7 @@ Using {sqlpp} enables you to obtain further insights from the keyspaces.
 == Authentication and Client Privileges
 
 Users must have the *Query System Catalog* role to access restricted system keyspaces.
-For more details about user roles, see xref:learn:security/authorization-overview.adoc[Authorization].
+For more information about user roles, see xref:learn:security/authorization-overview.adoc[Authorization].
 
 == Examples on this Page
 
@@ -47,7 +47,7 @@ In the REST API examples:
 == Monitor System Vitals
 
 The `system:vitals` catalog provides data about the running state and health of the query nodes, such as number of logical cores, active threads, queued threads, CPU utilization, memory usage, network utilization, garbage collection percentage, and so on.
-This information can be very useful to assess the current workload and performance characteristics of a query node.
+This information can be useful to assess the current workload and performance characteristics of a query node.
 
 [#sys-vitals-get]
 === Get System Vitals
@@ -475,7 +475,7 @@ Getting prepared statements, as described in <<sys-prepared-get>>, returns resul
 }
 ----
 
-In this example, the names of the prepared statements are identical, but they are associated with different query contexts.
+In this example, the names of the prepared statements are identical, but they're associated with different query contexts.
 
 <.> The name of the prepared statement for the default query context
 <.> The name of the prepared statement showing the associated query context
@@ -524,7 +524,7 @@ SELECT * FROM system:completed_requests;
 --
 ====
 
-Note that the `completed` state means that the request was started and completed by the Query service, but it does not mean that it was necessarily successful.
+The `completed` state means that the request was started and completed by the Query Service, but it does not mean that it was necessarily successful.
 The request could have been successful, or completed with errors.
 
 To find requests that completed successfully, search for completed requests whose `state` is `completed` and whose `errorCount` field has the value `0`.
@@ -610,7 +610,7 @@ DELETE FROM system:completed_requests WHERE requestTime LIKE "2015-09-09%";
 [[sys-completed-examples]]
 === Completed Request Details
 
-To try the examples in this section, first run a query which takes at least 1000ms (the default value of the `completed-threshold` query setting) to get registered in the `system:completed_requests` keyspace.
+To try the examples in this section, first run a query which takes at least 1000{nbsp}ms (the default value of the `completed-threshold` query setting) to get registered in the `system:completed_requests` keyspace.
 
 .Run a long query
 ====
@@ -720,7 +720,7 @@ curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
 === Logging Qualifiers
 
 You can specify the following logging qualifiers.
-A completed request is logged if _any_ of the qualifiers are met (logical OR).
+A completed request is logged if any of the qualifiers are met (logical OR).
 
 [horizontal]
 `threshold`:: The execution time threshold in milliseconds.
@@ -735,11 +735,12 @@ A completed request is logged if _any_ of the qualifiers are met (logical OR).
 
 For full details, see xref:n1ql-rest-admin:index.adoc#Logging_Parameters[Logging Parameters].
 
-The basic syntax adds a qualifier to the logging parameters, i.e. any existing qualifiers are not removed.
+The basic syntax adds a qualifier to the logging parameters.
+Any existing qualifiers are not removed.
 You can change the value of a logging qualifier by specifying the same qualifier again with a new value.
 
-To add a new instance of an existing qualifier, use a plus sign (`+`) before the qualifier name, e.g. `+user`.
-To remove a qualifier, use a minus sign (`-`) before the qualifier name, e.g. `-user`.
+To add a new instance of an existing qualifier, use a plus sign (`+`) before the qualifier name, such as `+user`.
+To remove a qualifier, use a minus sign (`-`) before the qualifier name, such as `-user`.
 
 For example, the following request will add user `simon` to those tracked, and remove error `12003`.
 
@@ -790,7 +791,7 @@ You cannot add a new instance of an existing qualifier to a tagged set using a p
 For example, you cannot add a `user` qualifier to a tagged set that already contains a `user` qualifier.
 If you need to track two users with the same error, create two tagged sets, one per user.
 
-You can remove a qualifier from a tagged set using a minus sign (`-`) before the qualifier name, e.g. `-user`.
+You can remove a qualifier from a tagged set using a minus sign (`-`) before the qualifier name, such as `-user`.
 When you remove the last qualifier from a tagged set, the tagged set is removed.
 
 [NOTE]
@@ -807,7 +808,7 @@ In this case, completed requests are logged if they match any of the individual 
 The [.param]`completed-threshold` field provides another way of specifying the `threshold` qualifier within the `completed` field.
 
 This field sets the minimum request duration after which requests are added to the `system:completed_requests` catalog.
-The default value is 1000ms.
+The default value is 1000{nbsp}ms.
 Specify [.in]`0` to log all requests and [.in]`-1` to not log any requests to the keyspace.
 
 To specify a different value, use:
@@ -841,13 +842,13 @@ curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
 
 In Couchbase Server 7.6.4 and later, you can stream completed requests to disk.
 
-To enable completed request streaming, use the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] `/admin/settings` endpoint to specify the `completed_stream_size` property.
+To enable completed request streaming, use the xref:n1ql:n1ql-rest-api/admin.adoc[Admin REST API] `/admin/settings` endpoint to specify the `completed-stream-size` property.
 
 [source,sh]
 ----
 curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
   -H 'Content-Type: application/json' \
-  -d '{"completed_stream_size":500}'
+  -d '{"completed-stream-size": 500}'
 ----
 
 This property is a file size in MiB.
@@ -857,8 +858,8 @@ When set to any size greater than `0`, completed requests are streamed to archiv
 The value of this property determines the size of the data to retain, per node.
 The configuration for completed requests determines which requests are saved.
 
-NOTE: The additional processing required to save completed requests to disk may limit overall request throughput on a Query node, but typically only when every completed request is being recorded, and requests are very small or short-lived.
-The speed of the file system on which the server logs directory resides naturally affects the potential impact too.
+NOTE: The additional processing required to save completed requests to disk may limit overall request throughput on a Query node, but typically only when every completed request is being recorded, and requests are small or short-lived.
+The speed of the file system on which the server logs directory resides may affect the request throughput also.
 
 [#sys-history-files]
 === Archived Request Files
@@ -866,16 +867,16 @@ The speed of the file system on which the server logs directory resides naturall
 When streaming is enabled, completed requests are saved to GZIP archives with the prefix `local_request_log` in the Couchbase Server `logs` directory.
 Each saved GZIP archive file contains multiple JSON entries, one for each for each recorded completed request.
 
-Couchbase Server writes multiple archive files in parallel, so whilst the order of requests in a file is sequential, a single given file may not contain a contiguous sequence of requests.
+Couchbase Server writes multiple archive files in parallel, so while the order of requests in a file is sequential, a single given file may not contain a contiguous sequence of requests.
 
-When an archive file reaches or exceeds 100 MiB, it is finalized and saved to disk.
+When an archive file reaches or exceeds 100 MiB, it's finalized and saved to disk.
 This is not a hard limit -- entries are not truncated to adhere to it.
 Files may also be finalized with less content, if nothing has been written to them for an extended period.
-Files that are actively being written are not available for reading, and they don't count towards the configured size limit until they're finalized.
+Files that are actively being written are not available for reading, and they do not count towards the configured size limit until they're finalized.
 
 Couchbase Server tries to manage and retain archive files such that the total disk space used by the files is within the specified limit for the node.
 When the specified limit is reached, older files are removed as necessary to make space for newly finalized files.
-When a file is removed, it isn't guaranteed that only the oldest requests are evicted, given that Couchbase Server writes to multiple archive files in parallel.
+When a file is removed, it's not guaranteed that only the oldest requests are evicted, given that Couchbase Server writes to multiple archive files in parallel.
 
 [#sys-history-view]
 === View Archived Requests
@@ -907,7 +908,7 @@ SELECT * FROM system:completed_requests_history;
 --
 ====
 
-The `system:completed_requests_history` keyspace is provided for {sqlpp} access to the archived files, but as they are external GZIP archives performance is restricted, particularly with large histories on clusters with multiple Query service nodes.
+The `system:completed_requests_history` keyspace is provided for {sqlpp} access to the archived files, but as they're external GZIP archives performance is restricted, particularly with large histories on clusters with multiple Query Service nodes.
 Directly reading the files may be more useful in some cases.
 
 [#query-monitoring-settings]
@@ -922,7 +923,7 @@ You can set query profiling to the following levels:
 
 You can set query profiling in the following ways:
 
-* At the <<enable-settings-for-a-query-engine,node level>>, so that it is enabled for all queries on that node.
+* At the <<enable-settings-for-a-query-engine,node level>>, so that it's enabled for all queries on that node.
 * At the <<enable-settings-per-session-or-per-query,request level>>, for individual queries.
 
 For more information about Query settings and parameters, see xref:n1ql:n1ql-manage/query-settings.adoc[].
@@ -1079,12 +1080,12 @@ When a query executes a user-defined function, profiling information is availabl
 
 When profiling is enabled:
 
-* If you are using the cbq shell or the Query REST API, query profiling information is returned with the query results.
-* If you are using the Query workbench, query profiling information is not returned with the query results.
+* If you're using the cbq shell or the Query REST API, query profiling information is returned with the query results.
+* If you're using the Query workbench, query profiling information is not returned with the query results.
 
 .Phases Profile
 ====
-If you are using the cbq shell or the Query REST API, the following statistics are returned when `profile` is set to `phases`:
+If you're using the cbq shell or the Query REST API, the following statistics are returned when `profile` is set to `phases`:
 
 [source,json]
 ----
@@ -1142,7 +1143,7 @@ If you are using the cbq shell or the Query REST API, the following statistics a
 
 .Timings Profile
 ====
-If you are using the cbq shell or the Query REST API, the following statistics are returned when `profile` is set to `timings`:
+If you're using the cbq shell or the Query REST API, the following statistics are returned when `profile` is set to `timings`:
 
 [source,json]
 ----
@@ -1305,7 +1306,7 @@ For field names and meanings, see xref:n1ql-rest-query:index.adoc#Profile[Profil
 [[plan]]
 === Profiling Details in System Catalogs
 
-The <<sys-active-req,system:active_requests>> and <<sys-completed-req,system:completed_requests>> system catalogs always return profiling information regarding query phases: that is, phase times, phase counts, and phase operators.
+The <<sys-active-req,system:active_requests>> and <<sys-completed-req,system:completed_requests>> system catalogs always return profiling information regarding query phases: namely, phase times, phase counts, and phase operators.
 
 The <<sys-active-req,system:active_requests>>, <<sys-completed-req,system:completed_requests>>, and <<sys-prepared,system:prepareds>> system catalogs also support the `meta().plan` virtual attribute.
 This captures the whole query plan, and includes profiling information regarding execution timings.
@@ -1507,4 +1508,4 @@ a| icon:check[fw] timings
 
 == Related Links
 
-* Refer to xref:n1ql:n1ql-intro/sysinfo.adoc[Getting System Information] for more information on the system namespace.
+* For more information on the system namespace, see xref:n1ql:n1ql-intro/sysinfo.adoc[Getting System Information].
