@@ -1,0 +1,127 @@
+= Handling Errors in JavaScript Functions
+:description: You can handle errors in JavaScript user-defined functions with the same standard exception mechanism you would use in any JavaScript code.
+:page-topic-type: reference
+:page-toclevels: 2
+
+[abstract]
+{description}
+
+For more information about user-defined functions in Capella, see xref:guides:javascript-udfs.adoc[].
+
+You can also choose to handle errors <<runtime,with the runtime>> or <<function,with your JavaScript function>>.
+
+{sqlpp} also supports using the xref:n1ql:n1ql-language-reference/metafun.adoc#abort[ABORT()] function inside a query or a user-defined function to return an error.
+
+[#runtime]
+== Handle Errors with the Runtime
+
+If you run into an error during the execution of a {sqlpp} statement, you can handle those errors with the runtime. 
+
+The runtime returns a JSON object with the details of the error that occurred. 
+For example, if you execute a record insertion function with a key that already exists:
+
+[source, sqlpp]
+----
+include::example$execute-airline-function-with-date.n1ql[]
+----
+
+then an error object is returned:
+
+[source, json]
+----
+include::example$duplicate-key-error.json5[]
+----
+
+[#function]
+== Handle Errors with the Function
+
+In most cases, it's better to use your JavaScript function to handle likely errors. 
+You can provide a more user-friendly message or take an alternative course of action. 
+
+For example, the following function will add an airline record, but will return a `failure` message if the `try` {sqlpp} statement fails:
+
+[source, javascript]
+----
+include::example$add-airline-with-check-return.js[]
+----
+
+If the document with the given `id` value already exists in the `travel-sample`.`inventory`.`airline` collection, then the function would return the following:
+
+[source, json]
+----
+include::example$add-airline-with-check-failure-return-response.jsonc[]
+----
+
+You can also choose to throw the error, rather than returning it as a string:
+
+[source, javascript]
+----
+include::example$add-airline-with-check-throw.js[]
+----
+
+Running the preceding function with an `id` value that already exists would return the following:
+
+[source,javascript]
+----
+include::example$add-airline-with-check-failure-throw-response.jsonc[]
+----
+
+When you throw the error, the exception is returned as a detailed JSON object. 
+
+=== Throwing or Returning Errors
+
+The data the JavaScript engine returns is different on a throw vs. a return.
+Throw and return also affect how subsequent {sqlpp} operations are processed in a function. 
+
+*Returning an error*:: If the JavaScript function returns any value, including an error, then the {sqlpp} runtime will assume that the function completed successfully, and the caller will continue to run subsequent statements.
+
+*Throwing an error*:: If an error is thrown, then this is treated as an error condition.
+Further statements in the request will not run.
+
+You can also choose to throw the error object, rather than just the string.
+For example, the following function throws the entire error object, rather than just a string:
+
+[source, javascript]
+----
+include::example$add-airline-with-check-throw-object.js[]
+----
+
+Throwing the error object returns more useful information than just returning a string.
+For example, the following response makes it clear that the function failed to run because of a duplicate key value:
+
+[source, json]
+----
+include::example$add-airline-with-check-failure-throw-object-response.jsonc[]
+----
+
+=== Parsing Errors
+
+You can also choose to parse the error with the `JSON.parse()` function and return the resulting object.
+
+For example, the following function takes the object from `error.message` and returns that if an error occurs:
+
+[source, javascript]
+----
+include::example$add-airline-check-parse.js[]
+----
+
+If you ran the function on an `id` value that already exists in your operational cluster, the function would return a JSON object like the following:
+
+[source, json]
+----
+include::example$parsed-error-in-full.json5[]
+----
+
+=== Complex Error Handling
+
+Using the structure of the error message returned by `catch (error)`, you can also use `JSON.parse()` to add more complex error handling to your JavaScript function.
+
+You could parse out the specific cause of an error, and display a more user-friendly error message that tells the user of your function how to resolve their error, or other, more complex logic.
+
+For example, in this function, if the error returned has a `message.cause.key` value of `dml.statement.duplicatekey`, the function returns only the duplicate key, without the `Duplicate Key:` part of the message:
+
+[source, javascript]
+----
+include::example$add-airline-parse-check-2.js[]
+----
+

@@ -1,0 +1,88 @@
+= Call a User-Defined Function
+:description: Call a user-defined JavaScript function from the Query Tab or cbq and use it with your Capella operational cluster.
+:page-pagination: prev
+:page-topic-type: guide
+:page-toclevels: 2
+:imagesdir: ../assets/images
+:tabs:
+
+[abstract]
+{description}
+
+include::ROOT:partial$component-signpost.adoc[]
+
+A user-defined function can be called like any other {sqlpp} function.
+
+== Prerequisites
+
+* If you want to use cbq to run your user-defined function, you must complete the prerequisites for using cbq. 
+For more information, see xref:n1ql:n1ql-intro/cbq.adoc#prerequisites[Prerequisites].
+* You have created a user-defined function.
+For more information, see xref:create-user-defined-function.adoc[].
+
+== Procedure
+
+You can run user-defined functions from the Query Tab or cbq. 
+
+[tabs]
+====
+Query Tab::
++
+--
+To run a user-defined function from the Query Tab: 
+
+. On the *Operational Clusters* page, select the operational cluster where you want to work with your user-defined function. 
+. Go to menu:Data Tools[Query].
+. Enter a {sqlpp} statement in the query editor to run your function.
++
+If you created a scoped user-defined function, make sure your xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context] is set to the same bucket and scope as the namespace for your function.
++
+For example, the following statement executes a function called `GetBusinessDays`, which takes 2 dates:
++
+[source, sqlpp]
+----
+include::example$javascript-udfs/execute-javascript-function.n1ql[]
+----
++
+You can also use a user-defined function in any {sqlpp} statement, just like a standard built-in function. 
+For example: 
++
+[source, sqlpp]
+----
+include::example$javascript-udfs/select-true-alias-get-business-days.n1ql[]
+----
+--
+
+cbq::
++
+--
+To run a user-defined function using the command line tool, cbq: 
+
+. Open a terminal window. 
+. Navigate to the directory where you installed cbq.
+. Connect to your Capella operational cluster.
+For more information, see xref:n1ql:n1ql-intro/cbq.adoc#cbq-connect-to-cluster[Connecting to the Cluster].
+. Run the `EXECUTE FUNCTION` command with your user-defined function.
++
+For example, the following command executes a function called `GetBusinessDays`, which takes 2 dates, on the `travel-sample`/`inventory` keyspace:
++
+[source, sqlpp]
+----
+include::example$javascript-udfs/execute-scoped-function.n1ql[]
+----
++
+You can also use a user-defined function in any {sqlpp} statement, just like a standard built-in function. 
+For example: 
++
+[source, console]
+----
+include::example$javascript-udfs/select-true-alias-get-business-days-cbq.sh[]
+----
+--
+====
+
+== See Also
+
+include::partial$javascript-udfs/further-reading.adoc[tags="create-function;user-defined-functions"]
+* xref:n1ql:n1ql-language-reference/execfunction.adoc[]
+* xref:javascript-udfs:javascript-functions-with-couchbase.adoc[]
