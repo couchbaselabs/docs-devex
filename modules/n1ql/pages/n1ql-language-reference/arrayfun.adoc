@@ -1253,12 +1253,12 @@ SELECT ARRAY_REPEAT("Vallie Ryan", 3) AS repeat_val;
 ====
 
 [[fn-array-replace,ARRAY_REPLACE()]]
-== ARRAY_REPLACE([.var]`expr`, [.var]`val1`, [.var]`val2` [, [.var]`max_int` ])
+== ARRAY_REPLACE(`expr`, `val1`, `val2` [, `max_int`])
 
 === Description
 This function returns a new array with all occurrences of [.in]`value1` replaced with [.in]`value2`.
 
-If [.var]`max_int` is specified, than no more than [.var]`max_int` replacements will be performed.
+If [.var]`max_int` is specified, the function performs no more than [.var]`max_int` replacements.
 
 === Arguments
 expr:: [Required] The input array you want to replace [.var]`val1` with [.var]`val2`.
@@ -1304,6 +1304,79 @@ LIMIT 1;
       "Lilian McLaughlin",
       "Ms. Moses Feeney",
       "Elnora Trantow"
+    ]
+  }
+]
+----
+====
+
+[[fn-array-replace-equivalent,ARRAY_REPLACE_EQUIVALENT()]]
+== ARRAY_REPLACE_EQUIVALENT(`expr`, `val1`, `val2` [, `max_int`])
+
+=== Description
+
+This function is similar to the <<fn-array-replace, ARRAY_REPLACE()>> function and returns a new array with all occurrences of `val1` replaced with `val2`.
+However, it determines matches using the equivalence operator instead of the equality operator.
+This enables you to replace `NULL` values and composite object values with `NULL` attributes, which is not possible with <<fn-array-replace, ARRAY_REPLACE()>>.
+
+If `max_int` is specified, the function performs no more than `max_int` replacements.
+
+=== Arguments
+
+expr:: [Required] The input array you want to replace `val1` with `val2`.
+
+val1:: [Required] The existing value in the input `expr` you want to replace.
+
+val2:: [Required] The new value you want to take the place of `val1` in the input `expr`.
+
+max_int::
+[Optional] The maximum number of replacements to perform. 
+By default, you can perform any number of replacements.
+
+=== Return Values
+A new array with all or `max_int` occurrences of `val1` replaced with `val2`.
+
+If any of the arguments are `MISSING`, then it returns `MISSING`.
+
+If the first argument is not an array, then it returns `NULL`.
+
+=== Example
+====
+The following example shows how the ARRAY_REPLACE_EQUIVALENT function can replace `NULL` values, while the ARRAY_REPLACE function cannot.
+
+[source,sqlpp]
+----
+SELECT 
+ARRAY_REPLACE([{"name":"Brian"},{"name":null}], 
+          {"name":null}, 
+          {"name":"Unknown User"}) 
+          AS replace_result,
+ARRAY_REPLACE_EQUIVALENT([{"name":"Brian"},{"name":null}], 
+          {"name":null}, 
+          {"name":"Unknown User"}) 
+          AS replace_equiv_result;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "replace_result": [
+      {
+        "name": "Brian"
+      },
+      {
+        "name": null
+      }
+    ],
+    "replace_equiv_result": [
+      {
+        "name": "Brian"
+      },
+      {
+        "name": "Unknown User"
+      }
     ]
   }
 ]
