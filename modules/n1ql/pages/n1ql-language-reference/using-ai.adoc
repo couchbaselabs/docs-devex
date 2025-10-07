@@ -9,34 +9,29 @@
 
 == Purpose
 
-You can use the USING AI statement to input natural language queries through {sqlpp} interfaces such as the CBQ shell, REST APIs, and SDKs. 
+You can use the USING AI statement to convert a natural language prompt into a {sqlpp} query.
 When executed, the statement passes the input to Large Language Models (LLMs), which interpret the request and return the equivalent {sqlpp} query. 
 
-For example, you can input prompts such as `How many airlines are based in Europe` or `List the names of all hotels in the same city as an airport`, and the statement will generate the corresponding SQL++ queries. 
+For example, you can input prompts such as `How many airlines are based in Europe` or `List the names of all hotels in the same city as an airport`, and the statement generates the corresponding SQL++ query. 
 
-If USING AI generates a SELECT query, it automatically executes it and returns the results.
-For all other query types, it returns the generated query as a string without executing it.
+If the generated statement is a SELECT query, the Query Service automatically executes it and returns the results.
+For all other query types, it returns the generated statement as a string without executing it. 
+However, you can modify this behavior by using the <<optional-parameters, execute>> option.
 
-[IMPORTANT]
-====
-* With the introduction of the USING AI statement, you might notice that AI is now recognized as a keyword.
-However, this change has been implemented in a way that does not break existing queries or applications where "ai" is used as a field name or identifier.
-For example, queries like `SELECT ai FROM XYZ` will continue to work without any issues.
-AI is treated as a keyword only when used in conjunction with the USING AI statement.
-
-* Currently, the Couchbase Server Web Console does not support the USING AI statement. 
-You can execute it only through the CBQ shell, REST APIs, or SDKs.
-====
+IMPORTANT: The word `AI` is recognized as a keyword, but only when used as part of the `USING AI` statement.
+When used by itself as a field name or identifier, you do not need to escape the word `AI` by enclosing it in backticks.
+For example, in a query like `SELECT ai FROM XYZ`, you can use `ai` as a field name without needing to escape it.
 
 == Prerequisites
 
 Before using the USING AI statement, make sure you have:
 
 * A Couchbase Capella account. 
-* Your Capella account credentials and organization ID readily available.
+* Your Capella account credentials and organization ID readily available. 
 
 NOTE: Although the USING AI statement requires a Capella account, you can use it with any Couchbase Server 8.0 instances. 
 
+[[syntax]]
 == Syntax
 
 [source,ebnf]
@@ -47,22 +42,20 @@ include::partial$grammar/utility.ebnf[tag=using-ai]
 image::n1ql-language-reference/using-ai.png["Syntax diagram: refer to source code listing", align=left]
 
 prompt:: 
-[Required] A natural language request that you want to convert into a SQL++ query.
+[Required] A natural language request that you want to convert into a {sqlpp} query.
 
 options::
-[Optional] A JSON object specifying additional <<optional-parameters,options>> to guide the statement execution.
+[Optional] A JSON object specifying additional <<optional-parameters,options>> for the statement.
 +
-By default, the statement uses the `natural_orgid`, `natural_cred`, and `natural_context` parameters.
+By default, the statement uses the xref:n1ql-rest-query:index.adoc#natural_orgid[natural_orgid], xref:n1ql-rest-query:index.adoc#natural_cred[natural_cred], and xref:n1ql-rest-query:index.adoc#natural_context[natural_context] request-level parameters.
 These parameters determine the organization ID, credentials, and keyspaces for the request.
-You can override them by using the <<optional-parameters,options>> object.
- 
-//TODO: Add links to `natural_orgid`, `natural_cred` and `natural_context` when available in the 8.0 documentation.
+You can override them by specifying the relevant parameters in the <<optional-parameters,options>> object.
 
 === FLEXINDEX / FTS
 
 Use the optional `FLEXINDEX` or `FTS` keyword to generate a query that uses an FTS or flex index.
 This hint appends a `USE INDEX (USING FTS)` clause to all `FROM` keyspaces in the generated query. 
-Refer to <<example-6>>.
+See <<example-6>>.
 
 [[optional-parameters]]
 === Options
@@ -73,15 +66,16 @@ Refer to <<example-6>>.
 
 | **creds** +
 __optional__
-| Credentials to authenticate the request.
+| Couchbase Capella credentials to authenticate the request.
 
 Can be one of the following:
 
-* A string in the username:password format, which matches the `natural_cred` specification. 
-//TODO: Add link to `natural_cred` when available in the 8.0 documentation.
-* An object with the fields `user` and `pass`, similar to the xref:n1ql:n1ql-manage/query-settings.adoc#Credentials[`creds`] parameter.
+* A string in the username:password format. 
+* An object with the fields `user` and `pass`, similar to the xref:n1ql:n1ql-manage/query-settings.adoc#Credentials[creds] request-level parameter.
 
-If specified, this value overrides the `natural_cred` parameter, which by default contains your Capella credentials.
+If specified, this value overrides the xref:n1ql-rest-query:index.adoc#natural_cred[natural_cred] request-level parameter.
+
+To ensure your credentials are passed securely, see <<handling-passwords, Handling Passwords>>.
 
 | String or object
 
@@ -92,36 +86,38 @@ __optional__
 
 Can be one of the following:
 
-* A string matching the `natural_keyspaces` specification. 
-//TODO: Add link to `natural_context` when available in the 8.0 documentation.
-* An array of comma-separated strings, which when joined, form the value.
+* A string matching the xref:n1ql-rest-query:index.adoc#natural_context[natural_context] specification. 
+* An array of comma-separated strings.
 
-If specified, this value overrides the default `natural_context` parameter.
+If specified, this value overrides the xref:n1ql-rest-query:index.adoc#natural_context[natural_context] request-level parameter.
 
 | String or an array of strings 
 
 | **orgId** +
 __optional__
 
-| Organization ID for the request.
+| Couchbase Capella organization ID for the request.
 
-If specified, this value overrides the `natural_orgid` parameter, which by default contains your Capella organization ID.
-//TODO: Add link to `natural_orgid` when available in the 8.0 documentation.
+If specified, this value overrides the xref:n1ql-rest-query:index.adoc#natural_orgid[natural_orgid] request-level parameter.
+
+To find your organization ID, log in to your Couchbase Capella account and check the URL in your web browser.
+The organization ID is the `oid` parameter in the URL.
+
+For example, in the URL `+++https://cloud.couchbase.com/databases?oid=5c670d3e-12a3-456b-7c89-123456789ab+++`, the organization ID is `5c670d3e-12a3-456b-7c89-123456789ab`.
 
 | String
 
 | **execute** +
 __optional__
 
-| Indicates if the generated statement should be executed immediately. 
+| Indicates if the generated statement should be executed automatically. 
 
 If `TRUE`, the Query Service executes the generated statement and returns the results. 
-
 This applies only if the statement is a SELECT query.
-For other statement types, such as INSERT, UPDATE, DELETE, UPSERT, or CREATE FUNCTION, the Query Service returns the statement without executing it, even if `execute` is `TRUE`.
-Refer to <<example-5>>.
+For other statement types, such as INSERT, UPDATE, DELETE, UPSERT, or CREATE FUNCTION, the statement is not executed, even if `execute` is `TRUE`.
+See <<example-5>>.
 
-If `FALSE`, the Query Service returns the generated statement as a string without executing it.
+If `FALSE`, the generated statement is returned, but not executed.
 
 *Default:* `TRUE`
 
@@ -133,20 +129,22 @@ __optional__
 
 Possible values are:
 --
-* `sql` - Generates a standard SQL++ query.
+* `sql` &mdash; 
+Generates a standard SQL++ query.
 
-* `jsudf` - Generates a CREATE FUNCTION statement.
+* `jsudf` &mdash;
+Generates a CREATE FUNCTION statement.
 You can use this to create a SQL++ managed JavaScript user-defined function.
-+
-The Query Service does not execute the CREATE FUNCTION, even if `execute` is `TRUE`.
+Note that the Query Service does not execute the CREATE FUNCTION, even if `execute` is `TRUE`.
 You must run the generated statement separately to create the function.
 
-* `ftssql` - Generates a SQL++ query optimized for FTS or flex indexes. 
+* `ftssql` &mdash;
+Generates a SQL++ query optimized for FTS or flex indexes. 
 The Query Service appends a `USE INDEX (USING FTS)` clause to all `FROM` keyspaces in the generated query.
 This enables the query to use a flex index if it's available. 
 --
 
-The Query Service returns an error if you specify a value not included in this list. 
+The statement returns an error if you specify a value not included in this list. 
 
 *Default:* `sql`
 | String
@@ -154,7 +152,39 @@ The Query Service returns an error if you specify a value not included in this l
 |===
 
 TIP: You can prefix a USING AI statement with EXPLAIN or ADVISE to get the query plan or index recommendations for your generated query.
-Refer to <<example-9>>.
+See <<example-9>>.
+
+[[usage]]
+== Usage
+
+To use a USING AI statement, you must provide your Capella credentials, Capella organization ID, and one or more keyspaces. 
+You can provide these details in two ways: 
+
+* <<request-level-parameters, As request-level parameters>> 
+* <<inline-parameters, Inline within the statement>> 
+
+[[request-level-parameters]]
+=== Set Parameters at the Request Level
+
+You can set `natural_cred`, `natural_orgid`, and `natural_context` as request-level parameters, outside the USING AI statement.
+When set, these parameters apply to all subsequent USING AI statements in that session.
+
+For example:
+
+* In the cbq shell, you can set these parameters using the `\set` command. 
+See <<example-1>>.
+* In the Query Workbench, you can set these parameters in the xref:tools:query-workbench.adoc#query-preferences[Run-Time Preferences] window as named parameters, without the $ prefix. 
+
+For more information about how to set request-level parameters, see xref:n1ql:n1ql-manage/query-settings.adoc#section_nnj_sjk_k1b[Configure Queries].
+
+Once configured, you do not need to specify `creds`, `orgId`, or `keyspaces` in the WITH clause.
+
+[[inline-parameters]]
+=== Set Parameters Inline
+
+You can set the `creds`, `orgId`, and `keyspaces` options directly in the `WITH` clause of the USING AI statement. 
+If specified, these values override the `natural_cred`, `natural_orgid`, and `natural_context` parameters. 
+See <<example-3>>.
 
 == Result
 
@@ -162,6 +192,7 @@ A JSON object containing the generated statement, execution status, and metrics.
 
 If the generated statement is a SELECT query and the `execute` option is `TRUE` (default), the output includes the query results as well.
 
+[[handling-passwords]]
 == Handling Passwords Securely
 
 Use `creds` and `natural_cred` parameters with caution to avoid exposing password information through history files or logs.
@@ -169,10 +200,26 @@ When working with the cbq shell, avoid passing passwords directly on the command
 Instead, use the `\set` command to specify only the username, and then enter the password at the terminal prompt.
 This ensures that the password is not recorded in the shell history.
 
-Similarly, if you are sending requests directly to a REST endpoint from a shell, be mindful of how you provide the password and whether it will be recorded in the shell history.
+For example: 
+
+----
+cbq> \set -natural_cred username@example.com;
+Enter password for "natural_cred": <enter password>
+
+cbq> \set;
+ Query Parameters : 
+ Parameter name : natural_cred
+ Value : [username@example.com:***]
+
+ Parameter name : profile
+ Value : ["timings"]
+
+ ...
+----
+
+Similarly, if you're sending requests directly to a REST endpoint from a shell, be mindful of how you provide the password and whether it will be recorded in the shell history.
 Consider using a method like the following to prompt for the password:
 
-[source,sh]
 ----
 echo -n "Enter your password: "
 read -s p
@@ -180,20 +227,20 @@ echo
 curl -s -d "natural_cred=<your-username>:${p}" ...
 ----
 
-If you choose to reuse the password by setting an evironment variable, note that it might be visible to other users on the system with sufficient privileges for process inspection (for example, through `/proc`).
+If you choose to reuse the password by setting an environment variable, note that it might be visible to other users on the system with sufficient privileges for process inspection (for example, through `/proc`).
 If security is a concern, consider using an HTTPS connection. 
 
 == Examples
 
-In the following examples, replace `natural_cred` and `natural_orgid` with your Capella credentials and organization ID, respectively.
+In the following examples, replace `natural_cred`/`creds` and `natural_orgid`/`orgId` with your Couchbase Capella credentials and organization ID, respectively.
 
 [[example-1]]
-.Natural language prompt with default request parameters
+.USING AI with default request parameters
 ====
 {example-note}
 
 .Request
-[source, console]
+[source, sqlpp]
 ----
 \set -natural_context travel-sample.inventory.hotel;
 \set -natural_cred username@example.com:P@ssw0rd; 
@@ -205,7 +252,8 @@ USING AI How many hotels provide free parking?;
 ----
 {
     "requestID": "097f9cbf-57f2-4832-986d-4f85041c91dc",
-    "generated_statement": "SELECT COUNT(*) FROM `travel-sample`.`inventory`.`hotel` 
+    "generated_statement": "SELECT COUNT(*) 
+                        FROM `travel-sample`.`inventory`.`hotel` 
                         AS `h` WHERE `h`.`free_parking` = TRUE",
     "signature": {
         "$1": "number"
@@ -230,12 +278,12 @@ USING AI How many hotels provide free parking?;
 ====
 
 [[example-2]]
-.Natural language prompt with a custom keyspace 
+.USING AI with keyspace specified within the statement and execute set to FALSE
 ====
 {example-note}
 
 .Request
-[source, console]
+[source,sqlpp]
 ----
 \set -natural_cred username@example.com:P@ssw0rd;
 \set -natural_orgid 7a99d00c-f55b-4b39-bc72-1b4cc68ba894;
@@ -265,12 +313,12 @@ How many airlines are based in United Kingdom?;
 ====
 
 [[example-3]]
-.Natural language prompt with all parameters directly in the statement, overriding the default ones
+.USING AI with all parameters directly in the statement
 ====
 {example-note}
 
 .Request
-[source, console]
+[source, sqlpp]
 ----
 USING AI WITH
 {
@@ -311,7 +359,7 @@ List the names of all hotels in the same city as an airport;
 ====
 
 [[example-4]]
-.Natural language prompt submitted directly to the Query REST API
+.USING AI with the Query REST API
 ====
 .Request
 [source, sh]
@@ -330,7 +378,8 @@ curl -s -d "natural_cred=username@example.com:${p}" \
 ----
 {
     "requestID": "325457b8-9cf4-477b-aaf5-7609f2ae79bf",
-    "generated_statement": "SELECT COUNT(*) FROM `travel-sample`.`inventory`.`landmark` 
+    "generated_statement": "SELECT COUNT(*) 
+                        FROM `travel-sample`.`inventory`.`landmark` 
                         AS `l` WHERE `l`.`geo`.`lon` \u003c 0",
     "signature": {
         "$1": "number"
@@ -359,9 +408,9 @@ curl -s -d "natural_cred=username@example.com:${p}" \
 {example-note}
 
 .Request
-[source, console]
+[source, sqlpp]
 ----
-\set -natural_cred rakhi.prathap@couchbase.com:Couchbase123#;
+\set -natural_cred username@example.com:P@ssw0rd;
 \set -natural_orgid 7a99d00c-f55b-4b39-bc72-1b4cc68ba894;
 USING AI WITH {"keyspaces":["travel-sample.inventory.hotel"], "execute": true} \
 Insert a new hotel named "Sunset Inn" in "Miami, Florida" with a rating of 4;
@@ -390,17 +439,17 @@ Insert a new hotel named "Sunset Inn" in "Miami, Florida" with a rating of 4;
     }
 }
 ----
-If you examine the `hotel` keyspace, you will see that this document is not inserted, even though `execute` was set to `TRUE`.
-This is because the Query Service executes the generated statement only if it is a SELECT statement.
+If you examine the `hotel` keyspace, you'll see that this document was not inserted, even though `execute` was set to `TRUE`.
+This is because the Query Service executes the generated statement only if it's a SELECT query.
 ====
 
 [[example-6]]
-.USING AI with flex index hint
+.USING AI with the Flex Index hint
 ====
 {example-note}
 
 .Request
-[source, console]
+[source, sqlpp]
 ----
 \set -natural_cred username@example.com:P@ssw0rd;
 \set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab;
@@ -441,10 +490,10 @@ How many hotels are located in California?;
 ====
 {example-note}
 
-This example uses the same prompt as <<example-5>> but specifies the `output` option instead of the `FLEXINDEX` keyword.
+This example uses the same prompt as <<example-5>>, but specifies the `output` option instead of the `FLEXINDEX` keyword.
 
 .Request
-[source, console]
+[source, sqlpp]
 ----
 \set -natural_cred username@example.com:P@ssw0rd;
 \set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab;
@@ -458,7 +507,8 @@ How many hotels are located in California?;
 {
     "requestID": "c6fcaed5-23fa-4dc5-936c-febc6b5cb222",
     "generated_statement": "SELECT COUNT(*) 
-                        FROM `travel-sample`.`inventory`.`hotel` AS `h` 
+                        FROM `travel-sample`.`inventory`.`hotel` 
+                        AS `h` 
                         USE INDEX (USING FTS) WHERE `h`.`state` = \"California\"",
     "signature": {
         "$1": "number"
@@ -487,7 +537,7 @@ How many hotels are located in California?;
 {example-note}
 
 .Request
-[source, console]
+[source, sqlpp]
 ----
 \set -natural_cred username@example.com:P@ssw0rd;
 \set -natural_orgid 5c670d3e-12a3-456b-7c89-123456789ab;
@@ -509,7 +559,8 @@ Create a function to list all hotels in California;
                             AS `h` WHERE `h`.`state` = \"CA\"; 
                     /* Initialize an empty array to store the results */ 
                     var res = []; 
-                    /* Iterate over the query results and push each hotel into the results array */ 
+                    /* Iterate over the query results and 
+                    push each hotel into the results array */ 
                     for (const doc of q) {
                     var hotel = {}; 
                     hotel.name = doc.name; 
@@ -534,14 +585,14 @@ Create a function to list all hotels in California;
 ====
 
 [[example-9]]
-.Using EXPLAIN with USING AI
+.Prefixing USING AI with EXPLAIN
 ====
 {example-note}
 
 .Request
-[source, console]
+[source, sqlpp]
 ----
-\set -natural_cred rakhi.prathap@couchbase.com:Couchbase123#;
+\set -natural_cred username@example.com:P@ssw0rd;
 \set -natural_orgid 7a99d00c-f55b-4b39-bc72-1b4cc68ba894;
 EXPLAIN USING AI WITH {"keyspaces":["travel-sample.inventory.hotel"]} \
 List the names and cities of hotels with a rating greater than 4;
@@ -608,7 +659,8 @@ List the names and cities of hotels with a rating greater than 4;
                             {
                                 "#operator": "Filter",
                                 "condition": "any `review` in (`h`.`reviews`) 
-                                              satisfies (4 \u003c (`review`.`rating`)) end"
+                                              satisfies (4 \u003c (`review`.`rating`)) 
+                                              end"
                             },
                             {
                                 "#operator": "InitialProject",
@@ -646,3 +698,9 @@ List the names and cities of hotels with a rating greater than 4;
 }
 ----
 ====
+
+== Related Links
+
+* xref:cloud:get-started:intro.adoc[Couchbase Capella Operational]
+* xref:n1ql-manage/query-settings.adoc#section_nnj_sjk_k1b[Setting Request-Level Parameters]
+* xref:n1ql-rest-query:index.adoc[Query Service REST API]
