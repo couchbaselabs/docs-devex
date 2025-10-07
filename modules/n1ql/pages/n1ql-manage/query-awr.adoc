@@ -42,15 +42,16 @@ You can assess query performance before and after a cluster upgrade to identify 
 The workload repository is a centralized storage location where all AWR data is collected and maintained.
 
 Before AWR can start collecting data, you must configure this location in the <<system-awr, system:awr>> catalog.
-The repository can be a bucket or a collection, but not a scope.
+The repository can be a bucket or a collection, but not a scope. 
+
+If you specify only the bucket name, AWR uses the default scope (`_default`) and default collection (`_default`) within that bucket to store the data.
 If the bucket or collection does not exist, you must create it. 
 
-For example, a valid location is `travel-sample._default.awr`.
-You can use the following query to create this collection: 
+For example, a valid location is `travel-sample._default.awr`, which you can create using the following query:
 
 [source,sqlpp]
 ----
-CREATE COLLECTION `travel-sample`._default.awr;
+CREATE COLLECTION `travel-sample`._default.awr IF NOT EXISTS;
 ----
 
 AWR checks the availability of repository location at the start of each reporting interval.
@@ -76,9 +77,16 @@ Each document is uniquely identified by its document key (ID), which includes th
 AWR retains snapshot documents for long-term analysis, but does not enforce retention policies by default. 
 To manage storage effectively, you need to configure a Time-To-Live (TTL) or expiration for the AWR location. 
 The TTL specifies how long the documents remain in that location before the system automatically purges them.
-
-For example, setting a TTL of 180 days on a given bucket ensures that all snapshot documents older than 180 days within the bucket are automatically deleted.
 For more information about configuring the TTL, see xref:server:learn:data/expiration.adoc[Expiration].
+
+For example, setting a TTL of 7 days on the target AWR collection ensures that all snapshot documents older than 7 days within the collection are automatically deleted. 
+You can set the TTL while creating the collection using the following query:
+
+[source,sqlpp]
+----
+CREATE COLLECTION `travel-sample`._default.awr IF NOT EXISTS WITH { "maxTTL": (7*24*60*60) };
+----
+For more information about creating collections, see xref:n1ql:n1ql-language-reference/createcollection.adoc[CREATE COLLECTION].
 
 [#enable-configure-awr]
 == Enable and Configure AWR
@@ -247,7 +255,7 @@ You can access the AWR data by:
 [#report-generation-tool]
 === Report Generation Tool
 
-You can generate AWR reports using Couchbase's `cbqueryreportgen` tool.
+You can generate AWR reports using the xref:cli:cbqueryreportgen.adoc[cbqueryreportgen] command line tool.
 It provides comprehensive and user-friendly reports by executing SQL++ queries against the collected AWR data.
 
 For optimal query performance with this tool, it is recommended to create an index on the document key (`META().id`) in your configured AWR location.
@@ -258,9 +266,7 @@ For example, if the target location is `travel-sample._default.awr`, you can cre
 [source,sqlpp]
 ----
 CREATE INDEX idx_awr ON `travel-sample`._default.awr(META().id);
-----
-//For more information about the tool and its usage, see cbqueryreportgen.
-// TODO: Add link to the CLI Reference section.  
+---- 
 
 [#query-awr-data-directly]
 === Querying AWR Data Directly
@@ -525,7 +531,8 @@ Then use one of those entries to get the full statement text.
 
 == See Also
 
-* xref:cli:cli-intro.adoc[CLI Reference for Couchbase Tools]
+* xref:cli:cbqueryreportgen.adoc[Report Generation CLI Tool]
+* xref:n1ql:n1ql-language-reference/createcollection.adoc[CREATE COLLECTION Statement]
 * xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-completed-req[Monitor Completed Requests]
 * xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#vitals[Monitor System Vitals]
 * xref:server:learn:data/expiration.adoc[Data Expiration and TTL]
