@@ -420,6 +420,73 @@ SELECT `Flavor` FROM EVALUATE("INFER `travel-sample`")[0] inf;
 ----
 ====
 
+[[extract-ddl,EXTRACTDDL()]]
+== EXTRACTDDL(`filter` [,`options`])
+
+[.status]#Couchbase Server 8.0#
+
+=== Description
+
+Extracts xref:n1ql:n1ql-language-reference/statements.adoc#ddl[Data Definition Language (DDL)] statements such as CREATE BUCKET or CREATE INDEX from the specified buckets.
+
+The function returns an array of strings, with each string containing an extracted DDL statement.
+
+NOTE: To execute this function, you must have the `query_system_catalog` role and permissions to access each individual bucket.
+
+=== Arguments
+
+filter:: String value LIKE pattern for matching against bucket names.  An empty string matches all names.
+
+options:: [Optional]
+
+A JSON object specifying options for the function.
+When options is not specified (or if it doesn't include the flags field) then all statements are included in the output.
+
+
+=== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **flags** +
+__optional__
+| A numeric representation of the flags or an array of string flag values
+
+Possible values are:
+
+* `bucket` - Includes CREATE BUCKET statements
+* `scope` - Includes CREATE SCOPE statements
+* `collection` - Includes CREATE COLLECTION statements
+* `index` - Includes CREATE INDEX statements
+* `sequence` - Includes CREATE SEQUENCE statements
+
+| String array or number
+|===
+
+
+== Return Value
+
+An array of strings, each containing a DDL statement.
+
+=== Examples
+
+[[extract-ddl-ex1,EXTRACTDDL() Example 1]]
+.Extract all DDL statements for all buckets
+====
+.Query
+[source,sqlpp]
+----
+SELECT extractddl("travel-sample",{"flags":["index"]});
+----
+
+.Results
+[source,json]
+----
+----
+====
+
+
 [[finderr,FINDERR()]]
 == FINDERR(`expression`)
 
