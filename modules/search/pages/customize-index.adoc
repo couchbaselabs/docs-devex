@@ -11,14 +11,47 @@ Some features are only available in xref:create-search-indexes.adoc#advanced-mod
 
 You can add the following components and configure the following options for a Search index: 
 
-* <<analyzers,>>
-* <<date-time,>>
-* <<type-identifiers,>>
-* <<scoring-model,>>
-* <<type-mappings,>>
-* <<synonyms,>>
-* <<replica,>>
-* <<custom-filters,>>
+[cols="2,1,1"]
+|====
+|Option |Quick Mode |Advanced Mode
+
+|<<analyzers,>>
+|&check;
+|&check;
+
+|<<date-time,>>
+|
+|&check;
+
+|<<type-identifiers,>>
+|
+|&check;
+
+|<<synonyms,>>
+|
+|&check;
+
+|<<scoring-model,>>
+|
+|&check;
+
+|<<dynamic-fields,>>
+|
+|&check;
+
+|<<type-mappings,>>
+|&check;
+|&check;
+
+|<<replica,>>
+|&check;
+|&check;
+
+|<<custom-filters,>>
+|
+|&check;
+
+|====
 
 
 [#analyzers]
@@ -29,7 +62,7 @@ Use analyzers to improve and customize the search results in your index.
 Analyzers transform input text into tokens, which give you greater control over your index's text matching.
 The *Default Analyzer* sets the analyzer that's used by default for new <<type-mappings,type mappings>> across your Search index.  
 
-You can use one of Couchbase's built-in analyzers as the *Default Analyzer* or the analyzer for a specific <<type-mappings,type mapping>>.
+You can use 1 of Couchbase's built-in analyzers as the *Default Analyzer* or the analyzer for a specific <<type-mappings,type mapping>>.
 If you use Advanced Mode, you can create your own analyzer.
 
 Analyzers have different components that control how text is transformed for search. 
@@ -79,6 +112,58 @@ If a collection mapping has a document filter, only documents that pass the filt
 
 For more information about how to create a document filter, see xref:set-type-identifier.adoc[].
 
+[#synonyms]
+== Synonym Sources
+
+[.status]#Couchbase Server 8.0#
+
+As of Couchbase Server version 8.0 and later, you can add a Synonym Source to a Search index to use synonym searches on text fields.
+
+After you xref:synonyms/create-synonym-collection-docs.adoc[create a synonym collection and synonym documents], and xref:synonyms/add-synonym-source.adoc[add a synonym source], you can run a search for a term and return results that include terms with similar meanings. 
+
+For example, you could run a search for `happy` and get results for `joyful`, `cheerful`, or `delighted`.
+
+For more information about synonym search for the Search Service, see xref:synonyms/synonyms-search.adoc[].
+
+[#scoring-model]
+== Scoring Model
+
+[.status]#Couchbase Server version 8.0#
+
+As of Couchbase Server version 8.0, in Advanced Mode editing, you can choose the specific scoring model you want to use for a Search index. 
+Your scoring model changes the calculation the Search Service uses for scoring documents and ranking them in your search results. 
+
+The following scoring model algorithms are available: 
+
+* `tfidf`: The standard scoring model for the Search Service.
+A higher tf-idf score for a document places that document higher in your search results.
+* `bm25`: A scoring model better suited to hybrid searches with the Search Service.
+A hybrid Search query uses xref:vector-search:vector-search.adoc[Vector Search] together with a standard Search query.
+For more information about the calculations for scoring for each algorithm, see xref:run-searches.adoc#scoring[Scoring for Search Queries].
+
+[#dynamic-fields]
+== Dynamic Fields Settings
+
+When you add <<dynamic,>> to your Search index, in *Advanced Mode*, you can choose how the Search Service handles these dynamic type mappings: 
+
+* <<store-dynamic,>>
+* <<index-dynamic,>>
+
+[#store-dynamic]
+=== Store Dynamic Fields
+
+If you turn on *Store Dynamic Fields*, the Search Service stores the content of any fields under a dynamic type mapping.
+Storing field content allows you to return the value of a field in search results. 
+
+This increases the size of your index. 
+
+[#index-dynamic]
+=== Index Dynamic Fields
+
+If you turn on *Index Dynamic Fields*, the Search Service includes fields or whole documents in your Search index that match a dynamic type mapping. 
+
+This increases the size of your index.
+
 [#type-mappings]
 == Type Mappings and Mappings 
 
@@ -98,7 +183,7 @@ For more information about how to configure settings for the different types of 
 
 For more information about how to configure a type mapping in the Search index editor, see xref:create-type-mapping.adoc[].
 
-You can create two types of type mappings with the Search Service: 
+You can create 2 types of type mappings with the Search Service: 
 
 * <<dynamic,Dynamic Type Mappings>>
 * <<static,Static Type Mappings>>
@@ -119,18 +204,6 @@ For example, you could create a static type mapping to only include the contents
 
 Configure this type of mapping by selecting a field in your document schema in the Search index editor when you xref:create-type-mapping.adoc[].
 
-[#synonyms]
-== Synonym Sources
-
-[.status]#Couchbase Server 8.0#
-
-As of Couchbase Server version 8.0 and later, you can add a Synonym Source to a Search index to use synonym searches on text fields.
-
-After you xref:synonyms/create-synonym-collection-docs.adoc[create a synonym collection and synonym documents], and xref:synonyms/add-synonym-source.adoc[add a synonym source], you can run a search for a term and return results that include terms with similar meanings. 
-
-For example, you could run a search for `happy` and get results for `joyful`, `cheerful`, or `delighted`.
-
-For more information about synonym search for the Search Service, see xref:synonyms/synonyms-search.adoc[].
 
 [#replica]
 == Replica and Partition Settings
@@ -154,7 +227,7 @@ Partitions improve Search index performance, but increase the complexity of a Se
 It's recommended to set your Search index partitions to the number of nodes running the Search Service in your operational cluster, to get the most efficient resource usage. 
 
 [#custom-filters]
-== Custom Analyzers and Other Filters 
+== Custom Analyzers and Custom Filters
 
 Custom filters are components of a Search index <<analyzers,analyzer>>.
 
