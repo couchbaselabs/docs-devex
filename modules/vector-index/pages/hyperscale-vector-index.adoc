@@ -167,18 +167,17 @@ A typical query looks like this:
 
 [source,sqlpp]
 ----
-SELECT <fields>  
-       FROM <collection>> 
+SELECT <fields>
+       FROM <collection>
        ORDER BY APPROX_VECTOR_DISTANCE(
-                <collection-vector-column>, 
-                <search-vector-value>, 
-                <distance-metric>, 
-                <centroids-to-probe>]
+                <collection-vector-column>,
+                <search-vector-value>,
+                <distance-metric>,
+                <centroids-to-probe>,
+                <rerank>,
+                <topNScan>
         ) LIMIT <number-of-results>;
 ----
-
-NOTE: The previous query example shows just a subset of the most common parameters for the `APPROX_VECTOR_DISTANCE` function.
-See xref:n1ql:n1ql-language-reference/vectorfun.adoc#approx_vector_distance[APPROX_VECTOR_DISTANCE()] for the full set of parameters available in this function.
 
 The `APPROX_VECTOR_DISTANCE` parameters shown in the example are:
 
@@ -189,16 +188,20 @@ It can be an array of floating point numbers or a base64 encoded string.
 This value should match the distance metric you used when you created the index.
 * `centroids-to-probe` is an optional integer value that sets the number of centroids to probe for matching vectors.
 By default, the vector search only probes a single centroid.
+* `rerank` is an optional Boolean that can only be used when `centroids-to-probe` is specified.
+It specifies whether the function should use full vectors to achieve better results.
+For more information, see xref:vector-index:hyperscale-reranking.adoc[].
+* `topNScan` is an optional positive integer that can only be used when `centroids-to-probe` and `rerank` are specified.
+If specified, it sets the number of records to scan.
 
-
-NOTE: You can also call the function xref:n1ql:n1ql-language-reference/vectorfun.adoc#vector_distance[VECTOR_DISTANCE()] to find similar vectors. 
-However, this function does not use the Hyperscale Vector index to perform the vector search. 
-Instead, it performs a brute-force search for similar vectors.
-It's useful to measure the recall of your Hyperscale Vector index. 
-See xref:vector-index:vector-index-best-practices.adoc#recall-accuracy[Determine Recall Rate] for more information about measuring recall.
-
-Also use a `LIMIT` clause to return just the number of results you need. 
+Also use a `LIMIT` clause to return just the number of results you need.
 The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the number of matches you need.
+
+NOTE: You can also call the function xref:n1ql:n1ql-language-reference/vectorfun.adoc#vector_distance[VECTOR_DISTANCE()] to find similar vectors.
+However, this function does not use the Hyperscale Vector index to perform the vector search.
+Instead, it performs a brute-force search for similar vectors.
+It's useful to measure the recall of your Hyperscale Vector index.
+See xref:vector-index:vector-index-best-practices.adoc#recall-accuracy[Determine Recall Rate] for more information about measuring recall.
 
 [#query-example]
 === Hyperscale Vector Index Query Example
