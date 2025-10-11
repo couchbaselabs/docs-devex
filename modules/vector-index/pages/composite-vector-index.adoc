@@ -64,7 +64,10 @@ include::vector-index:partial$create-composite-index-capella-ui.adoc[opts=option
 
 Creating a Composite Vector index is similar to creating a non-vector GSI index.
 See xref:guides:create-index.adoc[] for an overview of creating indexes.
-In the `CREATE INDEX` statement to create the Composite Vector index, add the `VECTOR` lead key attribute after the vector's key name to declare it as an embedded vector.
+In the `CREATE INDEX` statement to create the Composite Vector index, add the `VECTOR` key attribute after the vector's key name to declare it as an embedded vector.
+
+The index key that refers to a vector field may be the only index key.
+If there are multiple index keys, the index key referring to the vector field may be any of the index keys, including the leading index key.
 
 You must also use the xref:n1ql:n1ql-language-reference/createindex.adoc#index-with[WITH] clause to specify some additional information for the vector column. 
 The format for this clause with the most commonly used parameters is:
@@ -183,6 +186,35 @@ If successful, Couchbase {product-name} responds with:
 ----
 
 After Couchbase {product-name} creates the index, it begins training it. 
+Depending on your system, this training can take several seconds.
+
+==== Create a Composite Vector Index with a Scalar Leading Key
+
+If a Composite Vector index has multiple index keys, the leading index key may be a scalar field, rather than the vector field.
+This enables the Index Service to pre-filter using a scalar field.
+This is a key advantage that a Composite Vector index has over a Hyperscale Vector index with included scalar fields.
+
+The following example creates a Composite Vector index that indexes the scalar `color` and brightness fields, as well as the embedded vectors in the `embedding_vector_dot` field.
+
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-colors-idx]
+----
+
+If successful, Couchbase {product-name} responds with:
+
+[source, json]
+----
+[
+  {
+    "id": "45222612ffac4e98",
+    "name": "color_name_idx",
+    "state": "online"
+  }
+]
+----
+
+After Couchbase {product-name} creates the index, it begins training it.
 Depending on your system, this training can take several seconds.
 
 To find the most similar vectors, use an `ORDER BY` clause in your query to return the most relevant vectors first.
