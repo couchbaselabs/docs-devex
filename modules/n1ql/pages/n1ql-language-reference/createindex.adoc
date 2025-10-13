@@ -4,7 +4,7 @@
 :page-toclevels: 2
 :imagesdir: ../../assets/images
 :keywords: secondary, index, placement
-:description: The CREATE INDEX statement allows you to create secondary indexes and composite vector indexes.
+:description: The CREATE INDEX statement allows you to create secondary indexes and Composite Vector indexes.
 
 :authorization-overview: xref:server:learn:security/authorization-overview.adoc
 :index-replication: xref:indexes:index-replication.adoc#index-replication
@@ -35,8 +35,8 @@ The `CREATE INDEX` statement allows you to create secondary indexes.
 Secondary indexes contain a filtered or a full set of keys in a given keyspace.
 Secondary indexes are optional but increase query efficiency on a keyspace.
 
-In clusters running Couchbase Server 8.0 and later, the `CREATE INDEX` statement also allows you to create composite vector indexes.
-To create hyperscale vector indexes, use the {create-vector-index}[CREATE VECTOR INDEX] statement.
+In clusters running Couchbase Server 8.0 and later, the `CREATE INDEX` statement also allows you to create Composite Vector indexes.
+To create Hyperscale Vector indexes, use the {create-vector-index}[CREATE VECTOR INDEX] statement.
 
 //tag::purpose[]
 == Purpose
@@ -56,7 +56,7 @@ You can create multiple identical secondary indexes on a keyspace and place them
 The recommended way to do this is using the `num_replica` option.
 See <<index-with,WITH Clause>> for more details.
 
-Hyperscale vector indexes and composite vector indexes require a codebook for the vector field.
+Hyperscale Vector indexes and Composite Vector indexes require a codebook for the vector field.
 The codebook is the result of sampling the dataset and is saved as part of the index metadata.
 
 The codebook is created as part of the {build-index}[BUILD INDEX] process, and is not incrementally updated.
@@ -72,8 +72,6 @@ If the data set changes dramatically, you must drop and rebuild the index to upd
 To execute the {doctitle} statement, you must have the `Query Manage Index` privilege granted on the keyspace.
 For more information about user roles, see
 {authorization-overview}[Authorization].
-
-include::partial$n1ql-language-reference/vector-index-no-windows.adoc[]
 //end::prerequisites[]
 
 == Syntax
@@ -209,7 +207,7 @@ include::partial$grammar/ddl.ebnf[tag=index-keys-and-attribs]
 
 image::n1ql-language-reference/index-keys-and-attribs.png["Syntax diagram: see source code listing", align=left]
 
-Secondary indexes and composite vector indexes can have many keys.
+Secondary indexes and Composite Vector indexes can have many keys.
 Each key may have index attributes, which define the behavior of the index key.
 
 [horizontal]
@@ -234,7 +232,7 @@ image::n1ql-language-reference/index-key.png["Syntax diagram: see source code li
 
 The index key is a {sqlpp} {expression}[expression] referring to a field in the document, or an ARRAY expression on the field.
 
-For a composite vector index, one index key must refer to a vector field in the document.
+For a Composite Vector index, one index key must refer to a vector field in the document.
 The index key that refers to a vector field may be the only index key.
 If there are multiple index keys, the index key referring to the vector field may be any of the index keys, including the leading index key.
 
@@ -280,7 +278,7 @@ See <<index-order>>.
 include-missing:: (Optional) If the leading index key is a non-vector field, it may also include the `INCLUDE MISSING` clause.
 See <<include-missing>>.
 
-include-vector:: (Optional) In a composite vector index, one index key must include the `VECTOR` keyword.
+include-vector:: (Optional) In a Composite Vector index, one index key must include the `VECTOR` keyword.
 See <<include-vector>>.
 
 [[index-order]]
@@ -341,7 +339,7 @@ Used to partition the index.
 Index partitioning helps increase the query performance by dividing and spreading a large index of documents across multiple nodes, horizontally scaling out an index as needed.
 For details, see {index-partitioning}[Index Partitioning].
 
-With hyperscale vector indexes and composite vector indexes, training is done for each index node independently, and the codebook is provided to all partitions on that node.
+With Hyperscale Vector indexes and Composite Vector indexes, training is done for each index node independently, and the codebook is provided to all partitions on that node.
 If there are multiple partitions for an index on a node, training is only done once for all partitions.
 See {index-training}[The Importance of Index Training].
 //end::index-partition[]
@@ -394,7 +392,7 @@ Use the WITH clause to specify additional options.
 expr::
 An object with the following properties.
 
-[options="header", cols="1a,4a,1a"]
+[options="header", cols="3a,8a,2a"]
 |===
 |Name|Description|Schema
 
@@ -446,9 +444,9 @@ If the value of this property is not less than the number of index nodes in the 
 //end::index-with[]
 |===
 
-Composite vector indexes support the following additional options.
+Composite Vector indexes support the following additional options.
 
-[options="header", cols="1a,4a,1a"]
+[options="header", cols="3a,8a,2a"]
 |===
 |Name|Description|Schema
 //tag::index-with[]
@@ -460,7 +458,7 @@ The embedded model you use to embed the vectors determines the number of dimensi
 |Integer
 
 |**similarity** +
-__required__
+__optional__
 | Sets the distance metric to use when comparing vectors during index creation.
 
 Couchbase {product-name} uses the following strings to represent the distance metrics:
@@ -474,10 +472,12 @@ L2_SQUARED::
 EUCLIDEAN_SQUARED:: xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean Squared Distance]
 
 For the greatest accuracy, use the distance metric you plan to use to query the data.
+
+**Default:** `L2_SQUARED`
 |String
 
 |**description** +
-__required__
+__optional__
 | The settings for the quantization and index algorithms.
 The string is made up of the following settings:
 
@@ -488,7 +488,9 @@ PQ:: For product quantization -- the number of subquantizers, and the number of 
 
 For more information, see {algo-settings}[Quantization and Centroid Settings].
 
+[%hardbreaks]
 **Pattern:** `^IVF[0-9]*,(SQ[468]&vert;PQ[0-9]+x[0-9]+)$`
+**Default:** `IVF,SQ8`
 |String
 
 |**scan_nprobes** +
@@ -509,7 +511,7 @@ Otherwise, the default value is 10% of the index count, or 10{nbsp}&times; the n
 **Maximum:** `1000000`
 |Integer
 
-ifeval::["{docname}" == "createvectorindex"]
+ifeval::["{docname}" == "n1ql-language-reference/createvectorindex"]
 |**persist_full_vector** +
 __optional__
 | If `true` (the default), the index stores the full vector value in addition to the quantized value.
@@ -533,7 +535,7 @@ See {index-partitioning}[].
 [IMPORTANT]
 .Attention
 ====
-Do not create (or drop) secondary indexes, composite vector indexes, or hyperscale vector indexes when any Index service node is down, as this may result in duplicate index names.
+Do not create (or drop) secondary indexes, Composite Vector indexes, or Hyperscale Vector indexes when any Index service node is down, as this may result in duplicate index names.
 ====
 //end::usage[]
 
@@ -591,7 +593,7 @@ The system automatically load-balances an index scan across the index and all it
 Adding index replicas enables you to scale scan throughput, in addition to providing high availability.
 ====
 
-With hyperscale vector indexes and composite vector indexes, training is done by each replica index independently, and the codebook is stored as part of index metadata.
+With Hyperscale Vector indexes and Composite Vector indexes, training is done by each replica index independently, and the codebook is stored as part of index metadata.
 See {index-training}[The Importance of Index Training].
 //end::index-replicas[]
 
@@ -720,12 +722,12 @@ For more examples of indexes where the leading key may be missing, see xref:n1ql
 ====
 
 [[ex-create-rgb-idx]]
-.Create a composite vector index
+.Create a Composite Vector index
 ====
 For this example, you must install the vector sample data as described in {prerequisites}[Prerequisites].
 The path to the required keyspace is specified by the query, so you do not need to set the query context.
 
-Create a composite vector index that indexes the vector field named `colorvect_l2`, as well as the scalar `color` and `brightness` fields.
+Create a Composite Vector index that indexes the vector field named `colorvect_l2`, as well as the scalar `color` and `brightness` fields.
 
 [source,sqlpp]
 ----
@@ -734,16 +736,30 @@ include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-rgb-idx]
 ====
 
 [[ex-create-vectors-idx]]
-.Create a composite vector index using embedded vectors
+.Create a Composite Vector index using embedded vectors
 ====
 For this example, you must install the vector sample data as described in {prerequisites}[Prerequisites].
 The path to the required keyspace is specified by the query, so you do not need to set the query context.
 
-Create a composite vector index that indexes the vector field named `embedding-vector-dot`, as well as the scalar `color` and `brightness` fields.
+Create a Composite Vector index that indexes the vector field named `embedding-vector-dot`, as well as the scalar `color` and `brightness` fields.
 
 [source,sqlpp]
 ----
 include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-vectors-idx]
+----
+====
+
+[[ex-create-colors-idx]]
+.Create a Composite Vector index with a scalar leading key
+====
+For this example, you must install the vector sample data as described in {prerequisites}[Prerequisites].
+The path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a Composite Vector index that indexes the scalar `color` and `brightness` fields, as well as the vector field named `embedding-vector-dot`.
+
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-colors-idx]
 ----
 ====
 
