@@ -8,6 +8,7 @@
 :index-name: Composite Vector index
 :index-name-plural: Composite Vector indexes
 
+[abstract]
 {description}
 The added vector column lets your application perform a query using both the index's scalar, array, and object index entries to pre-filter the dataset before performing a vector similarity search.
 
@@ -81,7 +82,7 @@ WITH {"dimension": <dimensions>,
 ----
 
 NOTE: The `WITH` clause can contain other parameters that affect how the index processes vectors.
-For a full list of these parameters, see xref:n1ql:n1ql-language-reference/createindex.adoc#index-with[WITH Clause] in the {sqlpp} for Query Reference.
+For a full list of the parameters that affect a Composite Vector index, see xref:n1ql:n1ql-language-reference/createindex.adoc[] in the {sqlpp} for Query Reference.
 
 * `dimensions` is an integer value that sets the number of dimensions in the vector.
 This value is set by the embedded model you used to embed the vectors.
@@ -93,8 +94,6 @@ include::partial$distance-metric-list.adoc[]
 For the greatest accuracy, use the distance function you plan to use when querying vector data.
 * `centroids_and_quantization` is a string containing the settings for the quantization and index algorithms.
 See <<#algo_settings>> in the next section for more information.
-
-For a full list of the parameters that affect a Composite Vector index, see xref:n1ql:n1ql-language-reference/createindex.adoc[].
 
 include::partial$index-algorithm-settings.adoc[]
 
@@ -161,7 +160,7 @@ The `embedding_vector_dot` attribute contains the embedded vectors for the text 
 The data sample shown in <<#examples>> truncated this attribute to several values.
 The embedded vector contains 1536 dimensions.
 
-The following example creates a Composite Vector index that indexes the embedded vectors in the `embedding_vector_dot` as well as indexing the scalar `color` that contains the color's name and `brightness.`
+The following example creates a Composite Vector index that indexes the embedded vectors in the `embedding_vector_dot` as well as indexing the scalar `color` that contains the color's name and `brightness`.
 
 [source,sqlpp]
 ----
@@ -170,7 +169,7 @@ include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-vectors-i
 
 This example uses the Dot Product similarity function.
 This function works better with the embedded text content than the Euclidean function used in the previous example.
-It also uses the same algorithms as the previous example--Couchbase {product-name} chooses the number of centroids, and uses SQ quantization with 256 bins.
+It also uses the same algorithms as the previous example -- Couchbase {product-name} chooses the number of centroids, and uses SQ quantization with 256 bins.
 
 If successful, Couchbase {product-name} responds with:
 
@@ -229,7 +228,7 @@ Which you choose depends on your use case.
 To use your Composite Vector index, use the `SELECT` statement with an `ORDER BY` clause containing a call to the `APPROX_VECTOR_DISTANCE` function.
 This function selects the Composite Vector index when you query the vector key that the index covers.
 
-You should also use a `LIMIT` clause to return just the number of vectors you need.
+You should use a `LIMIT` clause to return just the number of vectors you need.
 The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the required number of matches.
 
 You can also perform vector comparisons using the VECTOR_DISTANCE function.
@@ -390,7 +389,7 @@ include::vector-index:example$composite-vector-data.json[tag=sample-doc-question
 
 The `couchbase_search_query.knn.vector` attribute contains the embedded vector for the `question` attribute.
 
-This example queries the  `embedding_vector_dot` column.
+This example queries the `embedding_vector_dot` column.
 It appears here with most of the 1536 vectors omitted:
 
 [source,sqlpp]
@@ -398,7 +397,7 @@ It appears here with most of the 1536 vectors omitted:
 include::vector-index:example$query-vectors-idx-whole.sqlpp[tags=!query-vectors-idx-truncated]
 ----
 
-You can click btn:[View] to see and copy the entire query with all the vectors.
+Click btn:[icon:github[\] View] to see and copy the entire query with all the vectors.
 
 Another option is to import the `rgb_questions.json` file into another collection in the `vector-sample` bucket's `color` scope named `rgb-questions`.
 Then you can use a subquery to get the vectors for the question and use it in your query of the `rgb` collection's `embedding_vector_dot` attribute:
@@ -462,9 +461,9 @@ The truncated version of the query is:
 include::vector-index:example$query-vectors-idx-filtered-whole.sqlpp[tags=!query-vectors-idx-filtered-truncated]
 ----
 
-You can click btn:[View] to see and copy the entire query with all the vectors.
+Click btn:[icon:github[\] View] to see and copy the entire query with all the vectors.
 
-The results of this query moves the papaya whip entry to the top.
+The results show that this query moves the papaya whip entry to the top.
 
 [source,json]
 ----
