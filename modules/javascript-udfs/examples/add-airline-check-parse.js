@@ -19,7 +19,7 @@ function addAirlineWithCheck(id, name, callsign, country) {
         return "success"
     }
     catch (error) {
-        const message = JSON.parse(error.message)    // <.>
+        const message = JSON.parse(error.message)
         return message
     }
 

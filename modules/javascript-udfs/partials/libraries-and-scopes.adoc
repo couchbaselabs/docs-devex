@@ -7,21 +7,24 @@ The libraries and scope section can be reused in the SQL++ reference
 === External Libraries
 
 (((library namespacing)))
-You can store JavaScript functions in [.term]#external libraries#.
+You can store JavaScript functions in a [.term]#user-defined function (UDF) library#.
 This enables you to share external function code for use in more than one {sqlpp} user-defined function.
-A library can contain one or more JavaScript functions.
+A library can contain 1 or more JavaScript functions.
 
-You must create the external library and the external function code using the xref:tools:udfs-ui.adoc[Query Workbench] or the {sqlpp} xref:n1ql-rest-functions:index.adoc[Functions REST API].
+For more information about how to create a UDF library, see xref:guides:create-javascript-library.adoc[].
 // This line left blank intentionally
 
 // end::extract[]
 
-You do not call the external function code directly from {sqlpp}.
-Instead, when you have created an external library and added a JavaScript function to it, you must define a {sqlpp} user-defined function to call the JavaScript function.
+You cannot call external function code directly from {sqlpp}.
+If you want to manage your external function code with a library, you must:
+
+* xref:guides:create-javascript-library.adoc[Create a UDF library] and add a JavaScript function or functions to that library.
+* xref:guides:create-user-defined-function.adoc[Create a user-defined function] to call a specific JavaScript function from that library. 
 
 // tag::extract[]
-External libraries, like {sqlpp} user-defined functions, may be scoped or global.
-This enables you to keep the code for external functions separate where required.
+UDF libraries, like {sqlpp} user-defined functions, may be scoped or global.
+Set a UDF library or user-defined function as *Scoped* to keep the code for external functions separate.
 // This line left blank intentionally
 
 // end::extract[]
@@ -36,14 +39,14 @@ include::partial$diagrams/javascript-scopes.puml[]
 
 * A [.term]#scoped library# is created within a xref:n1ql:n1ql-intro/queriesandresults.adoc#logical-hierarchy[scope], at the same level as the collections within a scope.
 
-You can apply access restrictions to scopes, so that only certain groups of users will be able to access collections and libraries within that scope.
+//You can apply access restrictions to scopes, so that only certain groups of users will be able to access collections and libraries within that scope.
 
 // tag::extract[]
-Code which is stored in a scoped library is private to users of that scope, and is not visible or available to users of another scope.
-Code which is stored in a global library is available to users of all scopes.
+//Code which is stored in a scoped library is private to users of that scope, and is not visible or available to users of another scope.
+Any code that you store in a global library is available to all users with read and write permissions on your operational cluster.
 
 A global library may have the same name as a scoped library, and scoped libraries may have the same name as each other.
-For example, you may have a global `math` library, and a `math` library in each scope.
+For example, you can have a global `math` library, and a `math` library in each scope.
 // end::extract[]
 
 .Calling a function in a scoped external library
@@ -52,4 +55,4 @@ For example, you may have a global `math` library, and a `math` library in each 
 include::partial$diagrams/udf-scopes-diagram.puml[]
 ....
 
-In order to use a {sqlpp} user-defined function which calls external JavaScript code in a scoped library, you must set the xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context] to the same bucket and scope as the scoped library.
+When you want to use a *Scoped* user-defined function from the Query Tab, you must set your xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context] to the same bucket and scope as the library.
