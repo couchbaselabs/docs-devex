@@ -1,0 +1,97 @@
+= CREATE SCOPE (EXAMPLE FIRST)
+:description: pass:q[The `CREATE SCOPE` statement enables you to create a scope.]
+:page-topic-type: reference
+:imagesdir: ../../assets/images
+:page-partial:
+
+:identifier: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
+:naming-for-scopes-and-collections: xref:learn:data/scopes-and-collections.adoc#naming-for-scopes-and-collections
+:scopes-and-collections: xref:learn:data/scopes-and-collections.adoc
+:manage-scopes-and-collections: xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc
+:scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
+:couchbase-cli-collection-manage: xref:cli:cbcli/couchbase-cli-collection-manage.adoc
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+[sidebar]
+.Try it First
+--
+To create a scope named `events` in the `travel-sample` bucket, use the following query:
+
+[source,sqlpp]
+----
+CREATE SCOPE `travel-sample`.events;
+----
+--
+
+== Description
+
+A scope is a way to group collections within a bucket to help organize and manage related data.
+A scope is similar to a database schema in a relational database.
+
+The `CREATE SCOPE` statement enables you to create a new scope within a specified bucket.
+You can create scopes only within existing buckets.
+You must have the `Manage Collections` privilege on the bucket to create a scope within it.
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=create-scope]
+----
+
+image::n1ql-language-reference/create-scope.png["Syntax diagram: refer to source code listing", align=left]
+
+[horizontal]
+namespace::
+(Optional) An {identifier}[identifier] that refers to the {logical-hierarchy}[namespace] of the bucket in which you want to create the scope.
+Currently, only the `default` namespace is available.
+If the namespace name is omitted, the default namespace in the current session is used.
+
+bucket::
+(Required) An {identifier}[identifier] that refers to the bucket in which you want to create the scope.
+
+scope::
+(Required) An {identifier}[identifier] that refers to the name of the scope that you want to create.
+Refer to {naming-for-scopes-and-collections}[Naming for Scopes and Collections] for restrictions on scope names.
+
+NOTE: If there is a hyphen (-) inside the bucket name or the scope name, you must wrap that part of the path in backticks ({backtick} {backtick}).
+For example, `default:{backtick}travel-sample{backtick}` indicates the `travel-sample` keyspace in the `default` namespace.
+
+[[if-not-exists]]
+=== IF NOT EXISTS Clause
+
+The optional `IF NOT EXISTS` clause enables the statement to complete successfully when the specified scope already exists.
+If a scope with the same name already exists within the specified bucket, then:
+
+* If this clause is not present, an error is generated.
+
+* If this clause is present, the statement does nothing and completes without error.
+
+== Examples
+
+.Create a scope if it does not already exist
+====
+This statement creates a scope called `guest` in the `travel-sample` bucket if it does not already exist.
+If it exists, the statement does nothing and completes without error.
+
+[source,sqlpp]
+----
+CREATE SCOPE `travel-sample`.guest IF NOT EXISTS;
+----
+====
+
+== Related Links
+
+* An overview of scopes and collections is provided in {scopes-and-collections}[Scopes and Collections].
+
+* Step-by-step procedures for management are provided in {manage-scopes-and-collections}[Manage Scopes and Collections].
+
+* Refer to {scopes-and-collections-api}[Scopes and Collections API] to manage scopes and collections with the REST API.
+
+* Refer to the reference page for the {couchbase-cli-collection-manage}[collection-manage] command to manage scopes and collections with the CLI.
