@@ -1,9 +1,9 @@
-= Create an FTS Vector Index in Quick Mode
+= Create a Search Vector Index in Quick Mode
 :page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
 :page-toclevels: 2
-:description: Use Quick Mode to create an FTS Vector Index in Couchbase Capella.
+:description: Use Quick Mode to create a Search Vector Index in Couchbase Capella.
 
 [abstract]
 {description}
@@ -13,10 +13,10 @@ You must use Advanced Mode to have greater control over how the Search Service r
 
 For more information about how to create a Search index in Advanced Mode, see xref:search:create-search-index-ui.adoc[].
 
-TIP: FTS Vector Indexes can include all the same features and settings as a Search index. 
+TIP: Search Vector Indexes can include all the same features and settings as a Search index. 
 For more information about Search indexes, see the xref:search:search.adoc[Search documentation].
 
-You must create an FTS Vector Index before you can xref:run-vector-search-ui.adoc[run a search] that supports vector comparisons.
+You must create a Search Vector Index before you can xref:run-vector-search-ui.adoc[run a search] that supports vector comparisons.
 
 == Prerequisites 
 
@@ -38,12 +38,69 @@ include::partial$download-sample-partial.adoc[]
 
 == Procedure 
 
-To create an FTS Vector Index with Quick Mode in Capella:
+To create a Search Vector Index in Capella:
 
 . On the *Operational Clusters* page, select the operational cluster where you want to create a Search index.
+. Do 1 of the following: 
+.. Use the <<vector-indexes-flow,Vector Index creation flow>>. 
+.. Use the <<search-flow,Search creation flow>>.
+
+NOTE: If you use the <<vector-indexes-flow,Vector Index creation flow>>, you cannot add fields other than vector fields to your index during your initial index creation.
+
+[#vector-indexes-flow]
+=== Create a Search Vector Index from Vector Indexes 
+
+To use the *Vector Indexes* creation flow to create a new Search Vector Index: 
+
+. Go to menu:Data Tools[Vector Indexes].
+. On the *Vector Indexes* page, click btn:[+ Create Vector Index].
+. Click btn:[Search Vector Index].
+. In the *Index Name* field, enter a name for the Search Vector Index. 
++
+[NOTE]
+====
+Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
+
+For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope. You cannot have 2 indexes with the same name inside the same bucket and scope.
+====
+. In the *Bucket* and *Scope* lists, choose the bucket and scope where you want to create your Search Vector index.
+. In the *Collections* list, select the collection or collections that contain documents with vector embeddings. 
+. Under *Type Mappings*, in your document schema, expand a collection that contains these documents. 
+. In your document schema, select the child field that contains your vector embeddings. 
+. Configure the options for the child field as follows:
+.. In the *Type* list, select 1 of the following: 
+... If your child field contains vector embeddings as an array, click *vector*. 
++
+Vector embeddings formatted as arrays appear as `\{field-name} [ number ]` in the editor.
+... (Couchbase Server version 7.6.2 or later) If your child field contains vector embeddings formatted as a base64 encoded string, click *vector_base64*.
++
+Vector embeddings formatted as base64 strings appear as `\{field-name} [ string ]` in the Capella Quick Mode editor.
+.. In the *Dimension* field, check that the value matches the total number of elements in your vector embeddings array. 
++
+The Search Service supports arrays up to 4096 elements.
+Capella automatically fills in the dimension value for your selected child field when you choose the *vector* or *vector_base64* type.
+.. In the *Similarity metric* list, choose the method to use to calculate the similarity between search term and Search index vectors.
++ 
+For more information, see xref:search:type-mapping-options.adoc#field[Field Type Mapping Options].
+.. In the *Optimized for* list, choose whether the Search Service should optimize Search queries for accuracy (*recall*) or speed (*latency*).
++
+For more information, see xref:search:type-mapping-options.adoc#field[Field Type Mapping Options].
+. Click btn:[Add To Index].
+. Click btn:[Review Index].
+. Click btn:[Create Index].
+
+TIP: After you create your Search Vector Index, click the index name to go back into the editor and add additional collections or child field type mappings to your index.
+For example, you could add the text field that you used to generate your vector embeddings.
+For more information, see xref:search:create-search-index-ui.adoc#add-mapping[Add Type Mappings and Mappings].
+
+[#search-flow]
+=== Create a Search Vector Index from Search
+
+To use the *Search* creation flow to create a new Search Vector Index: 
+
 . Go to menu:Data Tools[Search].
 . Click btn:[Create Search Index].
-. In the *Index Name* field, enter a name for the FTS Vector Index. 
+. In the *Index Name* field, enter a name for the Search Vector Index. 
 +
 [NOTE]
 ====
@@ -56,7 +113,7 @@ For Couchbase Server version 7.6 and later, your index name must be unique insid
 . Under *Type Mappings*, in your document schema, expand a collection that contains these documents. 
 . In your document schema, select the child field that contains your vector embeddings. 
 . Configure the options for the child field as follows:
-.. In the *Type* list, select one of the following: 
+.. In the *Type* list, select 1 of the following: 
 ... If your child field contains vector embeddings as an array, click *vector*. 
 +
 Vector embeddings formatted as arrays appear as `\{field-name} [ number ]` in the Capella Quick Mode editor.
@@ -65,7 +122,7 @@ Vector embeddings formatted as arrays appear as `\{field-name} [ number ]` in th
 Vector embeddings formatted as base64 strings appear as `\{field-name} [ string ]` in the Capella Quick Mode editor.
 .. In the *Dimension* field, check that the value matches the total number of elements in your vector embeddings array. 
 +
-The Search Service supports arrays up to 2048 elements.
+The Search Service supports arrays up to 4096 elements.
 Capella automatically fills in the dimension value for your selected child field when you choose the *vector* or *vector_base64* type.
 .. In the *Similarity metric* list, choose the method to use to calculate the similarity between search term and Search index vectors.
 + 
@@ -82,7 +139,7 @@ For more information, see xref:search:create-search-index-ui.adoc#add-mapping[Ad
 . Click btn:[Create Index].
 
 [#example]
-=== Example: Creating an FTS Vector Index for Vector Search Query Examples 
+=== Example: Creating a Search Vector Index for Vector Search Query Examples 
 
 If you want to use the sample dataset for the examples in xref:run-vector-search-ui.adoc[] and xref:run-vector-search-sdk.adoc[], then you can xref:search:import-search-index.adoc[import] the following Search index definition into {page-ui-name}:
 
@@ -93,7 +150,7 @@ include::example$sample-vector-search-index-payload.json[]
 
 NOTE: Make sure you imported the sample dataset with the recommended settings. 
 
-This FTS Vector Index has a type mapping for a `color.rgb` collection and includes the following fields: 
+This Search Vector Index has a type mapping for a `color.rgb` collection and includes the following fields: 
 
 * The *brightness number* field, which is included in search results and supports sorting and faceting.
 * The *color string* and *description string* fields, which are included in search results, support highlighting, phrase matching, and sorting and faceting.
@@ -102,16 +159,16 @@ This FTS Vector Index has a type mapping for a `color.rgb` collection and includ
 
 == Next Steps 
 
-This basic FTS Vector Index includes the vector embeddings from the child field you specified in your type mapping.
+This basic Search Vector Index includes the vector embeddings from the child field you specified in your type mapping.
 If you chose to add additional child fields and enabled *Include in search results*, the Search Service can also return data from those fields when you run a Vector Search query.
 
-For example, if you used the Vector Search sample data, you might want to add another child field for the *color* string field to your FTS Vector Index, to return color names with your Search query.
+For example, if you used the Vector Search sample data, you might want to add another child field for the *color* string field to your Search Vector Index, to return color names with your Search query.
 For more information about how to add additional child fields to your index, see xref:search:create-search-index-ui.adoc#add-mapping[Add Type Mappings and Mappings].
 
-You can customize your FTS Vector Index like any other Search index to add additional data and improve search results. 
+You can customize your Search Vector Index like any other Search index to add additional data and improve search results. 
 For more information about how to customize an index, see xref:search:customize-index.adoc[].
 
 CAUTION: Some Search index features are only available in Advanced Mode.
 If you edit your Search index in Advanced Mode, you cannot make any additional edits in Quick Mode without losing all Advanced Mode settings. 
 
-For more information about how to run a search against an FTS Vector Index, see xref:run-vector-search-ui.adoc[].
+For more information about how to run a search against a Search Vector Index, see xref:run-vector-search-ui.adoc[].
