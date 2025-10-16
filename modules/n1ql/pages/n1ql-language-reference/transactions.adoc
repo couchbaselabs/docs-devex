@@ -18,7 +18,7 @@
 
 // Learn cross-references
 :transactions: xref:server:learn:data/transactions.adoc
-:roles: xref:server:learn:security/roles.adoc
+:roles: xref:clusters:manage-database-users.adoc
 
 // Manage cross-references
 :install-sample-buckets: xref:clusters:data-service/import-data-documents.adoc#import-sample-data
@@ -27,7 +27,7 @@
 // Tools cross-references
 :query-workbench: xref:clusters:query-service/query-workbench.adoc
 :cbq-shell: xref:n1ql:n1ql-intro/cbq.adoc
-:n1ql-rest-api: xref:n1ql-rest-query:index.adoc
+:n1ql-rest-api: xref:data-api-guide:data-api-intro.adoc
 
 // Settings cross-references
 :txid: xref:n1ql:n1ql-manage/query-settings.adoc#txid
@@ -146,7 +146,7 @@ To create a Couchbase transaction using {sqlpp}, you can use:
 * The {query-workbench}[Query tab]
 * The {cbq-shell}[cbq shell]
 ifdef::flag-devex-rest-api[]
-* The {n1ql-rest-api}[Query REST API]
+* The {n1ql-rest-api}[Data API]
 endif::flag-devex-rest-api[]
 
 There are slight differences in the way these tools operate when creating Couchbase transactions.
@@ -154,6 +154,12 @@ These are explained in the sections below.
 
 Note that some Couchbase SDKs provide APIs to support Couchbase transactions.
 For further details, refer to {transactions}[Transactions] in the Server documentation.
+
+ifndef::flag-devex-rest-api[]
+[NOTE]
+Couchbase Transactions are not supported via the Data API (Query Service passthrough).
+The Query Service requires that the whole transaction must be executed by a single node, and there is currently no way for the Data API to enforce this.
+endif::flag-devex-rest-api[]
 
 === Couchbase Transactions with the Query Tab
 
@@ -182,7 +188,7 @@ In this case, you do not need to specify the `txid` parameter either.
 * You can specify parameters for the Couchbase transaction using the `\SET` command.
 
 ifdef::flag-devex-rest-api[]
-=== Couchbase Transactions with the Query REST API
+=== Couchbase Transactions with the Data API
 
 * To execute a transaction containing multiple statements, you can create the transaction one statement at a time.
 Once you have started the transaction, you must set the `txid` parameter to specify the transaction to which each subsequent statement belongs.
@@ -340,9 +346,9 @@ The booking document has been added with the attributes that were present when t
 ====
 
 ifdef::flag-devex-rest-api[]
-.Transaction using the Query REST API
+.Transaction using the Data API
 ====
-For reference, this example shows the equivalent of <<ex-1>> using the Query REST API.
+For reference, this example shows the equivalent of <<ex-1>> using the Data API.
 
 .Begin transaction and set parameters
 [source,console]

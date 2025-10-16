@@ -105,16 +105,22 @@ include::example$utility/execute-numbers.n1ql[]
 
 [IMPORTANT]
 ====
-Alternatively, you can specify named parameters and positional parameters using the {sqlpp} REST API (`/query/service` endpoint), the `cbq` command line tool, or a software development kit (SDK).
+Alternatively, you can specify named parameters and positional parameters using the Data API (Query Service passthrough), the `cbq` command line tool, or a software development kit (SDK).
 Named parameters can be specified as request-level parameters, and positional parameters can be specified using the `args` parameter.
 See xref:n1ql:n1ql-manage/query-settings.adoc[] for more information.
 
-When you specify parameters with the USING clause, you cannot also specify parameters at the same time using the {sqlpp} REST API, the `cbq` command line tool, or an SDK.
+When you specify parameters with the USING clause, you cannot also specify parameters at the same time using the Data API, the `cbq` command line tool, or an SDK.
 When you do this, the query service returns error `5003`: "cannot have both USING clause and request parameters".
 ====
 
 [[examples]]
 == Examples
+
+In the REST API examples:
+
+* `$BASEURL` is the base URL for the Data API.
+* `$USER` is the cluster access username.
+* `$PASSWORD` is the cluster access secret.
 
 .Executing a prepared statement in {sqlpp}
 ====
@@ -127,14 +133,15 @@ EXECUTE `[127.0.0.1:8091]24734829-c793-4b90-b8bd-74ff788be493`;
 ----
 ====
 
-.Executing a prepared statement without a name using the REST API
+.Executing a prepared statement without a name using the Data API
 ====
 The following example shows how to prepare the statement without specifying a name.
 
 .Request
 [source,sh]
 ----
-curl -v http://localhost:8093/query/service \
+curl -X POST "$BASEURL/_p/query/query/service" \
+     -u $USER:$PASSWORD \
      -d 'statement=PREPARE SELECT text FROM tweets
                            WHERE rating > $r AND created_at > $date'
 ----
@@ -175,7 +182,8 @@ The following example uses the server-generated name of the prepared statement t
 .Request:
 [source,sh]
 ----
-curl -v http://localhost:8093/query/service \
+curl -X POST "$BASEURL/_p/query/query/service" \
+     -u $USER:$PASSWORD \
      -d 'prepared="a1355198-2576-4e3d-af04-5acc77d8a681"&$r=9.5&$date="1-1-2014"'
 ----
 
@@ -203,14 +211,15 @@ curl -v http://localhost:8093/query/service \
 ----
 ====
 
-.Executing a prepared statement with a name using the REST API
+.Executing a prepared statement with a name using the Data API
 ====
 The following example specifies a [.param]`name` for the prepared statement.
 
 .Request:
 [source,sh]
 ----
-curl -v http://localhost:8093/query/service \
+curl -X POST "$BASEURL/_p/query/query/service" \
+     -u $USER:$PASSWORD \
      -d 'statement=PREPARE fave_tweets FROM SELECT text FROM tweets WHERE rating >= $r'
 ----
 
@@ -237,7 +246,9 @@ The following example uses the [.param]`name` specified in the example above to 
 .Request:
 [source,sh]
 ----
-curl -v http://localhost:8093/query/service -d 'prepared="fave_tweets"&$r=9.5'
+curl -X POST "$BASEURL/_p/query/query/service" \
+     -u $USER:$PASSWORD \
+     -d 'prepared="fave_tweets"&$r=9.5'
 ----
 
 .Response
@@ -271,8 +282,6 @@ curl -v http://localhost:8093/query/service -d 'prepared="fave_tweets"&$r=9.5'
 
 * For information on using prepared statements with the `cbq` command line shell, refer to xref:n1ql:n1ql-intro/cbq.adoc[].
 
-ifdef::flag-devex-rest-api[]
-* For information on using prepared statements with the Query REST API (`/query/service` endpoint), refer to xref:n1ql-rest-query:index.adoc[].
-endif::flag-devex-rest-api[]
+* For information on using prepared statements with the Data API (Query Service passthrough), refer to xref:data-api-guide:data-api-intro.adoc[].
 
 * For information on using prepared statements with an SDK, refer to xref:java-sdk:concept-docs:n1ql-query.adoc#prepared-statements-for-query-optimization[Prepared Statements for Query Optimization] and xref:java-sdk:howtos:n1ql-queries-with-sdk.adoc#parameterized-queries[Parameterized Queries].
