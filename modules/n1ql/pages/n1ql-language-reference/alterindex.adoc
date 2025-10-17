@@ -1,5 +1,5 @@
 = ALTER INDEX
-:description: The ALTER INDEX statement moves the placement of an existing index or replica among different GSI nodes.
+:description: The ALTER INDEX statement increases or decreases the number of index replicas and partition replicas.
 :page-partial:
 :page-toclevels: 2
 :imagesdir: ../../assets/images
@@ -24,27 +24,17 @@ Both statements have the same functionality.
 //tag::purpose[]
 == Purpose
 
-You can use the `{doctitle}` statement to change the placement of an existing index or replica among different GSI nodes, to increase or decrease the number of replicas, or to drop a specified index replica temporarily.
+You can use the `{doctitle}` statement to increase or decrease the number of replicas, or to drop a specified index replica temporarily.
 You can also use it to perform the same alterations to a partitioned index and any replica partitions.
 You may use this statement when you encounter any of the following situations:
 
-* An imbalance occurs due to a particular index growing faster than expected and is needed on a different node.
+* An imbalance occurs due to a particular index growing faster than expected, and a replica is needed on a different node.
 * An imbalance occurs due to a cluster of indexes being dropped on a single node.
-* A machine is scheduled for removal, so its indexes need to move off its current node.
+* A node is scheduled for removal, and its index replicas need to be dropped.
 * The automated process of rebalancing does not give the expected results.
 * Other types of scaling up or scaling down are needed.
 
-For example, if a node fails, you can use the `{doctitle}` statement to move an index to another node.
-See <<examples>> below.
-
-NOTE: The {doctitle} move operation is asynchronous.
-As soon as the move alter index command is executed, the command returns.
-If there is no error in the input, the move operation can be tracked through the console UI and any error can be found in the Console logs and Indexer logs.
-
 If a node goes down while an {doctitle} operation is happening, then the index would rollback to its original node (not affecting queries) and a notification would appear.
-
-IMPORTANT: It's not possible to move an index or index replica and change the number of index replicas at the same time.
-
 //end::purpose[]
 
 //tag::prerequisites[]
@@ -298,14 +288,13 @@ __required__
 The possible values are:
 
 move:::
-Moves an index (or its replicas) to a different node while not making any changes to the index topology -- for example, the number of replicas remains the same.
-You must use the `nodes` property to specify the target node or nodes.
+You cannot use this action in Couchbase Capella, as it defaults to file-based index rebalancing.
 
 replica_count:::
 Alters the number of replicas.
 You must use the `num_replica` property to specify the required number of replicas.
-You can use the `nodes` property to restrict the placement of index replicas to the specified nodes.
 The planner decides where to place any new index replicas on the available index nodes, based on the server load.
+In Couchbase Capella, you cannot restrict the placement of index replicas to specified nodes.
 
 drop_replica:::
 Drops a specified replica temporarily; for example, to repair a replica.
@@ -319,21 +308,12 @@ __optional__
 An integer specifying the number of replicas of the index.
 The index service will automatically distribute these indexes amongst the index nodes in the cluster for load balancing and high availability purposes.
 The index service attempts to distribute the replicas based on the server groups in use in the cluster where possible.
-(You can restrict the number of index nodes available for index and index replica placement using the `nodes` property, described below.)
+(In Couchbase Capella, you cannot restrict the placement of index replicas to specified nodes.)
 | Integer
 
 |**nodes** +
 __optional__
-| Required if `action` is set to `move`; +
-Optional if `action` is set to `replica_count`.
-
-An array of strings, specifying a list of nodes.
-If `action` is set to `move`, the node list determines the new destination nodes for the index and its replicas.
-If `action` is set to `replica_count` and you're increasing the number of replicas, the node list restricts the set of nodes available for placement of the index and its replicas.
-However, if `action` is set to `replica_count` and you're decreasing the number of replicas, the `nodes` property is ignored.
-
-NOTE: You cannot use this property in Couchbase Capella, as it defaults to file-based index rebalancing. 
-See xref:server:learn:clusters-and-availability/rebalance.adoc#index-rebalance-methods[Index Rebalance Methods].
+| You cannot use this property in Couchbase Capella, as it defaults to file-based index rebalancing.
 | String array
 
 |**replicaId** +
@@ -354,22 +334,18 @@ The statement will not work while the cluster is undergoing a rebalance.
 
 === Moving an Index or Index Replicas
 
-When moving an index or index replicas, the number of destination nodes must be the same as the number of nodes on which the index and any replicas are currently placed.
-You must specify the full node list, even if you only need to move a single replica.
+You cannot use this statement to move indexes or index replicas in Couchbase Capella, as it defaults to file-based index rebalancing.
 
-Likewise, when moving a partitioned index, the number of destination nodes must be the same as the number of nodes on which the index partitions and any replicas are currently placed.
-You cannot use this statement to repartition an index across a different number of nodes.
-
-The source and destination node ranges may overlap, for example you may move a partitioned index from `["192.168.0.15:9000", "27.0.0.1:9001"]` to `["192.168.0.15:9000", "127.0.0.1:9002"]`.
+Likewise, you cannot use this statement to repartition an index across a different number of nodes.
 
 === Changing the Replica Count
 
 When changing the number of replicas, the specified number of replicas must be less than the number of index nodes available for placement.
 If the specified number of replicas is greater than or equal to the number of index nodes available for placement, then the operation will fail.
 
-If you specify a node list when changing the number of replicas, the specified nodes must include all of the nodes on which the index or index partitions and any index replicas are currently placed.
+In Couchbase Capella, you cannot restrict the placement of index replicas to specified nodes.
 
-When increasing the number of replicas, whether you specify a node list or not, no single index node will host more than 1 replica of the same index, or the same partition of the same index.
+When increasing the number of replicas, no single index node will host more than 1 replica of the same index, or the same partition of the same index.
 Replicas are distributed across the available server groups.
 
 When reducing the number of replicas, the index service will first drop unhealthy replicas, where an unhealthy replica is a replica with missing partitions.
@@ -389,10 +365,6 @@ For a partitioned index, run a rebalance to move a replica into the vacant serve
 
 === Index Redistribution
 
-Using this statement to move 1 index at a time may be cumbersome if there are a lot of indexes to be moved.
-ifdef::flag-devex-rest-api[]
-The index redistribution setting enables you to specify how
-endif::flag-devex-rest-api[]
 Couchbase Capella redistributes indexes automatically on rebalance.
 For more information, see {rebalancing-the-index-service}[Rebalance].
 //end::usage[]
@@ -450,66 +422,14 @@ a|
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
-.Move the `def_inventory_airport_faa` index from one node to another
-====
-Create a cluster of 3 nodes and install the `travel-sample` bucket.
-The indexes are then installed in a round-robin fashion and distributed over the 3 nodes.
-
-Then move the `def_inventory_airport_faa` index from its original node (`svc-dqi-node-001` in this example) to a new node (`svc-dqi-node-002` in this example).
-
-[source,sqlpp]
-----
-include::example$n1ql-language-reference/alter-idx-move.n1ql[]
-----
-
-You should see:
-
-[source,json]
-----
-include::example$n1ql-language-reference/alter-idx-move.jsonc[]
-----
-====
-
-.Create and move an index replica from one node to another
-====
-Create an index on node `svc-dqi-node-001` with a replica on node `svc-dqi-node-002`, then move its replica from node `svc-dqi-node-002` to `svc-dqi-node-003`.
-
-[source,sqlpp]
-----
-CREATE INDEX country_idx ON airport(country, city)
-       USING GSI
-       WITH {"nodes": ["svc-dqi-node-001:18091",
-                       "svc-dqi-node-002:18091"]};
-
-ALTER INDEX country_idx ON airport
-WITH {"action": "move",
-      "nodes": ["svc-dqi-node-001:18091",
-                "svc-dqi-node-003:18091"]};
-----
-====
-
-.Moving multiple replicas
-====
-Create an index on node `svc-dqi-node-001` with replicas on nodes `svc-dqi-node-002` and `svc-dqi-node-003`, then move the replicas to nodes `svc-dqi-node-004` and `svc-dqi-node-005`.
-
-[source,sqlpp]
-----
-CREATE INDEX country_idx ON airport(country, city)
-WITH {"nodes": ["svc-dqi-node-001:18091",
-                "svc-dqi-node-002:18091",
-                "svc-dqi-node-003:18091"]};
-
-ALTER INDEX country_idx ON airport
-WITH {"action": "move",
-      "nodes": ["svc-dqi-node-001:18091",
-                "svc-dqi-node-004:18091",
-                "svc-dqi-node-005:18091"]};
-----
-====
+The examples in this section assume that you have a cluster with at least 4 nodes.
+The nodes are named `svc-dqi-node-001`, `svc-dqi-node-002`, and `svc-dqi-node-003`, and `svc-dqi-node-004`.
+The nodes in your cluster may have different names or IP addresses.
 
 .Increasing the number of replicas
 ====
-Create an index on node `svc-dqi-node-001` with replicas on nodes `svc-dqi-node-002` and `svc-dqi-node-003`, then increase the number of replicas to 4 and specify that new replicas may be placed on any available index nodes in the cluster.
+Create an index on node `svc-dqi-node-001` with replicas on nodes `svc-dqi-node-002` and `svc-dqi-node-003`, then increase the number of replicas to 4.
+New replicas may be placed on any available index nodes in the cluster.
 
 [source,sqlpp]
 ----
@@ -520,28 +440,6 @@ WITH {"nodes": ["svc-dqi-node-001:18091",
 
 ALTER INDEX country_idx ON airport
 WITH {"action": "replica_count", "num_replica": 4};
-----
-====
-
-.Increasing the number of replicas and restricting the nodes
-====
-Create an index on node `svc-dqi-node-001` with replicas on nodes `svc-dqi-node-002` and `svc-dqi-node-003`, then increase the number of replicas to 4, and specify that replicas may now also be placed on nodes `svc-dqi-node-004` and `svc-dqi-node-005`.
-
-[source,sqlpp]
-----
-CREATE INDEX country_idx ON airport(country, city)
-WITH {"nodes": ["svc-dqi-node-001:18091",
-                "svc-dqi-node-002:18091",
-                "svc-dqi-node-003:18091"]};
-
-ALTER INDEX country_idx ON airport
-WITH {"action": "replica_count",
-      "num_replica": 4,
-      "nodes": ["svc-dqi-node-001:18091",
-                "svc-dqi-node-002:18091",
-                "svc-dqi-node-003:18091",
-                "svc-dqi-node-004:18091",
-                "svc-dqi-node-005:18091"]};
 ----
 ====
 
