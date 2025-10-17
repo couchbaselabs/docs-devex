@@ -1,5 +1,5 @@
 = ALTER VECTOR INDEX
-:description: The ALTER VECTOR INDEX statement moves the placement of an existing index or replica among different GSI nodes.
+:description: The ALTER VECTOR INDEX statement increases or decreases the number of index replicas and partition replicas.
 :page-status: Couchbase Server 8.0
 :page-toclevels: 2
 :imagesdir: ../../assets/images
@@ -63,55 +63,10 @@ The nodes in your cluster may have different names or IP addresses.
 . Set the query context to the `color` scope in the `color-vector-sample` dataset.
 For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
 
-.Create and move an index from one node to another
-====
-Create a Hyperscale Vector index on node `svc-dqi-node-001`.
-
-[source,sqlpp]
-----
-CREATE VECTOR INDEX hyperscale_idx_move
-       ON rgb(embedding_vector_dot VECTOR)
-       WITH {"dimension": 1536,
-             "similarity": "L2",
-             "description": "IVF8,SQ4",
-             "nodes": "svc-dqi-node-001:18091"}
-----
-
-Then move the index from its original node (`svc-dqi-node-001` in this example) to a new node (`svc-dqi-node-002` in this example).
-
-[source,sqlpp]
-----
-ALTER VECTOR INDEX hyperscale_idx_move ON rgb
-WITH {"action": "move", "nodes": ["svc-dqi-node-002:18091"]};
-----
-
-To check the node where the index is located, see xref:manage:manage-indexes/manage-indexes.adoc[].
-====
-
-.Create and move an index replica from one node to another
-====
-Create a Hyperscale Vector index on node `svc-dqi-node-001` with a replica on node `svc-dqi-node-002`, then move its replica from node `svc-dqi-node-002` to `svc-dqi-node-003`.
-
-[source,sqlpp]
-----
-CREATE VECTOR INDEX hyperscale_rep_move
-       ON rgb(embedding_vector_dot VECTOR)
-       WITH {"dimension": 1536,
-             "similarity": "L2",
-             "description": "IVF8,SQ4",
-             "nodes": ["svc-dqi-node-001:18091",
-                       "svc-dqi-node-002:18091"]};
-
-ALTER VECTOR INDEX hyperscale_rep_move ON rgb
-WITH {"action": "move",
-      "nodes": ["svc-dqi-node-001:18091",
-                "svc-dqi-node-003:18091"]};
-----
-====
-
 .Increase the number of replicas
 ====
-Create a Hyperscale Vector index on node `svc-dqi-node-001` with a replica on nodes `svc-dqi-node-002`, then increase the number of replicas to 2 and specify that new replicas may be placed on any available index nodes in the cluster.
+Create a Hyperscale Vector index on node `svc-dqi-node-001` with a replica on node `svc-dqi-node-002`, then increase the number of replicas to 2.
+New replicas may be placed on any available index nodes in the cluster.
 
 [source,sqlpp]
 ----
@@ -125,29 +80,6 @@ CREATE VECTOR INDEX hyperscale_rep_multi
 
 ALTER VECTOR INDEX hyperscale_rep_multi ON rgb
 WITH {"action": "replica_count", "num_replica": 2};
-----
-====
-
-.Increase the number of replicas and specify the nodes
-====
-Create a Hyperscale Vector index on node `svc-dqi-node-001` with a replica on node `svc-dqi-node-002`, then increase the number of replicas to 2, and specify that replicas may be placed on nodes `svc-dqi-node-002` and `svc-dqi-node-003`.
-
-[source,sqlpp]
-----
-CREATE VECTOR INDEX hyperscale_rep_increase
-       ON rgb(embedding_vector_dot VECTOR)
-       WITH {"dimension": 1536,
-             "similarity": "L2",
-             "description": "IVF8,SQ4",
-             "nodes": ["svc-dqi-node-001:18091",
-                       "svc-dqi-node-002:18091"]};
-
-ALTER VECTOR INDEX hyperscale_rep_increase ON rgb
-WITH {"action": "replica_count",
-      "num_replica": 2,
-      "nodes": ["svc-dqi-node-001:18091",
-                "svc-dqi-node-002:18091",
-                "svc-dqi-node-003:18091"]};
 ----
 ====
 
