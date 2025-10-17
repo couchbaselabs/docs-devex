@@ -3,7 +3,7 @@ SELECT RAW OBJECT_PUT(d, "embedding_vector_dot",
   ARRAY_CONCAT(d.embedding_vector_dot[0:4], ["..."])
 )
 FROM `color-vector-sample`.`color`.`rgb` AS d
-USE KEYS ["#FFEFD5"];
+USE KEYS ["FFEFD5"];
 /* end::get-sample-doc[] */
 
 /* tag::get-sample-doc-question[] */
@@ -55,7 +55,7 @@ LIMIT 5;
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector  
         from `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#FFEFD5")
+        USE KEYS "#FFEFD5")
 SELECT b.color, b.description from `rgb` AS b 
 order by APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, 
 question_vec[0], "DOT")  LIMIT 3;
@@ -65,7 +65,7 @@ question_vec[0], "DOT")  LIMIT 3;
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector  
         from `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#FFEFD5")
+        USE KEYS "#FFEFD5")
 SELECT b.color, b.description, b.brightness from `rgb` AS b 
 WHERE b.brightness > 190.0
 order by APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, 
