@@ -52,6 +52,19 @@ See xref:vector-index:vectors-and-indexes-overview.adoc#vector_similarity[Vector
 
 include::vector-search:partial$download-sample-partial.adoc[]
 
+include::vector-search:partial$download-sample-partial.adoc[]
+
+In addition, to get the best results with the examples on this page, download the following sample dataset:
+
+https://cbc-remote-execution-examples-prod.s3.amazonaws.com/color_data_2vectors.zip[Download color_data_2vectors.zip]
+
+When you have downloaded `color_data_2vectors.zip`, unzip it, then xref:guides:load.adoc[import] the `rgb_questions.json` file with the following settings:
+
+* Use the `color-vector-sample` bucket.
+* Use the `color` scope.
+* Create a new target collection called `rgb-questions` -- with a hyphen `-`, not an underscore `&lowbar;`.
+* To set your document keys, use the value of the `id` field from the JSON document.
+
 [#create-index]
 
 include::vector-index:partial$create-composite-index-capella-ui.adoc[opts=optional]
@@ -98,7 +111,7 @@ include::partial$index-algorithm-settings.adoc[]
 The following examples show you how to create two Composite Vector index with a vector column using sample data.
 They both use the data from the `color_data_2vectors.zip` file mentioned earlier.
 
-The following query gets a single document from the `rgb` collection in the `vector-sample` bucket's `color` scope.
+The following query gets a single document from the `rgb` collection in the `color-vector-sample` bucket's `color` scope.
 It truncates the `embedding_vector_dot` attribute to the first four values to improve readability.
 
 [source,sqlpp]
@@ -115,7 +128,7 @@ include::vector-index:example$composite-vector-data.json[tag=sample-doc]
 
 ==== Index the RGB Values
 
-The `rgb.json` file's `colorvect_l2` attribute defines an array containing the RGB values for the entry's color.
+The `rgb` collection's `colorvect_l2` attribute defines an array containing the RGB values for the entry's color.
 While this technically is not an embedded vector, you can still create a vector index column for this array.
 The following example creates a Composite Vector index for this attribute as an embedded vector as well as the color's name and brightness.
 
@@ -366,7 +379,7 @@ In a production environment, your application calls the same embedding model it 
 
 For this example, you can use embedded vectors in the `rgb_questions.json` file that's in the `color_data_2vectors.zip` file.
 This file contains a `question` attribute containing a search prompt for a particular color.
-The following query gets a single document from the `rgb_questions` collection in the `vector-sample` bucket's `color` scope.
+The following query gets a single document from the `rgb_questions` collection in the `color-vector-sample` bucket's `color` scope.
 It truncates the `couchbase_search_query.knn.vector` attribute to the first four values to improve readability.
 
 [source,sqlpp]
@@ -394,7 +407,7 @@ include::vector-index:example$query-vectors-idx-whole.sqlpp[tags=!query-vectors-
 
 Click btn:[icon:github[\] View] to see and copy the entire query with all the vectors.
 
-Another option is to import the `rgb_questions.json` file into another collection in the `vector-sample` bucket's `color` scope named `rgb-questions`.
+Another option is to import the `rgb_questions.json` file into another collection in the `color-vector-sample` bucket's `color` scope named `rgb-questions`.
 Then you can use a subquery to get the vectors for the question and use it in your query of the `rgb` collection's `embedding_vector_dot` attribute:
 
 [source,sqlpp]

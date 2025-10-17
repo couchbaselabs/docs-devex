@@ -18,7 +18,7 @@ public class RunVectorSearchSimpleColor {
 	String username = System.getenv("CB_USERNAME");
 	String password = System.getenv("CB_PASSWORD");
     // Make sure to change the bucket, scope, collection, and index names to match where you stored the sample data in your database. 
-	String bucketName = "vector-sample";
+	String bucketName = "color-vector-sample";
 	String scopeName = "color";
 	String collectionName = "rgb";
 	String searchIndexName = "color-index";
