@@ -2,7 +2,7 @@
 SELECT RAW OBJECT_PUT(d, "embedding_vector_dot",
   ARRAY_CONCAT(d.embedding_vector_dot[0:4], ["..."])
 )
-FROM `vector-sample`.`color`.`rgb` AS d
+FROM `color-vector-sample`.`color`.`rgb` AS d
 USE KEYS ["#FFEFD5"];
 /* end::get-sample-doc[] */
 
@@ -15,25 +15,25 @@ SELECT RAW OBJECT_PUT(d, "couchbase_search_query",
     FOR k IN d.couchbase_search_query.knn END
   )
 )
-FROM `vector-sample`.`color`.`rgb-questions` AS d
+FROM `color-vector-sample`.`color`.`rgb-questions` AS d
 USE KEYS ["#FFEFD5"];
 /* end::get-sample-doc-question[] */
 
 
 /* tag::create-rgb-idx[] */
-CREATE INDEX `color_vectors_idx` ON `vector-sample`.`color`.`rgb`
+CREATE INDEX `color_vectors_idx` ON `color-vector-sample`.`color`.`rgb`
        (`colorvect_l2` VECTOR, color, brightness)
        WITH {  "dimension":3 , "similarity":"L2", "description":"IVF,SQ8"};
 /* end::create-rgb-idx[] */
 
 /* tag::create-vectors-idx[] */
-CREATE INDEX `color_desc_idx` ON `vector-sample`.`color`.`rgb` 
+CREATE INDEX `color_desc_idx` ON `color-vector-sample`.`color`.`rgb` 
      (`embedding_vector_dot` VECTOR, color, brightness) 
      WITH { "dimension":1536, "similarity":"DOT", "description":" IVF,SQ8" }
 /* end::create-vectors-idx[] */
 
 /* tag::create-colors-idx[] */
-CREATE INDEX `color_name_idx` ON `vector-sample`.`color`.`rgb`
+CREATE INDEX `color_name_idx` ON `color-vector-sample`.`color`.`rgb`
      (color, brightness, `embedding_vector_dot` VECTOR)
      WITH { "dimension":1536, "similarity":"DOT", "description":" IVF,SQ8" }
 /* end::create-colors-idx[] */
@@ -54,7 +54,7 @@ LIMIT 5;
 /* tag::query-vectors-idx-subquery[] */
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector  
-        from `vector-sample`.`color`.`rgb-questions` 
+        from `color-vector-sample`.`color`.`rgb-questions` 
         WHERE meta().id = "#FFEFD5")
 SELECT b.color, b.description from `rgb` AS b 
 order by APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, 
@@ -64,7 +64,7 @@ question_vec[0], "DOT")  LIMIT 3;
 /* tag::query-vectors-idx-subquery-filtered[] */
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector  
-        from `vector-sample`.`color`.`rgb-questions` 
+        from `color-vector-sample`.`color`.`rgb-questions` 
         WHERE meta().id = "#FFEFD5")
 SELECT b.color, b.description, b.brightness from `rgb` AS b 
 WHERE b.brightness > 190.0

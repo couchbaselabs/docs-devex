@@ -12,14 +12,14 @@ from datetime import timedelta
 COUCHBASE_URL = "couchbase://localhost"
 USERNAME = "Administrator"
 PASSWORD = "password"
-BUCKET_NAME = "vector-sample"
+BUCKET_NAME = "color-vector-sample"
 
 # --- Connect to Cluster ---
 cluster = Cluster(COUCHBASE_URL, ClusterOptions(PasswordAuthenticator(USERNAME, PASSWORD)))
 cluster.wait_until_ready(timedelta(seconds=10))
 
 # --- Get all search-color IDs ---
-get_ids_query = "SELECT META().id AS id FROM `vector-sample`.`color`.`rgb`"
+get_ids_query = "SELECT META().id AS id FROM `color-vector-sample`.`color`.`rgb`"
 search_colors = cluster.query(get_ids_query)
 search_color_ids = [row["id"] for row in search_colors]
 
@@ -29,10 +29,10 @@ def run_vector_query(search_color_id, use_rerank=False, limit=10):
     query = f"""
     WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector  
-        FROM `vector-sample`.`color`.`rgb-questions` 
+        FROM `color-vector-sample`.`color`.`rgb-questions` 
         WHERE meta().id = "{search_color_id}")
     SELECT b.color, b.description, b.id
-    FROM `vector-sample`.`color`.`rgb` AS b
+    FROM `color-vector-sample`.`color`.`rgb` AS b
     ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4, {rerank_str})
     LIMIT {limit};
     """
