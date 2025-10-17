@@ -15,7 +15,7 @@ SELECT
     ["..."]
   ) AS embedding_vector_dot
 FROM `color-vector-sample`.`color`.`rgb` AS d
-WHERE d.id = "#87CEEB";
+USE KEYS "87CEEB";
 /* end::rgb-entry[] */
 
 
@@ -29,18 +29,18 @@ SELECT
     ["..."]
   ) AS vector
 FROM `color-vector-sample`.`color`.`rgb-questions` AS d
-WHERE d.id = "#87CEEB";
+USE KEYS "#87CEEB";
 /* end::query-rgb-questions[] */
 
 /* tag::query-rgb-with-subquery[] */
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector  
         FROM `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#87CEEB"),
+        USE KEYS "#87CEEB"),
     question_answer AS (
         SELECT wanted_similar_color_from_search
         FROM `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#87CEEB")
+        USE KEYS "#87CEEB")
 SELECT b.color, b.description, q.wanted_similar_color_from_search  
        FROM `color-vector-sample`.`color`.`rgb` AS b, question_answer as q
        ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, 
@@ -58,7 +58,7 @@ CREATE VECTOR INDEX `color_desc_hyperscale_brightness`
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector  
         FROM `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#87CEEB")
+        USE KEYS "#87CEEB")
 SELECT b.color, b.description, b.brightness
        FROM `color-vector-sample`.`color`.`rgb` AS b
        WHERE b.brightness > 170.0
@@ -77,7 +77,7 @@ CREATE VECTOR INDEX `color_desc_hyperscale_no_persist`
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector  
         FROM `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#FFFFE0")
+        USE KEYS "#FFFFE0")
     SELECT b.color, b.description, b.id
     FROM `color-vector-sample`.`color`.`rgb` AS b
     ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4)
@@ -88,7 +88,7 @@ WITH question_vec AS (
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector  
         FROM `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#FFFFE0")
+        USE KEYS "#FFFFE0")
     SELECT b.color, b.description, b.id
     FROM `color-vector-sample`.`color`.`rgb` AS b
     ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4, TRUE)
@@ -100,15 +100,14 @@ WITH question_vec AS (
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector  
         FROM `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#87CEEB"),
+        USE KEYS "#87CEEB"),
     question_answer AS (
         SELECT wanted_similar_color_from_search
         FROM `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#87CEEB")
+        USE KEYS "#87CEEB")
 SELECT b.color, b.description, q.wanted_similar_color_from_search, approx_distance  
-       FROM `color-vector-sample`.`color`.`rgb` AS b, question_answer as q, 
-       APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4) 
-       as approx_distance
+       FROM `color-vector-sample`.`color`.`rgb` AS b, question_answer as q 
+       LET approx_distance = APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4) 
        ORDER BY approx_distance  LIMIT 3;
 /* end::query-rgb-with-distance[] */
 
@@ -116,7 +115,7 @@ SELECT b.color, b.description, q.wanted_similar_color_from_search, approx_distan
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector 
         FROM `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#87CEEB"
+        USE KEYS "#87CEEB"
     ), 
 colors AS (
     SELECT b.color
@@ -131,7 +130,7 @@ SELECT RAW colors;
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector 
         FROM `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#87CEEB"
+        USE KEYS "#87CEEB"
     ), 
 colors AS (
     SELECT b.color
@@ -146,7 +145,7 @@ SELECT RAW colors;
 WITH question_vec AS (
     SELECT RAW couchbase_search_query.knn[0].vector
     FROM `color-vector-sample`.`color`.`rgb-questions`
-    WHERE meta().id = "#87CEEB"
+    USE KEYS "#87CEEB"
 ),
 -- Exact Search results
 GroundTruthResults AS (
@@ -183,7 +182,7 @@ LEFT JOIN
 WITH question_vec AS (
     SELECT RAW couchbase_search_query.knn[0].vector
     FROM `color-vector-sample`.`color`.`rgb-questions`
-    WHERE meta().id = "#87CEEB"
+    USE KEYS "#87CEEB"
 ),
 -- Exact Search results
 GroundTruthResults AS (
@@ -220,7 +219,7 @@ LEFT JOIN
 WITH question_vec AS (
         SELECT RAW couchbase_search_query.knn[0].vector 
         FROM `color-vector-sample`.`color`.`rgb-questions` 
-        WHERE meta().id = "#87CEEB"
+        USE KEYS "#87CEEB"
     ), 
 colors AS (
     SELECT b.color
