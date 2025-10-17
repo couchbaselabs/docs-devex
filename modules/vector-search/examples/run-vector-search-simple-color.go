@@ -16,7 +16,7 @@ func main() {
     username := os.Getenv("CB_USERNAME")
     password := os.Getenv("CB_PASSWORD")
 	// Make sure to change the bucket, and scope names to match where you stored the sample data in your database. 
-    bucket_name := "vector-sample"
+    bucket_name := "color-vector-sample"
     scope_name := "color"
 
     cluster, err := gocb.Connect(connstr, gocb.ClusterOptions{
