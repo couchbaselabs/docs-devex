@@ -8,25 +8,42 @@ create-statement ::= create-scope
                    | create-collection
                    | create-primary-index
                    | create-index
+                   | create-vector-index
                    | create-function
                    | create-sequence
+                   | create-user
+                   | create-group
+                   | create-bucket
 
 drop-statement ::= drop-scope
                  | drop-collection
                  | drop-primary-index
                  | drop-index
+                 | drop-vector-index
                  | drop-function
                  | drop-sequence
+                 | drop-user
+                 | drop-group
+                 | drop-bucket
 
-other-statement ::= alter-index
+other-statement ::= alter-bucket
+                  | alter-group
+                  | alter-index
+                  | alter-vector-index
                   | alter-sequence
+                  | alter-user
                   | build-index
                   | execute-function
 
 
 /**************************
- * Scopes and Collections *
+ * Buckets, Scopes, and Collections *
  **************************/
+
+/* tag::create-bucket[] */
+create-bucket ::= 'CREATE' ( 'BUCKET' | 'DATABASE' ) ( 'IF' 'NOT' 'EXISTS' )? name 
+                  ( 'WITH' with-fields )?
+/* end::create-bucket[] */
 
 /* tag::create-scope[] */
 create-scope ::= 'CREATE' 'SCOPE' ( namespace ':' )? bucket '.' scope ( 'IF' 'NOT' 'EXISTS' )?
@@ -36,6 +53,14 @@ create-scope ::= 'CREATE' 'SCOPE' ( namespace ':' )? bucket '.' scope ( 'IF' 'NO
 create-collection ::= 'CREATE' 'COLLECTION' ( ( namespace ':' )? bucket '.' scope '.' )?
                       collection ( 'IF' 'NOT' 'EXISTS' )? ( 'WITH' expr )?
 /* end::create-collection[] */
+
+/* tag::alter-bucket[] */
+alter-bucket ::= 'ALTER' ( 'BUCKET' | 'DATABASE' ) name ( 'WITH' with-fields )?
+/* end::alter-bucket[] */
+
+/* tag::drop-bucket[] */
+drop-bucket ::= 'DROP' ( 'BUCKET' | 'DATABASE' ) ('IF' 'EXISTS' )? name
+/* end::drop-bucket[] */
 
 /* tag::drop-scope[] */
 drop-scope ::= 'DROP' 'SCOPE' ( namespace ':' )? bucket '.' scope ( 'IF' 'EXISTS' )?
@@ -52,7 +77,8 @@ drop-collection ::= 'DROP' 'COLLECTION' ( ( namespace ':' )? bucket '.' scope '.
  ***********/
 
 /* tag::create-primary-index[] */
-create-primary-index ::= 'CREATE' 'PRIMARY' 'INDEX' index-name? ( 'IF' 'NOT' 'EXISTS' )?
+create-primary-index ::= 'CREATE' 'PRIMARY' 'INDEX' ( index-name? ( 'IF' 'NOT' 'EXISTS' )? |
+                         'IF' 'NOT' 'EXISTS' index-name )
                          'ON' keyspace-ref index-using? index-with?
 /* end::create-primary-index[] */
 
@@ -65,21 +91,39 @@ index-with ::= 'WITH' expr
 /* end::index-with[] */
 
 /* tag::create-index[] */
-create-index ::= 'CREATE' 'INDEX' index-name ( 'IF' 'NOT' 'EXISTS' )? 'ON' keyspace-ref
-                 '(' index-key lead-key-attribs? ( ( ',' index-key key-attribs? )+ )? ')'
+create-index ::= 'CREATE' 'INDEX' ( index-name ( 'IF' 'NOT' 'EXISTS' )? |
+                 'IF' 'NOT' 'EXISTS' index-name ) 'ON' keyspace-ref
+                 '(' index-keys-and-attribs ')'
                  index-partition? where-clause? index-using? index-with?
 /* end::create-index[] */
+
+/* tag::create-vector-index[] */
+create-vector-index ::= 'CREATE' 'VECTOR' 'INDEX' ( index-name ( 'IF' 'NOT' 'EXISTS' )? |
+                        'IF' 'NOT' 'EXISTS' index-name ) 'ON' keyspace-ref
+                        '(' index-key-and-attrib ')'
+                        index-include? index-partition? where-clause? index-using? index-with?
+/* end::create-vector-index[] */
+
+/* tag::index-keys-and-attribs[] */
+index-keys-and-attribs ::= index-key lead-key-attribs? ( ( ',' index-key key-attribs? )+ )?
+/* end::index-keys-and-attribs[] */
+
+/* tag::index-key-and-attrib[] */
+index-key-and-attrib ::= index-key index-vector
+/* end::index-key-and-attrib[] */
 
 /* tag::index-key[] */
 index-key ::= expr | array-expr
 /* end::index-key[] */
 
 /* tag::lead-key-attribs[] */
-lead-key-attribs ::= index-order include-missing? | include-missing index-order?
+lead-key-attribs ::= index-order include-missing? |
+                     include-missing index-order? |
+                     index-vector
 /* end::lead-key-attribs[] */
 
 /* tag::key-attribs[] */
-key-attribs ::= index-order
+key-attribs ::= index-order | index-vector
 /* end::key-attribs[] */
 
 /* tag::include-missing[] */
@@ -89,6 +133,10 @@ include-missing ::= 'INCLUDE' 'MISSING'
 /* tag::index-order[] */
 index-order ::= 'ASC' | 'DESC'
 /* end::index-order[] */
+
+/* tag::index-vector[] */
+index-vector ::= 'VECTOR'
+/* end::index-vector[] */
 
 /* tag::array-expr[] */
 array-expr ::= full-array-expr | simple-array-expr
@@ -112,6 +160,10 @@ pairs-function ::= 'PAIRS' '(' ( 'SELF' | index-key-object ) ')'
 index-key-object ::= expr
 /* end::index-key-object[] */
 
+/* tag::index-include[] */
+index-include ::= 'INCLUDE' '(' expr ( ',' expr )* ')'
+/* end::index-include[] */
+
 /* tag::index-partition[] */
 index-partition ::= 'PARTITION' 'BY' 'HASH' '(' partition-key-expr
                     ( ',' partition-key-expr )* ')'
@@ -122,9 +174,14 @@ partition-key-expr ::= expr
 /* end::partition-key-expr[] */
 
 /* tag::alter-index[] */
-alter-index ::= 'ALTER' 'INDEX' ( index-path '.' index-name | index-name 'ON' keyspace-ref )
-                index-using? index-with
+alter-index ::= 'ALTER' 'INDEX' ( index-path '.' index-name |
+                index-name 'ON' keyspace-ref ) index-using? index-with
 /* end::alter-index[] */
+
+/* tag::alter-vector-index[] */
+alter-vector-index ::= 'ALTER' 'VECTOR' 'INDEX' ( index-path '.' index-name |
+                       index-name 'ON' keyspace-ref ) index-using? index-with
+/* end::alter-vector-index[] */
 
 /* tag::build-index[] */
 build-index ::= 'BUILD' 'INDEX' 'ON' keyspace-ref '(' index-term (',' index-term)* ')'
@@ -140,14 +197,29 @@ index-expr ::= string | array
 /* end::index-expr[] */
 
 /* tag::drop-primary-index[] */
-drop-primary-index ::= 'DROP' 'PRIMARY' 'INDEX' ( 'IF' 'EXISTS' )? 'ON' keyspace-ref
-                       index-using?
+drop-primary-index ::= 'DROP' 'PRIMARY' 'INDEX' ( index-name? ( 'IF' 'EXISTS' )? |
+                       'IF' 'EXISTS' index-name ) 'ON' keyspace-ref index-using?
 /* end::drop-primary-index[] */
 
 /* tag::drop-index[] */
-drop-index ::= 'DROP' 'INDEX' ( index-path '.' index-name ( 'IF' 'EXISTS' )? |
-                index-name ( 'IF' 'EXISTS' )? 'ON' keyspace-ref ) index-using?
+drop-index ::= 'DROP' 'INDEX' ( index-path-and-name | index-name-on-keyspace )
+               index-using?
 /* end::drop-index[] */
+
+/* tag::drop-vector-index[] */
+drop-vector-index ::= 'DROP' 'VECTOR' 'INDEX' ( index-path-and-name | index-name-on-keyspace )
+                      index-using?
+/* end::drop-vector-index[] */
+
+/* tag::index-path-and-name[] */
+index-path-and-name ::= index-path '.' index-name ( 'IF' 'EXISTS' )? |
+                        'IF' 'EXISTS' index-path '.' index-name
+/* end::index-path-and-name[] */
+
+/* tag::index-name-on-keyspace[] */
+index-name-on-keyspace ::= ( index-name ( 'IF' 'EXISTS' )? | 'IF' 'EXISTS' index-name )
+                           'ON' keyspace-ref
+/* end::index-name-on-keyspace[] */
 
 /* tag::index-path[] */
 index-path ::= keyspace-full | keyspace-prefix | keyspace-partial
@@ -288,3 +360,45 @@ alter-sequence-options ::= ( restart-with
 /* tag::restart-with[] */
 restart-with ::= 'RESTART' ( 'WITH' integer )?
 /* end::restart-with[] */
+
+/********************
+ * Users and Groups *
+ ********************/
+
+/* tag::create-user[] */
+create-user ::= 'CREATE' 'USER' ( 'IF' 'NOT' 'EXISTS' )? username 'PASSWORD' password 
+                ( 'WITH' name )? 
+                ( 'GROUP' group | 'GROUPS' group ( ',' group )* | 'NO' 'GROUPS' )?
+/* end::create-user[] */
+
+/* tag::alter-user[] */
+alter-user ::= 'ALTER' 'USER' username ( 'PASSWORD' password )? 
+                ( 'WITH' name )? 
+                ( 'GROUP' group | 'GROUPS' group ( ',' group )* | 'NO' 'GROUPS' )?
+/* end::alter-user[] */
+
+/* tag::drop-user[] */
+drop-user ::= 'DROP' 'USER' ( 'IF' 'EXISTS' )? username
+/* end::drop-user[] */
+
+/* tag::create-group[] */
+create-group ::= 'CREATE' 'GROUP' ( 'IF' 'NOT' 'EXISTS' )? name 
+                 ( 'WITH' description )? 
+                 ( 'ROLE' rbac-role | 'ROLES' rbac-role ( ',' rbac-role )* | 'NO' 'ROLES' )
+/* end::create-group[] */
+
+/* tag::alter-group[] */
+alter-group ::= 'ALTER' 'GROUP' name ( 'WITH' description )? 
+                ( 'ROLE' rbac-role | 'ROLES' rbac-role (',' rbac-role )* | 'NO' 'ROLES' )?
+/* end::alter-group[] */
+
+/* tag::rbac-role[] */
+rbac-role ::= role ( 'ON' keyspace-ref )?
+/* end::rbac-role[] */
+
+/* tag::drop-group[] */
+drop-group ::= 'DROP' 'GROUP' ('IF' 'EXISTS' )? groupname
+/* end::drop-group[] */
+
+
+

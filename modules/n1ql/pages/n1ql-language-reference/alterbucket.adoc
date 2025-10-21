@@ -1,0 +1,77 @@
+= ALTER BUCKET
+:description: The ALTER BUCKET statement enables you to update an existing bucket's configuration.
+:page-topic-type: reference
+:page-status: Couchbase Server 8.0
+:imagesdir: ../../assets/images
+
+:identifier: xref:n1ql-language-reference/identifiers.adoc
+:roles: xref:learn:security/roles.adoc
+:bucket-parameters: xref:rest-api:rest-bucket-create.adoc#parameter-groups
+:buckets: xref:learn:buckets-memory-and-storage/buckets.adoc
+:manage-buckets: xref:manage:manage-buckets/bucket-management-overview.adoc
+:buckets-api: xref:rest-api:rest-bucket-intro.adoc
+:couchbase-cli-bucket-edit: xref:cli:cbcli/couchbase-cli-bucket-edit.adoc
+
+[abstract]
+{description}
+
+== Purpose
+
+Use the ALTER BUCKET statement to modify the configuration of a bucket in your Couchbase cluster. 
+You can update only a limited set of bucket settings.
+You cannot change its core properties such as the bucket name and type. 
+For more information, see the <<alterbucket-syntax,Syntax>> section.
+
+== RBAC Privileges
+
+Only administrators with the following roles can execute the ALTER BUCKET statement:
+
+* Full Admin
+* Cluster Admin
+* Bucket Admin (if privileges are extended to the specific bucket or all buckets on the cluster)
+
+For more information about roles and privileges, see {roles}[Roles].
+
+[[alterbucket-syntax]]
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=alter-bucket]
+----
+
+image::n1ql-language-reference/alter-bucket.png["Syntax diagram: refer to source code listing", align=left]
+
+The `BUCKET` and `DATABASE` keywords are synonyms.
+You can use either of them.
+
+[horizontal]
+name:: 
+(Required) An {identifier}[identifier] that represents the name of the bucket that you want to update.
+
+with-fields:: (Optional)
+A JSON object containing a list of name-value pairs that specify additional options for the bucket.
+For a list of valid fields names and values, see {bucket-parameters}[Bucket Parameter Groups] in the REST API documentation.
+
+NOTE: You cannot alter the following fields of a bucket: `bucketType`, `storageBackend`, `replicaIndex`, and `conflictResolutionType`.
+
+== Example
+
+.Alter a bucket and update its memory quota, maximum TTL, and durability level
+====
+[source,sqlpp]
+----
+ALTER BUCKET `student-records`
+WITH {
+    "ramQuota": 256,
+    "maxTTL": 86400,
+    "durabilityMinLevel": "majority"
+};
+----
+====    
+
+== Related Links
+
+* For an overview of buckets, see {buckets}[Buckets].
+* For step-by-step procedures for bucket management, see {manage-buckets}[Manage Buckets].
+* For managing buckets with the REST API, see {buckets-api}[Buckets API].

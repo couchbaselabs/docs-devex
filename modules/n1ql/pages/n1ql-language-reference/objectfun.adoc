@@ -87,7 +87,12 @@ If any of the input objects contain the same attribute name, the attribute from 
 .Query
 [source,sqlpp]
 ----
-SELECT OBJECT_CONCAT({"abc": 1}, {"def": 2}, {"ghi": 3}, {"ghi": 4}, {"ghi": [5, 6, 7]});
+SELECT OBJECT_CONCAT({"flight": "AF198"}, 
+    {"utc": "4:44:44"},
+    {"code": "green"}, 
+    {"code": "yellow"},
+    {"passengers": ["Corrine Hill", "Vallie Ryan"]}
+);       
 ----
 
 .Results
@@ -96,13 +101,66 @@ SELECT OBJECT_CONCAT({"abc": 1}, {"def": 2}, {"ghi": 3}, {"ghi": 4}, {"ghi": [5,
 [
   {
     "$1": {
-      "abc": 1,
-      "def": 2,
-      "ghi": [
-        5,
-        6,
-        7
+      "flight": "AF198",
+      "utc": "4:44:44",
+      "code": "yellow",
+      "passengers": [
+        "Corrine Hill",
+        "Vallie Ryan"
       ]
+    }
+  }
+]
+----
+====
+
+[[fn-obj-concat2,OBJECT_CONCAT2()]]
+== OBJECT_CONCAT2(`expr`, `expr` ...)
+
+[.status]#Couchbase Server 8.0#
+
+=== Description
+
+This function concatenates multiple input objects into a single new object, and requires at least two input objects to work. 
+Unlike <<fn-obj-concat>>, this function supports both plain objects and arrays of objects as arguments. 
+
+=== Arguments
+
+expr:: An expression representing an object or an array of objects. 
+The first argument must be a plain object and cannot be an array. 
+
+=== Return Value
+
+An object constructed by concatenating all the input objects.
+If any of the input objects contain the same attribute name, the attribute from the last relevant object in the input list is copied to the output; similarly-named attributes from earlier objects in the input list are ignored.
+
+=== Examples
+
+[[obj-concat2-ex,OBJECT_CONCAT2() Example]]
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_CONCAT2(
+    {"flight": "AF198"},
+    [ {"utc": "4:44:44"},
+      {"code": "green"},
+      {"airline": "Air France"},
+      {"airline": "Delta"}
+    ]
+);
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": {
+      "flight": "AF198",
+      "utc": "4:44:44",
+      "code": "green",
+      "airline": "Delta"
     }
   }
 ]
@@ -224,6 +282,171 @@ LIMIT 1;
 ]
 ----
 ====
+
+
+[[fn-obj-filter,OBJECT_FILTER()]]
+== OBJECT_FILTER(`expression` [, `options`])
+
+[.status]#Couchbase Server 8.0#
+
+=== Description
+This function extracts and returns nested fields from an input object that match a specified pattern, while retaining their original hierarchical path structure in the output. 
+This is particularly useful when working with complex objects, as it allows you to filter fields based on patterns using either regular expressions or exact matches.
+
+=== Arguments
+expression:: An expression representing an object.
+
+options:: [Optional] A JSON object specifying options for the function.
+
+=== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **pattern** +
+__optional__
+
+| The pattern to match. 
+This can be a regular expression or a simple string, depending on the `regex` parameter.
+| String
+
+| **regex** +
+__optional__
+| If `TRUE`, the pattern is treated as a regular expression.
+
+If `FALSE`, the pattern is treated as a simple string.
+
+*Default:* `TRUE`
+| Boolean
+
+| **arraysubscript** +
+__optional__
+| Specifies whether array subscripts are included in field names before applying the filter.
+
+If `TRUE`, array subscripts are included. 
+
+If `FALSE`, array subscripts are replaced by `*`.
+
+*Default:* `TRUE`
+
+| Boolean
+
+| **composites** +
+__optional__
+| Specifies whether the pattern should match field names that contain values requiring further processing, such as nested objects or arrays.
+
+If `TRUE`, the pattern is matched against every level of nested fields. 
+
+If `FALSE`, the pattern is matched only against the deepest level of nested fields. 
+
+*Default:* `TRUE`
+| Boolean
+
+| **patternspace** +
+__optional__
+| A string literal with two possible values. 
+
+`"field"`: The pattern is matched against individual field names. 
+
+`"path"`: The pattern is matched against composite path names.
+
+*Default:* `"path"`
+| String
+
+| **exact** +
+__optional__
+| Specifies whether the provided pattern must be an exact match for the field or path (as determined by the `patternspace` parameter). 
+
+This is a short-cut for the regular expression start (^) and end ($) anchors, and can be used even when `regex` is set to `false`.
+
+If `TRUE`, the pattern must be an exact match.
+
+If `FALSE`, the pattern does not need to be an exact match.
+
+*Default:* `FALSE`
+| Boolean
+
+| **ignorecase** +
+__optional__
+| If `TRUE`, the pattern matching is case-sensitive.
+
+If `FALSE`, the pattern matching ignores case. 
+
+*Default:* `FALSE`
+| Boolean
+|===
+
+=== Return Value
+An object containing only the fields that match the specified pattern.
+Non-matching fields are excluded from the output.
+
+=== Examples
+
+[[obj-filter-ex1,OBJECT_FILTER() Example 1]]  
+.Filtering by field name
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_FILTER(t, {"pattern":"Business service"})  
+FROM `travel-sample`.`inventory`.`hotel` t 
+WHERE type = 'hotel' 
+LIMIT 2;
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": {
+      "reviews": [
+        {
+          "ratings": {
+            "Business service (e.g., internet access)": 4
+          }
+        }
+      ]
+    }
+  },
+  {
+    "$1": null
+  }
+]
+----
+====
+
+[[obj-filter-ex2,OBJECT_FILTER() Example 2]]
+.Filtering by full path
+You can use <<fn-obj-paths,OBJECT_PATHS()>> to generate the full path to a field, and then use that path in the `pattern` parameter. 
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_FILTER(t, { "pattern": "reviews[1].ratings.Service", "regex": false }) 
+FROM `travel-sample`.`inventory`.`hotel` t 
+WHERE type = 'hotel' 
+LIMIT 1;
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": {
+      "reviews": [
+        {
+          "ratings": {
+            "Service": 3
+          }
+        }
+      ]
+    }
+  }
+]
+----
+====
+
 
 [[fn-obj-inner-pairs,OBJECT_INNER_PAIRS()]]
 == OBJECT_INNER_PAIRS(`expression`)
@@ -541,36 +764,73 @@ SELECT OBJECT_NAMES(special_flights[*]) AS names;
 ====
 
 [[fn-obj-pairs,OBJECT_PAIRS()]]
-== OBJECT_PAIRS(`expression`)
+== OBJECT_PAIRS(`expression` [, `options` ])
 
-_Alias_: *OBJECT_OUTER_PAIRS(`expression`)*
+_Alias_: *OBJECT_OUTER_PAIRS(`expression` [, `options` ])*
 
 === Description
 
 This function returns an array of objects, containing the names and values of each attribute in the input object.
-It is particularly useful when iterating over multiple objects in an array, as it collates the values from similarly-named attributes into a single nested array.
+It also provides an option to return attribute types instead of values.
 
-In this case, the function returns a null entry from any object which does not contain the shared attribute name, rather like an OUTER JOIN.
+The function is particularly useful when iterating over multiple objects in an array, as it collates the values from similarly-named attributes into a single nested array. 
+However, if an object does not contain a shared attribute name, it returns a null entry, similar to an OUTER JOIN.
+
 For an illustration, refer to the examples below.
 
 === Arguments
 
 expression:: An expression representing an object.
 
+options:: [Optional]
+A JSON object specifying options for the function.
+
+=== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **types** +
+__required__
+| Determines whether to return attribute types or values.
+
+If TRUE, the function returns the name and type of each attribute.
+
+If FALSE, the function returns the name and value of each attribute.
+
+*Default:* `FALSE`
+| Boolean
+|===
+
 === Return Value
 
-An array of objects, each containing two attributes:
+An array of objects, each containing the following attributes:
 
-name:: The name of an attribute in the source object.
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
 
-val:: The value of an attribute in the source object; or an array, containing the collated values of similarly-named attributes in the source objects.
+| **name** +
+| The name of an attribute in the source object.
+| String
 
-The objects in the array are sorted by attribute name, in {sqlpp} collation order.
+| **val** +
+| The value of an attribute in the source object; or an array, containing the collated values of similarly-named attributes in the source objects.
+| Depends on the value returned. It can be a string, number, boolean, or others. 
+
+| **type** +
+| The type of an attribute in the source object. Returned only when the `types` parameter is set to `TRUE`. 
+| String
+|===
+
+NOTE: Each returned object will have either **val** or **type** (depending on the specified options), and not both. 
+Also, the objects in the array are sorted by attribute name, in {sqlpp} collation order.
 
 === Examples
 
 [[obj-pairs-ex1,OBJECT_PAIRS() Example 1]]
-.Single object
+.A single input object returning names and values
 ====
 .Query
 [source,sqlpp]
@@ -604,6 +864,40 @@ SELECT OBJECT_PAIRS({"flight": "AI444", "utc": "4:44:44", "codename": "green"})
 ====
 
 [[obj-pairs-ex2,OBJECT_PAIRS() Example 2]]
+.A single input object returning names and types
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_PAIRS({"flight": "AI444", "utc": "4:44:44", "codename": "green"},{"types":TRUE})
+    AS outer_pairs;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "outer_pairs": [
+      {
+        "name": "codename",
+        "type": "string"
+      },
+      {
+        "name": "flight",
+        "type": "string"
+      },
+      {
+        "name": "utc",
+        "type": "string"
+      }
+    ]
+  }
+]
+----
+====
+
+[[obj-pairs-ex3,OBJECT_PAIRS() Example 3]]
 .Iterating over objects in an array
 ====
 In this example, notice that where the source objects have similarly-named attributes, the values from each of those attributes are collated into a single array in the output.
@@ -661,44 +955,147 @@ SELECT OBJECT_PAIRS(special_flights[*]) AS outer_pairs;
 ----
 ====
 
+
 [[fn-obj-pairs-nested,OBJECT_PAIRS_NESTED()]]
 == OBJECT_PAIRS_NESTED(`object` [, `options`])
 
 
 === Description
 
-Similar to <<fn-obj-pairs>>, this function returns an array of objects, containing the names and values of each field in the input object.
-A field in this context may be any attribute or element, nested at any level within the object.
+Similar to <<fn-obj-pairs>>, this function returns an array of objects, containing the names and values of each field in the input object. 
+It also provides an option to return field types instead of values. 
+A field in this context may be any attribute or element, nested at any level within the object. 
 
 This function may be useful when iterating over multiple objects in an array, as it collates and unnests the values from similarly-named fields across all objects in the input array.
-In this case, the function returns a null entry from any object which does not contain the shared field name, rather like an OUTER JOIN.
+However, if an object does not contain a shared field name, it returns a null entry, similar to an OUTER JOIN.
+
 For an illustration, refer to the examples below.
 
 === Arguments
 
 object:: An expression representing an object.
 
-options:: [Optional] An object containing the following possible parameters:
+options:: [Optional] A JSON object specifying options for the function. 
 
-composites;; A boolean.
-If `true`, every level of every nested field is displayed; if `false`, only the deepest possible nested fields are returned.
-Default `false`.
+=== Options
 
-pattern;; A regular expression used to filter the returned paths.
-The pattern is matched against the composite path names, not the individual field names.
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **composites** +
+__optional__
+| If TRUE, every level of every nested field is displayed.
+
+If FALSE, only the deepest possible nested fields are returned.
+
+*Default:* `FALSE`
+| Boolean
+
+| **types** +
+__optional__
+| Determines whether to return field types or values.
+
+If TRUE, the function returns the name and type of each field.
+
+If FALSE, the function returns the name and value of each field.
+
+*Default:* `FALSE`
+| Boolean
+
+| **pattern** +
+__optional__
+| The pattern used to filter the returned paths.
+
+It can be a regular expression or a simple string, depending on the `regex` parameter.
+
+| String
+
+| **regex** +
+__optional__
+| If `TRUE`, the pattern is treated as a regular expression.
+
+If `FALSE`, the pattern is treated as a simple string.
+
+*Default:* `TRUE`
+| Boolean
+
+| **patternspace** +
+__optional__
+| A string literal with two possible values. 
+
+`"field"`: The pattern is matched against individual field names. 
+
+`"path"`: The pattern is matched against composite path names.
+
+*Default:* `"path"`
+| String
+
+| **exact** +
+__optional__
+| Determines whether the provided pattern must be an exact match for the field or path (as determined by the `patternspace` parameter). 
+
+This is a short-cut for the regular expression start (^) and end ($) anchors, and can be used even when `regex` is set to `false`.
+
+If `TRUE`, the pattern must be an exact match.
+
+If `FALSE`, the pattern does not need to be an exact match.
+
+*Default:* `FALSE`
+| Boolean
+
+| **ignorecase** +
+__optional__
+| If `TRUE`, the pattern matching is case-sensitive.
+
+If `FALSE`, the pattern matching ignores case. 
+
+*Default:* `FALSE`
+| Boolean
+
+| **report** +
+__optional__
+
+| Controls the output of the `name` field, allowing selection between the full path or the final field name.
+
+Possible values are:
+
+`"field"`: Outputs only the final field name. 
+
+`"path"`: Outputs the full path to the field. 
+
+*Default:* `"path"`
+
+| String
+|===
 
 === Return Value
 
-An array of objects, each containing two attributes:
+An array of objects, each containing the following attributes:
 
-name:: The full path to every possible field within the source object, subject to the specified options.
-+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **name** +
+| The full path to every possible field within the source object, subject to the specified options. +
+
 The result uses xref:n1ql-language-reference/nestedops.adoc[nested operators] to specify the path to all nested attributes or elements.
 If any attribute names within a field path contain special characters, they are escaped using backticks (`{backtick}{backtick}`).
 
-val:: The value of an attribute in the source object; or an array, containing the collated values of similarly-named attributes in the source objects.
+| String
 
-The objects in the array are sorted by attribute name, in {sqlpp} collation order.
+| **val** +
+| The value of a field in the source object; or an array, containing the collated values of similarly-named fields in the source objects.
+| Depends on the value returned. It can be a string, number, boolean, or others. 
+
+| **type** +
+| The type of a field in the source object. Returned only when the 'types' parameter is set to 'TRUE'.
+| String
+|===
+
+NOTE: Each returned object will have either **val** or **type** (depending on the specified options), and not both. 
+Also, the objects in the array are sorted by field name, in {sqlpp} collation order.
 
 === Examples
 
@@ -709,11 +1106,15 @@ The objects in the array are sorted by attribute name, in {sqlpp} collation orde
 [source,sqlpp]
 ----
 WITH input AS ({
- "attribute": {"first-part": 1, "second-part": 2}
-})
+    "attribute": {"flight-name": "AI444", "flight-number": 737}
+  })
 SELECT OBJECT_PAIRS_NESTED(input) AS nested_pairs,
        OBJECT_PAIRS_NESTED(input, {"composites": true}) AS nested_pairs_comp,
-       OBJECT_PAIRS_NESTED(input, {"pattern": "first"}) AS nested_pairs_pattern;
+       OBJECT_PAIRS_NESTED(input, {"pattern": "name"}) AS nested_pairs_pattern,
+       OBJECT_PAIRS_NESTED(input, {"types": true}) AS nested_pairs_types,
+       OBJECT_PAIRS_NESTED(input, {"pattern": "number", "patternspace":"field"}) AS filtered_fields,
+       OBJECT_PAIRS_NESTED(input, {"pattern": "-name$", "patternspace":"field", "regex":true}) 
+                                   AS filtered_fields_regex;
 ----
 
 .Results
@@ -723,35 +1124,57 @@ SELECT OBJECT_PAIRS_NESTED(input) AS nested_pairs,
   {
     "nested_pairs": [
       {
-        "name": "attribute.first-part",
-        "val": 1
+        "name": "attribute.flight-name",
+        "val": "AI444"
       },
       {
-        "name": "attribute.second-part",
-        "val": 2
+        "name": "attribute.flight-number",
+        "val": 737
       }
     ],
     "nested_pairs_comp": [
       {
         "name": "attribute",
         "val": {
-          "first-part": 1,
-          "second-part": 2
+          "flight-name": "AI444",
+          "flight-number": 737
         }
       },
       {
-        "name": "attribute.first-part",
-        "val": 1
+        "name": "attribute.flight-name",
+        "val": "AI444"
       },
       {
-        "name": "attribute.second-part",
-        "val": 2
+        "name": "attribute.flight-number",
+        "val": 737
       }
     ],
     "nested_pairs_pattern": [
       {
-        "name": "attribute.first-part",
-        "val": 1
+        "name": "attribute.flight-name",
+        "val": "AI444"
+      }
+    ],
+    "nested_pairs_types": [
+      {
+        "name": "attribute.flight-name",
+        "type": "string"
+      },
+      {
+        "name": "attribute.flight-number",
+        "type": "number"
+      }
+    ],
+    "filtered_fields": [
+      {
+        "name": "attribute.flight-number",
+        "val": 737
+      }
+    ],
+    "filtered_fields_regex": [
+      {
+        "name": "attribute.flight-name",
+        "val": "AI444"
       }
     ]
   }
@@ -865,7 +1288,7 @@ SELECT OBJECT_PAIRS_NESTED(special_flights[*], {"composites": true}) AS nested_p
 ]
 ----
 
-Compare this example with <<obj-pairs-ex2>>.
+Compare this example with <<obj-pairs-ex3>>.
 ====
 
 [[fn-obj-paths,OBJECT_PATHS()]]
@@ -880,31 +1303,86 @@ A field in this context may be any attribute or element, nested at any level wit
 
 object:: An expression representing an object.
 
-options:: [Optional] An object containing the following possible parameters:
+options:: [Optional] An object containing the following possible parameters. 
 
-composites;; A boolean.
-If `true`, every level of every nested field is displayed; if `false`, only the deepest possible nested fields are returned.
-Default `true`.
+=== Options
 
-arraysubscript;; A boolean.
-If `true`, array subscripts are returned; if `false`, array subscripts are replaced by `*`.
-Default `true`.
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
 
-unique;; A boolean.
-If `true`, duplicate field names are collapsed to single unique field name; if `false`, all duplicate field names are returned.
+| **composites** +
+__optional__
+| If `TRUE`, every level of every nested field is displayed. 
+
+If `FALSE`, only the deepest possible nested fields are returned.
+ 
+*Default:* `TRUE`
+| Boolean
+
+| **arraysubscript** +
+__optional__
+| If `TRUE`, array subscripts are returned. 
+
+If `FALSE`, array subscripts are replaced by `*`.
+
+*Default:* `TRUE`
+| Boolean
+
+| **unique** +
+__optional__
+| If `TRUE`, duplicate field names are collapsed to single unique field name. 
+
+If `FALSE`, all duplicate field names are returned.
+
 Typically used when arrays are expanded and array subscripts are not returned.
-Default `true`.
 
-pattern;; A regular expression used to filter the returned paths.
-Used in conjunction with the following setting.
+*Default:* `TRUE`
+| Boolean
 
-patternspace;; A string literal with two possible values.
-Default `"path"`.
-+
-[horizontal]
-`"field"`::: The pattern is matched against individual field names.
+| **pattern** +
+__optional__
+| A regular expression used to filter the returned paths. 
+Used in conjunction with the `patternspace` setting.
 
-`"path"`::: The pattern is matched against composite path names.
+| String
+
+| **patternspace** +
+__optional__
+
+| A string literal with two possible values.
+
+`"field"`: The pattern is matched against individual field names.
+
+`"path"`: The pattern is matched against composite path names.
+
+*Default:* `"path"`
+
+| String
+
+| **exact** +
+__optional__
+| Determines whether the provided pattern must be an exact match for the field or path (as determined by the `patternspace` parameter). 
+
+This is a short-cut for the regular expression start (^) and end ($) anchors, and can be used even when `regex` is set to `false`.
+
+If `TRUE`, the pattern must be an exact match.
+
+If `FALSE`, the pattern does not need to be an exact match.
+
+*Default:* `FALSE`
+| Boolean
+
+| **ignorecase** +
+__optional__
+| If `TRUE`, the pattern matching is case-sensitive.
+
+If `FALSE`, the pattern matching ignores case. 
+
+*Default:* `FALSE`
+| Boolean
+
+|===
 
 === Return Value
 
@@ -996,7 +1474,7 @@ SELECT
 [[obj-paths-ex3,OBJECT_PATHS() Example 3]]
 .Pattern matching and pattern space
 ====
-This example searches for strings beginning with "n" in the given object paths.
+This example searches for strings beginning with "n" and also fields that exactly match "name". 
 
 .Query
 [source,sqlpp]
@@ -1010,7 +1488,9 @@ SELECT
   OBJECT_PATHS(input, {"pattern": "^n", "patternspace": "field"})
     AS field_starts_with_n,
   OBJECT_PATHS(input, {"pattern": "^n", "patternspace": "path"})
-    AS path_starts_with_n;
+    AS path_starts_with_n,
+  OBJECT_PATHS(input, {"pattern": "name", "patternspace": "field", "exact": true})
+    AS exact_field_name; 
 ----
 
 .Results
@@ -1025,7 +1505,10 @@ SELECT
     "field_starts_with_n": [
       "attribute.name"
     ],
-    "path_starts_with_n": []
+    "path_starts_with_n": [],
+    "exact_field_name": [
+      "attribute.name"
+    ]
   }
 ]
 ----
@@ -1356,6 +1839,112 @@ LIMIT 1;
 ]
 ----
 ====
+
+[[fn-obj-type,OBJECT_TYPES()]]
+== OBJECT_TYPES(`expression`)
+
+[.status]#Couchbase Server 8.0#
+
+=== Description
+
+This function returns the data type of every field in the supplied object, as reported by the xref:n1ql-language-reference/typefun.adoc#fn-type-type[TYPE()] function.
+
+=== Arguments
+
+expression:: An expression representing an object.
+
+=== Return Value
+
+An object with the same fields as the input object, but with all values replaced by their corresponding data types. 
+
+=== Example
+
+[[obj-type-ex,OBJECT_TYPES() Example]]
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_TYPES({"flight": "AI444",
+                     "duration": 180,
+                     "gate": NULL,
+                     "aircraft": {"model": "Boeing 737"}}) 
+    AS object_types;
+----
+
+.Results
+[source,json]
+----
+[
+    {
+        "object_types":{
+            "flight":"string",
+            "duration":"number",
+            "gate":"null",
+            "aircraft":"object"
+        }
+    }
+]
+----
+====
+
+[[fn-obj-types-nested,OBJECT_TYPES_NESTED()]]
+== OBJECT_TYPES_NESTED(`expression`)
+
+[.status]#Couchbase Server 8.0#
+
+=== Description
+
+This function returns the data type of every non-composite field in the supplied object, as reported by the xref:n1ql-language-reference/typefun.adoc#fn-type-type[TYPE()] function.
+Additionally, all composite type fields (ARRAYs and OBJECTs) are recursively processed in the same way, returning the data types of all nested values. 
+
+=== Arguments
+
+expression:: An expression representing an object.
+
+=== Return Value
+
+An object with the same fields as the input object, but with all values replaced by their corresponding non-composite data types. 
+
+=== Example
+
+[[obj-type-nested-ex,OBJECT_TYPES_NESTED() Example]]
+====
+.Query
+[source,sqlpp]
+----
+SELECT OBJECT_TYPES_NESTED({"flight":"AI444",
+                            "crewMembers": ["Alice Bobson",
+                                            "John Flo",
+                                            true],
+                            "gate": NULL,
+                            "aircraft": {"model": "Boeing 737",
+                                         "capacity":200}}) 
+    AS object_types_nested;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "object_types_nested": {
+      "flight": "string",
+      "crewMembers": [
+        "string",
+        "string",
+        "boolean"
+      ],
+      "gate": "null",
+      "aircraft": {
+        "model": "string",
+        "capacity":"number"
+      }
+    }
+  }
+]
+----
+====
+
 
 [[fn-obj-unwrap,OBJECT_UNWRAP()]]
 == OBJECT_UNWRAP(`expression`)

@@ -1,0 +1,238 @@
+/* tag::create-rgb-idx[] */
+CREATE VECTOR INDEX `color_desc_hyperscale` 
+       ON `color-vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)
+       WITH { "dimension":1536, "similarity":"L2", "description":"IVF8,SQ4" }
+/* end::create-rgb-idx[] */
+
+/* tag::rgb-entry[] */
+SELECT 
+  d.id,
+  d.color,
+  d.brightness,
+  d.description,
+  ARRAY_CONCAT(
+    d.embedding_vector_dot[0:4], 
+    ["..."]
+  ) AS embedding_vector_dot
+FROM `color-vector-sample`.`color`.`rgb` AS d
+USE KEYS "87CEEB";
+/* end::rgb-entry[] */
+
+
+/* tag::query-rgb-questions[] */
+SELECT 
+  d.id,
+  d.question,
+  d.wanted_similar_color_from_search,
+  ARRAY_CONCAT(
+    d.couchbase_search_query.knn[0].vector[0:4], 
+    ["..."]
+  ) AS vector
+FROM `color-vector-sample`.`color`.`rgb-questions` AS d
+USE KEYS "#87CEEB";
+/* end::query-rgb-questions[] */
+
+/* tag::query-rgb-with-subquery[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector  
+        FROM `color-vector-sample`.`color`.`rgb-questions` 
+        USE KEYS "#87CEEB"),
+    question_answer AS (
+        SELECT wanted_similar_color_from_search
+        FROM `color-vector-sample`.`color`.`rgb-questions` 
+        USE KEYS "#87CEEB")
+SELECT b.color, b.description, q.wanted_similar_color_from_search  
+       FROM `color-vector-sample`.`color`.`rgb` AS b, question_answer as q
+       ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, 
+       question_vec[0], "l2", 4)  LIMIT 3;
+/* end::query-rgb-with-subquery[] */
+
+/* tag::create-idx-brightness[] */
+CREATE VECTOR INDEX `color_desc_hyperscale_brightness` 
+       ON `color-vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)
+       INCLUDE (`brightness`)
+       WITH { "dimension":1536, "similarity":"L2", "description":"IVF8,SQ4" }
+/* end::create-idx-brightness[] */
+
+/* tag::query-rgb-with-brightness[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector  
+        FROM `color-vector-sample`.`color`.`rgb-questions` 
+        USE KEYS "#87CEEB")
+SELECT b.color, b.description, b.brightness
+       FROM `color-vector-sample`.`color`.`rgb` AS b
+       WHERE b.brightness > 170.0
+       ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, 
+       question_vec[0], "l2", 4)  LIMIT 3;
+/* end::query-rgb-with-brightness[] */
+
+/* tag::create-rgb-no-persist[] */
+CREATE VECTOR INDEX `color_desc_hyperscale_no_persist` 
+       ON `color-vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)
+       WITH { "dimension":1536, "similarity":"L2", "description":"IVF8,SQ4", 
+              "persist_full_vector": false};
+/* end::create-rgb-no-persist[] */
+
+/* tag::rerank-before-example[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector  
+        FROM `color-vector-sample`.`color`.`rgb-questions` 
+        USE KEYS "#FFFFE0")
+    SELECT b.color, b.description, b.id
+    FROM `color-vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4)
+    LIMIT 3;
+/* end::rerank-before-example[] */
+
+/* tag::rerank-after-example[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector  
+        FROM `color-vector-sample`.`color`.`rgb-questions` 
+        USE KEYS "#FFFFE0")
+    SELECT b.color, b.description, b.id
+    FROM `color-vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4, TRUE)
+    LIMIT 3;
+/* end::rerank-after-example[] */
+
+
+/* tag::query-rgb-with-distance[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector  
+        FROM `color-vector-sample`.`color`.`rgb-questions` 
+        USE KEYS "#87CEEB"),
+    question_answer AS (
+        SELECT wanted_similar_color_from_search
+        FROM `color-vector-sample`.`color`.`rgb-questions` 
+        USE KEYS "#87CEEB")
+SELECT b.color, b.description, q.wanted_similar_color_from_search, approx_distance  
+       FROM `color-vector-sample`.`color`.`rgb` AS b, question_answer as q 
+       LET approx_distance = APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4) 
+       ORDER BY approx_distance  LIMIT 3;
+/* end::query-rgb-with-distance[] */
+
+/* tag::untuned-query[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector 
+        FROM `color-vector-sample`.`color`.`rgb-questions` 
+        USE KEYS "#87CEEB"
+    ), 
+colors AS (
+    SELECT b.color
+    FROM `color-vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2")
+    LIMIT 10 )
+SELECT RAW colors;
+/* end::untuned-query[] */
+
+
+/* tag::exact-query[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector 
+        FROM `color-vector-sample`.`color`.`rgb-questions` 
+        USE KEYS "#87CEEB"
+    ), 
+colors AS (
+    SELECT b.color
+    FROM `color-vector-sample`.`color`.`rgb` AS b
+    ORDER BY VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2")
+    LIMIT 10 )
+SELECT RAW colors;
+/* end::exact-query[] */
+
+/* tag::recall-rate-query[] */
+-- Get the vector for the question
+WITH question_vec AS (
+    SELECT RAW couchbase_search_query.knn[0].vector
+    FROM `color-vector-sample`.`color`.`rgb-questions`
+    USE KEYS "#87CEEB"
+),
+-- Exact Search results
+GroundTruthResults AS (
+    SELECT b.color
+    FROM `color-vector-sample`.`color`.`rgb` AS b
+    ORDER BY VECTOR_DISTANCE(b.embedding_vector_dot,
+    question_vec[0], "l2") LIMIT 10
+),
+-- Approximate Search results
+ApproximateResults AS (
+    SELECT b.color
+    FROM `color-vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot,
+    question_vec[0], "l2") LIMIT 10
+)
+SELECT
+    -- List the stats based on the merges in the following clauses
+    COUNT(DISTINCT gr.color) AS total_returned_items,
+    ARRAY_AGG(intersection_results) AS matching_color_list,
+    COUNT(DISTINCT intersection_results.color) AS matching_color_count,
+    (COUNT(DISTINCT intersection_results.color) * 100.0 / COUNT(DISTINCT gr.color)) AS recall_percentage
+FROM
+    GroundTruthResults AS gr
+LEFT JOIN
+    ApproximateResults AS ar ON gr.color = ar.color
+LEFT JOIN
+    -- Use INTERSECT SELECT to find the shared members of the two result sets
+    (SELECT t1.color FROM GroundTruthResults AS t1 INTERSECT SELECT t2.color FROM ApproximateResults AS t2) AS intersection_results
+    ON gr.color = intersection_results.color;
+/* end::recall-rate-query[] */
+
+/* tag::recall-rate-tuned[] */
+-- Get the vector for the question
+WITH question_vec AS (
+    SELECT RAW couchbase_search_query.knn[0].vector
+    FROM `color-vector-sample`.`color`.`rgb-questions`
+    USE KEYS "#87CEEB"
+),
+-- Exact Search results
+GroundTruthResults AS (
+    SELECT b.color
+    FROM `color-vector-sample`.`color`.`rgb` AS b
+    ORDER BY VECTOR_DISTANCE(b.embedding_vector_dot,
+    question_vec[0], "l2") LIMIT 10
+),
+-- Approximate Search results, this timw with nProbes set to 4:
+ApproximateResults AS (
+    SELECT b.color
+    FROM `color-vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot,
+    question_vec[0], "l2", 4) LIMIT 10
+)
+SELECT
+    -- List the stats based on the merges in the following clauses
+    COUNT(DISTINCT gr.color) AS total_returned_items,
+    ARRAY_AGG(intersection_results) AS matching_color_list,
+    COUNT(DISTINCT intersection_results.color) AS matching_color_count,
+    (COUNT(DISTINCT intersection_results.color) * 100.0 / COUNT(DISTINCT gr.color)) AS recall_percentage
+FROM
+    GroundTruthResults AS gr
+LEFT JOIN
+    ApproximateResults AS ar ON gr.color = ar.color
+LEFT JOIN
+    -- Use INTERSECT SELECT to find the shared members of the two result sets
+    (SELECT t1.color FROM GroundTruthResults AS t1 INTERSECT SELECT t2.color FROM ApproximateResults AS t2) AS intersection_results
+    ON gr.color = intersection_results.color;
+/* end::recall-rate-tuned[] */
+
+
+/* tag::tuned-query[] */
+WITH question_vec AS (
+        SELECT RAW couchbase_search_query.knn[0].vector 
+        FROM `color-vector-sample`.`color`.`rgb-questions` 
+        USE KEYS "#87CEEB"
+    ), 
+colors AS (
+    SELECT b.color
+    FROM `color-vector-sample`.`color`.`rgb` AS b
+    ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, question_vec[0], "l2", 4)
+    LIMIT 10 )
+SELECT RAW colors;
+/* end::tuned-query[] */
+
+/* tag::train-list[] */
+CREATE VECTOR INDEX `squad-context-index`
+ON  `demo`.`squad`.`context`(`vector` VECTOR)
+       WITH {  "dimension":384, "similarity":"L2", 
+               "description":"IVF,SQ8", 
+               "train_list":15000};
+/* end::train-list[] */

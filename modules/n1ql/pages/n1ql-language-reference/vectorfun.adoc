@@ -1,0 +1,674 @@
+= Vector Functions
+:description: Vector functions enable you to work with vector values.
+:stem: asciimath
+:page-topic-type: reference
+:page-status: Couchbase Server 8.0
+:page-partial:
+:example-caption!:
+:keywords: similarity
+
+[abstract]
+{description}
+
+Vector functions include similarity functions to find the distance between two vectors, functions that check for a vector value, and functions that modify vector values.
+
+For more information about vectors and vector indexes, see xref:vector-index:vectors-and-indexes-overview.adoc[].
+
+[[approx_vector_distance,APPROX_VECTOR_DISTANCE()]]
+== APPROX_VECTOR_DISTANCE(`vec`, `queryvec`, `metric` [,{nbsp}``nprobes`` [,{nbsp}``rerank`` [,{nbsp}``topNScan``]]])
+
+This function has an alias <<aliases,ANN_DISTANCE()>>.
+
+=== Description
+
+Finds the approximate distance between a provided vector and the content of a specified field that contains vector embeddings.
+
+This function works best with a Hyperscale Vector index or Composite Vector index.
+If a query contains this function, and all of the following are true:
+
+* The cluster has a Hyperscale Vector index or a Composite Vector index with a vector index key which is the same as the vector field referenced by the function
+
+* The vector index key uses a similarity setting which is the same as the distance metric referenced by the function
+
+* The vector index key has the same dimension as the vector provided by the function
+
+&hellip; then the Query optimizer selects that Hyperscale Vector index or Composite Vector index for use with the query containing this function.
+
+This function is faster, but less precise than <<vector_distance>>.
+You should use this function in your production queries.
+
+=== Arguments
+
+vec:: The name of a field that contains vector embeddings.
+The field must contain an array of floating point numbers, or a base64 encoded string.
+
+queryvec:: An array of floating point numbers, or a base64 encoded string, representing the vector value to search for in the vector field.
+
+metric:: A string representing the distance metric to use when comparing the vectors.
+To select a Hyperscale Vector index or Composite Vector index for the query, the distance metric should match the `similarity` setting that you used when you created the index.
++
+[horizontal.compact]
+COSINE;; xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
+DOT;; xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
+L2;;
+EUCLIDEAN;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
+L2_SQUARED;;
+EUCLIDEAN_SQUARED;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean Squared Distance]
+
+nprobes:: [Optional] An integer representing the number of centroids to probe for matching vectors.
+If the Query Service selects a Hyperscale Vector index or Composite Vector index for the query, this option defaults to the `scan_nprobes` setting that you used when you created the index.
+If an invalid value is provided, defaults to `1`.
+
+rerank:: [Optional; can only be used when `nprobes` is specified]
+A Boolean.
+If `false`, the function uses quantized vectors.
+If `true`, the function uses full vectors to reorder the results.
+The default is `false`.
+
+topNScan:: [Optional; can only be used when `nprobes` and `rerank` are specified]
+This option only applies if using a Hyperscale Vector index.
+A positive integer representing the number of records to scan.
+The default is `0`, meaning the function uses the indexer default.
+
+=== Return Value
+
+Returns a numeric value representing the approximate vector distance.
+
+=== Examples
+
+To try the examples in this section, you must do the following:
+
+* Install the `rgb` and `rgb-questions` collections from the supplied vector sample, as described in xref:vector-index:hyperscale-vector-index.adoc#prerequisites[Prerequisites].
+
+* Create a Composite Vector index in the `rbg` collection on the field named `colorvect_l2`, as described in xref:n1ql:n1ql-language-reference/createindex.adoc#ex-create-rgb-idx[CREATE INDEX Example 6].
+
+* Create a Hyperscale Vector index in the `rbg` collection on the field named `embedding-vector-dot`, as described in xref:n1ql:n1ql-language-reference/createvectorindex.adoc#ex-create-rgb-idx[CREATE VECTOR INDEX Example 1].
+
+[#approx_vector_distance_ex_simple]
+.APPROX_VECTOR_DISTANCE() Example 1
+====
+This example finds the approximate vector distance between a query vector and three different embedded vectors.
+
+.Query
+[source,sqlpp]
+----
+WITH data AS ([
+  {"vector": [1, 2, 3, 4], "similarity": "identical"},
+  {"vector": [1, 2, 3, 5], "similarity": "close"},
+  {"vector": [6, 7, 8, 9], "similarity": "distant"}
+])
+SELECT
+  similarity,
+  APPROX_VECTOR_DISTANCE(vector, [1, 2, 3, 4], "COSINE") AS cosine,
+  APPROX_VECTOR_DISTANCE(vector, [1, 2, 3, 4], "DOT") AS dot,
+  APPROX_VECTOR_DISTANCE(vector, [1, 2, 3, 4], "L2") AS l2,
+  APPROX_VECTOR_DISTANCE(vector, [1, 2, 3, 4], "L2_SQUARED") AS l2_squared
+FROM data;
+----
+
+The results show how the distance changes as the similarity decreases.
+
+.Results
+[source,json]
+----
+[
+    {
+        "similarity": "identical",
+        "cosine": 0,
+        "dot": -30,
+        "l2": 0,
+        "l2_squared": 0
+    },
+    {
+        "similarity": "close",
+        "cosine": 0.00600091145203363,
+        "dot": -34,
+        "l2": 1,
+        "l2_squared": 1
+    },
+    {
+        "similarity": "distant",
+        "cosine": 0.0369131753138463,
+        "dot": -80,
+        "l2": 10,
+        "l2_squared": 100
+    }
+]
+----
+
+Compare this with the result of <<vector_distance_ex_simple>>.
+In this case, the results are identical because the query is not using a Hyperscale Vector index or Composite Vector index.
+====
+
+[#approx_vector_distance_ex_rbg]
+.APPROX_VECTOR_DISTANCE() Example 2
+====
+This example finds the colors from the `rgb` collection that are similar to gray, which has an RGB value of `[128, 128, 128]`.
+
+.Query
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-rgb-idx]
+----
+
+The top result is the entry for gray. 
+The other results are all shades of gray:
+
+.Results
+[source,json]
+----
+[
+    {
+        "color": "grey",
+        "colorvect_l2": [
+            128,
+            128,
+            128
+        ],
+        "brightness": 128
+    },
+    {
+        "color": "slate gray",
+        "colorvect_l2": [
+            112,
+            128,
+            144
+        ],
+        "brightness": 125.04
+    },
+    {
+        "color": "light slate gray",
+        "colorvect_l2": [
+            119,
+            136,
+            153
+        ],
+        "brightness": 132.855
+    },
+    {
+        "color": "light gray",
+        "colorvect_l2": [
+            144,
+            144,
+            144
+        ],
+        "brightness": 144
+    },
+    {
+        "color": "dim gray",
+        "colorvect_l2": [
+            105,
+            105,
+            105
+        ],
+        "brightness": 105
+    }
+]
+----
+====
+
+[#approx_vector_distance_ex_embedded]
+.APPROX_VECTOR_DISTANCE() Example 3
+====
+This example compares embedded vector values.
+The query finds the colors from the `rgb` collection whose descriptions are most similar to the following presupplied question:
+
+> What is the color that is often linked to feelings of peace and tranquility, and is reminiscent of the clear sky on a calm day?
+
+.Query
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=exact-query]
+----
+
+. The `vector` field in the `rgb-questions` collection contains the embedded vectors associated with the presupplied questions. @/couchbase_search_query.knn/
+
+. The `embedding_vector_dot` field in the `rgb` collection contains the embedded vectors associated with the color descriptions. @/embedding_vector_dot/
+
+The query returns 10 colors where the embedded vector associated with the color description is most similar to the embedded vector associated with the presupplied question.
+
+.Results
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=exact-query-results]
+----
+
+Compare this with the result of <<vector_distance_ex_embedded>>.
+In this case, the approximate vector distance does not give accurate results.
+====
+
+[#approx_vector_distance_ex_nprobe]
+.APPROX_VECTOR_DISTANCE() Example 4
+====
+This example improves on <<approx_vector_distance_ex_embedded>> by increasing the number of centroids to probe.
+
+.Query
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=tuned-query]
+----
+
+.Results
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=tuned-query-results]
+----
+
+Compare this with the result of <<vector_distance_ex_embedded>>.
+The approximate vector distance now gives much more accurate results.
+====
+
+[#approx_vector_distance_ex_rerank]
+.APPROX_VECTOR_DISTANCE() Example 5
+====
+This example is similar to <<approx_vector_distance_ex_nprobe>>, but also uses reranking to improve its accuracy.
+The query finds colors from the `rgb` collection whose descriptions are most similar to the following presupplied question:
+
+> What is a soft and gentle hue that can add warmth and brightness to a room?
+
+.Query
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=rerank-after-example]
+----
+
+. The `vector` field in the `rgb-questions` collection contains the embedded vectors associated with the presupplied questions. @/couchbase_search_query.knn/
+
+. The `embedding_vector_dot` field in the `rgb` collection contains the embedded vectors associated with the color descriptions. @/embedding_vector_dot/
+
+The query returns 3 colors where the embedded vector associated with the color description is most similar to the embedded vector associated with the presupplied question.
+
+.Results
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=rerank-after]
+----
+
+For more information and examples, see xref:vector-index:hyperscale-reranking.adoc[].
+====
+
+[[decode_vector,DECODE_VECTOR()]]
+== DECODE_VECTOR(`vector` [,{nbsp}``byte_order``])
+
+This function has an alias <<aliases,VECTOR_DECODE()>>.
+
+=== Description
+
+Reverses the encoding done by the <<encode_vector>> function.
+
+=== Arguments
+
+vector:: String, or any {sqlpp} expression that evaluates to a string, representing the base64 encoding of a vector value.
+
+byte_order:: [Optional] A boolean which determines the byte order of the vector value.
+If `true`, it's big-endian.
+If `false`, it's little-endian.
+The default is `false`.
+
+=== Return Value
+
+An array of floating point numbers.
+
+=== Example
+
+[#decode_vector_ex]
+.DECODE_VECTOR() Example
+====
+The following query decodes the base64 encoding of a vector value using two different byte orders.
+
+.Query
+[source,sqlpp]
+----
+SELECT DECODE_VECTOR("AACAPwAAAEAAAEBAAACAQA==") AS little_endian,
+       DECODE_VECTOR("P4AAAEAAAABAQAAAQIAAAA==", true) AS big_endian;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "little_endian": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "big_endian": [
+      1,
+      2,
+      3,
+      4
+    ]
+  }
+]
+----
+====
+
+[[encode_vector,ENCODE_VECTOR()]]
+== ENCODE_VECTOR(`vector` [,{nbsp}``byte_order``])
+
+This function has an alias <<aliases,VECTOR_ENCODE()>>.
+
+=== Description
+
+Returns the https://en.wikipedia.org/wiki/Base64[base64] encoding of a vector value.
+
+=== Arguments
+
+vector:: An array of floating point numbers, or any {sqlpp} expression that evaluates to an array of floating point numbers.
+
+byte_order:: [Optional] A boolean which determines the byte order of the vector value.
+If `true`, it's big-endian.
+If `false`, it's little-endian.
+The default is `false`.
+
+=== Return Value
+
+A string representing the base64 encoding of the input expression.
+
+=== Example
+
+[#encode_vector_ex]
+.ENCODE_VECTOR() Example
+====
+The following query encodes an array of floating point numbers using two different byte orders.
+
+.Query
+[source,sqlpp]
+----
+SELECT ENCODE_VECTOR([1, 2, 3, 4]) AS little_endian,
+       ENCODE_VECTOR([1, 2, 3, 4], true) AS big_endian;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "little_endian": "AACAPwAAAEAAAEBAAACAQA==",
+    "big_endian": "P4AAAEAAAABAQAAAQIAAAA=="
+  }
+]
+----
+====
+
+// tag::isvector[]
+[[isvector,ISVECTOR()]]
+== ISVECTOR(`vector`, `dimension`, `format`)
+
+// This function has no alias
+
+=== Description
+
+Checks if the supplied expression is an array of floating point numbers with the specified number of dimensions.
+This can be used to determine whether a field contains a vector value.
+
+=== Arguments
+
+vector::  An array of floating point numbers, or any {sqlpp} expression that evaluates to an array of floating point numbers.
+
+dimension:: An integer representing the number of dimensions.
+
+format:: A string.
+This argument must always be present and must have the value `"float32"`.
+
+=== Return Value
+
+Returns `true` if the expression is an array of floating point numbers with the specified number of dimensions.
+
+=== Examples
+
+To try the examples in this section, you must install the `rgb` and `rgb-questions` collections from the supplied vector sample, as described in xref:vector-index:hyperscale-vector-index.adoc#prerequisites[Prerequisites].
+
+[#isvector_ex_simple]
+.ISVECTOR() Example 1
+====
+.Query
+[source,sqlpp]
+----
+SELECT ISVECTOR([1, 2, 3, 4], 4, "float32") as vector,
+       ISVECTOR([1, 2, 3, 4], 3, "float32") as wrong_dimension,
+       ISVECTOR(["a", "b", "c", "d"], 4, "float32") as wrong_values;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "vector": true,
+    "wrong_dimension": false,
+    "wrong_values": false
+  }
+]
+----
+====
+
+[#isvector_ex2]
+.ISVECTOR() Example 2
+====
+
+Check whether the specified fields in the `rgb` collection contain vector values.
+
+.Query
+[source,sqlpp]
+----
+SELECT ISVECTOR(description, 1, "float32") AS description,
+       ISVECTOR(colorvect_l2, 3, "float32") AS colorvect_l2,
+       ISVECTOR(embedding_vector_dot, 1536, "float32") AS embedding_vector_dot
+FROM `color-vector-sample`.color.rgb LIMIT 1;
+----
+
+.Results
+[source,json]
+----
+[{
+    "description": false,
+    "colorvect_l2": true,
+    "embedding_vector_dot": true
+}]
+----
+
+The results show that the `description` field is not a vector field. The `colorvect_l2` and `embedding_vector_dot` fields are vector fields, with the specified number of dimensions.
+====
+// end::isvector[]
+
+[[normalize_vector,NORMALIZE_VECTOR()]]
+== NORMALIZE_VECTOR(`vector`)
+
+This function has aliases <<aliases,NORMALISE_VECTOR()>>, <<aliases,VECTOR_NORMALISE()>>, and <<aliases,VECTOR_NORMALIZE()>>.
+
+=== Description
+
+Normalizes a vector.
+This function changes the magnitude of a vector, but not its direction, so that the vector has unit length.
+This is useful in cases where you only need the direction of the vector, not its magnitude.
+
+To normalize a vector stem:[x], the function first calculates the length of the vector, stem:[|x|].
+This is the square root of the sum of the squares of each component of the vector.
+
+[stem]
+++++
+|x| = sqrt(x_1^2 + x_2^2 + ... + x_n^2)
+++++
+
+To find the normalized vector, stem:[hat x], the function then divides each component of the vector by the length of the vector.
+
+[stem]
+++++
+hat x = (x_1/|x|, x_2/|x|, ... x_n/|x|)
+++++
+
+=== Arguments
+
+vector:: An array of floating point numbers, or any {sqlpp} expression that evaluates to an array of floating point numbers.
+
+=== Return Value
+
+An array of floating point numbers representing the normalized vector.
+
+=== Example
+
+[#normalize_vector_ex]
+.NORMALIZE_VECTOR() Example
+====
+The following query normalizes a vector.
+
+.Query
+[source,sqlpp]
+----
+SELECT NORMALIZE_VECTOR([1, 2, 3, 4]) AS normalized;
+----
+
+.Results
+[source,json]
+----
+[{
+    "normalized": [
+        0.18257418583505536,
+        0.3651483716701107,
+        0.5477225575051661,
+        0.7302967433402214
+    ]
+}]
+----
+====
+
+[[vector_distance,VECTOR_DISTANCE()]]
+== VECTOR_DISTANCE(`vec`, `queryvec`, `metric`)
+
+This function has an alias <<aliases,KNN_DISTANCE()>>.
+
+=== Description
+
+Finds the exact distance between a provided vector and the content of a specified field that contains vector embeddings.
+
+This function does not use a Hyperscale Vector index or Composite Vector index to perform the comparison.
+Instead, it performs a brute-force search for similar vectors.
+
+This function is slower, but more precise than <<approx_vector_distance>>.
+You should use this function to check the accuracy of your production queries, and adjust the index and query settings to improve the recall accuracy.
+
+=== Arguments
+
+vec:: The name of a field that contains vector embeddings.
+The field must contain an array of floating point numbers, or a base64 encoded string.
+
+queryvec:: An array of floating point numbers, or a base64 encoded string, representing the vector value to search for in the vector field.
+
+metric:: A string representing the distance metric to use when comparing the vectors.
++
+[horizontal.compact]
+COSINE;; xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
+DOT;; xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
+L2;;
+EUCLIDEAN;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
+L2_SQUARED;;
+EUCLIDEAN_SQUARED;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean Squared Distance]
+
+=== Return Value
+
+Returns a numeric value representing the vector distance.
+
+=== Examples
+
+To try the examples in this section, you must install the `rgb` and `rgb-questions` collections from the supplied vector sample, as described in xref:vector-index:hyperscale-vector-index.adoc#prerequisites[Prerequisites].
+
+[#vector_distance_ex_simple]
+.VECTOR_DISTANCE() Example 1
+====
+The following query finds the exact vector distance between a query vector and three different embedded vectors.
+
+.Query
+[source,sqlpp]
+----
+WITH data AS ([
+  {"vector": [1, 2, 3, 4], "similarity": "identical"},
+  {"vector": [1, 2, 3, 5], "similarity": "close"},
+  {"vector": [6, 7, 8, 9], "similarity": "distant"}
+])
+SELECT
+  similarity,
+  VECTOR_DISTANCE(vector, [1, 2, 3, 4], "COSINE") AS cosine,
+  VECTOR_DISTANCE(vector, [1, 2, 3, 4], "DOT") AS dot,
+  VECTOR_DISTANCE(vector, [1, 2, 3, 4], "L2") AS l2,
+  VECTOR_DISTANCE(vector, [1, 2, 3, 4], "L2_SQUARED") AS l2_squared
+FROM data;
+----
+
+The results show how the distance changes as the similarity decreases.
+
+.Results
+[source,json]
+----
+[
+    {
+        "similarity": "identical",
+        "cosine": 0,
+        "dot": -30,
+        "l2": 0,
+        "l2_squared": 0
+    },
+    {
+        "similarity": "close",
+        "cosine": 0.00600091145203363,
+        "dot": -34,
+        "l2": 1,
+        "l2_squared": 1
+    },
+    {
+        "similarity": "distant",
+        "cosine": 0.0369131753138463,
+        "dot": -80,
+        "l2": 10,
+        "l2_squared": 100
+    }
+]
+----
+
+Compare this with the result of <<approx_vector_distance_ex_simple>>.
+====
+
+[#vector_distance_ex_embedded]
+.VECTOR_DISTANCE() Example 2
+====
+This example compares embedded vector values.
+The query finds colors from the `rgb` collection whose descriptions are most similar to the following presupplied question:
+
+> What is the color that is often linked to feelings of peace and tranquility, and is reminiscent of the clear sky on a calm day?
+
+.Query
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=exact-query]
+----
+
+. The `vector` field in the `rgb-questions` collection contains the embedded vectors associated with the presupplied questions. @/couchbase_search_query.knn/
+
+. The `embedding_vector_dot` field in the `rgb` collection contains the embedded vectors associated with the color descriptions. @/embedding_vector_dot/
+
+The query returns 10 colors where the embedded vector associated with the color description is most similar to the embedded vector associated with the presupplied question.
+
+.Results
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=exact-query-results]
+----
+
+For more information and examples, see xref:vector-index:vector-index-best-practices.adoc#recall-accuracy[Determine Recall Rate].
+====
+
+[#aliases]
+== Aliases
+
+Some vector functions have aliases.
+
+* `ANN_DISTANCE()` is an alias for <<approx_vector_distance>>.
+* `KNN_DISTANCE()` is an alias for <<vector_distance>>.
+* `NORMALISE_VECTOR()` is an alias for <<normalize_vector>>.
+* `VECTOR_DECODE()` is an alias for <<decode_vector>>.
+* `VECTOR_ENCODE()` is an alias for <<encode_vector>>.
+* `VECTOR_NORMALISE()` is an alias for <<normalize_vector>>.
+* `VECTOR_NORMALIZE()` is an alias for <<normalize_vector>>.
+

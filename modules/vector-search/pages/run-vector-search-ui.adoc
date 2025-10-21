@@ -2,7 +2,7 @@
 :page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
-:description: Run a Vector Search query from the Couchbase {page-ui-name} to preview and test the search results from a Vector Search index.
+:description: Run a Vector Search query from the Couchbase {page-ui-name} to preview and test the search results from a Search Vector Index.
 
 [abstract]
 {description}
@@ -14,15 +14,15 @@ For more information about how the Search Service scores documents in search res
 * You have the Search Service enabled on a node in your operational cluster.
 For more information about how to change Services on your operational cluster, see xref:cloud:clusters:modify-database.adoc[].
 
-* You have created a Vector Search index. 
+* You have created a Search Vector Index. 
 +
-For more information about how to create a Vector Search index, see xref:create-vector-search-index-ui.adoc[].
+For more information about how to create a Search Vector Index, see xref:create-vector-search-index-ui.adoc[].
 +
 [TIP]
 --
 include::partial$download-sample-partial.adoc[]
 
-For the best results, consider using the sample Vector Search index from xref:create-vector-search-index-ui.adoc#example[Create a Vector Search Index in Quick Mode].
+For the best results, consider using the sample Search Vector Index from xref:create-vector-search-index-ui.adoc#example[Create a Search Vector Index in Quick Mode].
 --
 
 * You have logged in to the Couchbase {page-ui-name}. 
@@ -33,7 +33,7 @@ To run a Vector Search with the {page-ui-name}:
 
 . On the *Operational Clusters* page, select the operational cluster where you created your Search index. 
 . Go to menu:Data Tools[Search]. 
-. Next to your Vector Search index, click btn:[Search].
+. Next to your Search Vector Index, click btn:[Search].
 . In the *Search* field, enter a search query.
 . Press kbd:[Enter] or click btn:[Search].
 . (Optional) To view a document and its source collection, click a document name in the search results list. 
@@ -71,6 +71,9 @@ The Search Service combines the Vector search results from a `knn` object with t
 If the same documents match the `knn` and `query` objects, the Search Service ranks those documents higher in search results.
 
 The document for the color `navy` should be the first result, followed by colors that are similar and match the `brightness` field query. 
+
+TIP: If you want to run a hybrid Search query on a large, partitioned Search index and your cluster is on Couchbase Server version 8.0 or later, use the `bm25` scoring model for your Search index.
+For more information, see xref:search:create-search-index-ui.adoc#configure-settings[Configure Additional Search Index Settings], xref:run-searches.adoc#scoring[Scoring for Search Queries], or xref:customize-index.adoc#scoring-model[Scoring Model].
 
 [#large]
 === Example: Running a Semantic Search Query with a Large Embedding Vector
@@ -119,6 +122,26 @@ include::example$run-vector-search-payload-base64-ui.jsonc[]
 
 NOTE: You can only use base64 encoded strings in your Vector Search queries if your documents use base64 encoded strings, indexed with the *vector_base64* field data type.
 You cannot search for and return vectors you indexed as arrays with the *vector* field data type by using a Search query with a base64 encoded string. 
+
+=== Example: Use global_scoring With a bm25 Search Index
+
+In the following example, the Search query uses both a `query` and `knn` object to run both a Vector Search and traditional Search query on an index named `products-index`.
+
+The query searches for a specific embedding vector generated from an ecommerce website's product description. 
+The Search vector is generated from the phrase `long battery life wireless earbuds`.
+The `query` object specifically searches for documents that have `Electronics` as their category, with a price between `100.00` and `300.00`.
+The query returns the `description`, `price`, and `product_name` fields in results.
+Since the query is on a large, partitioned index and uses the `bm25` scoring algorithm, the query also uses `global_scoring` to keep document scores consistent across the Search index's partitions:
+
+[source,json]
+----
+include::example$run-global-scoring-vector-search-payload-ui.jsonc[]
+----
+
+NOTE: The vector embedding has been truncated for this example.
+The vector embedding in your Search query must match the configured dimension and similarity metric for your Search index.
+
+For more information about the `bm25` scoring algorithm, see xref:search:run-searches.adoc#scoring[Scoring for Search Queries].
 
 == Next Steps 
 

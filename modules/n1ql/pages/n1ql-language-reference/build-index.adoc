@@ -1,6 +1,7 @@
 = BUILD INDEX
 :description: The BUILD INDEX statement enables you to build one or more GSI indexes that are marked for deferred building all at once.
 :page-topic-type: reference
+:page-toclevels: 2
 :imagesdir: ../../assets/images
 
 :authorization-overview: xref:clusters:manage-database-users.adoc
@@ -18,8 +19,8 @@ include::partial$n1ql-language-reference/horizontal-style.adoc[]
 [abstract]
 {description}
 
-By default, CREATE INDEX starts building the created index after the creation stage is complete.
-However for more efficient building of multiple indexes, CREATE INDEX can mark indexes for deferred building using the `defer_build:true` option.
+By default, CREATE INDEX or CREATE VECTOR INDEX starts building the created index after the creation stage is complete.
+However for more efficient building of multiple indexes, CREATE INDEX or CREATE VECTOR INDEX can mark indexes for deferred building using the `defer_build:true` option.
 BUILD INDEX is capable of building multiple indexes at once, and can utilize a single scan of documents in the keyspace to feed many index build operations.
 
 BUILD INDEX is an asynchronous operation.
@@ -50,6 +51,12 @@ On execution, the statement only builds indexes which have not already been buil
 If any of the indexes specified by BUILD INDEX have already been built, BUILD INDEX skips those indexes.
 
 When building an index which has automatic index replicas, all of the replicas are also built as part of the BUILD INDEX statement, without having to manually specify them.
+
+Hyperscale Vector indexes and Composite Vector indexes require a codebook for the vector field.
+The codebook is the result of sampling the dataset and is saved as part of the index metadata.
+
+The codebook is created as part of the BUILD INDEX process, and is not incrementally updated.
+If the data set changes dramatically, you must drop and rebuild the index to update the codebook.
 
 == Prerequisites
 
@@ -296,3 +303,17 @@ include::example$n1ql-language-reference/check-idx-online.jsonc[]
 
 <1> Note that the index has now been created.
 ====
+
+== Related Links
+
+* xref:indexes:indexing-overview.adoc[]
+* xref:vector-index:composite-vector-index.adoc[]
+* xref:vector-index:hyperscale-vector-index.adoc[]
+* xref:n1ql:n1ql-language-reference/createprimaryindex.adoc[CREATE PRIMARY INDEX]
+| xref:n1ql:n1ql-language-reference/createindex.adoc[CREATE INDEX]
+| xref:n1ql:n1ql-language-reference/createvectorindex.adoc[CREATE VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/alterindex.adoc[ALTER INDEX]
+| xref:n1ql:n1ql-language-reference/altervectorindex.adoc[ALTER VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/dropprimaryindex.adoc[DROP PRIMARY INDEX]
+| xref:n1ql:n1ql-language-reference/dropindex.adoc[DROP INDEX]
+| xref:n1ql:n1ql-language-reference/dropvectorindex.adoc[DROP VECTOR INDEX]

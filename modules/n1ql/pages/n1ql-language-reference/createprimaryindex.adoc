@@ -1,5 +1,6 @@
 = CREATE PRIMARY INDEX
 :page-topic-type: reference
+:page-toclevels: 2
 :imagesdir: ../../assets/images
 :keywords: primary, index, placement
 :description: The CREATE PRIMARY INDEX statement allows you to create a primary index. \
@@ -11,7 +12,7 @@ Primary indexes contain a full set of keys in a given keyspace.
 :query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
 :logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
 :querying-indexes: xref:n1ql-intro/sysinfo.adoc#querying-indexes
-:index-replication: xref:learn:services-and-indexes/indexes/index-replication.adoc#index-replication
+:index-replication: xref:indexes:index-replication.adoc#index-replication
 :query-settings: xref:n1ql:n1ql-manage/query-settings.adoc
 
 // TEMP
@@ -19,7 +20,7 @@ include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 The `CREATE PRIMARY INDEX` statement allows you to create a primary index.
 Primary indexes contain a full set of keys in a given keyspace.
-Primary indexes are optional and are only required for running ad hoc queries on a keyspace that is not supported by a secondary index.
+Primary indexes are optional -- they enable you to run ad hoc queries on a keyspace that's not supported by a secondary index.
 
 == Purpose
 
@@ -36,15 +37,15 @@ You can then build the index using the {build-index}[BUILD INDEX] command.
 
 You can create multiple identical primary indexes on a keyspace and place them on separate nodes for better index availability.
 The recommended way to do this is using the `num_replicas` option.
-Refer to <<index-with,WITH Clause>> below for more details.
+See <<index-with,WITH Clause>> for more details.
 
 == Prerequisites
 
 [discrete]
 ===== RBAC Privileges
 
-Users executing the `CREATE PRIMARY INDEX` statement must have the _Query Manage Index_ privilege granted on the keyspace.
-For more details about user roles, see
+To execute the `CREATE PRIMARY INDEX` statement, you must have the `Query Manage Index` privilege granted on the keyspace.
+For more information about user roles, see
 {authorization-overview}[].
 
 == Syntax
@@ -54,30 +55,27 @@ For more details about user roles, see
 include::partial$grammar/ddl.ebnf[tag=create-primary-index]
 ----
 
-image::n1ql-language-reference/create-primary-index.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/create-primary-index.png["Syntax diagram: see source code listing", align=left]
 
 // TODO: Automatic links in EBNF.
 
 [horizontal]
 index-name::
 (Optional) A unique name that identifies the index.
-If a name is not specified, the default name of `#primary` is applied. [small]##[<<note-index-name>>]##
+If a name is not specified, the default name of `#primary` is applied.
 +
 Valid GSI index names can contain any of the following characters: `A-Z` `a-z` `0-9` `&num;` `&lowbar;`, and must start with a letter, [`A-Z` `a-z`].
 The minimum length of an index name is 1 character and there is no maximum length set for an index name.
 When querying, if the index name contains a `&num;` or `&lowbar;` character, you must enclose the index name within backticks.
 
 keyspace-ref:: [Required] Specifies the keyspace where the index is created.
-Refer to <<keyspace-ref>> below.
+See <<keyspace-ref>>.
 
 index-using:: (Optional) Specifies the index type.
-Refer to <<index-using>> below.
+See <<index-using>>.
 
 index-with:: (Optional) Specifies options for the index.
-Refer to <<index-with>> below.
-
-[[note-index-name,note]]
-NOTE: You can drop unnamed primary indexes using the `DROP PRIMARY INDEX` statement, and named primary indexes using the `DROP INDEX` statement.
+See <<index-with>>.
 
 [[if-not-exists]]
 === IF NOT EXISTS Clause
@@ -97,13 +95,13 @@ If a primary index with the same name already exists within the specified keyspa
 include::partial$grammar/dql.ebnf[tag=keyspace-ref]
 ----
 
-image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: see source code listing", align=left]
 
 Specifies the keyspace for which the index needs to be created.
 The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
 
 NOTE: If there is a hyphen (-) inside any part of the keyspace reference, you must wrap that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+See the examples on this page.
 
 [[keyspace-path,keyspace path]]
 ==== Keyspace Path
@@ -113,7 +111,7 @@ Refer to the examples below.
 include::partial$grammar/dql.ebnf[tag=keyspace-path]
 ----
 
-image::n1ql-language-reference/keyspace-path.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-path.png["Syntax diagram: see source code listing", align=left]
 
 If the keyspace is a named collection, or the default collection in the default scope within a bucket, the keyspace reference may be a keyspace path.
 In this case, the {query-context}[query context] should not be set.
@@ -149,7 +147,7 @@ Similarly, `default:{backtick}travel-sample{backtick}.inventory.airline` indicat
 include::partial$grammar/dql.ebnf[tag=keyspace-partial]
 ----
 
-image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: see source code listing", align=left]
 
 Alternatively, if the keyspace is a named collection, the keyspace reference may be just the collection name with no path.
 In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
@@ -170,7 +168,7 @@ For example, `airline` indicates the `airline` collection, assuming the query co
 include::partial$grammar/ddl.ebnf[tag=index-using]
 ----
 
-image::n1ql-language-reference/index-using.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/index-using.png["Syntax diagram: see source code listing", align=left]
 
 The index type for a primary index must be Global Secondary Index (GSI).
 The `USING GSI` keywords are optional and may be omitted.
@@ -183,7 +181,7 @@ The `USING GSI` keywords are optional and may be omitted.
 include::partial$grammar/ddl.ebnf[tag=index-with]
 ----
 
-image::n1ql-language-reference/index-with.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/index-with.png["Syntax diagram: see source code listing", align=left]
 
 Use the WITH clause to specify additional options.
 
@@ -204,7 +202,7 @@ include::partial$n1ql-language-reference/file-based-index-rebalance-note.adoc[]
 '''
 
 You can specify multiple nodes to distribute replicas of an index across nodes running the indexing service: for example, `WITH {"nodes": ["node1:8091", "node2:8091", "node3:8091"]}`.
-For details and examples, refer to {index-replication}[Index Replication].
+For details and examples, see {index-replication}[Index Replication].
 
 If specifying both [.var]`nodes` and [.var]`num_replica`, the number of nodes in the array must be one greater than the specified number of replicas otherwise the index creation will fail.
 
@@ -246,10 +244,12 @@ If the value of this property is not less than the number of index nodes in the 
 
 == Usage
 
+// Nothing
+
 === Monitoring Primary Indexes
 
 Index metadata provides a state field.
-This state field and other index metadata can be queried using {querying-indexes}[system:indexes].
+You can query this state field and other index metadata using {querying-indexes}[system:indexes].
 The index state may be `scheduled for creation`, `deferred`, `building`, `pending`, `online`, `offline`, or `abridged`.
 You can also monitor the index state using the Couchbase Web Console.
 
@@ -271,13 +271,16 @@ You must drop the failed index using the `DROP INDEX` command.
 
 For a primary index scan on any keyspace size, the query engine guarantees that the client is not exposed to scan timeout if the indexer throws a scan timeout after it has returned a greater than zero sized subset of primary keys.
 To complete the scan, the query engine performs successive scans of the primary index until all the primary keys have been returned.
-It is possible that the indexer throws scan timeout without returning any primary keys, and in this event the query engine returns scan timeout to the client.
+It's possible that the indexer may throw scan timeout without returning any primary keys, and in this event the query engine returns scan timeout to the client.
 
 For example, if the indexer cannot find a snapshot that satisfies the consistency guarantee of the query within the timeout limit, it will timeout without returning any primary keys.
 
 For secondary index scans, the query engine does not handle scan timeout, and returns index scan timeout error to the client.
-You can handle scan timeout on a secondary index by increasing the indexer timeout setting (see
-{query-settings}[Query Settings]) or preferably by defining and using a more selective index.
+You can handle scan timeout on a secondary index by
+ifdef::flag-devex-rest-api[]
+increasing the indexer timeout setting (see {query-settings}[Query Settings]), or preferably by
+endif::flag-devex-rest-api[]
+defining and using a more selective index.
 
 == Examples
 
@@ -350,3 +353,17 @@ include::example$n1ql-language-reference/check-pri-online.n1ql[]
 
 The output from `system:indexes` shows that the index has now been created.
 ====
+
+== Related Links
+
+* xref:indexes:indexing-overview.adoc[]
+* xref:vector-index:composite-vector-index.adoc[]
+* xref:vector-index:hyperscale-vector-index.adoc[]
+* xref:n1ql:n1ql-language-reference/createindex.adoc[CREATE INDEX]
+| xref:n1ql:n1ql-language-reference/createvectorindex.adoc[CREATE VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/build-index.adoc[BUILD INDEX]
+* xref:n1ql:n1ql-language-reference/alterindex.adoc[ALTER INDEX]
+| xref:n1ql:n1ql-language-reference/altervectorindex.adoc[ALTER VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/dropprimaryindex.adoc[DROP PRIMARY INDEX]
+| xref:n1ql:n1ql-language-reference/dropindex.adoc[DROP INDEX]
+| xref:n1ql:n1ql-language-reference/dropvectorindex.adoc[DROP VECTOR INDEX]

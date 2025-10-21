@@ -119,7 +119,7 @@ include::partial$grammar/n1ql.ebnf[tag=is-expr]
 
 image::n1ql-language-reference/is-expr.png["Syntax diagram", align=left]
 
-[cols="100,326,213"]
+[cols="1a,3a,2a"]
 |===
 | Operator | Description | Returns
 
@@ -141,14 +141,50 @@ image::n1ql-language-reference/is-expr.png["Syntax diagram", align=left]
 
 | IS VALUED
 | Value for field found.
-Value is neither missing nor NULL
+Value is neither missing nor NULL.
 | TRUE or FALSE
 
 | IS NOT VALUED
 | Value for field not found.
 Value is NULL.
 | TRUE or FALSE
+
+| IS UNKNOWN
+| Value for field is unknown, NULL, or missing. +
+Equivalent to IS NOT VALUED/IS NOT KNOWN. 
+| TRUE OR FALSE
+
+| IS NOT UNKNOWN
+| Value for field is known. Value is neither NULL nor missing. +
+Equivalent to IS VALUED/IS KNOWN. 
+| TRUE OR FALSE
+
+| IS DISTINCT FROM
+| Compares two values to determine if they're distinct. 
+| TRUE or FALSE +
+
+--
+* TRUE if one value is NULL and the other is non-NULL.
+* FALSE if both values are NULL.
+* MISSING if either value is MISSING.
+* The result of the comparison `expr != expr` if both values are non-NULL and non-MISSING.
+--
+
+| IS NOT DISTINCT FROM
+| Compares two values to determine if they're not distinct. 
+
+| TRUE or FALSE +
+
+--
+* FALSE if one value is NULL and the other is non-NULL.
+* TRUE if both values are NULL.
+* MISSING if either value is MISSING.
+* The result of the comparison `expr == expr` if both values are non-NULL and non-MISSING.
+--  
+
 |===
+
+=== Examples
 
 .IS NULL
 ====
@@ -197,6 +233,75 @@ Value is NULL.
     }
   ]
 }
+----
+====
+
+.IS UNKNOWN
+====
+.Query
+[source,sqlpp]
+----
+SELECT NULL IS UNKNOWN, 
+       NULL IS NOT UNKNOWN,
+       missing IS UNKNOWN, 
+       missing IS NOT UNKNOWN,
+       "Harry" IS UNKNOWN, 
+       "Harry" IS NOT UNKNOWN
+----
+
+.Returns
+[source,json]
+----
+{
+  "results": [
+    {
+    "$1": true,
+    "$2": false,
+    "$3": true,
+    "$4": false,
+    "$5": false,
+    "$6": true
+  }
+ ]
+}
+----
+====
+
+.IS DISTINCT FROM
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT 1 IS DISTINCT FROM 1,
+       1 IS DISTINCT FROM 2,
+       NULL IS DISTINCT FROM NULL,
+       NULL IS DISTINCT FROM 1,
+       1 IS DISTINCT FROM MISSING,
+       1 IS NOT DISTINCT FROM 1,
+       1 IS NOT DISTINCT FROM 2,
+       NULL IS NOT DISTINCT FROM NULL,
+       NULL IS NOT DISTINCT FROM 1,
+       1 IS NOT DISTINCT FROM MISSING;
+----
+
+.Returns
+[source,json]
+----
+[
+  {
+    "$1": false,
+    "$2": true,
+    "$3": false,
+    "$4": true,
+    "$5": true,
+    "$6": true,
+    "$7": false,
+    "$8": true,
+    "$9": false,
+    "$10": false
+  }
+]
 ----
 ====
 

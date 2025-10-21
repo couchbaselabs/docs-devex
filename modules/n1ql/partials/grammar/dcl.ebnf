@@ -4,14 +4,32 @@ dcl-statement ::= grant
                 | revoke
 
 /* tag::grant[] */
-grant ::= 'GRANT' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
-          'TO' user ( ',' user )*
+grant ::= grant-user | grant-group
 /* end::grant[] */
 
+/* tag::grant-user[] */
+grant-user ::= 'GRANT' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
+          'TO' ( 'USER' | 'USERS' )? user ( ',' user )*
+/* end::grant-user[] */
+
+/* tag::grant-group[] */
+grant-group ::= 'GRANT' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
+          'TO' ( 'GROUP' | 'GROUPS' ) group ( ',' group )*          
+/* end::grant-group[] */          
+
 /* tag::revoke[] */
-revoke ::= 'REVOKE' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
-           'FROM' user ( ',' user )*
+revoke ::= revoke-user | revoke-group
 /* end::revoke[] */
+
+/* tag::revoke-user[] */
+revoke-user ::= 'REVOKE' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
+           'FROM' ( 'USER' | 'USERS' )? user ( ',' user )*
+/* end::revoke-user[] */
+
+/* tag::revoke-group[] */
+revoke-group ::= 'REVOKE' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
+           'FROM' ( 'GROUP' | 'GROUPS' ) group ( ',' group )*
+/* end::revoke-group[] */
 
 role ::= identifier
 user ::= identifier

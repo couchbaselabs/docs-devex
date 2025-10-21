@@ -34,6 +34,7 @@ image::n1ql-language-reference/select-clause.png["Syntax diagram", align=left]
 [horizontal.compact]
 hint-comment:: <<hint-comment>> icon:caret-down[]
 projection:: <<sec_Arguments>> icon:caret-down[]
+exclude-clause:: <<sec_ExcludeClause>> icon:caret-down[]
 
 [#hint-comment]
 === Optimizer Hints
@@ -154,6 +155,49 @@ If you do not explicitly give a field an alias, it is given an _implicit alias_.
 * For any expression which does not refer to a field, the implicit alias is a dollar sign followed by a number, based on the position of the expression in the projection; for example, `$1`, `$2`, and so on.
 
 An implicit or explicit alias is returned in the result set, unless you suppress it using the <<raw-element-value,RAW keyword>>.
+
+[#sec_ExcludeClause]
+=== EXCLUDE Clause
+
+[.status]#Couchbase Server 8.0#
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=exclude-clause]
+----
+image::n1ql-language-reference/exclude-clause.png["Syntax diagram", align=left]
+
+The EXCLUDE clause removes specific fields from your query's result set. 
+
+Instead of listing every field you want to include in the SELECT statement, use EXCLUDE to specify only the ones you want to omit.
+This is particularly useful when you use the star expression (`{asterisk}`) to select all fields, but want to exclude a few. 
+
+The clause consists of one or more <<exclude-term, EXCLUDE terms>>, separated by commas.
+
+[[exclude-term]]
+==== EXCLUDE Term
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=exclude-term]
+----
+image::n1ql-language-reference/exclude-term.png["Syntax diagram", align=left]
+
+An EXCLUDE term is a field that you want to exclude from the final projection.
+It must exactly match the field name or alias as it appears in the projection.
+Refer to <<ex-exclude-clause>>.
+
+An EXCLUDE term can be:
+
+* An identifier, such as `hotel.name`.
+* A string expression with one or more fields separated by commas, such as `"hotel.name, address"`.
+
+[NOTE]
+====
+* If the field has an alias, you must use the alias as the term. 
+* When your query includes only one FROM term, fields are automatically qualified with it.
+You can use the field name without the full identifier.
+For example, `name` instead of `hotel.name`.
+====
 
 [#sec_BestPractices]
 == Best Practices
@@ -630,6 +674,52 @@ FROM hotel LIMIT 5;
 ----
 
 <.> With a select expression, you may optionally include the keyspace name; in either case, the keyspace name is not added to the results.
+====
+
+[[ex-exclude-clause]]
+.SELECT with an EXCLUDE clause
+====
+.Query
+[source,sqlpp]
+----
+SELECT * EXCLUDE reviews,h.public_likes,"geo,description" 
+FROM `travel-sample`.inventory.hotel h 
+ORDER BY meta().id LIMIT 1;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "h": {
+      "address": "Capstone Road, ME7 3JE",
+      "alias": null,
+      "checkin": null,
+      "checkout": null,
+      "city": "Medway",
+      "country": "United Kingdom",
+      "directions": null,
+      "email": null,
+      "fax": null,
+      "free_breakfast": true,
+      "free_internet": false,
+      "free_parking": true,
+      "id": 10025,
+      "name": "Medway Youth Hostel",
+      "pets_ok": true,
+      "phone": "+44 870 770 5964",
+      "price": null,
+      "state": null,
+      "title": "Gillingham (Kent)",
+      "tollfree": null,
+      "type": "hotel",
+      "url": "http://www.yha.org.uk",
+      "vacancy": true
+    }
+  }
+]
+----
 ====
 
 [#sec_RelatedLinks]

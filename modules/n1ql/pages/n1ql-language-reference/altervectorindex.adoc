@@ -1,0 +1,140 @@
+= ALTER VECTOR INDEX
+:description: The ALTER VECTOR INDEX statement increases or decreases the number of index replicas and partition replicas.
+:page-status: Couchbase Server 8.0
+:page-toclevels: 2
+:imagesdir: ../../assets/images
+
+:rebalancing-the-index-service: xref:learn:clusters-and-availability/rebalance.adoc#rebalancing-the-index-service
+:console-indexes: xref:manage:manage-ui/manage-ui.adoc#console-indexes
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+:identifiers: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql:n1ql-intro/queriesandresults.adoc#logical-hierarchy
+:querying-indexes: xref:n1ql-intro/sysinfo.adoc#querying-indexes
+:alter-index: xref:n1ql-language-reference/alterindex.adoc
+:prerequisites: xref:vector-index:hyperscale-vector-index.adoc#prerequisites
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+The {alter-index}[ALTER INDEX] statement is a synonym for the ALTER VECTOR INDEX statement.
+Both statements have the same functionality.
+
+include::alterindex.adoc[tags=purpose]
+
+include::alterindex.adoc[tags=prerequisites]
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=alter-vector-index]
+----
+
+image::n1ql-language-reference/alter-vector-index.png["Syntax diagram: see source code listing", align=left]
+
+include::alterindex.adoc[tags=syntax-arguments]
+
+include::alterindex.adoc[tags=index-path]
+
+include::alterindex.adoc[tags=keyspace-ref]
+
+include::alterindex.adoc[tags=index-using]
+
+include::alterindex.adoc[tags=index-with]
+
+include::alterindex.adoc[tags=usage]
+
+include::alterindex.adoc[tags=return-value]
+
+[[examples]]
+== Examples
+
+To try the examples in this section, you must do the following:
+
+. Create a cluster of 3 nodes.
+The examples in this section assume that the 3 nodes have the names `svc-dqi-node-001`, `svc-dqi-node-002`, and `svc-dqi-node-003`.
+The nodes in your cluster may have different names or IP addresses.
+
+. Install the `color-vector-sample` data as described in {prerequisites}[Prerequisites].
+
+. Set the query context to the `color` scope in the `color-vector-sample` dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+.Increase the number of replicas
+====
+Create a Hyperscale Vector index on node `svc-dqi-node-001` with a replica on node `svc-dqi-node-002`, then increase the number of replicas to 2.
+New replicas may be placed on any available index nodes in the cluster.
+
+[source,sqlpp]
+----
+CREATE VECTOR INDEX hyperscale_rep_multi
+       ON rgb(embedding_vector_dot VECTOR)
+       WITH {"dimension": 1536,
+             "similarity": "L2",
+             "description": "IVF8,SQ4",
+             "nodes": ["svc-dqi-node-001:18091",
+                       "svc-dqi-node-002:18091"]};
+
+ALTER VECTOR INDEX hyperscale_rep_multi ON rgb
+WITH {"action": "replica_count", "num_replica": 2};
+----
+====
+
+.Decrease the number of replicas
+====
+Create a Hyperscale Vector index on node `svc-dqi-node-001` with replicas on nodes `svc-dqi-node-002` and `svc-dqi-node-003`, then decrease the number of replicas to 1.
+
+[source,sqlpp]
+----
+CREATE VECTOR INDEX hyperscale_rep_decrease
+       ON rgb(embedding_vector_dot VECTOR)
+       WITH {"dimension": 1536,
+             "similarity": "L2",
+             "description": "IVF8,SQ4",
+             "nodes": ["svc-dqi-node-001:18091",
+                       "svc-dqi-node-002:18091",
+                       "svc-dqi-node-003:18091"]};
+
+ALTER VECTOR INDEX hyperscale_rep_decrease ON rgb
+WITH {"action": "replica_count", "num_replica": 1};
+----
+====
+
+.Drop a specific replica
+====
+Create a Hyperscale Vector index with 2 replicas, and specify that nodes `svc-dqi-node-001`, `svc-dqi-node-002`, and `svc-dqi-node-003` should be available for index and replica placement.
+Then delete replica 2.
+
+[source,sqlpp]
+----
+CREATE VECTOR INDEX hyperscale_rep_drop
+       ON rgb(embedding_vector_dot VECTOR)
+       WITH {"dimension": 1536,
+             "similarity": "L2",
+             "description": "IVF8,SQ4",
+             "num_replica": 2,
+             "nodes": ["svc-dqi-node-001:18091",
+                       "svc-dqi-node-002:18091",
+                       "svc-dqi-node-003:18091"]};
+
+ALTER VECTOR INDEX hyperscale_rep_drop ON rgb
+WITH {"action": "drop_replica", "replicaId": 2};
+----
+====
+
+== Related Links
+
+* xref:indexes:indexing-overview.adoc[]
+* xref:vector-index:composite-vector-index.adoc[]
+* xref:vector-index:hyperscale-vector-index.adoc[]
+* xref:n1ql:n1ql-language-reference/createprimaryindex.adoc[CREATE PRIMARY INDEX]
+| xref:n1ql:n1ql-language-reference/createindex.adoc[CREATE INDEX]
+| xref:n1ql:n1ql-language-reference/createvectorindex.adoc[CREATE VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/build-index.adoc[BUILD INDEX]
+* xref:n1ql:n1ql-language-reference/alterindex.adoc[ALTER INDEX]
+* xref:n1ql:n1ql-language-reference/dropprimaryindex.adoc[DROP PRIMARY INDEX]
+| xref:n1ql:n1ql-language-reference/dropindex.adoc[DROP INDEX]
+| xref:n1ql:n1ql-language-reference/dropvectorindex.adoc[DROP VECTOR INDEX]

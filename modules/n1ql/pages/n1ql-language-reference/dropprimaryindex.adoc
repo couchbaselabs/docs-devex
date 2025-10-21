@@ -1,6 +1,7 @@
 = DROP PRIMARY INDEX
-:description: The DROP PRIMARY INDEX statement allows you to drop an unnamed primary index.
+:description: The DROP PRIMARY INDEX statement allows you to drop a primary index.
 :page-topic-type: reference
+:page-toclevels: 2
 :imagesdir: ../../assets/images
 
 :roles: xref:clusters:manage-database-users.adoc
@@ -13,15 +14,15 @@ include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 {description}
 
-IMPORTANT: Named primary indexes that are created using CREATE PRIMARY INDEX can only be dropped using the DROP INDEX command.
+NOTE: For compatibility with legacy versions of Couchbase Server, you can also use the DROP INDEX or DROP VECTOR INDEX statement to drop a named primary index.
 
 == Prerequisites
 
 [discrete]
 ===== RBAC Privileges
 
-User executing the DROP PRIMARY INDEX statement must have the _Query Manage Index_ privilege granted on the keyspace.
-For more details about user roles, see {roles}[].
+To execute the DROP PRIMARY INDEX statement, you must have the `Query Manage Index` privilege granted on the keyspace.
+For more information about user roles, see {roles}[].
 
 == Syntax
 
@@ -30,21 +31,24 @@ For more details about user roles, see {roles}[].
 include::partial$grammar/ddl.ebnf[tag=drop-primary-index]
 ----
 
-image::n1ql-language-reference/drop-primary-index.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/drop-primary-index.png["Syntax diagram: see source code listing", align=left]
 
 // TODO: Automatic links in EBNF.
 
 [horizontal]
+index-name:: (Optional) A unique name that identifies the index.
+If you do not specify a name, the index with the default name of `#primary` is deleted.
+
 keyspace-ref:: (Required) Specifies the keyspace where the index is located.
-Refer to <<keyspace-ref>> below.
+See <<keyspace-ref>>.
 
 index-using:: (Optional) Specifies the index type.
-Refer to <<index-using>> below.
+See <<index-using>>.
 
 [[if-exists]]
 === IF EXISTS Clause
 
-The optional `IF EXISTS` clause enables the statement to complete successfully when the specified primary index doesn't exist.
+The optional `IF EXISTS` clause enables the statement to complete successfully when the specified primary index does not exist.
 If the primary index does not exist within the specified keyspace, then:
 
 * If this clause is not present, an error is generated.
@@ -59,13 +63,13 @@ If the primary index does not exist within the specified keyspace, then:
 include::partial$grammar/dql.ebnf[tag=keyspace-ref]
 ----
 
-image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: see source code listing", align=left]
 
 Specifies the keyspace for the primary index to drop.
 The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
 
 NOTE: If there is a hyphen (-) inside any part of the keyspace reference, you must wrap that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+See the examples on this page.
 
 [[keyspace-path,keyspace path]]
 ==== Keyspace Path
@@ -75,7 +79,7 @@ Refer to the examples below.
 include::partial$grammar/dql.ebnf[tag=keyspace-path]
 ----
 
-image::n1ql-language-reference/keyspace-path.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-path.png["Syntax diagram: see source code listing", align=left]
 
 If the keyspace is a named collection, or the default collection in the default scope within a bucket, the keyspace reference may be a keyspace path.
 In this case, the {query-context}[query context] should not be set.
@@ -111,7 +115,7 @@ Similarly, `default:{backtick}travel-sample{backtick}.inventory.airline` indicat
 include::partial$grammar/dql.ebnf[tag=keyspace-partial]
 ----
 
-image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: see source code listing", align=left]
 
 Alternatively, if the keyspace is a named collection, the keyspace reference may be just the collection name with no path.
 In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
@@ -132,7 +136,7 @@ For example, `airline` indicates the `airline` collection, assuming the query co
 include::partial$grammar/ddl.ebnf[tag=index-using]
 ----
 
-image::n1ql-language-reference/index-using.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/index-using.png["Syntax diagram: see source code listing", align=left]
 
 The index type for a primary index must be Global Secondary Index (GSI).
 The `USING GSI` keywords are optional and may be omitted.
@@ -151,10 +155,24 @@ Once the index creation statement comes back, query `system:indexes` for status 
 include::example$n1ql-language-reference/create-pri-nameless.n1ql[tags=**]
 ----
 
-Subsequently, drop the unnamed primary index with the following statement so that it is no longer reported in the `system:indexes` output.
+Subsequently, drop the unnamed primary index with the following statement so that it's no longer reported in the `system:indexes` output.
 
 [source,sqlpp]
 ----
 include::example$n1ql-language-reference/drop-pri-nameless.n1ql[tags=**]
 ----
 ====
+
+== Related Links
+
+* xref:indexes:indexing-overview.adoc[]
+* xref:vector-index:composite-vector-index.adoc[]
+* xref:vector-index:hyperscale-vector-index.adoc[]
+* xref:n1ql:n1ql-language-reference/createprimaryindex.adoc[CREATE PRIMARY INDEX]
+| xref:n1ql:n1ql-language-reference/createindex.adoc[CREATE INDEX]
+| xref:n1ql:n1ql-language-reference/createvectorindex.adoc[CREATE VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/build-index.adoc[BUILD INDEX]
+* xref:n1ql:n1ql-language-reference/alterindex.adoc[ALTER INDEX]
+| xref:n1ql:n1ql-language-reference/altervectorindex.adoc[ALTER VECTOR INDEX]
+* xref:n1ql:n1ql-language-reference/dropindex.adoc[DROP INDEX]
+| xref:n1ql:n1ql-language-reference/dropvectorindex.adoc[DROP VECTOR INDEX]

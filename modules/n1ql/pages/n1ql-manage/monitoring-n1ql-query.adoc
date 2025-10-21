@@ -1,7 +1,7 @@
 = Manage and Monitor Queries
 :example-caption!:
 :alt-markdown-links:
-:description: Monitoring and profiling {sqlpp} queries, query service nodes, and corresponding system resources is very important for smoother operational performance and efficiency of the system.
+:description: Monitoring and profiling {sqlpp} queries, Query Service nodes, and corresponding system resources is important for smoother operational performance and efficiency of the system.
 
 ifdef::basebackend-html[]
 ++++
@@ -55,22 +55,22 @@ endif::[]
 
 [abstract]
 {description}
-In fact, often it is vital for diagnosing and troubleshooting issues such as query performance, resource bottlenecks, and overloading of various services.
+In fact, often it's vital for diagnosing and troubleshooting issues such as query performance, resource bottlenecks, and overloading of various services.
 
 include::ROOT:partial$component-signpost.adoc[]
 
-System keyspaces provide various monitoring details and statistics about individual queries and the Query service.
+System keyspaces provide various monitoring details and statistics about individual queries and the Query Service.
 When running on a cluster with multiple query nodes, stats about all queries on all query nodes are collected in the Query management and monitoring system keyspaces.
 
 For example, this can help identify:
 
 * The top 10 slow or fast queries running on a particular query node or the cluster.
-* Resource usage statistics of the query service, or resources used for a particular query.
+* Resource usage statistics of the Query Service, or resources used for a particular query.
 * Details about the active, completed, and prepared queries.
 * Find long running queries that are running for more than 2 minutes.
 
 These system keyspaces are transient in nature, and are not persisted to disk or permanent storage.
-Hence, the information in the keyspaces pertains to the current instantiation of the Query service.
+Hence, the information in the keyspaces pertains to the current instantiation of the Query Service.
 
 You can access the Query management and monitoring system keyspaces using any of the following:
 
@@ -85,7 +85,7 @@ Using {sqlpp} enables you to obtain further insights from the keyspaces.
 == Authentication and Client Privileges
 
 Users must have permission to access restricted system keyspaces.
-For more details about cluster credentials, see xref:clusters:manage-database-users.adoc[].
+For information about cluster credentials, see xref:clusters:manage-database-users.adoc[].
 
 == Examples on this Page
 
@@ -99,7 +99,7 @@ In the REST API examples:
 == Monitor System Vitals
 
 The `system:vitals` catalog provides data about the running state and health of the query nodes, such as number of logical cores, active threads, queued threads, CPU utilization, memory usage, network utilization, garbage collection percentage, and so on.
-This information can be very useful to assess the current workload and performance characteristics of a query node.
+This information can be useful to assess the current workload and performance characteristics of a query node.
 
 [#sys-vitals-get]
 === Get System Vitals
@@ -239,7 +239,11 @@ SELECT *, meta().plan FROM system:active_requests;
 [[sys-active-delete]]
 === Terminate an Active Request
 
-The DELETE command can be used to terminate an active request, for instance, a non-responding or a long-running query.
+To terminate an active request, for instance, a non-responding or a long-running query, use
+ifdef::flag-devex-rest-api[]
+the Admin REST API or
+endif::flag-devex-rest-api[]
+a {sqlpp} query.
 
 [tabs]
 ====
@@ -279,42 +283,47 @@ Getting active requests, as described in <<sys-active-get>>, returns results sim
 [
   {
     "active_requests": {
-      "clientContextID": "832adfa0-e9e6-464e-b5e6-b7ec7549d511",
-      "cpuTime": "111.877µs",
-      "elapsedTime": "77.631814ms",
-      "executionTime": "77.517185ms",
-      "n1qlFeatCtrl": 76,
-      "node": "127.0.0.1:8091",
-      "phaseOperators": {
-        "authorize": 1,
-        "fetch": 1,
-        "primaryScan": 1,
-        "project": 1,
-        "stream": 1
-      },
-      "phaseTimes": {
-        "authorize": "4.998µs",
-        "fetch": "69.519µs",
-        "instantiate": "16.28µs",
-        "parse": "597.435µs",
-        "plan": "24.141851ms",
-        "plan.index.metadata": "24.005473ms",
-        "plan.keyspace.metadata": "2.022µs",
-        "primaryScan": "23.496033ms",
-        "project": "824ns",
-        "stream": "2.242µs"
-      },
-      "queryContext": "default:travel-sample.inventory",
-      "remoteAddr": "127.0.0.1:37506",
-      "requestId": "05cc1895-9986-4819-b4d3-8a4311e8f319",
-      "requestTime": "2024-05-21T13:29:16.864Z",
-      "scanConsistency": "unbounded",
-      "state": "running",
-      "statement": "SELECT * FROM system:active_requests;",
-      "statementType": "SELECT",
-      "useCBO": true,
-      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0",
-      "users": "builtin:Administrator"
+        "clientContextID": "8c169ed1-9e1a-486a-a1b9-1c2ac8e327a4",
+        "cpuTime": "22.915µs",
+        "elapsedTime": "30.092625ms",
+        "executionTime": "30.012ms",
+        "ioTime": "8.366709ms",
+        "memoryQuota": 1152921504606846976,
+        "n1qlFeatCtrl": 76,
+        "node": "127.0.0.1:8091",
+        "phaseOperators": {
+            "authorize": 1,
+            "fetch": 1,
+            "primaryScan": 1,
+            "project": 1,
+            "stream": 1
+        },
+        "phaseTimes": {
+            "authorize": "7.584µs",
+            "fetch": "5.708µs",
+            "instantiate": "15.708µs",
+            "parse": "266.875µs",
+            "plan": "13.737208ms",
+            "plan.index.metadata": "13.577125ms",
+            "plan.keyspace.metadata": "45.915µs",
+            "primaryScan": "8.370458ms",
+            "project": "666ns",
+            "queued": "1.459µs",
+            "setup": "62.375µs",
+            "stream": "2.542µs"
+        },
+        "queryContext": "default:travel-sample.inventory",
+        "remoteAddr": "127.0.0.1:34064",
+        "requestId": "9860351c-d837-4b42-ad2f-a5b3cbcfeb4b",
+        "requestTime": "2025-06-05T10:31:34.423Z",
+        "scanConsistency": "unbounded",
+        "state": "running",
+        "statement": "SELECT * FROM system:active_requests;",
+        "statementType": "SELECT",
+        "useCBO": true,
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        "users": "builtin:Administrator",
+        "waitTime": "8.376917ms"
     }
   }
 ]
@@ -558,7 +567,7 @@ Getting prepared statements, as described in <<sys-prepared-get>>, returns resul
 }
 ----
 
-In this example, the names of the prepared statements are identical, but they are associated with different query contexts.
+In this example, the names of the prepared statements are identical, but they're associated with different query contexts.
 
 <.> The name of the prepared statement for the default query context
 <.> The name of the prepared statement showing the associated query context
@@ -615,7 +624,7 @@ SELECT * FROM system:completed_requests;
 --
 ====
 
-Note that the `completed` state means that the request was started and completed by the Query service, but it does not mean that it was necessarily successful.
+The `completed` state means that the request was started and completed by the Query Service, but it does not mean that it was necessarily successful.
 The request could have been successful, or completed with errors.
 
 To find requests that completed successfully, search for completed requests whose `state` is `completed` and whose `errorCount` field has the value `0`.
@@ -707,7 +716,7 @@ DELETE FROM system:completed_requests WHERE requestTime LIKE "2015-09-09%";
 [[sys-completed-examples]]
 === Completed Request Details
 
-To try the examples in this section, first run a query which takes at least 1000ms (the default value of the `completed-threshold` query setting) to get registered in the `system:completed_requests` keyspace.
+To try the examples in this section, first run a query which takes at least 1000{nbsp}ms (the default value of the `completed-threshold` query setting) to get registered in the `system:completed_requests` keyspace.
 
 .Run a long query
 ====
@@ -726,62 +735,69 @@ Getting completed requests, as described in <<sys-completed-get>>, returns resul
 [source,json]
 ----
 [
-  // ...
   {
     "completed_requests": {
-      "clientContextID": "a19a61ab-cd9e-46c9-be71-92623ff85741",
-      "cpuTime": "912.408423ms",
-      "elapsedTime": "3.762926948s",
-      "errorCount": 0,
-      "errors": [],
-      "n1qlFeatCtrl": 76,
-      "node": "127.0.0.1:8091",
-      "phaseCounts": {
-        "fetch": 24023,
-        "primaryScan": 24023,
-        "primaryScan.GSI": 24023,
-        "sort": 24028
-      },
-      "phaseOperators": {
-        "authorize": 1,
-        "fetch": 1,
-        "primaryScan": 1,
-        "primaryScan.GSI": 1,
-        "project": 1,
-        "sort": 2,
-        "stream": 1
-      },
-      "phaseTimes": {
-        "authorize": "15.111µs",
-        "fetch": "3.641125449s",
-        "instantiate": "332.963µs",
-        "parse": "1.04015ms",
-        "plan": "602.878µs",
-        "plan.index.metadata": "25.849µs",
-        "plan.keyspace.metadata": "11.586µs",
-        "primaryScan": "101.118572ms",
-        "primaryScan.GSI": "101.118572ms",
-        "project": "33.273783ms",
-        "run": "3.760767643s",
-        "sort": "666.364325ms",
-        "stream": "1.617688ms"
-      },
-      "queryContext": "default:travel-sample.inventory",
-      "remoteAddr": "127.0.0.1:37684",
-      "requestId": "e170bf67-d364-4ed7-9698-784bbb779d18",
-      "requestTime": "2024-05-21T14:31:46.882Z",
-      "resultCount": 5,
-      "resultSize": 17714,
-      "scanConsistency": "unbounded",
-      "serviceTime": "3.762768429s",
-      "state": "completed",
-      "statement": "SELECT * FROM route ORDER BY sourceairport LIMIT 5;",
-      "statementType": "SELECT",
-      "useCBO": true,
-      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:126.0) Gecko/20100101 Firefox/126.0",
-      "users": "builtin:Administrator",
-      "~qualifier": "threshold"
-    }
+        "clientContextID": "99c776c2-438e-449e-b3f5-7585f2c41b62",
+        "cpuTime": "912.042µs",
+        "elapsedTime": "10.237875ms",
+        "errorCount": 0,
+        "errors": [],
+        "ioTime": "5.338667ms",
+        "memoryQuota": 1152921504606846976,
+        "n1qlFeatCtrl": 76,
+        "namedArgs": {},
+        "phaseCounts": {
+            "fetch": 5,
+            "indexScan": 5,
+            "indexScan.GSI": 5
+          },
+        "phaseOperators": {
+            "authorize": 1,
+            "fetch": 1,
+            "indexScan": 1,
+            "indexScan.GSI": 1,
+            "project": 1,
+            "stream": 1
+          },
+        "phaseTimes": {
+            "authorize": "19.084µs",
+            "fetch": "1.1245ms",
+            "indexScan": "4.312417ms",
+            "indexScan.GSI": "4.312417ms",
+            "instantiate": "233.666µs",
+            "parse": "1.087875ms",
+            "plan": "1.453375ms",
+            "plan.index.metadata": "149.833µs",
+            "plan.keyspace.metadata": "13.543µs",
+            "project": "49.541µs",
+            "queued": "417ns",
+            "run": "6.39025ms",
+            "setup": "913.667µs",
+            "stream": "696µs"
+          },
+        "queryContext": "default:travel-sample.inventory",
+        "remoteAddr": "127.0.0.1:34066",
+        "requestId": "73fcdccc-da70-40e9-95f6-f8566acb671c",
+        "requestTime": "2025-06-05T10:38:32.904Z",
+        "resultCount": 5,
+        "resultSize": 17714,
+        "scanConsistency": "unbounded",
+        "serviceTime": "9.305625ms",
+        "sqlID": "4c7b735499e4f5e84d031c1ee327d66e",
+        "sessionMemory": 1048576,
+        "state": "completed",
+        "statement": "SELECT * FROM route ORDER BY sourceairport LIMIT 5;",
+        "statementType": "SELECT",
+        "useCBO": true,
+        "usedMemory": 13374,
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        "users": "builtin:Administrator",
+        "waitTime": "9.836667ms",
+        "~analysis": [
+            "High IO time"
+          ],              
+        "~qualifier": "threshold"
+     }
   }
 ]
 ----
@@ -793,7 +809,7 @@ For query plan field names and meanings, see <<monitor-profile-details>>.
 
 ifdef::flag-devex-rest-api[]
 [[sys-completed-config]]
-== Configure the Completed Requests
+== Configure Completed Requests
 
 You can configure the `system:completed_requests` keyspace by specifying parameters through the Admin API `/admin/settings` endpoint.
 
@@ -811,7 +827,7 @@ curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
 === Logging Qualifiers
 
 You can specify the following logging qualifiers.
-A completed request is logged if _any_ of the qualifiers are met (logical OR).
+A completed request is logged if any of the qualifiers are met (logical OR).
 
 [horizontal]
 `threshold`:: The execution time threshold in milliseconds.
@@ -820,14 +836,18 @@ A completed request is logged if _any_ of the qualifiers are met (logical OR).
 `client`:: Log requests from this IP address.
 `user`:: Log requests with this user name.
 `context`:: Log requests with this client context ID.
+`statement`:: Log requests that match the specified LIKE search pattern in the query text.
+`plan`:: Log requests where the specified plan field values appear in the query plan.
+`errors`:: Log requests with at least this many errors. 
 
 For full details, see xref:n1ql-rest-admin:index.adoc#Logging_Parameters[Logging Parameters].
 
-The basic syntax adds a qualifier to the logging parameters, i.e. any existing qualifiers are not removed.
+The basic syntax adds a qualifier to the logging parameters.
+Any existing qualifiers are not removed.
 You can change the value of a logging qualifier by specifying the same qualifier again with a new value.
 
-To add a new instance of an existing qualifier, use a plus sign (`+`) before the qualifier name, e.g. `+user`.
-To remove a qualifier, use a minus sign (`-`) before the qualifier name, e.g. `-user`.
+To add a new instance of an existing qualifier, use a plus sign (`+`) before the qualifier name, such as `+user`.
+To remove a qualifier, use a minus sign (`-`) before the qualifier name, such as `-user`.
 
 For example, the following request will add user `simon` to those tracked, and remove error `12003`.
 
@@ -878,7 +898,7 @@ You cannot add a new instance of an existing qualifier to a tagged set using a p
 For example, you cannot add a `user` qualifier to a tagged set that already contains a `user` qualifier.
 If you need to track two users with the same error, create two tagged sets, one per user.
 
-You can remove a qualifier from a tagged set using a minus sign (`-`) before the qualifier name, e.g. `-user`.
+You can remove a qualifier from a tagged set using a minus sign (`-`) before the qualifier name, such as `-user`.
 When you remove the last qualifier from a tagged set, the tagged set is removed.
 
 [NOTE]
@@ -895,7 +915,7 @@ In this case, completed requests are logged if they match any of the individual 
 The [.param]`completed-threshold` field provides another way of specifying the `threshold` qualifier within the `completed` field.
 
 This field sets the minimum request duration after which requests are added to the `system:completed_requests` catalog.
-The default value is 1000ms.
+The default value is 1000{nbsp}ms.
 Specify [.in]`0` to log all requests and [.in]`-1` to not log any requests to the keyspace.
 
 To specify a different value, use:
@@ -921,6 +941,78 @@ curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
   -H 'Content-Type: application/json' \
   -d '{"completed-limit":1000}'
 ----
+
+[[sys-history]]
+== Stream Completed Requests
+
+In clusters running Couchbase Server 7.6.4 and later, you can stream completed requests to disk.
+
+[source,sh]
+----
+curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
+  -H 'Content-Type: application/json' \
+  -d '{"completed-stream-size": 500}'
+----
+
+This property is a file size in MiB.
+When set to `0` (the default), completed request streaming is disabled.
+
+When set to any size greater than `0`, completed requests are streamed to archive files.
+The value of this property determines the size of the data to retain, per node.
+The configuration for completed requests determines which requests are saved.
+
+NOTE: The additional processing required to save completed requests to disk may limit overall request throughput on a Query node, but typically only when every completed request is being recorded, and requests are small or short-lived.
+The speed of the file system on which the server logs directory resides may affect the request throughput also.
+
+[#sys-history-files]
+=== Archived Request Files
+
+When streaming is enabled, completed requests are saved to GZIP archives with the prefix `local_request_log` in the Couchbase Server `logs` directory.
+Each saved GZIP archive file contains multiple JSON entries, one for each for each recorded completed request.
+
+Couchbase Server writes multiple archive files in parallel, so while the order of requests in a file is sequential, a single given file may not contain a contiguous sequence of requests.
+
+When an archive file reaches or exceeds 100 MiB, it's finalized and saved to disk.
+This is not a hard limit -- entries are not truncated to adhere to it.
+Files may also be finalized with less content, if nothing has been written to them for an extended period.
+Files that are actively being written are not available for reading, and they do not count towards the configured size limit until they're finalized.
+
+Couchbase Server tries to manage and retain archive files such that the total disk space used by the files is within the specified limit for the node.
+When the specified limit is reached, older files are removed as necessary to make space for newly finalized files.
+When a file is removed, it's not guaranteed that only the oldest requests are evicted, given that Couchbase Server writes to multiple archive files in parallel.
+
+[#sys-history-view]
+=== View Archived Requests
+
+To view archived completed requests, use https://www.gnu.org/software/gzip[gzip] and https://jqlang.github.io/jq[jq] on the command line, or a {sqlpp} query.
+
+[tabs,sync-group-id="REST API|{sqlpp}"]
+====
+Command Line::
++
+--
+To view all archived completed requests in `$FILE`:
+
+[source,sh]
+----
+gzip -qdc $FILE | jq .
+----
+--
+
+{sqlpp}::
++
+--
+To get a list of archived completed requests using {sqlpp}:
+
+[source,sqlpp]
+----
+SELECT * FROM system:completed_requests_history;
+----
+--
+====
+
+The `system:completed_requests_history` keyspace is provided for {sqlpp} access to the archived files, but as they're external GZIP archives performance is restricted, particularly with large histories on clusters with multiple Query Service nodes.
+Directly reading the files may be more useful in some cases.
 endif::flag-devex-rest-api[]
 
 [#query-monitoring-settings]
@@ -936,7 +1028,7 @@ You can set query profiling to the following levels:
 You can set query profiling:
 
 ifdef::flag-devex-rest-api[]
-* At the <<enable-settings-for-a-query-engine,node level>>, so that it is enabled for all queries on that node.
+* At the <<enable-settings-for-a-query-engine,node level>>, so that it's enabled for all queries on that node.
 endif::flag-devex-rest-api[]
 * At the <<enable-settings-per-session-or-per-query,request level>>, for individual queries.
 
@@ -1097,12 +1189,12 @@ When a query executes a user-defined function, profiling information is availabl
 
 When profiling is enabled:
 
-* If you are using the Data API or the cbq shell, query profiling information is returned with the query results.
-* If you are using the Query tab, query profiling information is not returned with the query results.
+* If you're using the Data API or the cbq shell, query profiling information is returned with the query results.
+* If you're using the Query tab, query profiling information is not returned with the query results.
 
 .Phases Profile
 ====
-If you are using the Data API or the cbq shell, the following statistics are returned when `profile` is set to `phases`:
+If you're using the Data API or the cbq shell, the following statistics are returned when `profile` is set to `phases`:
 
 [source,json]
 ----
@@ -1160,7 +1252,7 @@ If you are using the Data API or the cbq shell, the following statistics are ret
 
 .Timings Profile
 ====
-If you are using the Data API or the cbq shell, the following statistics are returned when `profile` is set to `timings`:
+If you're using the Data API or the cbq shell, the following statistics are returned when `profile` is set to `timings`:
 
 [source,json]
 ----
@@ -1337,7 +1429,7 @@ include::n1ql-rest-query:partial$definitions/Statistics/definition-end.adoc[opts
 [[plan]]
 === Profiling Details in System Catalogs
 
-The <<sys-active-req,system:active_requests>> and <<sys-completed-req,system:completed_requests>> system catalogs always return profiling information regarding query phases: that is, phase times, phase counts, and phase operators.
+The <<sys-active-req,system:active_requests>> and <<sys-completed-req,system:completed_requests>> system catalogs always return profiling information regarding query phases: namely, phase times, phase counts, and phase operators.
 
 The <<sys-active-req,system:active_requests>>, <<sys-completed-req,system:completed_requests>>, and <<sys-prepared,system:prepareds>> system catalogs also support the `meta().plan` virtual attribute.
 This captures the whole query plan, and includes profiling information regarding execution timings.
@@ -1541,4 +1633,4 @@ a| icon:check[fw] timings
 
 == Related Links
 
-* Refer to xref:n1ql:n1ql-intro/sysinfo.adoc[Getting System Information] for more information on the system namespace.
+* For more information on the system namespace, see xref:n1ql:n1ql-intro/sysinfo.adoc[Getting System Information].

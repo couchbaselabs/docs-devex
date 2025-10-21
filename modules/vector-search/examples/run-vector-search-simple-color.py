@@ -17,7 +17,7 @@ vector = [0.0,0.0,128.0]
 pa = PasswordAuthenticator(os.getenv("CB_USERNAME"), os.getenv("CB_PASSWORD"))
 cluster = Cluster("couchbases://" + os.getenv("CB_HOSTNAME") + "/?ssl=no_verify", ClusterOptions(pa))
 # Make sure to change the bucket, scope, and index names to match where you stored the sample data in your database.  
-bucket = cluster.bucket("vector-sample")
+bucket = cluster.bucket("color-vector-sample")
 scope = bucket.scope("color")
 search_index = "color-index"
 try:
