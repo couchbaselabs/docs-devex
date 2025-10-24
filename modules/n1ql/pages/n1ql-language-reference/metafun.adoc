@@ -430,7 +430,9 @@ SELECT `Flavor` FROM EVALUATE("INFER `travel-sample`")[0] inf;
 This function extracts Data Definition Language (DDL) statements from one or more specified buckets.
 It returns an array of strings, where each string contains an extracted DDL statement.
 
-The function supports the following DDL statements:
+You can use this function to retrieve the data models of existing buckets for purposes such as replication, backup, or auditing.
+
+The function extracts the following DDL statements:
 
 * CREATE BUCKET
 * CREATE SCOPE 
@@ -444,11 +446,11 @@ NOTE: To execute this function, you must have the `query_system_catalog` role an
 
 filter:: [Required] 
 A string pattern to match against bucket names using the LIKE operator. 
-An empty string (`""`) matches all bucket names.
+Use an empty string (`""`) to match all bucket names.
 
 options:: [Optional]
 A JSON object specifying options for the function.
-If you do not specify this argument, the output includes all supported DDL statements.
+If you omit this argument, the output includes all supported DDL statements.
 
 === Options
 
@@ -458,21 +460,41 @@ If you do not specify this argument, the output includes all supported DDL state
 
 | **flags** +
 __optional__
-| Specifies the types of DDL statements to extract. 
-The value can be a numeric bit flag or an array of strings.
+| Specifies which types of DDL statements to extract. 
 
-* `"bucket"` or `1`: For CREATE BUCKET statements
-* `"scope"` or `2`: For CREATE SCOPE statements
-* `"collection"` or `4`: For CREATE COLLECTION statements
-* `"index"` or `8`: For CREATE INDEX statements
-* `"sequence"` or `16`: For CREATE SEQUENCE statements
+Accepts either a numeric value or an array of strings, but not both. 
 
-You cannot use string and numeric values in the same function call.
-If you're using numeric flags, you can combine multiple values by adding them together.
+[options="header", cols="1a,1a,1a"]
+!===
 
-For example, to extract CREATE SCOPE and CREATE INDEX statements, specify the value as `10` (2 + 8) or as an array of strings `["scope", "index"]`.
+! Statement ! String Value ! Numeric Value
 
-| String array or number
+! CREATE BUCKET
+! `"bucket"` 
+! `1` 
+
+! CREATE SCOPE
+! `"scope"`
+! `2`
+
+! CREATE COLLECTION
+! `"collection"`
+! `4`
+
+! CREATE INDEX
+! `"index"`
+! `8`
+
+! CREATE SEQUENCE
+! `"sequence"`
+! `16`
+!===
+
+To extract multiple statement types, specify either an array with the string values or a numeric value representing the sum of their corresponding numeric values.
+
+For example, to extract CREATE SCOPE and CREATE INDEX statements, input the value as `10` (`2` + `8`) or as an array of strings `["scope", "index"]`.
+
+| String array or Number
 |===
 
 === Return Value
@@ -482,7 +504,7 @@ An array of strings, with each string containing a DDL statement.
 === Examples
 
 [[extract-ddl-ex1,EXTRACTDDL() Example 1]]
-.Extract index statements from the `travel-sample` bucket using string flags
+.Using string values to extract CREATE INDEX statements from the `travel-sample` bucket
 ====
 .Query
 [source,sqlpp]
@@ -508,7 +530,7 @@ SELECT extractddl("travel-sample",{"flags":["index"]});
 ====
 
 [[extract-ddl-ex2,EXTRACTDDL() Example 2]]
-.Extract index statements from the `travel-sample` bucket using numeric flags
+.Using a numeric flag to extract CREATE INDEX statements from the `travel-sample` bucket
 ====
 .Query
 [source,sqlpp]
@@ -534,14 +556,14 @@ SELECT extractddl("travel-sample", {"flags":8});
 ====
 
 [[extract-ddl-ex3,EXTRACTDDL() Example 3]]
-.Extract bucket and scope statements from the `travel-sample` bucket using combined numeric flags
+.Using a combined numeric flag to extract CREATE BUCKET and CREATE SCOPE statements from the `travel-sample` bucket
 ====
 .Query
 [source,sqlpp]
 ----
 SELECT extractddl("travel-sample",{"flags":3});
 ----
-In this query, the value `3` is the sum of the flags for bucket (`1`) and scope (`2`).
+In this query, the value `3` represents the combined flags for bucket (`1`) and scope (`2`).
 
 .Results
 [source,json]
