@@ -21,11 +21,7 @@ parameterized by a keyspace::
 Roles which are defined for the context of the specified keyspace only.
 Specify the keyspace name after the keyword ON.
 +
-The keyspace must be fully qualified and must include the bucket, scope, and collection names.
-Even if you're granting a role to an entire bucket, you must specify the default scope (`_default`) and default collection (`_default`).
-Using only the bucket name is not sufficient.
-+
-For example: `pass:c[data_reader ON `travel-sample`.`_default`.`_default`]` +
+For example: `pass:c[data_reader ON `travel-sample`]` +
 or `pass:c[query_select ON `travel-sample`.`inventory`.`airline`]`
 
 NOTE: To run the GRANT statement, you must be an xref:organizations:organization-user-roles.adoc#organization-role-organization-owner[`Organization Owner`] or xref:projects:project-roles.adoc#project-owner-role[`Project Owner`].
@@ -119,7 +115,7 @@ GRANT replication_admin, query_external_access
 [source,sqlpp]
 ----
 GRANT query_select, views_admin
-   ON `retail`.`customers`.`orders`
+   ON orders, customers
    TO bill, linda;
 ----
 
@@ -135,18 +131,18 @@ GRANT cluster_admin TO david, michael, robin;
 ----
 ====
 
-.Grant Query Select and Data Reader roles on a keyspace to a specific user
+.Grant Query Select and Data Reader roles on the `travel-sample` keyspace to a specific user
 ====
 [source,sqlpp]
 ----
-GRANT query_select, data_reader ON `travel-sample`.`_default`.`_default` TO debby;
+GRANT query_select, data_reader ON `travel-sample` TO debby;
 ----
 ====
 
-.Grant the role of Data Reader on a keyspace to a specific group
+.Grant the role of Data Reader on the `travel-sample` keyspace to a specific group
 ====
 [source,sqlpp]
 ----
-GRANT data_reader ON `travel-sample`.`inventory`.`hotel` TO GROUP sales;
+GRANT data_reader ON `travel-sample` TO GROUP sales;
 ----
 ====
