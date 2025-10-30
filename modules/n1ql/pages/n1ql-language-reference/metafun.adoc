@@ -420,6 +420,178 @@ SELECT `Flavor` FROM EVALUATE("INFER `travel-sample`")[0] inf;
 ----
 ====
 
+[[extract-ddl,EXTRACTDDL()]]
+== EXTRACTDDL(`filter` [ ,`options` ])
+
+[.status]#Couchbase Server 8.0#
+
+=== Description
+
+This function extracts Data Definition Language (DDL) statements of buckets and returns them as an array of strings.
+It retrieves definitions for buckets, scopes, collections, indexes, and sequences. 
+You can use these definitions for purposes such as replication, backup, or auditing.
+
+The function supports the following statements:
+
+* CREATE BUCKET
+* CREATE SCOPE 
+* CREATE COLLECTION
+* CREATE INDEX
+* CREATE SEQUENCE
+
+NOTE: To execute this function, you must have the `query_system_catalog` role. 
+Also, to extract DDLs from a specific bucket, you need necessary permissions on that bucket.
+For more information about roles and permissions, see xref:learn:security/authorization-overview.adoc[Authorization].
+
+=== Arguments
+
+filter:: [Required] 
+A string pattern to match against bucket names using the LIKE operator. 
+To match all bucket names, use an empty string (`""`).
+
+options:: [Optional]
+A JSON object specifying options for the function.
+If you omit this argument, the output includes all supported DDL statements.
+
+=== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **flags** +
+__optional__
+| Specifies the types of DDL statements to extract. 
+
+Accepts either a numeric value or an array of strings, but not both. 
+
+[options="header", cols="1a,1a,1a"]
+!===
+
+! Statement ! String Value ! Numeric Value
+
+! CREATE BUCKET
+! `"bucket"` 
+! `1` 
+
+! CREATE SCOPE
+! `"scope"`
+! `2`
+
+! CREATE COLLECTION
+! `"collection"`
+! `4`
+
+! CREATE INDEX
+! `"index"`
+! `8`
+
+! CREATE SEQUENCE
+! `"sequence"`
+! `16`
+!===
+
+To extract multiple statement types, specify an array of their string values or a single numeric value that represents the sum of their respective numeric values.
+
+For example, to extract CREATE BUCKET and CREATE INDEX statements, input the value as `9` (sum of `1` + `8`) or as an array of strings `["bucket", "index"]`.
+
+| String array or Number
+|===
+
+=== Return Value
+
+An array of strings, with each string containing a DDL statement.
+
+=== Examples
+
+[[extract-ddl-ex1,EXTRACTDDL() Example 1]]
+.Using a string flag to extract CREATE INDEX statements from the `travel-sample` bucket
+====
+.Query
+[source,sqlpp]
+----
+SELECT extractddl("travel-sample",{"flags":["index"]});
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "CREATE INDEX `def_airportname` ON `travel-sample`(`airportname`) ;",
+      "CREATE INDEX `def_city` ON `travel-sample`(`city`) ;",
+      "CREATE INDEX `def_faa` ON `travel-sample`(`faa`) ;",
+      "CREATE INDEX `def_icao` ON `travel-sample`(`icao`) ;",
+      ...
+    ]
+  }
+]   
+----
+====
+
+[[extract-ddl-ex2,EXTRACTDDL() Example 2]]
+.Using a numeric flag to extract CREATE INDEX statements from the `travel-sample` bucket
+====
+.Query
+[source,sqlpp]
+----
+SELECT extractddl("travel-sample", {"flags":8});
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "CREATE INDEX `def_airportname` ON `travel-sample`(`airportname`) ;",
+      "CREATE INDEX `def_city` ON `travel-sample`(`city`) ;",
+      "CREATE INDEX `def_faa` ON `travel-sample`(`faa`) ;",
+      "CREATE INDEX `def_icao` ON `travel-sample`(`icao`) ;",
+      ...
+    ]
+  }
+]     
+----
+====
+
+[[extract-ddl-ex3,EXTRACTDDL() Example 3]]
+.Using a combined numeric flag to extract CREATE BUCKET and CREATE SCOPE statements from the `travel-sample` bucket
+====
+.Query
+[source,sqlpp]
+----
+SELECT extractddl("travel-sample",{"flags":3});
+----
+In this query, the value `3` represents the sum of the flags for bucket (`1`) and scope (`2`).
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "CREATE BUCKET `travel-sample` WITH { 
+              'evictionPolicy':'fullEviction',
+              'numVBuckets':128,
+              'ramQuota':200,
+              'replicaNumber':0,
+              'storageBackend':'magma'
+          };",
+      "CREATE SCOPE `travel-sample`.`inventory`;",
+      "CREATE SCOPE `travel-sample`.`tenant_agent_00`;",
+      "CREATE SCOPE `travel-sample`.`tenant_agent_01`;",
+      "CREATE SCOPE `travel-sample`.`tenant_agent_02`;",
+      "CREATE SCOPE `travel-sample`.`tenant_agent_03`;",
+      "CREATE SCOPE `travel-sample`.`tenant_agent_04`;"
+    ]
+  }
+]
+----
+====
+
+
 [[finderr,FINDERR()]]
 == FINDERR(`expression`)
 
