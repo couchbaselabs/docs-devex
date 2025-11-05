@@ -1,7 +1,7 @@
 = Index Partitioning
 :page-edition: Enterprise Edition
 :imagesdir: ../../assets/images
-:description: Index Partitioning enables you to increase aggregate query performance by dividing and spreading a large index of documents across multiple nodes, horizontally scaling out an index as needed.
+:description: Index partitioning enables you to increase aggregate query performance by dividing and spreading a large index of documents across multiple nodes, horizontally scaling out an index as needed.
 :page-topic-type: reference
 
 :createindex: xref:n1ql-language-reference/createindex.adoc
@@ -28,7 +28,7 @@ Benefits of a partitioned index include:
 
 Partitioned indexes are displayed in the Couchbase Web Console with a `partitioned` indicator:
 
-image::manage:manage-indexes/index-indicators.png[]
+image::manage:manage-indexes/index-indicators.png["The Couchbase Web Console, with partitioned indexes marked."]
 
 For more information, see xref:manage:manage-indexes/manage-indexes.adoc[Manage Indexes].
 
@@ -49,7 +49,7 @@ include::partial$grammar/ddl.ebnf[tag=index-partition]
 
 image::n1ql-language-reference/index-partition.png["Syntax diagram: see source code listing", align=left]
 
-[horizontal.compact]
+[horizontal]
 partition-key-expr::
 A field or an expression over a field representing a partition key.
 For details and examples, see <<partition-keys>>.
@@ -66,49 +66,92 @@ image::n1ql-language-reference/index-with.png["Syntax diagram: see source code l
 
 When creating a partitioned index, you can use the WITH clause to specify additional options for the partitions.
 
-_expr_::
-An object with the following properties:
+[horizontal#index-with-args]
+expr::
+An object with the following properties.
 
-num_partition;;
-[Optional] An integer that defines the number of partitions to divide into.
-The default value is 8.
-For more information and examples, see <<Number of Partitions>>.
+[options="header", cols="1a,4a,1a"]
+|===
+| Name | Description | Schema
 
-nodes;;
-[Optional] An array of strings, specifying a list of nodes.
-The node list to restrict the set of nodes available for placement.
-See the {index-with}[CREATE INDEX] statement for details of the syntax.
-For more information and examples, see <<Partition Placement>>.
+| **num_partition** +
+__optional__
+| The number of partitions to divide the index into.
+For more information, see <<Number of Partitions>>.
 
-defer_build;;
-[Optional] Boolean.
-When set to true, the index creation operation queues the task for building the index, but immediately pauses the building of the index.
-See the {index-with}[CREATE INDEX] statement for more details.
+**Default:** `8`
+| Integer
 
-num_replica;;
-[Optional] An integer specifying the number of replicas of the partitioned index to create.
+| **nodes** +
+__optional__
+| A list of nodes to restrict the set of nodes available for placement.
+For more information, see <<Partition Placement>>.
+
+For details of the syntax, see {primary-index-with}[CREATE PRIMARY INDEX], {index-with}[CREATE INDEX], or {vector-index-with}[CREATE VECTOR INDEX].
+| String array
+
+| **defer_build** +
+__optional__
+| When set to true, the index creation operation queues the task for building the index, but immediately pauses the building of the index.
+
+For more information, see {primary-index-with}[CREATE PRIMARY INDEX], {index-with}[CREATE INDEX], or {vector-index-with}[CREATE VECTOR INDEX].
+| Boolean
+
+| **num_replica** +
+__optional__
+| The number of replicas of the partitioned index to create.
 If this integer is greater than or equal to the number of index nodes in the cluster, then the index creation will fail.
-See the {index-with}[CREATE INDEX] statement for more details.
 
-secKeySize;;
-[Optional] An integer, specifying the average length of the combined index keys.
-For more information and examples, see <<sizing-hints>>.
+For more information, see {primary-index-with}[CREATE PRIMARY INDEX], {index-with}[CREATE INDEX], or {vector-index-with}[CREATE VECTOR INDEX].
+| Integer
 
-docKeySize;;
-[Optional] An integer, specifying the average length of the document key.
-For more information and examples, see <<sizing-hints>>.
+| **secKeySize** +
+__optional__
+| A sizing hint, specifying the average length of the combined index keys.
+For more information, see <<sizing-hints>>.
 
-arrSize;;
-[Optional] An integer, specifying the average length of the array fields.
-For more information and examples, see <<sizing-hints>>.
+**Example:** `20`
+| Integer
 
-numDoc;;
-[Optional] An integer, specifying the number of documents in the index.
-For more information and examples, see <<sizing-hints>>.
+| **docKeySize** +
+__optional__
+| A sizing hint, specifying the average length of the document key `meta().id`.
+For more information, see <<sizing-hints>>.
 
-residentRatio;;
-[Optional] An integer, specifying the resident ratio of the index.
-For more information and examples, see <<sizing-hints>>.
+**Example:** `20`
+|Integer
+
+| **arrSize** +
+__optional__
+| A sizing hint, specifying the average length of the array fields.
+Non-array fields will be ignored.
+For more information, see <<sizing-hints>>.
+
+**Example:** `10`
+| Integer
+
+| **numDoc** +
+__optional__
+| A sizing hint, specifying the number of documents in the index.
+For more information, see <<sizing-hints>>.
+
+**Example:** `7303`
+| Integer
+
+| **residentRatio** +
+__optional__
+| A sizing hint, specifying the resident ratio of the index.
+The resident ratio is the memory usage of the index, as a percentage of its estimated data size.
+For more information, see <<sizing-hints>>.
+
+Couchbase recommends setting this property to `10` or higher, to avoid index build failures and other issues.
+
+**Example:** `50`
+| Integer
+|===
+
+Composite Vector indexes and Hyperscale Vector indexes support further options.
+See {index-with}[CREATE INDEX] or {vector-index-with}[CREATE VECTOR INDEX].
 
 [[partition-keys]]
 == Partition Keys
@@ -505,40 +548,11 @@ NOTE: To avoid any downtime, before removing the partitioned index, first create
 [[sizing-hints]]
 === Sizing Hints
 
-You can optionally provide sizing hints too.
+You can optionally provide sizing hints to help place the partitions.
 Given the sizing hints, the planner uses a formula to estimate the memory and CPU usage of the index.
 Based on the estimated memory and CPU usage, the planner tries to place the partitions according to the free resources available to each index node.
 
-.Sizing Hints
-[cols="2,5,2"]
-|===
-| Optional Sizing Hint | Description | Example
-
-| *secKeySize*
-| The average length of the combined index keys.
-| `20`
-
-| *docKeySize*
-| The average length of the document key `meta().id`.
-| `20`
-
-| *arrSize*
-| The average length of the array field.
-Non-array fields will be ignored.
-| `10`
-
-| *numDoc*
-| The number of documents in the index.
-| `7303`
-
-| *residentRatio*
-| The memory usage of the index, as a percentage of its estimated data size.
-| `50`
-|===
-
-NOTE: Couchbase recommends setting the residentRatio property value over 10 to avoid issues, for example, index build failures.
-
-To provide sizing estimation, you can use a command similar to the following examples.
+For a list of sizing hints and example values, see <<index-with,WITH Clause>>.
 
 [.server]
 include::ROOT:partial$query-context.adoc[tag=section]
