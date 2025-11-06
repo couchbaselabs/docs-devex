@@ -1,16 +1,19 @@
 = Index Partitioning
 :page-edition: Enterprise Edition
 :imagesdir: ../../assets/images
-:description: Index Partitioning enables you to increase aggregate query performance by dividing and spreading a large index of documents across multiple nodes, horizontally scaling out an index as needed.
+:description: Index partitioning enables you to increase aggregate query performance by dividing and spreading a large index of documents across multiple nodes, horizontally scaling out an index as needed.
 :page-topic-type: reference
+:page-toclevels: 2
 
 :createindex: xref:n1ql-language-reference/createindex.adoc
+:createprimaryindex: xref:n1ql-language-reference/createprimaryindex.adoc
 :gbap: xref:n1ql-language-reference/groupby-aggregate-performance.adoc
 :index-with: {createindex}#index-with
+:primary-index-with: {createprimaryindex}#primary-index-with
 :rebalancing-the-index-service: xref:learn:clusters-and-availability/rebalance.adoc#rebalancing-the-index-service
 
 {description}
-The system partitions the index across a number of index nodes using a hash partitioning strategy in a way that is transparent to queries.
+The system partitions the index across a number of index nodes using a hash partitioning strategy in a way that's transparent to queries.
 
 [#idx-partition-intro]
 --
@@ -24,17 +27,16 @@ Benefits of a partitioned index include:
 
 Partitioned indexes are displayed in the Couchbase Web Console with a `partitioned` indicator:
 
-image::manage:manage-indexes/index-indicators.png[]
+image::manage:manage-indexes/index-indicators.png["The Couchbase Web Console, with partitioned indexes marked."]
 
-For further details, refer to xref:manage:manage-indexes/manage-indexes.adoc[Manage Indexes].
+For more information, see xref:manage:manage-indexes/manage-indexes.adoc[Manage Indexes].
 
 == Syntax
 
-To create a partitioned index, the overall syntax is the same as for a global secondary index.
+To create a partitioned index, the overall syntax is the same as for a primary index or global secondary index.
 The distinguishing feature is the use of the PARTITION BY HASH clause to specify the partitions.
 
-Refer to the {createindex}[CREATE INDEX] statement for details of the syntax.
-
+For more information, see {createprimaryindex}[] or {createindex}[].
 
 [[index-partition,index-partition]]
 === PARTITION BY HASH Clause
@@ -44,11 +46,12 @@ Refer to the {createindex}[CREATE INDEX] statement for details of the syntax.
 include::partial$grammar/ddl.ebnf[tag=index-partition]
 ----
 
-image::n1ql-language-reference/index-partition.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/index-partition.png["Syntax diagram: see source code listing", align=left]
 
-_partition-key-expr_::
+[horizontal]
+partition-key-expr::
 A field or an expression over a field representing a partition key.
-For details and examples, refer to <<partition-keys>>.
+For details and examples, see <<partition-keys>>.
 
 [[index-with,index-with]]
 === WITH Clause
@@ -58,53 +61,93 @@ For details and examples, refer to <<partition-keys>>.
 include::partial$grammar/ddl.ebnf[tag=index-with]
 ----
 
-image::n1ql-language-reference/index-with.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/index-with.png["Syntax diagram: see source code listing", align=left]
 
 When creating a partitioned index, you can use the WITH clause to specify additional options for the partitions.
 
-_expr_::
-An object with the following properties:
+[horizontal#index-with-args]
+expr::
+An object with the following properties.
 
-num_partition;;
-[Optional] An integer that defines the number of partitions to divide into.
-The default value is 8.
-For more details and examples, refer to <<Number of Partitions>>.
+[options="header", cols="1a,4a,1a"]
+|===
+| Name | Description | Schema
 
-nodes;;
-[Optional] An array of strings, specifying a list of nodes.
-The node list to restrict the set of nodes available for placement.
-Refer to the {index-with}[CREATE INDEX] statement for details of the syntax.
-For more details and examples, refer to <<Partition Placement>>.
+| **num_partition** +
+__optional__
+| The number of partitions to divide the index into.
+For more information, see <<Number of Partitions>>.
 
-defer_build;;
-[Optional] Boolean.
-When set to true, the index creation operation queues the task for building the index, but immediately pauses the building of the index.
-Refer to the {index-with}[CREATE INDEX] statement for more details.
+**Default:** `8`
+| Integer
 
-num_replica;;
-[Optional] An integer specifying the number of replicas of the partitioned index to create.
+| **nodes** +
+__optional__
+| A list of nodes to restrict the set of nodes available for placement.
+For more information, see <<Partition Placement>>.
+
+For details of the syntax, see {primary-index-with}[CREATE PRIMARY INDEX] or {index-with}[CREATE INDEX].
+| String array
+
+| **defer_build** +
+__optional__
+| When set to true, the index creation operation queues the task for building the index, but immediately pauses the building of the index.
+
+For more information, see {primary-index-with}[CREATE PRIMARY INDEX] or {index-with}[CREATE INDEX].
+| Boolean
+
+| **num_replica** +
+__optional__
+| The number of replicas of the partitioned index to create.
 If this integer is greater than or equal to the number of index nodes in the cluster, then the index creation will fail.
-Refer to the {index-with}[CREATE INDEX] statement for more details.
 
-secKeySize;;
-[Optional] An integer, specifying the average length of the combined index keys.
-For more details and examples, refer to <<sizing-hints>>.
+For more information, see {primary-index-with}[CREATE PRIMARY INDEX] or {index-with}[CREATE INDEX].
+| Integer
 
-docKeySize;;
-[Optional] An integer, specifying the average length of the document key.
-For more details and examples, refer to <<sizing-hints>>.
+| **secKeySize** +
+__optional__
+| A sizing hint, specifying the average length of the combined index keys.
+For more information, see <<sizing-hints>>.
 
-arrSize;;
-[Optional] An integer, specifying the average length of the array fields.
-For more details and examples, refer to <<sizing-hints>>.
+**Example:** `20`
+| Integer
 
-numDoc;;
-[Optional] An integer, specifying the number of documents in the index.
-For more details and examples, refer to <<sizing-hints>>.
+| **docKeySize** +
+__optional__
+| A sizing hint, specifying the average length of the document key `meta().id`.
+For more information, see <<sizing-hints>>.
 
-residentRatio;;
-[Optional] An integer, specifying the resident ratio of the index.
-For more details and examples, refer to <<sizing-hints>>.
+**Example:** `20`
+|Integer
+
+| **arrSize** +
+__optional__
+| A sizing hint, specifying the average length of the array fields.
+Non-array fields will be ignored.
+For more information, see <<sizing-hints>>.
+
+**Example:** `10`
+| Integer
+
+| **numDoc** +
+__optional__
+| A sizing hint, specifying the number of documents in the index.
+For more information, see <<sizing-hints>>.
+
+**Example:** `7303`
+| Integer
+
+| **residentRatio** +
+__optional__
+| A sizing hint, specifying the resident ratio of the index.
+The resident ratio is the memory usage of the index, as a percentage of its estimated data size.
+For more information, see <<sizing-hints>>.
+
+Couchbase recommends setting this property to `10` or higher, to avoid index build failures and other issues.
+
+**Example:** `50`
+| Integer
+|===
 
 [[partition-keys]]
 == Partition Keys
@@ -113,13 +156,13 @@ Partition keys are made up of one or more terms, with each term being the docume
 The partition keys are hashed to generate a partition ID for each document.
 The partition ID is then used to identify the partition in which the document's index keys would reside.
 
-The partition keys should be immutable, that is, its values shouldn't change once the document is created.
+The partition keys should be immutable: their values should not change once the document is created.
 For example, in the `landmark` keyspace, the field named `activity` almost never changes, and is therefore a good candidate for partition key.
 If the partition keys have changed, then the corresponding document should be deleted and recreated with the new partition keys.
 
 Each term in the partition keys can be any JSON data type: number, string, boolean, array, object, or NULL.
 If a term in the partition keys is missing in the document, the term will have a {sqlpp} MISSING value.
-Partition keys do not support {sqlpp} array expressions, e.g. `ARRAY` \... `FOR` \... `IN`.
+Partition keys do not support {sqlpp} array expressions, such as `ARRAY` \... `FOR` \... `IN`.
 
 The following table lists some examples of partition keys.
 
@@ -198,7 +241,7 @@ CREATE INDEX idx ON route
 // * NULL value
 
 [#doc-keys-as-partition-key]
-== Using Document Keys as Partition Key
+== Use Document Keys as Partition Key
 
 The simplest way to create a partitioned index is to use the document key as the partition key.
 
@@ -223,7 +266,7 @@ With [.cmd]`meta().id` as the partition key, the index keys are evenly distribut
 Every query will gather the qualifying index keys from all the partitions.
 
 [#partition-keys-range-query]
-== Choosing Partition Keys for Range Query
+== Choose Partition Keys for Range Query
 
 An application has the option to choose the partition key that can minimize latency on a range query for a partitioned index.
 For example, let's say a query has an equality predicate based on the field `sourceairport` and `destinationairport`.
@@ -298,7 +341,7 @@ ORDER BY airline
 ====
 
 As with equality predicate in the previous examples, the query engine can select qualifying partitions using an IN clause with matching partitioned keys.
-The following example scans at most three partitions with `sourceairport "SFO"`, `"SJC"`, or `"OAK"`.
+The following example scans at most 3 partitions with `sourceairport "SFO"`, `"SJC"`, or `"OAK"`.
 
 .Create a partitioned index with partition keys matching query IN clause
 ====
@@ -398,12 +441,12 @@ CREATE INDEX idx ON route
 During index rebalancing, the rebalancer takes into account the data skew among the partitions using runtime statistics.
 It tries to even out resource utilization across the index service nodes by moving the partitions across the nodes when possible.
 
-== Choosing Partition Keys for Aggregate Query
+== Choose Partition Keys for Aggregate Query
 
 As with a range query, when an index is partitioned by document key, an aggregate query can gather the qualifying index keys from all the partitions before performing aggregation in the query engine.
-Whenever aggregate pushdown optimization is allowed, the query engine will push down "partial aggregate" calculation to each partition.
+Whenever aggregate pushdown optimization is allowed, the query engine will push down partial aggregate calculation to each partition.
 The query engine then computes the final aggregate result from the partial aggregates across all the partitions.
-For more details on aggregate query optimization, refer to {gbap}[Group By and Aggregate Performance].
+For more information on aggregate query optimization, see {gbap}[Group By and Aggregate Performance].
 
 [.server]
 include::ROOT:partial$query-context.adoc[tag=section]
@@ -425,7 +468,7 @@ GROUP BY sourceairport, destinationairport;
 ----
 ====
 
-The choice of partition keys can also improve aggregate query performance when the query engine can push down the "full aggregate" calculation to the index node.
+The choice of partition keys can also improve aggregate query performance by enabling the query engine to push down the full aggregate calculation to the index node.
 In this case, the query engine does not have to recompute the final aggregate result from the index nodes.
 In addition, certain pushdown optimizations can only be enabled when a full aggregate result is expected from the index node.
 To enable a full aggregate computation, the index must be created with the following requirements:
@@ -501,40 +544,11 @@ NOTE: To avoid any downtime, before removing the partitioned index, first create
 [[sizing-hints]]
 === Sizing Hints
 
-You can optionally provide sizing hints too.
+You can optionally provide sizing hints to help place the partitions.
 Given the sizing hints, the planner uses a formula to estimate the memory and CPU usage of the index.
 Based on the estimated memory and CPU usage, the planner tries to place the partitions according to the free resources available to each index node.
 
-.Sizing Hints
-[cols="2,5,2"]
-|===
-| Optional Sizing Hint | Description | Example
-
-| *secKeySize*
-| The average length of the combined index keys.
-| `20`
-
-| *docKeySize*
-| The average length of the document key `meta().id`.
-| `20`
-
-| *arrSize*
-| The average length of the array field.
-Non-array fields will be ignored.
-| `10`
-
-| *numDoc*
-| The number of documents in the index.
-| `7303`
-
-| *residentRatio*
-| The memory usage of the index, as a percentage of its estimated data size.
-| `50`
-|===
-
-NOTE: Couchbase recommends setting the residentRatio property value over 10 to avoid issues, for example, index build failures.
-
-To provide sizing estimation, you can use a command similar to the following examples.
+For a list of sizing hints and example values, see <<index-with,WITH Clause>>.
 
 [.server]
 include::ROOT:partial$query-context.adoc[tag=section]
@@ -584,24 +598,25 @@ When an index node fails, any in-flight query requests (serviced by the failed n
 Any new query requests requiring the lost partition are then serviced by the partitions in the replica.
 
 [[rebalancing]]
-== Rebalancing
+== Rebalance
 
 When new index nodes are added or removed from the cluster, the rebalance operation attempts to move the index partitions across available index nodes in order to balance resource consumptions.
 At the time of rebalancing, the rebalance operation gathers statistics from each index.
 These statistics are fed to an optimization algorithm to determine the possible placement of each partition in order to minimize the variation of resource consumption across index nodes.
 
 The rebalancer will only attempt to balance resource consumption on a best try basis.
-There are situations where the resource consumption cannot be fully balanced.
+In some situations, the resource consumption cannot be fully balanced.
 For example:
 
 * The index service will not try to move the index if the cost to move an index across nodes is too high.
 * A cluster has a mix of non-partitioned indexes and partitioned indexes.
-* There is data skew in the partitions.
+* The partitions contain skewed data.
 
-In Couchbase Server 7.0 and later, the [def]_index redistribution_ setting enables you to specify how Couchbase Server redistributes indexes on rebalance.
-For further details, refer to {rebalancing-the-index-service}[Rebalancing the Index Service].
+In Couchbase Server 7.0 and later, the index redistribution setting enables you to specify how Couchbase Server redistributes indexes on rebalance.
+For further details, see {rebalancing-the-index-service}[Rebalancing the Index Service].
 
-== Repairing Failed Partitions
+[[repairing-failed-partitions]]
+== Repair Failed Partitions
 
 When an index node fails, the index partitions on that node will be lost.
 The lost partitions can be recovered or repaired when:
@@ -613,12 +628,14 @@ The lost partitions cannot be repaired when the number of remaining nodes is les
 
 == Performance Considerations
 
+// Nothing
+
 === Max Parallelism
 
 Along with aggregate pushdown optimization, an application can further enhance the aggregate query performance by computing aggregation in parallel for each partition in the index service.
 This can be controlled by specifying the parameter `max_parallelism` when issuing a query.
 Starting with Couchbase Server 6.5, `max_parallelism` is set by default to match the number of partitions of the index.
-Note that when `max_parallelism` is set to the default value, the index service uses more CPU and memory since the query traffic is increased.
+When `max_parallelism` is set to the default value, the index service uses more CPU and memory since the query traffic is increased.
 
 ****
 [.edition]#{community}#
