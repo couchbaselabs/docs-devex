@@ -12,6 +12,7 @@ Primary indexes contain a full set of keys in a given keyspace.
 :logical-hierarchy: xref:n1ql-intro/sysinfo.adoc#logical-hierarchy
 :querying-indexes: xref:n1ql-intro/sysinfo.adoc#querying-indexes
 :index-replication: xref:learn:services-and-indexes/indexes/index-replication.adoc#index-replication
+:index-partitioning: xref:n1ql-language-reference/index-partitioning.adoc
 :query-settings: xref:manage:manage-settings/query-settings.adoc
 
 The `CREATE PRIMARY INDEX` statement allows you to create a primary index.
@@ -68,6 +69,9 @@ IMPORTANT: Unnamed primary indexes are dropped by using the `DROP PRIMARY INDEX`
 
 keyspace-ref:: [Required] Specifies the keyspace where the index is created.
 Refer to <<keyspace-ref>> below.
+
+index-partition:: [Optional] Specifies index partitions.
+Refer to <<index-partition>> below.
 
 index-using:: [Optional] Specifies the index type.
 Refer to <<index-using>> below.
@@ -156,6 +160,15 @@ collection::
 For example, `airline` indicates the `airline` collection, assuming the query context is set.
 ====
 
+[[index-partition]]
+=== PARTITION BY HASH Clause
+
+[.edition]#{enterprise}#
+
+Used to partition the index.
+Index partitioning helps increase the query performance by dividing and spreading a large index of documents across multiple nodes, horizontally scaling out an index as needed.
+For more information, see {index-partitioning}[Index Partitioning].
+
 [[index-using]]
 === USING Clause
 
@@ -237,6 +250,9 @@ The indexer will attempt to distribute the replicas based on the server groups i
 
 If the value of this property is not less than the number of index nodes in the cluster, then the index creation will fail.
 ****
+
+Partitioned indexes support further options.
+See {index-partitioning}[].
 
 == Usage
 
