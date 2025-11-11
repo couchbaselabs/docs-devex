@@ -22,7 +22,7 @@ IMPORTANT: The word `AI` is recognized as a keyword, but only when used as part 
 When used by itself as a field name or identifier, you do not need to escape the word `AI` by enclosing it in backticks.
 For example, in a query like `SELECT ai FROM XYZ`, you can use `ai` as a field name without needing to escape it.
 
-CAUTION: If you're using the USING AI statement on Couchbase Capella, we recommend that you use either the cbq shell or SDK.
+CAUTION: If you're using the USING AI statement on Couchbase Capella, we recommend that you use either the cbq shell or an SDK.
 For more information about these limitations and workarounds, see <<using-ai-limitations>>.
 
 == Prerequisites
@@ -69,7 +69,7 @@ See <<example-6>>.
 
 | **creds** +
 __optional__
-| Couchbase Capella credentials to authenticate the request.
+| Couchbase Capella account credentials to authenticate the request. 
 
 Can be one of the following:
 
@@ -77,6 +77,8 @@ Can be one of the following:
 * An object with the fields `user` and `pass`, similar to the xref:n1ql:n1ql-manage/query-settings.adoc#Credentials[creds] request-level parameter.
 
 If specified, this value overrides the xref:n1ql-rest-query:index.adoc#natural_cred[natural_cred] request-level parameter.
+
+This parameter does not support Single Sign-On (SSO), Multi-Factor Authentication (MFA), or social login credentials (such as Google or GitHub).
 
 To ensure your credentials are passed securely, see <<handling-passwords, Handling Passwords>>.
 
@@ -172,13 +174,13 @@ You can provide these details in two ways:
 You can set `natural_cred`, `natural_orgid`, and `natural_context` as request-level parameters, outside the USING AI statement.
 When set, these parameters apply to all subsequent USING AI statements in that session.
 
-For example:
-
-* In the cbq shell, you can set these parameters using the `\set` command. 
+For example, in the cbq shell, you can set these parameters using the `\set` command. 
 See <<example-1>>.
-* In the Query Workbench, you can set these parameters in the xref:tools:query-workbench.adoc#query-preferences[Run-Time Preferences] window as named parameters, without the $ prefix. 
 
-For more information about how to set request-level parameters, see xref:n1ql:n1ql-manage/query-settings.adoc#section_nnj_sjk_k1b[Configure Queries].
+// Commenting out the following lines for now as the statement does not work on the Capella UI. 
+// In the Query Workbench, you can set these parameters in the xref:tools:query-workbench.adoc#query-preferences[Query Settings] window as named parameters, without the $ prefix. 
+
+// For more information about how to set request-level parameters, see xref:n1ql:n1ql-manage/query-settings.adoc#section_nnj_sjk_k1b[Configure Queries].
 
 Once configured, you do not need to specify `creds`, `orgId`, or `keyspaces` in the WITH clause.
 
@@ -705,13 +707,15 @@ List the names and cities of hotels with a rating greater than 4;
 [[using-ai-limitations]]
 == Limitations 
 
-The USING AI statement provides the best results when run from Couchbase Server 8.0 instances (both Enterprise and Community Editions).
+When using the statement, consider the following:
 
-When using the statement in Couchbase Capella, consider the following limitations and workarounds.
-
-* The USING AI statement does not work on the Capella UI.
-* To run the statement on Capella, use either the cbq shell or SDK.
-* To generate SQL++ queries from natural language requests on the Capella UI, use xref:get-started:capella-iq/work-with-capellaiq.adoc[Capella iQ] instead.
+* To run the statement on Capella, use either the cbq shell or an SDK.
+The statement does not function as expected when executed directly through the Capella UI (Query Workbench).
+* For similar functionality within the Capella UI, use xref:get-started:capella-iq/work-with-capellaiq.adoc[Capella iQ] instead.
+* You cannot use the `creds` and `natural_cred` parameters with the following types of credentials:
+** Single Sign-On (SSO)
+** Multi-Factor Authentication (MFA)
+** Social logins (such as Google or GitHub)
 
 == Related Links
 
