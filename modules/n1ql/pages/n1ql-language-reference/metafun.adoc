@@ -428,8 +428,7 @@ SELECT `Flavor` FROM EVALUATE("INFER `travel-sample`")[0] inf;
 === Description
 
 This function extracts Data Definition Language (DDL) statements of buckets and returns them as an array of strings.
-It can retrieve definitions for buckets, scopes, collections, indexes, sequences, and functions. 
-It can also retrieve PREPARE statements for prepared queries.
+It retrieves definitions for buckets, scopes, collections, indexes, sequences, functions, and prepared statements.
 
 You can use these definitions for purposes such as replication, backup, or auditing.
 
@@ -494,12 +493,12 @@ Accepts either a numeric value or an array of strings, but not both.
 ! `"sequence"`
 ! `16`
 
-! CREATE or REPLACE FUNCTION
+! CREATE OR REPLACE FUNCTION
 ! `"function"`
 ! `32`
 
 ! PREPARE
-! `"prepare"`
+! `"prepared"`
 ! `64`
 !===
 
@@ -597,6 +596,32 @@ In this query, the value `3` represents the sum of the flags for bucket (`1`) an
       "CREATE SCOPE `travel-sample`.`tenant_agent_02`;",
       "CREATE SCOPE `travel-sample`.`tenant_agent_03`;",
       "CREATE SCOPE `travel-sample`.`tenant_agent_04`;"
+    ]
+  }
+]
+----
+====
+
+[[finderr-ex4,EXTRACTDDL() Example 4]]
+.Extracting CREATE FUNCTION and PREPARE statements from the `travel-sample` bucket
+====
+.Query
+[source,sqlpp]
+----
+SELECT extractddl("travel-sample",{"flags":["function","prepared"]});
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "CREATE OR REPLACE FUNCTION `celsius`(...) 
+          LANGUAGE INLINE AS (args[0] - 32) * 5/9;",
+      "PREPARE SELECT * FROM route\n
+              WHERE airline = \"FL\";",
+      "PREPARE NameParam AS\nSELECT * FROM hotel\n
+          WHERE city=$city AND country=$country;"
     ]
   }
 ]
