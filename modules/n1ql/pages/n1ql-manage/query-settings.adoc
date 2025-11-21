@@ -328,23 +328,32 @@ Command Line::
 --
 To set cluster-level settings at the command line, use the `couchbase-cli setting-query` command.
 
+// tag::cluster-examples[]
+In the following examples:
+
+* `$BASE_URL` is the protocol, host, and port -- for example, `+http://localhost:8091+`.
+* `$USER` is the user name.
+* `$PASSWORD` is the password.
+// end::cluster-examples[]
+
 '''
 
-The following example retrieves the current cluster-level settings:
+This example retrieves the current cluster-level settings:
 
 [source,sh]
 ----
-couchbase-cli setting-query -c http://localhost:8091 -u Administrator \
- -p password --get
+couchbase-cli setting-query -c $BASE_URL -u $USER \
+ -p $PASSWORD --get
 ----
 
-The following example sets the cluster-level maximum parallelism and log level settings:
+This example sets the cluster-level maximum parallelism and log level settings:
 
 [source,sh]
 ----
-couchbase-cli setting-query -c http://localhost:8091 -u Administrator \
- -p password --set --log-level debug --max-parallelism 4
+couchbase-cli setting-query -c $BASE_URL -u $USER \
+ -p $PASSWORD --set --log-level debug --max-parallelism 4
 ----
+
 --
 
 REST API::
@@ -352,25 +361,28 @@ REST API::
 --
 To set cluster-level settings with the REST API, specify the parameters in the request body.
 
+include::query-settings.adoc[tag=cluster-examples]
+
 '''
 
-The following example retrieves the current cluster-level settings:
+This example retrieves the current cluster-level settings:
 
 [source,sh]
 ----
-curl -v -u Administrator:password \
-http://localhost:8091/settings/querySettings
+curl -v -u $USER:$PASSWORD \
+$BASE_URL/settings/querySettings
 ----
 
-The following example sets the cluster-level maximum parallelism and log level settings:
+This example sets the cluster-level maximum parallelism and log level settings:
 
 [source,sh]
 ----
-curl -v -X POST -u Administrator:password \
-http://localhost:8091/settings/querySettings \
+curl -v -X POST -u $USER:$PASSWORD \
+$BASE_URL/settings/querySettings \
 -d 'queryLogLevel=debug' \
 -d 'queryMaxParallelism=4'
 ----
+
 --
 ====
 
@@ -379,8 +391,9 @@ The table below contains details of all cluster-level query settings.
 .Cluster-Level Query Settings
 include::n1ql-rest-settings:index.adoc[tag=Settings]
 
-[[Access,Access]]
-**Access**
+[#Access]
+=== Access
+
 include::n1ql-rest-settings:index.adoc[tag=Access]
 
 [[service-level-query-settings]]
@@ -401,14 +414,20 @@ To set node-level settings with the REST API, specify the parameters in the requ
 
 '''
 
-The following example retrieves the current node-level settings:
+In the following examples:
+
+* `$BASE_URL` is the protocol, host, and port -- for example, `+http://localhost:8093+`.
+* `$USER` is the user name.
+* `$PASSWORD` is the password.
+
+This example retrieves the current node-level settings:
 
 [source,sh]
 ----
 include::example$settings/node-level-settings.sh[tag=curl]
 ----
 
-The following example sets the node-level profile parameter:
+This example sets the node-level profile parameter:
 
 [source,sh]
 ----
@@ -427,9 +446,20 @@ The table below contains details of all node-level query settings.
 [[Settings]]
 include::n1ql-rest-admin:index.adoc[tag=Settings]
 
-[[Logging_Parameters,Logging Parameters]]
-**Logging Parameters**
+[#Logging_Parameters]
+=== Logging Parameters
+
 include::n1ql-rest-admin:index.adoc[tag=Logging_Parameters]
+
+[#Logging_Parameters_Plan]
+=== Plan Qualifier
+
+include::n1ql-rest-admin:index.adoc[tag=Logging_Parameters_Plan]
+
+[#Logging_Parameters_Plan_Pairs]
+=== Field:Value Pairs
+
+include::n1ql-rest-admin:index.adoc[tag=Logging_Parameters_Plan_Pairs]
 
 [#section_nnj_sjk_k1b]
 == Request-Level Parameters
@@ -459,7 +489,7 @@ To set request-level preferences in the Query Workbench:
 
 image::tools:query-workbench-preferences.png["The Run-Time Preferences window",266,350]
 
-For more examples, see the xref:guides:transactions.adoc#settings[Couchbase Transactions] guide.
+For more information, see xref:tools:query-workbench.adoc#query-preferences[Query Preferences].
 --
 
 Command Line::
@@ -470,7 +500,7 @@ The parameter name must be prefixed by a hyphen.
 
 '''
 
-The following example sets the request-level timeout, pretty-print, and max parallelism parameters, and runs a query:
+This example sets the request-level timeout, pretty-print, and max parallelism parameters, and runs a query:
 
 [source,sqlpp]
 ----
@@ -480,7 +510,7 @@ The following example sets the request-level timeout, pretty-print, and max para
 SELECT * FROM "world" AS hello;
 ----
 
-For more examples, see {cbq-shell}#cbq-parameter-manipulation[Parameter Manipulation] in the cbq documentation.
+For more information, see {cbq-shell}#cbq-parameter-manipulation[Parameter Manipulation] in the cbq documentation.
 --
 
 REST API::
@@ -488,13 +518,19 @@ REST API::
 --
 To set request-level parameters with the REST API, specify the parameters in the request body or the query URI.
 
+In the following examples:
+
+* `$BASE_URL` is the protocol, host, and port -- for example, `+http://localhost:8093+`.
+* `$USER` is the user name.
+* `$PASSWORD` is the password.
+
 '''
 
-The following example sets the request-level timeout, pretty-print, and max parallelism parameters, and runs a query:
+This example sets the request-level timeout, pretty-print, and max parallelism parameters, and runs a query:
 
 [source,sh]
 ----
-curl http://localhost:8093/query/service -u Administrator:password \
+curl $BASE_URL/query/service -u $USER:$PASSWORD \
   -d 'statement=SELECT * FROM "world" AS hello;
     & timeout=30m
     & pretty=true
@@ -510,12 +546,13 @@ The table below contains details of all request-level parameters, along with exa
 .Request-Level Parameters
 include::n1ql-rest-query:index.adoc[tag=Request]
 
-[[Credentials,Credentials]]
-**Credentials**
+[#Credentials]
+=== Credentials
+
 include::n1ql-rest-query:index.adoc[tag=Credentials]
 
-[discrete,#transactional-scan-consistency]
-===== Transactional Scan Consistency
+[#transactional-scan-consistency]
+=== Transactional Scan Consistency
 
 If the request contains a `BEGIN TRANSACTION` statement, or a DML statement with the <<tximplicit,tximplicit>> parameter set to `true`, then the <<scan_consistency,scan_consistency>> parameter sets the transactional scan consistency.
 If you specify a transactional scan consistency of `request_plus`, `statement_plus`, or `at_plus`, or if you specify no transactional scan consistency, the transactional scan consistency is set to `request_plus`; otherwise, the transactional scan consistency is set as specified.
@@ -589,6 +626,12 @@ You can supply the values for placeholder parameters using any of the methods us
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
+In the REST API examples:
+
+* `$BASE_URL` is the protocol, host, and port -- for example, `+http://localhost:8093+`.
+* `$USER` is the user name.
+* `$PASSWORD` is the password.
+
 .{example-caption} {counter:example}. Named Parameters
 {blank}
 
@@ -647,8 +690,6 @@ REST API::
 --
 include::query-settings.adoc[tag=intro-names]
 The parameter values are supplied using the Query Service REST API.
-
-'''
 
 [source,sh]
 ----
@@ -718,8 +759,6 @@ REST API::
 include::query-settings.adoc[tag=intro-numbers]
 The parameter values are supplied using the Query Service REST API.
 
-'''
-
 [source,sh]
 ----
 curl -v $BASE_URL/query/service \
@@ -784,8 +823,6 @@ REST API::
 --
 include::query-settings.adoc[tag=intro-positions]
 The parameter values are supplied using the Query Service REST API.
-
-'''
 
 [source,sh]
 ----
