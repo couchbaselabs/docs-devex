@@ -1214,7 +1214,13 @@ While you can create an index on a specific extended attribute like `META().xatt
 +
 Attempting to select the entire `META().xattrs` object will return an empty result. 
 +
-NOTE: Starting with Couchbase Server 8.0, you can include up to 15 XATTRs per query.
+[NOTE]
+====
+* Starting with Couchbase Server 8.0, you can include up to 15 XATTRs per query.
+* You can also use the `META().xattrs` property to access xref:learn:data/extended-attributes-fundamentals.adoc#virtual-extended-attributes[virtual XATTRs]
+(see <<meta-ex4>>).
+However, this is an expensive operation and may increase query latency.
+====
 
 === Return Value
 
@@ -1329,6 +1335,40 @@ LIMIT 3;
     "id": "route_10138"
   }
 ]
+----
+====
+
+[[meta-ex4, Example 4]]
+.Return a virtual XATTR
+====
+.Query
+[source,sqlpp]
+----
+SELECT META().xattrs.`$document`
+FROM airline
+USE KEYS ["airline_10123"];
+----
+.Results
+[source,json]
+----
+[{
+    "$document": {
+        "CAS": "0x1877771a5c980000",
+        "datatype": [
+            "snappy",
+            "json"
+        ],
+        "deleted": false,
+        "exptime": 0,
+        "flags": 0,
+        "last_modified": "1763008734",
+        "revid": "1",
+        "seqno": "0x0000000000000025",
+        "value_bytes": 118,
+        "value_crc32c": "0x85aa593e",
+        "vbucket_uuid": "0x0000e287931a14fb"
+    }
+}]
 ----
 ====
 
