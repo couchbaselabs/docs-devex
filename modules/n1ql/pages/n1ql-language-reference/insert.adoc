@@ -61,18 +61,16 @@ See and for details.
 
 === Security Requirements
 
-You should have read-write permission to the keyspace, to be able to insert documents into a keyspace.
-Any user who has the keyspace credentials or any Couchbase administrator should be able to insert documents into a keyspace.
-This includes the keyspace administrator for the specified keyspace, the cluster administrator, and the full administrator roles.
-See {roles}[] for details about access privileges for various administrators.
+To insert documents into a keyspace, you must have write privileges on the target keyspace. 
+Any user with appropriate roles, such as Organization Owner, Project Owner, or Data Writer, can insert documents into a keyspace. 
+For more information about roles and access privileges, see {roles}[].
 
 WARNING: You cannot insert documents into a SASL bucket if you have a read-only role for the SASL bucket.
 
 === RBAC Privileges
 
-To execute the INSERT statement, the client must have the `Write` privilege on the target keyspace.
-If the statement has any SELECT or RETURNING data-read clauses, then they also need the `Read` privilege on the keyspaces referred in the respective clauses.
-
+To execute the INSERT statement, your client must have the `Write` privilege on the target keyspace.
+If the statement includes any clauses that reads data, such as a SELECT clause or a RETURNING clause, the client must also have `Read` privileges on the keyspaces referenced in those clauses.
 For more information about access privileges, see xref:clusters:manage-database-users.adoc[].
 
 .RBAC Examples
@@ -89,7 +87,7 @@ INSERT INTO hotel (KEY, VALUE)
 VALUES ("key1", { "type" : "hotel", "name" : "new hotel" });
 ----
 
-To execute the following statement, your client must have the `Write` and `Read` privileges on `hotel`.
+To execute the following statement, your client must have both `Write` and `Read` privileges on `hotel`.
 
 [source,sqlpp]
 ----
@@ -97,7 +95,7 @@ INSERT INTO hotel (KEY, VALUE)
 VALUES ("key1", { "type" : "hotel", "name" : "new hotel" }) RETURNING *;
 ----
 
-To execute the following statement, your client must have the `Write` privilege on `hotel` and `Read` privilege on `pass:c[`beer-sample`]`.
+To execute the following statement, your client must have the `Write` privilege on `hotel` and the `Read` privilege on `beer-sample`.
 
 [source,sqlpp]
 ----
