@@ -36,13 +36,12 @@ Refer to xref:clusters:data-service/import-data-documents.adoc#import-sample-dat
 
 == Prerequisites
 
-To execute the `UPSERT` statement, your client must have the `Write` privilege on the target keyspace.
-If the statement has any RETURNING clauses, then the `Read` privilege is also required on the keyspaces referred in the respective clauses.
+To execute the UPSERT statement, your client must have the `Write` privilege on the target keyspace.
+If the statement includes any RETURNING clauses, the client also requires the `Read` privilege on the keyspaces referenced in those clauses.
 For more information about access privileges, see xref:clusters:manage-database-users.adoc[].
 
-[NOTE]
-A user with the _Data Writer_ privilege may set documents to expire.
-When the document expires, the data service deletes the document, even though the user may not have the _Query Delete_ privilege.
+NOTE: A user with the xref:projects:project-roles.adoc#project-cluster-data-reader-writer[Data Writer] privilege may set documents to expire.
+When the document expires, the data service deletes the document, even though the user may not have the xref:clusters:manage-database-users.adoc#database-role-write[Write] privilege.
 
 .RBAC Examples
 [%collapsible]
@@ -50,14 +49,14 @@ When the document expires, the data service deletes the document, even though th
 ======
 include::ROOT:partial$query-context.adoc[tag=example]
 
-To execute the following statement, your client must have the _Query Update_ and _Query Insert_ privileges on `hotel`.
+To execute the following statement, your client must have the `Write` privilege on `hotel`.
 
 [source,sqlpp]
 ----
 include::example$dml/upsert-rbac.n1ql[]
 ----
 
-To execute the following statement, your client must have the _Query Update_ and _Query Insert_ privileges on `hotel` and the _Query Select_ privilege on `hotel` also (for RETURNING clause).
+To execute the following statement, your client must have both the `Write` privilege and the `Read` privilege (for the RETURNING clause) on `hotel`.
 
 [source,sqlpp]
 ----
@@ -70,7 +69,7 @@ include::example$dml/upsert-rbac-return.n1ql[]
 include::example$dml/upsert-rbac-return.jsonc[]
 ----
 
-To execute the following statement, your client must have the _Query Update_ and _Query Insert_ privileges on `landmark` and _Query Select_ privilege on `pass:c[`beer-sample`]`.
+To execute the following statement, your client must have the `Write` privilege on `landmark` and the `Read` privilege on `beer-sample`.
 
 [source,sqlpp]
 ----
