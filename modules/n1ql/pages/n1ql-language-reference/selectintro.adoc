@@ -166,15 +166,16 @@ For example, sort phase can be skipped when there is no ORDER BY clause in the q
 
 The following diagram shows the possible elements and operations during query execution.
 
+[[query-execution-phases]]
 .Query Execution Phases
 [plantuml,query-service,svg]
 ....
 include::indexes:partial$diagrams/query-service.puml[]
 ....
 
-Some phases are done serially while others are done in parallel, as specified by their parent operator.
+Some phases execute serially, while others execute in parallel, as determined by their parent operator.
 
-The below table summarizes all the Query Phases that might be used in an Execution Plan:
+The following table summarizes all the Query Phases used in an Execution Plan:
 
 [cols="1,4"]
 |===
@@ -184,7 +185,7 @@ The below table summarizes all the Query Phases that might be used in an Executi
 | Analyzes the query and available access path options for each keyspace in the query to create a query plan and execution infrastructure.
 
 | Plan
-| Selects the access path, determines the Join order, determines the type of Joins, and then creates the infrastructure needed to execute the plan.
+| Selects the access path, determines the join order and join types, and then creates the infrastructure needed to execute the plan.
 
 | Scan
 | Scans the data from the Index Service.
@@ -204,8 +205,11 @@ The below table summarizes all the Query Phases that might be used in an Executi
 | Aggregate
 | Performs aggregating functions and window functions.
 
+| Project
+| Retrieves only the fields required for the client.
+
 | Sort
-| Orders and sorts items in the resultset in the order specified by the ORDER BY clause
+| Orders and sorts items in the result set in the order specified by the ORDER BY clause. 
 
 | Offset
 | Skips the first _n_ items in the result object as specified by the OFFSET clause.
@@ -213,8 +217,9 @@ The below table summarizes all the Query Phases that might be used in an Executi
 | Limit
 | Limits the number of results returned using the LIMIT clause.
 
-| Project
-| Receives only the fields needed for final displaying to the user.
+| Stream
+| Streams the final results back to the client.
+
 |===
 
 The possible elements and operations in a query include:
