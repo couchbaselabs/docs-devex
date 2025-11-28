@@ -11,6 +11,11 @@ include::partial$n1ql-language-reference/collapsible-style.adoc[]
 
 == Prerequisites
 
+ifdef::granular-rbac[]
+To execute the EXPLAIN statement, your client must have the privileges required for the {sqlpp} statement that is being explained.
+For more details about cluster access privileges, see xref:clusters:manage-database-users.adoc[].
+endif::granular-rbac[]
+
 To execute the EXPLAIN statement, your client must have the same privileges required to execute the query being explained.
 For example, if you are explaining an INSERT statement, the client must have the `Write` privilege on the target keyspace.
 
@@ -22,6 +27,10 @@ For more information about access privileges, see xref:clusters:manage-database-
 ======
 include::ROOT:partial$query-context.adoc[tag=example]
 
+ifdef::granular-rbac[]
+To execute the following statement, your client must have the _Query Insert_ privilege on the `landmark` keyspace and the _Query Select_ privilege on the `pass:c[`beer-sample`]` keyspace.
+endif::granular-rbac[]
+
 To execute the following statement, your client must have the `Write` privilege on `landmark` and the `Read` privilege on `beer-sample`.
 
 [source,sqlpp]
@@ -30,6 +39,10 @@ EXPLAIN INSERT INTO landmark (KEY foo, VALUE bar)
         SELECT META(doc).id AS foo, doc AS bar
         FROM `beer-sample` AS doc WHERE type = "brewery";
 ----
+
+ifdef::granular-rbac[]
+To execute the following statement, your client must have the _Query Insert_, _Query Update_, and _Query Select_ privileges on the `testbucket` keyspace.
+endif::granular-rbac[]
 
 To execute the following statement, your client must have both `Write` and `Read` privileges on `testbucket`.
 
