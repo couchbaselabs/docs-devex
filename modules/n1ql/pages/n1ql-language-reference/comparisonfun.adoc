@@ -2,12 +2,107 @@
 :description: Comparison functions determine the greatest or least value from a set of values.
 :page-topic-type: reference
 
+[abstract]
 {description}
 
-GREATEST(expression1, expression2, \...)
+== GREATEST 
 
-Largest non-NULL, non-MISSING value if the values are of the same type; otherwise NULL.
+=== Description
 
-LEAST(expression1, expression2, \...)
+Determines the largest non-NULL, non-MISSING value from a list of expressions.
 
-Returns smallest non-NULL, non-MISSING value if the values are of the same type, otherwise returns NULL.
+* Requires at least two expressions.
+* All expressions must be of the same type; otherwise, the function returns `NULL`.
+* Ignores `NULL` and `MISSING` values when evaluating the greatest value.
+
+=== Syntax
+
+[subs=normal]
+....
+GREATEST (expression1, expression2, ..., expressionN)
+....
+
+==== Arguments
+
+expression1, expression2, ..., expressionN::
+
+Any valid expression. 
+You must specify at least two expressions.
+The expressions must be of the same type (for example, all numbers or all strings).
+
+=== Return Values
+
+The function returns:
+
+* The largest value among the provided expressions, if all expressions are of the same type.  
+* `NULL` if the expressions are of different types or if all expressions are `NULL` or `MISSING`.
+
+=== Example
+
+.Find the greatest value among three numbers
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT GREATEST(10, 20, 15) AS greatest_value;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "greatest_value": 20
+  }
+]
+----
+====
+
+== LEAST
+
+=== Description
+
+Determines the smallest non-NULL, non-MISSING value from a list of expressions.
+
+* Requires at least two expressions.
+* All expressions must be of the same type; otherwise, the function returns `NULL`.
+* Ignores `NULL` and `MISSING` values when evaluating the least value.
+* Returns `NULL` if all expressions are `NULL` or `MISSING`.
+
+=== Syntax
+
+[subs=normal]
+....
+LEAST (expr1, expr2, ..., exprN)
+....
+
+==== Arguments
+
+expr1, expr2, ..., exprN::
+Any valid expression.
+You can specify two or more expressions.
+
+=== Return Values
+If all expressions are of the same type, the function returns the smallest non-NULL, non-MISSING value.
+If the expressions are of different types, the function returns NULL.
+
+=== Example
+
+.Find the least value among three numbers
+====
+.Query
+[source,sqlpp]
+----
+SELECT LEAST(10, 20, 15) AS least_value;
+----
+.Result
+[source,json]
+----
+[
+  {
+    "least_value": 10
+  }
+]
+----
+====
