@@ -23,6 +23,7 @@ The Query node analyzes the query, uses metadata on underlying objects to figure
 During execution, depending on the query, using applicable indexes, the Query node works with the Index and Data nodes to retrieve and perform the planned operations.
 Because Couchbase is a modular clustered database, you scale out data, index, and query services to fit your performance and availability goals.
 
+.Query Execution Overview
 [plantuml,query-execution,svg]
 ....
 include::partial$diagrams/query-execution.puml[]
@@ -33,19 +34,23 @@ include::partial$diagrams/query-execution.puml[]
 
 The following figure shows all the possible phases a SELECT query goes through to return the results.
 Not all queries need to go through every phase, some go through many of these phases multiple times.
-For example, the Sort phase can be skipped when there is no ORDER BY clause in the query; and the Scan-Fetch-Join phases will execute multiple times for correlated subqueries.
+For example, the Query Service skips the Sort phase when it does not include an ORDER BY clause; and the Scan-Fetch-Join phases execute multiple times for correlated subqueries.
 
+.Query Execution Phases
 [plantuml,query-service,svg]
 ....
 include::partial$diagrams/query-service.puml[]
 ....
 
-http://blog.couchbase.com/sql-for-documents-n1ql-brief-introduction-to-query-planning[This brief introduction to query planning^] has details of query planner.
-When the Index path is chosen, query engine requests the scan by providing the range of values to return.
-This range is represented as a SPAN in the query plan.
-The index spans will play major roles in optimal plan generation and execution.
-Here, we discuss how the Index spans are generated from the query predicates (filters).
+During query execution, the query planner selects the most appropriate index path based on the query predicates (filters). 
+Once the index path is chosen, the query engine requests the Index Service to perform a scan. 
+This scan is defined by a specific range of values that the query engine needs to retrieve. 
+These ranges are represented as spans in the query plan. 
+A span defines the start and end values for the scan, along with whether these values are inclusive or exclusive. 
+It plays a critical role in optimizing both the query plan generation and its execution. 
+For more information about index spans, see <<spans-overview>>.
 
+[[spans-overview]]
 == Spans Overview
 
 FILTER, JOIN, and PROJECT are fundamental operations of database query processing.
