@@ -11,41 +11,45 @@
 
 Determines the largest non-NULL, non-MISSING value from a list of expressions.
 
-* Requires at least two expressions.
-* All expressions must be of the same type; otherwise, the function returns `NULL`.
-* Ignores `NULL` and `MISSING` values when evaluating the greatest value.
+The function requires at least two expressions and ignores `NULL` and `MISSING` values when evaluating the greatest value.
 
 === Syntax
 
 [subs=normal]
 ....
-GREATEST (expression1, expression2, ..., expressionN)
+GREATEST (expression1, expression2, ...)
 ....
 
 ==== Arguments
 
-expression1, expression2, ..., expressionN::
-
-Any valid expression. 
+expression1, expression2, ...::
+The expressions to compare.
 You must specify at least two expressions.
-The expressions must be of the same type (for example, all numbers or all strings).
 
-=== Return Values
+=== Return Value
 
 The function returns:
 
-* The largest value among the provided expressions, if all expressions are of the same type.  
-* `NULL` if the expressions are of different types or if all expressions are `NULL` or `MISSING`.
+* The largest value among the provided expressions. 
+* `NULL` if all expressions are `NULL` or `MISSING`.
 
 === Example
 
-.Find the greatest value among three numbers
+.Find the highest rating across all review categories for a hotel
 ====
 
 .Query
 [source,sqlpp]
 ----
-SELECT GREATEST(10, 20, 15) AS greatest_value;
+SELECT GREATEST(
+    reviews[0].ratings.Service,
+    reviews[0].ratings.Cleanliness,
+    reviews[0].ratings.Overall,
+    reviews[0].ratings.Location,
+    reviews[0].ratings.Rooms
+) AS highest_rating
+FROM `travel-sample`.`inventory`.hotel
+WHERE id = 10025;
 ----
 
 .Result
@@ -53,7 +57,7 @@ SELECT GREATEST(10, 20, 15) AS greatest_value;
 ----
 [
   {
-    "greatest_value": 20
+    "highest_rating": 5
   }
 ]
 ----
@@ -65,43 +69,53 @@ SELECT GREATEST(10, 20, 15) AS greatest_value;
 
 Determines the smallest non-NULL, non-MISSING value from a list of expressions.
 
-* Requires at least two expressions.
-* All expressions must be of the same type; otherwise, the function returns `NULL`.
-* Ignores `NULL` and `MISSING` values when evaluating the least value.
-* Returns `NULL` if all expressions are `NULL` or `MISSING`.
+The function requires at least two expressions and ignores `NULL` and `MISSING` values when evaluating the least value.
 
 === Syntax
 
 [subs=normal]
 ....
-LEAST (expr1, expr2, ..., exprN)
+LEAST (expression1, expression2, ...)
 ....
 
 ==== Arguments
 
-expr1, expr2, ..., exprN::
-Any valid expression.
-You can specify two or more expressions.
+expression1, expression2, ...::
+The expressions to compare.
+You must specify at least two expressions.
 
-=== Return Values
-If all expressions are of the same type, the function returns the smallest non-NULL, non-MISSING value.
-If the expressions are of different types, the function returns NULL.
+=== Return Value
+
+The function returns:
+
+* The smallest value among the provided expressions.
+* `NULL` if all expressions are `NULL` or `MISSING`.
 
 === Example
 
-.Find the least value among three numbers
+.Find the least rating across all review categories for a hotel
 ====
+
 .Query
 [source,sqlpp]
 ----
-SELECT LEAST(10, 20, 15) AS least_value;
+SELECT LEAST(
+    reviews[0].ratings.Service,
+    reviews[0].ratings.Cleanliness,
+    reviews[0].ratings.Overall,
+    reviews[0].ratings.Location,
+    reviews[0].ratings.Rooms
+) AS highest_rating
+FROM `travel-sample`.`inventory`.hotel
+WHERE id = 10025;
 ----
+
 .Result
 [source,json]
 ----
 [
   {
-    "least_value": 10
+    "lowest_rating": 3
   }
 ]
 ----
