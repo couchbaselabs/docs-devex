@@ -1,9 +1,9 @@
 = Collect Additional Information with Search Facets
-:page-topic-type: guide
+:page-topic-type: concept
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
 :description: Use Search facets to collect specific, additional information about the documents included in results for a specific search query.
-:page-aliases: fts:fts-search-facets.adoc
+:page-aliases: fts:fts-search-facets.adoc, fts:fts-search-response-facets.adoc
 
 [abstract]
 {description}
@@ -21,6 +21,8 @@ Use a term facet to return a count for the number of documents in your search re
 
 TIP: For best results with a term facet, use the xref:search:default-analyzers-reference.adoc#keyword[keyword analyzer] on the field you want to use for the facet.
 
+Term facets work best when you have a field with a limited range of values, such as a type or tags field.
+
 For example, the following Search request searches for the word `water` in the Search index, and calculates a term facet for the value of the `country` field: 
 
 [source,console]
@@ -34,7 +36,7 @@ http://{HOSTNAME}:8094/api/bucket/{BUCKET_NAME}/scope/{SCOPE_NAME}/index/{INDEX_
         "query": "water"
      },
     "facets": {
-         "type": {
+         "country": {
              "size": 5,
              "field": "country"
          }
@@ -47,7 +49,7 @@ At the end of your search results, the Search Service would return the following
 [source,json]
 ----
 "facets": {
-    "type": {
+    "country": {
         "field": "country",
         "total": 94,
         "missing": 0,
@@ -70,6 +72,32 @@ At the end of your search results, the Search Service would return the following
 }
 ----
 
+Term facet results include the following information, under the named facet object you created in your query: 
+
+|====
+|Key |Description
+
+|field
+|The name of the field where the Search Service collected facet information.
+
+|total
+a|The total number of values checked for returning the facet.
+
+If every document had a single term, this value would be the total number of documents returned in your search results.
+This can change if you have multiple partitions in your Search index, or your `size` parameter is not large enough to accommodate all of the unique terms for your facet.
+
+|missing 
+|The number of documents in your search results that did not have a value in the field you specified for the facet.
+
+|other 
+|The number of documents in your search results that did have a value in the field you specified, but did not fit within the `size` parameter for the facet.
+
+|terms
+a|The unique terms found for the facet.
+
+Includes the specific term and the count of how many documents had that term in your specified field.
+|====
+
 xref:search:simple-search-ui.adoc[Run a search with the {page-ui-name}] to view facet information in a table format. 
 
 For more information about how to configure a term facet in your Search query, see xref:search-request-params.adoc#facets[facets] or xref:search-request-params.adoc#facet-name[\{facet-name} Object].
@@ -85,6 +113,8 @@ For example, you could define numeric range facets to collect information about 
 
 * You could define a numeric range facet, `high`, for ABV values greater than 7. 
 * You could define another numeric range facet, `low`, for ABV values less than 7. 
+
+You could define a `min` and `max` for every numeric range, or just the `min` or `max` value.
 
 The curl request for your query and the specific facet information would be: 
 
@@ -143,6 +173,33 @@ At the end of your search results, the Search Service would return the following
 }
 ----
 
+Numeric range facet results include the following information, under the named facet object you created in your query: 
+
+|====
+|Key |Description
+
+|field
+|The name of the field where the Search Service collected facet information.
+
+|total
+a|The total number of values checked for returning the facet.
+
+This value should be the total number of documents returned in your search results.
+This can change if you have multiple partitions in your Search index, or your `size` parameter is not large enough to accommodate all of the facet categories.
+
+|missing 
+|The number of documents in your search results that did not have a value in the field you specified for the facet.
+
+|other 
+|The number of documents in your search results that did have a value in the field you specified, but did not fit within the `size` parameter for the facet.
+
+|numeric_ranges
+a|Includes an object for each numeric range you defined in your facet.
+
+Each object includes the name of the numeric range, the `min` and `max` values that defined the range, and the number of documents that had a value that matched that range. 
+
+|====
+
 xref:search:simple-search-ui.adoc[Run a search with the {page-ui-name}] to view facet information in a table format. 
 
 For more information about how to configure a numeric range facet in your Search query, see:
@@ -162,7 +219,9 @@ Make sure to use a xref:search:customize-index.adoc#date-time[date/time parser] 
 For example, you could define date range facets to collect information about the last time a document was updated in the `beer-sample` sample data:
 
 * You could define a date range facet, `new`, for dates later than August 1st, 2010. 
-* You could define another numeric range facet, `old`, for dates earlier than August 1st, 2010. 
+* You could define another numeric range facet, `old`, for dates earlier than August 1st, 2010.
+
+You could define a `start` and `end` for every numeric range, or just the `start` or `end` value.
 
 The curl request for your query and the specific facet information would be: 
 
@@ -176,7 +235,7 @@ http://{HOSTNAME}:8094/api/bucket/beer-sample/scope/_default/index/beer-index/qu
         "term": "united"
     },
     "facets": {
-        "types": {
+        "updated": {
             "size": 10,
             "field": "updated",
             "date_ranges": [
@@ -199,7 +258,7 @@ At the end of your search results, the Search Service would return the following
 [source,json]
 ----
 "facets": {
-    "types": {
+    "updated": {
         "field": "updated",
         "total": 954,
         "missing": 0,
@@ -219,6 +278,33 @@ At the end of your search results, the Search Service would return the following
     }
 }
 ----
+
+Date range facet results include the following information, under the named facet object you created in your query: 
+
+|====
+|Key |Description
+
+|field
+|The name of the field where the Search Service collected facet information.
+
+|total
+a|The total number of values checked for returning the facet.
+
+This value should be the total number of documents returned in your search results.
+This can change if you have multiple partitions in your Search index, or your `size` parameter is not large enough to accommodate all of the facet categories.
+
+|missing 
+|The number of documents in your search results that did not have a value in the field you specified for the facet.
+
+|other 
+|The number of documents in your search results that did have a value in the field you specified, but did not fit within the `size` parameter for the facet.
+
+|date_ranges
+a|Includes an object for each date range you defined in your facet.
+
+Each object includes the name of the date range, the `start` and `end` values that defined the range, and the number of documents that had a value that matched that range. 
+
+|====
 
 xref:search:simple-search-ui.adoc[Run a search with the {page-ui-name}] to view facet information in a table format. 
 
