@@ -70,7 +70,13 @@ This means the total size of the index can be much bigger than the amount of mem
 In Couchbase Server Enterprise Edition, standard index storage is supported by the Plasma storage engine.
 In this case, compaction is handled automatically.
 
-However, for installations of Couchbase Server Enterprise Edition running on Linux, hole punching is required to enable auto-compaction of Global Secondary Indexes using standard index-storage.
+Each index is represented on disk by up to 4 Log Structured Stores (LSS).
+A single LSS is made up of multiple append-only segment files.
+Index compaction and space reclamation are triggered when the LSS segment files reach a maximum file size, which by default is 512MB on Microsoft Windows and 4GB on GNU Linux and macOS.
+
+To set the maximum LSS segment file size, use the xref:index-rest-settings:index.adoc[Index Settings REST API] to set the `indexer.plasma.LSSSegmentFileSize` property.
+
+For installations of Couchbase Server Enterprise Edition running on Linux, hole punching is required to enable auto-compaction of Global Secondary Indexes using standard index-storage.
 ****
 
 ****
