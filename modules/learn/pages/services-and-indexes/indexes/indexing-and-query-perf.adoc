@@ -64,7 +64,7 @@ LIMIT 1;
 [#primary-index]
 == Primary Index
 
-The primary index is simply an index on the document key on the entire keyspace.
+The primary index is an index on the document key for the entire keyspace.
 
 ====
 [source,sqlpp]
@@ -77,9 +77,11 @@ The Couchbase data layer enforces the uniqueness constraint on the document key.
 The primary index, like every other index, is maintained asynchronously.
 Use the primary index for full keyspace scans (primary scans) when the query does not have any filters (predicates) or when no other index or access path can be used.
 
+It's not recommended to use primary keys for your production queries.
+
 NOTE: A primary index does not index any {additional-storage-use}[transaction records] that may be stored in a keyspace.
-This means that if you are counting the number of documents in a keyspace, you may see slightly different results, depending on whether you are using a primary index or not.
-Refer to {aggregatefun}[Aggregate Functions] and {bucket-analyzer}[Viewing the Data Insights].
+This means that if you're counting the number of documents in a keyspace, you may see slightly different results, depending on whether you're using a primary index or not.
+See {aggregatefun}[Aggregate Functions] and {bucket-analyzer}[Viewing the Data Insights].
 
 .Metadata for Primary Index
 ====
@@ -95,7 +97,7 @@ include::n1ql:example$n1ql-language-reference/create-pri-nameless.jsonc[]
 ----
 ====
 
-The metadata provides additional information about the index, such as where the index resides ([.out]`datastore_id`), its state ([.out]`state`), and the indexing method used ([.out]`using`).
+The metadata provides additional information about the index, such as where the index resides (`datastore_id`), its state (`state`), and the indexing method used (`using`).
 
 [#named-primary-index]
 == Named Primary Index
@@ -117,18 +119,18 @@ This is true for both primary indexes and secondary indexes.
 [#secondary-index]
 == Secondary Index
 
-The secondary index is an index on any key-value or document-key.
-This index can use any key within the document and the key can be of any type: scalar, object, or array.
+The secondary index is an index on any field within the keyspace.
+The index key can be of any type: scalar, object, or array.
 The query has to use the same type of object for the query engine to use the index.
 
-.Key is a Simple Scalar Value
+.Key is a Scalar Value
 ====
 [source,sqlpp]
 ----
 include::n1ql:example$n1ql-language-reference/create-idx-name.n1ql[]
 ----
 
-In this keyspace, `name` is a simple scalar value such as `{ "name": "Air France" }`.
+In this keyspace, `name` is a scalar value such as `{ "name": "Air France" }`.
 ====
 
 .Key is an Object Embedded Within the Document
@@ -213,7 +215,7 @@ CREATE INDEX travel_schedule ON route(schedule);
 
 It's common to have queries with multiple filters (predicates).
 In such cases, you want to use indexes with multiple keys so the indexes can return only the qualified document keys.
-Additionally, if a query is referencing only the keys in the index, the query engine can simply answer the query from the index scan result without having to fetch from the data nodes.
+Additionally, if a query references only the keys in the index, the query engine can answer the query from the index scan result without having to fetch from the data nodes.
 This is commonly used for performance optimization.
 
 ====
@@ -223,10 +225,10 @@ include::example$services-and-indexes/indexes/create-idx-composite.n1ql[]
 ----
 ====
 
-Each of the keys can be a simple scalar field, object, or an array.
+Each of the keys can be a scalar field, object, or an array.
 For the index filtering to be exploited, the filters have to use respective object type in the query filter.
 
-The keys to the secondary indexes can include document keys (`meta().id`) explicitly if you need to filter on the document keys in the index.
+The keys to the secondary indexes can include document metadata (`meta().id`) explicitly if you need to filter on metadata in the index.
 
 [#functional-index]
 == Functional Index
@@ -377,7 +379,7 @@ include::example$services-and-indexes/indexes/create-idx-array.n1ql[]
 
 This index key is an expression on the array to clearly reference only the elements that need to be indexed.
 
-* `schedule` -- the array we’re dereferencing into.
+* `schedule` -- the array you're dereferencing into.
 * `v` -- the variable implicitly declared to reference each element/object within the array `schedule`.
 * `v.day` -- the element within each object of the array `schedule`.
 
@@ -479,7 +481,7 @@ CREATE INDEX travel_sched ON route
 ----
 ====
 
-For further details and examples, refer to {indexing-arrays}[Array Indexing].
+For further information and examples, see {indexing-arrays}[Array Indexing].
 
 [#partial-index]
 == Partial Index
@@ -543,13 +545,13 @@ Here are some examples where you can use partial indexes:
 * Partitioning the index based on a list of values.
 For example, you can have an index for each state.
 * Simulating index range partitioning via a range filter in the WHERE clause.
-Note that {sqlpp} queries use one partitioned index per query block.
+{sqlpp} queries use one partitioned index per query block.
 Use UNION ALL to have a query exploit multiple partitioned indexes in a single query.
 
 [#duplicate-index]
 == Duplicate Index
 
-Duplicate index isn't really a special type of index, but a feature of Couchbase indexing.
+A duplicate index is not a special type of index, but a feature of Couchbase indexing.
 You can create duplicate indexes with distinct names.
 
 ====
@@ -566,12 +568,12 @@ WHERE country = 'France';
 ----
 ====
 
-All three indexes have identical keys and an identical WHERE clause; the only difference is the name of these indexes.
+All 3 indexes have identical keys and an identical WHERE clause; the only difference is the name of these indexes.
 You can choose their physical location using the WITH clause of the CREATE INDEX statement.
 
 During query optimization, the query engine chooses one of the index names as seen in the explain plan.
 During query execution, these indexes are used in a round-robin fashion to distribute the load.
-Thus providing scale-out, multi-dimensional scaling, performance, and high availability.
+This provides scale-out, Multi-Dimensional Scaling, performance, and high availability.
 
 [#covering-index]
 == Covering Index
@@ -581,4 +583,4 @@ After the index selection is made, the query engine analyzes the query to see if
 If it does, the query engine skips retrieving the whole document from the data nodes.
 This is a performance optimization to keep in mind when designing your indexes.
 
-For further details and examples, refer to {covering-indexes}[Covering Indexes].
+For further information and examples, see {covering-indexes}[Covering Indexes].
