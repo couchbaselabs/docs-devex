@@ -5,7 +5,8 @@
 [abstract]
 {description}
 
-== GREATEST 
+[[comparison-func-greatest]]
+== GREATEST(`expr1` , `expr2`, ...)
 
 === Description
 
@@ -13,16 +14,9 @@ Determines the largest non-NULL, non-MISSING value from a list of expressions.
 
 The function requires at least 2 expressions and ignores `NULL` and `MISSING` values when evaluating the greatest value.
 
-=== Syntax
+=== Arguments
 
-[subs=normal]
-....
-GREATEST(expression1, expression2, ...)
-....
-
-==== Arguments
-
-expression1, expression2, ...::
+expr1, expr2, ...::
 The expressions to compare.
 You must specify at least 2 expressions.
 
@@ -35,21 +29,13 @@ The function returns:
 
 === Examples
 
-.Find the highest rating across all review categories for a hotel
+.Find the greatest value from a list of numbers
 ====
 
 .Query
 [source,sqlpp]
 ----
-SELECT GREATEST(
-    reviews[0].ratings.Service,
-    reviews[0].ratings.Cleanliness,
-    reviews[0].ratings.Overall,
-    reviews[0].ratings.Location,
-    reviews[0].ratings.Rooms
-) AS highest_rating
-FROM `travel-sample`.`inventory`.hotel
-WHERE id = 10025;
+SELECT GREATEST(19.50, 15, 21.50, 18) AS greatest_number;
 ----
 
 .Result
@@ -57,19 +43,20 @@ WHERE id = 10025;
 ----
 [
   {
-    "highest_rating": 5
+    "greatest_number": 21.5
   }
 ]
 ----
 ====
 
-.Find the greatest value among different types
+.Find the greatest value from a list of strings
 ====
 
 .Query
 [source,sqlpp]
 ----
-SELECT GREATEST(42, "Hotel", "2025-12-01T00:00:00Z") AS greatest_value;
+SELECT GREATEST("United", "Delta", "American", "Southwest") 
+AS last_airline_name;
 ----
 
 .Result
@@ -77,14 +64,35 @@ SELECT GREATEST(42, "Hotel", "2025-12-01T00:00:00Z") AS greatest_value;
 ----
 [
   {
-    "greatest_value": "Hotel"
+    "last_airline_name": "United"
   }
 ]
 ----
-The function returns `"Hotel"` because strings have a higher precedence than numbers and dates.
+When comparing string values, the function uses alphabetical order to determine the greatest value.
 ====
 
-== LEAST
+.Find the greatest value from a list with mixed types
+====
+.Query
+[source,sqlpp]
+----
+SELECT GREATEST(42, "airline", "2025-12-01T00:00:00Z", NULL)
+AS greatest_value;
+----
+.Result
+[source,json]
+----
+[
+  {
+    "greatest_value": "airline"
+  }
+]
+----
+The function returns `"airline"` because strings have a higher precedence than numbers and dates.
+====
+
+[[comparison-func-least]]
+== LEAST(`expr1` , `expr2`, ...)
 
 === Description
 
@@ -92,16 +100,9 @@ Determines the smallest non-NULL, non-MISSING value from a list of expressions.
 
 The function requires at least 2 expressions and ignores `NULL` and `MISSING` values when evaluating the least value.
 
-=== Syntax
+=== Arguments
 
-[subs=normal]
-....
-LEAST(expression1, expression2, ...)
-....
-
-==== Arguments
-
-expression1, expression2, ...::
+expr1, expr2, ...::
 The expressions to compare.
 You must specify at least 2 expressions.
 
@@ -114,21 +115,13 @@ The function returns:
 
 === Examples
 
-.Find the least rating across all review categories for a hotel
+.Find the least value from a list of numbers
 ====
 
 .Query
 [source,sqlpp]
 ----
-SELECT LEAST(
-    reviews[0].ratings.Service,
-    reviews[0].ratings.Cleanliness,
-    reviews[0].ratings.Overall,
-    reviews[0].ratings.Location,
-    reviews[0].ratings.Rooms
-) AS highest_rating
-FROM `travel-sample`.`inventory`.hotel
-WHERE id = 10025;
+SELECT LEAST(19.50, 15, 21.50, 18) AS lowest_number;
 ----
 
 .Result
@@ -136,21 +129,43 @@ WHERE id = 10025;
 ----
 [
   {
-    "lowest_rating": 3
+    "lowest_number": 15
   }
 ]
 ----
 ====
 
-.Find the least value among different types
+.Find the least value from a list of strings
 ====
 
 .Query
 [source,sqlpp]
 ----
-SELECT LEAST(42, "Hotel", "2025-12-01T00:00:00Z") AS least_value;
+SELECT LEAST("United", "Delta", "American", "Southwest") 
+AS first_airline_name; 
 ----
 
+.Result
+[source,json]
+----
+[
+  {
+    "first_airline_name": "American"
+  }
+]
+----
+When comparing string values, the function uses alphabetical order to determine the least value.
+====
+
+.Find the least value from a list with mixed types
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT LEAST(42, "airline", "2025-12-01T00:00:00Z", NULL)
+AS least_value;
+----
 .Result
 [source,json]
 ----
@@ -162,4 +177,3 @@ SELECT LEAST(42, "Hotel", "2025-12-01T00:00:00Z") AS least_value;
 ----
 The function returns `42` because numbers have a lower precedence than strings and dates.
 ====
-
