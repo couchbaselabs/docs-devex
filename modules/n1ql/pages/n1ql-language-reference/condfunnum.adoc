@@ -42,7 +42,7 @@ The function returns:
 .Query
 [source,sqlpp]
 ----
-SELECT IFINF(MISSING, Inf, -Inf, 42, 100) AS result
+SELECT IFINF(42, NULL, 100) AS result
 ----
 .Result
 [source,json]
@@ -53,6 +53,42 @@ SELECT IFINF(MISSING, Inf, -Inf, 42, 100) AS result
 ----
 ====
 
+.Find distance covered, ignoring infinite values
+====
+.Query
+[source,sqlpp]
+----
+SELECT airline, IFINF(distance, -1, 100) AS distance_covered
+FROM `travel-sample`.`inventory`.route
+WHERE type = "route"
+LIMIT 5;
+----
+.Result
+[source,json]
+----
+[{
+        "airline": "AF",
+        "distance_covered": 2881.617376098415
+    },
+    {
+        "airline": "AF",
+        "distance_covered": 2735.2013399811754
+    },
+    {
+        "airline": "AF",
+        "distance_covered": 8748.296323466084
+    },
+    {
+        "airline": "AF",
+        "distance_covered": 654.9546621929924
+    },
+    {
+        "airline": "AF",
+        "distance_covered": 9442.50092891188
+    }
+]
+----
+====
 
 
 
