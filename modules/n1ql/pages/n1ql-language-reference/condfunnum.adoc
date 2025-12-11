@@ -6,35 +6,29 @@
 [abstract]
 {description}
 
-== IFINF
+== IFINF (`expr1`, `expr2`, ...)
+
+This function has a synonym `IF_INF()`.
 
 === Description
 
-Returns the first non-missing, non-infinite number (Inf or -Inf) from a list of expressions. 
-Inf is positive infinity, whereas -Inf is negative infinity.
+Evaluates a list of expressions and returns the first non-infinite number.
 
-If the function encounters a non-number input first, it returns NULL.
+The function skips `MISSING` and infinite values such as `Inf` and `-Inf`.
+If it encounters `NULL` or any other non-number before finding a finite number, the function returns `NULL`.
 
-=== Syntax
+=== Arguments
 
-[subs=normal]
-....
-IFINF(expression1, expression2, ...)
-....
-
-==== Arguments
-
-expression1, expression2, ...::
+expr1, expr2, ...::
 A list of valid expressions to evaluate. 
+You must specify at least 2 expressions.
 
 === Return Value
 
-The function returns:
+* A finite number. 
+* `NULL` if the function encounters a non-number input before finding a finite number.
 
-* The first non-MISSING, non-Inf number. 
-* MISSING or NULL if a non-number input is encountered first.
-
-=== Examples
+=== Example
 
 .Find a non-infinite number from a list of numbers
 ====
@@ -42,84 +36,78 @@ The function returns:
 .Query
 [source,sqlpp]
 ----
-SELECT IFINF(42, NULL, 100) AS result
+SELECT IFINF(5, 10, 20),
+       IFINF(10, NULL, 20),
+       IFINF(NULL, 10, 20),
+       IFINF(MISSING, 20, NULL),
+       IFINF(MISSING, NULL, 10, 20),
+       IFINF(1e400, -1e400, 10, 20);
 ----
+
 .Result
 [source,json]
 ----
-{
-  "result": 42
-}
+[
+  {
+    "$1": 5,
+    "$2": 10,
+    "$3": null,
+    "$4": 20,
+    "$5": null,
+    "$6": 10
+  }
+]
 ----
+In SQL++, `1e400` is equivalent to `Inf` (positive infinity) and `-1e400` is equivalent to `-Inf` (negative infinity).
 ====
 
-.Find distance covered, ignoring infinite values
+== IFNAN(`expr1`, `expr2`, ...)
+
+This function has a synonym `IF_NAN()`.
+
+=== Description
+
+Evaluates a list of expressions and returns the first non-NaN (Not a Number).
+
+The function skips `MISSING` values. 
+If it encounters `NULL` or any other non-number before finding a valid number, the function returns `NULL`. 
+
+=== Arguments
+
+expr1, expr2, ...::
+A list of valid expressions to evaluate.
+You must specify at least 2 expressions.
+
+=== Return Value
+* A valid number that is not `NaN`.
+* `NULL` if the function encounters a non-number input before finding a valid number.
+
+=== Example
+.Find a non-NaN number from a list of numbers
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT airline, IFINF(distance, -1, 100) AS distance_covered
-FROM `travel-sample`.`inventory`.route
-WHERE type = "route"
-LIMIT 5;
+SELECT IFNAN(3.14, 2.71, NaN),
+         IFNAN(NaN, NULL, 2.71),
+            IFNAN(NULL, 3.14, NaN),
+                IFNAN(MISSING, NaN, NULL),
+                    IFNAN(MISSING, NULL, 3.14, NaN),
+                        IFNAN(NaN, NaN, 2.71, 3.14);
 ----
 .Result
 [source,json]
 ----
-[{
-        "airline": "AF",
-        "distance_covered": 2881.617376098415
-    },
+[
     {
-        "airline": "AF",
-        "distance_covered": 2735.2013399811754
-    },
-    {
-        "airline": "AF",
-        "distance_covered": 8748.296323466084
-    },
-    {
-        "airline": "AF",
-        "distance_covered": 654.9546621929924
-    },
-    {
-        "airline": "AF",
-        "distance_covered": 9442.50092891188
+        "$1": 3.14,
+        "$2": 2.71,
+        "$3": null,
+        "$4": null,
+        "$5": null,
+        "$6": 2.71
     }
 ]
 ----
+In SQL++, `NaN` represents a value that is "Not a Number".
 ====
-
-
-
-
-
-IFINF(expression1, expression2, \...)
-
-Returns first non-MISSING, non-Inf number.
-Returns MISSING or NULL if a non-number input is encountered first.
-
-IFNAN(expression1, expression2, \...)
-
-Returns first non-MISSING, non-NaN number.
-Returns MISSING or NULL if a non-number input is encountered first.
-
-IFNANORINF(expression1, expression2, \...)
-
-Returns first non-MISSING, non-Inf, or non-NaN number.
-Returns MISSING or NULL if a non-number input is encountered first.
-
-NANIF(expression1, expression2)
-
-Returns NaN if expression1 = expression2, otherwise returns expression1.
-Returns MISSING or NULL if either input is MISSING or NULL.
-
-NEGINFIF(expression1, expression2)
-
-Returns NegInf if expression1 = expression2, otherwise returns expression1.
-Returns MISSING or NULL if either input is MISSING or NULL.
-
-POSINFIF(expression1, expression2)
-
-Returns PosInf if expression1 = expression2, otherwise returns expression1.
-Returns MISSING or NULL if either input is MISSING or NULL.
