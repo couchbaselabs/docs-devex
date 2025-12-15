@@ -193,18 +193,6 @@ This worked example guides you through a complete Couchbase transaction session 
 The worked example assumes that the supplied `travel-sample` bucket is installed.
 Refer to {install-sample-buckets}[Sample Buckets] for installation details.
 
-.Index
-For the purposes of this worked example, you must create a primary index in the keyspace you will be using.
-
-====
-Create a primary index on `{backtick}travel-sample{backtick}.tenant_agent_00.bookings`, so that you can query and update the documents in this keyspace.
-
-[source,sqlpp]
-----
-include::example$transactions/multiple.n1ql[tag=index]
-----
-====
-
 .Parameters
 If necessary, set the transaction parameters for this worked example.
 In particular, you will turn off durability for the purposes of this example, in order to make sure that there are no problems meeting the transaction durability requirements.
@@ -303,11 +291,16 @@ For reference, this example shows the equivalent of <<ex-1>> using the Query RES
 include::example$transactions/multiple.sh[tag=begin]
 ----
 
+This example uses https://jqlang.org[jq] to get the transaction ID returned by the query.
+
 .Specify transaction settings
 [source,console]
 ----
 include::example$transactions/multiple.sh[tag=set]
 ----
+
+
+<.> After beginning the transaction, each subsequent statement in the transaction must specify the transaction ID that was generated when the transaction began.
 
 .Create a booking document
 [source,console]
@@ -368,8 +361,6 @@ include::example$transactions/multiple.sh[tag=check-3]
 ----
 include::example$transactions/multiple.sh[tag=commit]
 ----
-
-<.> After beginning the transaction, each subsequent statement in the transaction must specify the transaction ID that was generated when the transaction began.
 ====
 
 == Related Links
