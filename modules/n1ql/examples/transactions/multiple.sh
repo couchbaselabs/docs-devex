@@ -9,7 +9,7 @@ curl http://localhost:8093/query/service \
 -u Administrator:password \
 -H 'Content-Type: application/json' \
 -d '{
-  "statement": "BEGIN WORK",
+  "statement": "BEGIN TRANSACTION",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txtimeout": "2m",
   "scan_consistency": "request_plus",
@@ -111,7 +111,7 @@ curl http://localhost:8093/query/service \
 -u Administrator:password \
 -H 'Content-Type: application/json' \
 -d '{
-  "statement": "ROLLBACK TRAN TO SAVEPOINT s2;",
+  "statement": "ROLLBACK TRANSACTION TO SAVEPOINT s2;",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
 }'
