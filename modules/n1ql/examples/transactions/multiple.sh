@@ -26,7 +26,7 @@ curl http://localhost:8093/query/service \
   "statement": "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
-}' # <1>
+}'
 # end::set[]
 
 # tag::upsert[]
@@ -37,7 +37,7 @@ curl http://localhost:8093/query/service \
   "statement": "UPSERT INTO bookings VALUES(\"bf7ad6fa-bdb9-4099-a840-196e47179f03\", {\"date\": \"07/24/2021\", \"flight\": \"WN533\", \"flighttime\": 7713, \"price\": 964.13, \"route\": \"63986\"});",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
-}' # <1>
+}'
 # end::upsert[]
 
 # tag::savepoint-1[]
@@ -48,7 +48,7 @@ curl http://localhost:8093/query/service \
   "statement": "SAVEPOINT s1;",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
-}' # <1>
+}'
 # end::savepoint-1[]
 
 # tag::update-1[]
@@ -59,7 +59,7 @@ curl http://localhost:8093/query/service \
   "statement": "UPDATE bookings AS b USE KEYS \"bf7ad6fa-bdb9-4099-a840-196e47179f03\" SET b.`user` = \"0\";",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
-}' # <1>
+}'
 # end::update-1[]
 
 # tag::check-1[]
@@ -70,7 +70,7 @@ curl http://localhost:8093/query/service \
   "statement": "SELECT b.*, u.name FROM bookings b USE KEYS \"bf7ad6fa-bdb9-4099-a840-196e47179f03\" JOIN users u ON KEYS b.`user`;",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
-}' # <1>
+}'
 # end::check-1[]
 
 # tag::savepoint-2[]
@@ -81,7 +81,7 @@ curl http://localhost:8093/query/service \
   "statement": "SAVEPOINT s2;",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
-}' # <1>
+}'
 # end::savepoint-2[]
 
 # tag::update-2[]
@@ -92,7 +92,7 @@ curl http://localhost:8093/query/service \
   "statement": "UPDATE bookings AS b USE KEYS \"bf7ad6fa-bdb9-4099-a840-196e47179f03\" SET b.`user` = \"1\";",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
-}' # <1>
+}'
 # end::update-2[]
 
 # tag::check-2[]
@@ -103,7 +103,7 @@ curl http://localhost:8093/query/service \
   "statement": "SELECT b.*, u.name FROM bookings b USE KEYS \"bf7ad6fa-bdb9-4099-a840-196e47179f03\" JOIN users u ON KEYS b.`user`;",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
-}' # <1>
+}'
 # end::check-2[]
 
 # tag::rollback[]
@@ -114,7 +114,7 @@ curl http://localhost:8093/query/service \
   "statement": "ROLLBACK TRAN TO SAVEPOINT s2;",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
-}' # <1>
+}'
 # end::rollback[]
 
 # tag::check-3[]
@@ -125,7 +125,7 @@ curl http://localhost:8093/query/service \
   "statement": "SELECT b.*, u.name FROM bookings b USE KEYS \"bf7ad6fa-bdb9-4099-a840-196e47179f03\" JOIN users u ON KEYS b.`user`;",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
-}' # <1>
+}'
 # end::check-3[]
 
 # tag::commit[]
@@ -136,6 +136,6 @@ curl http://localhost:8093/query/service \
   "statement": "COMMIT TRANSACTION",
   "query_context": "`travel-sample`.tenant_agent_00",
   "txid": '${TXID}'
-}' # <1>
+}'
 # end::commit[]
 # end::transaction[]
