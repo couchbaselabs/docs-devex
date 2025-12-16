@@ -199,18 +199,22 @@ Refer to {install-sample-buckets}[Sample Buckets] for installation details.
 For this worked example, set the query context to the `tenant_agent_00` scope in the travel sample dataset.
 For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
 
-image::guides:transactions-context.png["The query context drop-down menu, with the tenant_agent_00 scope selected"]
-
-.Index
-For the purposes of this worked example, you must create a primary index in the keyspace you will be using.
-
+[{tabs}]
 ====
-Create a primary index on `{backtick}travel-sample{backtick}.tenant_agent_00.bookings`, so that you can query and update the documents in this keyspace.
+Query Workbench::
++
+--
+image::guides:transactions-context.png["The query context drop-down menu, with the tenant_agent_00 scope selected"]
+--
 
+CBQ Shell::
++
+--
 [source,sqlpp]
 ----
-include::example$transactions/multiple.n1ql[tag=index]
+include::example$transactions/multiple.n1ql[tag=context]
 ----
+--
 ====
 
 .Parameters
@@ -278,7 +282,7 @@ Beginning a transaction returns a unique transaction ID `txid`.
 
 [source.no-callouts,json]
 ----
-include::example$transactions/results.jsonc[tags=extract-2;!ellipsis]
+include::example$transactions/results.jsonc[tags=extract-2]
 ----
 Before setting the second savepoint, the booking document has user `"0"`, name `"Keon Hoppe"`.
 
@@ -320,78 +324,81 @@ The booking document has been added with the attributes that were present when t
 For reference, this example shows the equivalent of <<ex-1>> using the Query REST API.
 
 .Begin transaction and set parameters
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=begin]
 ----
 
+This statement uses https://jqlang.org[jq] to get the transaction ID from the query results.
+After beginning the transaction, each subsequent statement in the transaction must specify the transaction ID that was generated when the transaction began.
+
 .Specify transaction settings
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=set]
 ----
 
+In this and the following statements, replace `+'${TXID}'+` with the transaction ID, wrapped in double quotes `""`.
+
 .Create a booking document
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=upsert]
 ----
 
 .Set a savepoint
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=savepoint-1]
 ----
 
 .Update the booking document to include a user
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=update-1]
 ----
 
 .Check the content of the booking and user
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=check-1]
 ----
 
 .Set a second savepoint
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=savepoint-2]
 ----
 
 .Update the booking documents to change the user
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=update-2]
 ----
 
 .Check the content of the booking and user
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=check-2]
 ----
 
 .Roll back the transaction to the second savepoint
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=rollback]
 ----
 
 .Check the content of the booking and user again
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=check-3]
 ----
 
 .Commit the transaction
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=commit]
 ----
-
-<.> After beginning the transaction, each subsequent statement in the transaction must specify the transaction ID that was generated when the transaction began.
 ====
 
 == Related Links
