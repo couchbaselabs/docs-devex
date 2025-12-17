@@ -32,7 +32,7 @@
 == Purpose
 
 The `BEGIN TRANSACTION` statement enables you to begin a sequence of statements as an ACID transaction.
-Refer to {transactions}[] for further information.
+For more information, see {transactions}[].
 
 include::partial$n1ql-language-reference/transaction-restrictions.adoc[]
 
@@ -45,7 +45,7 @@ NOTE: You can also specify a single DML statement as an ACID transaction by sett
 include::partial$grammar/tcl.ebnf[tag=begin-transaction]
 ----
 
-image::n1ql-language-reference/begin-transaction.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/begin-transaction.png["Syntax diagram: see source code listing", align=left]
 
 The `BEGIN` and `START` keywords are synonyms.
 The statement must begin with one of these keywords.
@@ -55,31 +55,47 @@ The statement must contain one of these keywords.
 
 === Transaction Settings
 
-Currently, the only available transaction setting is "isolation level read committed".
+Currently, the only available transaction setting is `ISOLATION LEVEL READ COMMITTED`.
 This setting is enabled by default.
 The `ISOLATION LEVEL READ COMMITTED` keywords are therefore optional and may be omitted.
 
 == Return Value
 
-The statement returns an object containing the following property.
+The statement returns an object containing the following properties.
 
-txid::
-The transaction ID.
+[options="header", cols="3a,8a,2a"]
+|===
+|Name|Description|Schema
+
+|**nodeUUID** +
+__required__
+| The UUID of the Query node performing the transaction.
+| String
+
+|**txid** +
+__required__
+| The transaction ID.
+| String
+
+|===
 
 ifdef::flag-devex-rest-api[]
-If you are using the Data API, you must set the {txid}[txid] query parameter to specify the transaction ID for any subsequent statements that form part of the same transaction.
+If you're using the Data API, you must set the {txid}[txid] query parameter to specify the transaction ID for any subsequent statements that form part of the same transaction.
 endif::flag-devex-rest-api[]
 
-If you are using the Query tab, you don't need to specify the transaction ID for any statements that form a part of the same transaction within a multi-statement request.
+ifdef::flag-devex-query[]
+If you're using the Query tab, you do not need to specify the transaction ID for any statements that form a part of the same transaction within a multi-statement request.
 If you start a transaction within a multi-statement request, all statements within the request are assumed to be part of the same transaction until you rollback or commit the transaction.
+endif::flag-devex-query[]
 
-Similarly, if you are using the cbq shell, you don't need to specify the transaction ID for any statements that form a part of the same transaction.
+// Similarly,
+If you're using the cbq shell, you do not need to specify the transaction ID for any statements that form a part of the same transaction.
 Once you have started a transaction, all statements within the cbq shell session are assumed to be part of the same transaction until you rollback or commit the transaction.
 footnote:[You must be using cbq shell version 2.0 or above to use the automatic transaction ID functionality.]
 
 == Example
 
-If you want to try this example, first refer to {preparation}[Preparation] to set up your environment.
+If you want to try this example, first see {preparation}[Preparation] to set up your environment.
 
 .Begin a transaction
 ====
@@ -95,7 +111,7 @@ include::example$transactions/multiple.n1ql[tags=transaction;begin-mark;!begin-p
 .Results
 [source,json]
 ----
-include::example$transactions/results.jsonc[tags=extract;ellipsis]
+include::example$transactions/results.jsonc[tags=extract-1]
 ----
 
 <.> Beginning a transaction returns a transaction ID.
@@ -103,9 +119,9 @@ include::example$transactions/results.jsonc[tags=extract;ellipsis]
 
 == Related Links
 
-* For an overview of Couchbase transactions, refer to {overview}[].
-* To specify transaction settings, refer to {set-transaction}[].
-* To set a savepoint, refer to {savepoint}[].
-* To rollback a transaction, refer to {rollback-transaction}[].
-* To commit a transaction, refer to {commit-transaction}[].
+* For an overview of Couchbase transactions, see {overview}[].
+* To specify transaction settings, see {set-transaction}[].
+* To set a savepoint, see {savepoint}[].
+* To rollback a transaction, see {rollback-transaction}[].
+* To commit a transaction, see {commit-transaction}[].
 * Blog post: https://blog.couchbase.com/transactions-n1ql-couchbase-distributed-nosql/[Couchbase Transactions: Elastic, Scalable, and Distributed^].

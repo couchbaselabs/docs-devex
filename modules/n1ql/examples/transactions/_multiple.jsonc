@@ -1,0 +1,116 @@
+// FIXME: These are the results using the Query tab. Transactions not currently supported.
+// tag::extract-1[]
+[
+  {
+    "batchQuery": "-- Start the transaction\nBEGIN TRANSACTION;",
+    "batchQueryResult": [
+// tag::begin[]
+      {
+        "nodeUUID": "b30cc79a9d942784c8a6b8968fe086ec",
+        "txid": "d3bbf182-1179-42ba-8900-eb20fda69e42" // <.>
+      }
+// end::begin[]
+    ]
+  },
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+// end::extract-1[]
+// tag::extract-2[]
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+  {
+    "batchQuery": "\n\n-- Specify transaction settings\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;",
+    "batchQueryResult": []
+  },
+  {
+    "batchQuery": "\n\n-- Create a booking document\nUPSERT INTO bookings\nVALUES(\"bf7ad6fa-bdb9-4099-a840-196e47179f03\", {\n  \"date\": \"07/24/2021\",\n  \"flight\": \"WN533\",\n  \"flighttime\": 7713,\n  \"price\": 964.13,\n  \"route\": \"63986\"\n});",
+    "batchQueryResult": []
+  },
+  {
+    "batchQuery": "\n\n-- Set a savepoint\nSAVEPOINT s1;",
+    "batchQueryResult": []
+  },
+  {
+    "batchQuery": "\n\n-- Update the booking document to include a user\nUPDATE bookings AS b\nUSE KEYS \"bf7ad6fa-bdb9-4099-a840-196e47179f03\"\nSET b.`user` = \"0\";",
+    "batchQueryResult": []
+  },
+  {
+    "batchQuery": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM bookings b\nUSE KEYS \"bf7ad6fa-bdb9-4099-a840-196e47179f03\"\nJOIN users u\nON KEYS b.`user`;",
+    "batchQueryResult": [
+      {
+        "date": "07/24/2021",
+        "flight": "WN533",
+        "flighttime": 7713,
+        "price": 964.13,
+        "route": "63986",
+        "user": "0", // <.>
+        "name": "Keon Hoppe"
+      }
+    ]
+  },
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+// end::extract-2[]
+// tag::extract-3[]
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+  {
+    "batchQuery": "\n\n-- Set a second savepoint\nSAVEPOINT s2;",
+    "batchQueryResult": []
+  },
+  {
+    "batchQuery": "\n\n-- Update the booking documents to change the user\nUPDATE bookings AS b\nUSE KEYS \"bf7ad6fa-bdb9-4099-a840-196e47179f03\"\nSET b.`user` = \"1\";",
+    "batchQueryResult": []
+  },
+  {
+    "batchQuery": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM bookings b\nUSE KEYS \"bf7ad6fa-bdb9-4099-a840-196e47179f03\"\nJOIN users u\nON KEYS b.`user`;",
+    "batchQueryResult": [
+      {
+        "date": "07/24/2021",
+        "flight": "WN533",
+        "flighttime": 7713,
+        "price": 964.13,
+        "route": "63986",
+        "user": "1", // <.>
+        "name": "Rigoberto Bernier"
+      }
+    ]
+  },
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+// end::extract-3[]
+// tag::extract-4[]
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+  {
+    "batchQuery": "\n\n-- Roll back the transaction to the second savepoint\nROLLBACK TRANSACTION TO SAVEPOINT s2;",
+    "batchQueryResult": []
+  },
+  {
+    "batchQuery": "\n\n-- Check the content of the booking and user again\nSELECT b.*, u.name\nFROM bookings b\nUSE KEYS \"bf7ad6fa-bdb9-4099-a840-196e47179f03\"\nJOIN users u\nON KEYS b.`user`;",
+    "batchQueryResult": [
+// tag::check-3[]
+      {
+        "date": "07/24/2021",
+        "flight": "WN533",
+        "flighttime": 7713,
+        "price": 964.13,
+        "route": "63986",
+        "user": "0", // <.>
+        "name": "Keon Hoppe"
+      }
+// end::check-3[]
+    ]
+  },
+  {
+    "batchQuery": "\n\n-- Commit the transaction\nCOMMIT TRANSACTION;",
+    "batchQueryResult": []
+  }
+]
+// end::extract-4[]

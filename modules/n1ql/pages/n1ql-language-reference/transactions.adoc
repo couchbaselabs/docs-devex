@@ -65,26 +65,25 @@
 include::ROOT:partial$component-signpost.adoc[]
 
 A transaction is a group of operations that are either committed to the database together, or are all undone from the database if there's a failure.
-Refer to {transactions}[Transactions] for an overview of Couchbase transactions.
+For an overview of Couchbase transactions, see {transactions}[].
 
 include::partial$n1ql-language-reference/transaction-restrictions.adoc[]
 
 == Statements
 
 {sqlpp} provides the following statements in support of Couchbase transactions.
-Refer to the documentation for each statement for more information and examples.
+See the documentation for each statement for more information and examples.
 
-* To begin a transaction, refer to {begin-transaction}[BEGIN TRANSACTION].
-* To specify transaction settings, refer to {set-transaction}[SET TRANSACTION].
-* To set a savepoint, refer to {savepoint}[SAVEPOINT].
-* To rollback a transaction, refer to {rollback-transaction}[ROLLBACK TRANSACTION].
-* To commit a transaction, refer to {commit-transaction}[COMMIT TRANSACTION].
-
+* To begin a transaction, see {begin-transaction}[].
+* To specify transaction settings, see {set-transaction}[].
+* To set a savepoint, see {savepoint}[].
+* To rollback a transaction, see {rollback-transaction}[].
+* To commit a transaction, see {commit-transaction}[].
 
 == Settings and Parameters
 
-The Query service provides settings and parameters in support of Couchbase transactions.
-Refer to the documentation for each parameter for more information and examples.
+The Query Service provides settings and parameters in support of Couchbase transactions.
+For more information and examples, see the documentation for each parameter.
 
 |===
 | Setting{nbsp}/ Parameter | Description
@@ -135,50 +134,56 @@ ifdef::flag-devex-rest-api[]
 endif::flag-devex-rest-api[]
 |===
 
-In addition, the {scan_consistency}[scan-consistency] request-level parameter is used to specify the transactional scan consistency.
-Refer to {transactional-scan-consistency}[Transactional Scan Consistency] for details.
+In addition, use the {scan_consistency}[scan-consistency] request-level parameter to specify the transactional scan consistency.
+For more information, see {transactional-scan-consistency}[Transactional Scan Consistency].
 
 == Query Tools
 
 To create a Couchbase transaction using {sqlpp}, you can use:
 
+ifdef::flag-devex-query[]
 * The {query-workbench}[Query tab]
+endif::flag-devex-query[]
 * The {cbq-shell}[cbq shell]
 ifdef::flag-devex-rest-api[]
 * The {n1ql-rest-api}[Data API]
 endif::flag-devex-rest-api[]
 
-There are slight differences in the way these tools operate when creating Couchbase transactions.
-These are explained in the sections below.
+ifdef::flag-devex-query[]
+These tools operate in slightly different ways when creating Couchbase transactions.
+The differences are explained in the sections below.
+endif::flag-devex-query[]
 
-Note that some Couchbase SDKs provide APIs to support Couchbase transactions.
-For further details, refer to {transactions}[Transactions] in the Server documentation.
+Some Couchbase SDKs provide APIs to support Couchbase transactions.
+For more information, see {transactions}[] in the Server documentation.
 
 ifndef::flag-devex-rest-api[]
 [NOTE]
-Couchbase Transactions are not supported via the Data API (Query Service passthrough).
-The Query Service requires that the whole transaction must be executed by a single node, and there is currently no way for the Data API to enforce this.
+Couchbase Transactions are not supported via the Couchbase Capella Query tab or the Data API (Query Service passthrough).
+The Query Service requires that the whole transaction must be executed by a single node, and there is currently no way for the Query tab or the Data API to enforce this.
 endif::flag-devex-rest-api[]
 
+ifdef::flag-devex-query[]
 === Couchbase Transactions with the Query Tab
 
-* To execute a transaction containing multiple statements, compose the sequence of statements in the Query editor.
-Each statement must be terminated with a semicolon.
-After each statement, you must press kbd:[Shift+Enter] to start a new line _without_ executing the query.
+* To execute a transaction containing multiple statements, compose the sequence of statements in the query editor.
+Terminate each statement with a semicolon.
+After each statement, press kbd:[Shift+Enter] to start a new line without executing the query.
 You can then click btn:[Execute] to execute the transaction.
 
 ////
-* To execute a single statement as a transaction, simply enter the statement in the Query Editor and click btn:[Run as TX].
+* To execute a single statement as a transaction, enter the statement in the query editor and click btn:[Run as TX].
 ////
 
 * You do not need to specify the `txid` parameter or the `tximplicit` parameter.
 If you need to specify any other parameters for the Couchbase transaction, you can use the Query Options window.
+endif::flag-devex-query[]
 
 === Couchbase Transactions with the cbq shell
 
 * To execute a transaction containing multiple statements, you can create the transaction one statement at a time.
 Once you have started a transaction, all statements within the cbq shell session are assumed to be part of the same transaction until you rollback or commit the transaction.
-In this case, you don't need to set the `txid` parameter.
+In this case, you do not need to set the `txid` parameter.
 footnote:[You must be using cbq shell version 2.0 or above to use the automatic transaction ID functionality.]
 
 * Alternatively, you can use the `tximplicit` parameter to run a single statement as a transaction.
@@ -202,7 +207,7 @@ endif::flag-devex-rest-api[]
 == Monitoring
 
 You can monitor active Couchbase transactions using the `system:transactions` catalog.
-For more information, refer to {sys-transactions}[system:transactions].
+For more information, see {sys-transactions}[system:transactions].
 
 == Permissions
 
@@ -220,32 +225,39 @@ This worked example guides you through a complete Couchbase transaction session 
 === Preparation
 
 The worked example assumes that the supplied `travel-sample` bucket is installed.
-Refer to {install-sample-buckets}[Import Sample Data] for installation details.
+For more information, see {install-sample-buckets}[Import Sample Data].
 
 .Context
 For this worked example, set the query context to the `tenant_agent_00` scope in the travel sample dataset.
 For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
 
-image::guides:transactions-context.png["The query context drop-down menu, with the tenant_agent_00 scope selected"]
-
-.Index
-For the purposes of this worked example, you must create a primary index in the keyspace you will be using.
-
+[tabs]
 ====
-Create a primary index on `{backtick}travel-sample{backtick}.tenant_agent_00.bookings`, so that you can query and update the documents in this keyspace.
+ifdef::flag-devex-query[]
+Query Workbench::
++
+--
+image::guides:transactions-context.png["The query context drop-down menu, with the tenant_agent_00 scope selected"]
+--
+endif::flag-devex-query[]
 
+CBQ Shell::
++
+--
 [source,sqlpp]
 ----
-include::example$transactions/multiple.n1ql[tag=index]
+include::example$transactions/multiple.n1ql[tag=context]
 ----
+--
 ====
 
 .Parameters
 If necessary, set the transaction parameters for this worked example.
-In particular, you will turn off durability for the purposes of this example, in order to make sure that there are no problems meeting the transaction durability requirements.
+In particular, turn off durability for the purposes of this example, to make sure that there are no problems meeting the transaction durability requirements.
 
 [tabs]
 ====
+ifdef::flag-devex-query[]
 Query Tab::
 +
 --
@@ -257,10 +269,11 @@ Query Tab::
 
 . In the *Named Parameters* section, click the btn:[+] button to add a named parameter.
 
-. When the new named parameter appears, enter `durability_level` in the *name* box and `"none"` (with double quotes) in the *value* box.
+. For the new named parameter, enter `durability_level` in the *name* box and `"none"` (with double quotes) in the *value* box.
 
 . Choose btn:[Save] to save the preferences and return to the Query tab.
 --
+endif::flag-devex-query[]
 
 CBQ Shell::
 +
@@ -282,11 +295,14 @@ No scan consistency is set for individual statements within the transaction; the
 === Transaction
 
 [[ex-1]]
-
-.Transaction using the Query tab or cbq shell
+.Transaction with multiple statements
 ====
-Copy the entire sequence below and paste it into either the {query-workbench}[Query tab] or the {cbq-shell}[cbq shell].
-Note that you must be using cbq shell version 2.0 or above.
+Copy the entire sequence below and paste it into
+ifdef::flag-devex-query[]
+either the {query-workbench}[Query tab] or
+endif::flag-devex-query[]
+the {cbq-shell}[cbq shell].
+You must be using cbq shell version 2.0 or above.
 
 .Transaction
 [source,sqlpp]
@@ -295,8 +311,14 @@ include::example$transactions/multiple.n1ql[tags=transaction;!begin-mark;!set-ma
 ----
 
 
-The results of running the transaction in the Query tab are shown below.
-If you are using the cbq shell, the results are formatted differently, but contain the same information.
+The results of running the transaction
+ifdef::flag-devex-query[]
+in the Query tab
+endif::flag-devex-query[]
+are shown below.
+ifdef::flag-devex-query[]
+If you're using the cbq shell, the results are formatted differently, but contain the same information.
+endif::flag-devex-query[]
 
 .Results
 [source.no-callouts,json]
@@ -307,7 +329,7 @@ Beginning a transaction returns a unique transaction ID `txid`.
 
 [source.no-callouts,json]
 ----
-include::example$transactions/results.jsonc[tags=extract-2;!ellipsis]
+include::example$transactions/results.jsonc[tags=extract-2]
 ----
 Before setting the second savepoint, the booking document has user `"0"`, name `"Keon Hoppe"`.
 
@@ -350,78 +372,81 @@ ifdef::flag-devex-rest-api[]
 For reference, this example shows the equivalent of <<ex-1>> using the Data API.
 
 .Begin transaction and set parameters
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=begin]
 ----
 
+This statement uses https://jqlang.org[jq] to get the transaction ID from the query results.
+After beginning the transaction, each subsequent statement in the transaction must specify the transaction ID that was generated when the transaction began.
+
 .Specify transaction settings
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=set]
 ----
 
+In this and the following statements, replace `+'${TXID}'+` with the transaction ID, wrapped in double quotes `""`.
+
 .Create a booking document
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=upsert]
 ----
 
 .Set a savepoint
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=savepoint-1]
 ----
 
 .Update the booking document to include a user
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=update-1]
 ----
 
 .Check the content of the booking and user
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=check-1]
 ----
 
 .Set a second savepoint
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=savepoint-2]
 ----
 
 .Update the booking documents to change the user
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=update-2]
 ----
 
 .Check the content of the booking and user
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=check-2]
 ----
 
 .Roll back the transaction to the second savepoint
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=rollback]
 ----
 
 .Check the content of the booking and user again
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=check-3]
 ----
 
 .Commit the transaction
-[source,console]
+[source,sh]
 ----
 include::example$transactions/multiple.sh[tag=commit]
 ----
-
-<.> After beginning the transaction, each subsequent statement in the transaction must specify the transaction ID that was generated when the transaction began.
 ====
 endif::flag-devex-rest-api[]
 

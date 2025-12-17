@@ -8,10 +8,6 @@
 \SET -query_context travel-sample.tenant_agent_00;
 /* end::context[] */
 
-/* tag::index[] */
-CREATE PRIMARY INDEX ON bookings;
-/* end::index[] */
-
 /* tag::transaction[] */
 /* tag::begin-plain[] */
 -- Start the transaction
@@ -20,7 +16,7 @@ CREATE PRIMARY INDEX ON bookings;
 -- pass:[<mark>Start the transaction</mark>]
 /* end::begin-mark[] */
 /* tag::begin[] */
-BEGIN WORK;
+BEGIN TRANSACTION;
 /* end::begin[] */
 
 /* tag::set-plain[] */
@@ -58,17 +54,17 @@ SAVEPOINT s1;
 -- Update the booking document to include a user
 /* tag::update-1[] */
 UPDATE bookings AS b
-SET b.`user` = "0"
-WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
+USE KEYS "bf7ad6fa-bdb9-4099-a840-196e47179f03"
+SET b.`user` = "0";
 /* end::update-1[] */
 
 -- Check the content of the booking and user
 /* tag::check-1[] */
 SELECT b.*, u.name
 FROM bookings b
+USE KEYS "bf7ad6fa-bdb9-4099-a840-196e47179f03"
 JOIN users u
-ON b.`user` = META(u).id
-WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
+ON KEYS b.`user`;
 /* end::check-1[] */
 
 /* tag::savepoint-plain[] */
@@ -84,17 +80,17 @@ SAVEPOINT s2;
 -- Update the booking documents to change the user
 /* tag::update-2[] */
 UPDATE bookings AS b
-SET b.`user` = "1"
-WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
+USE KEYS "bf7ad6fa-bdb9-4099-a840-196e47179f03"
+SET b.`user` = "1";
 /* end::update-2[] */
 
 -- Check the content of the booking and user
 /* tag::check-2[] */
 SELECT b.*, u.name
 FROM bookings b
+USE KEYS "bf7ad6fa-bdb9-4099-a840-196e47179f03"
 JOIN users u
-ON b.`user` = META(u).id
-WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
+ON KEYS b.`user`;
 /* end::check-2[] */
 
 /* tag::rollback-plain[] */
@@ -104,16 +100,16 @@ WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
 -- pass:[<mark>Roll back the transaction to the second savepoint</mark>]
 /* end::rollback-mark[] */
 /* tag::rollback[] */
-ROLLBACK TRAN TO SAVEPOINT s2;
+ROLLBACK TRANSACTION TO SAVEPOINT s2;
 /* end::rollback[] */
 
 -- Check the content of the booking and user again
 /* tag::check-3[] */
 SELECT b.*, u.name
 FROM bookings b
+USE KEYS "bf7ad6fa-bdb9-4099-a840-196e47179f03"
 JOIN users u
-ON b.`user` = META(u).id
-WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
+ON KEYS b.`user`;
 /* end::check-3[] */
 
 /* tag::commit-plain[] */
@@ -123,6 +119,6 @@ WHERE META(b).id = "bf7ad6fa-bdb9-4099-a840-196e47179f03";
 -- pass:[<mark>Commit the transaction</mark>]
 /* end::commit-mark[] */
 /* tag::commit[] */
-COMMIT WORK;
+COMMIT TRANSACTION;
 /* end::commit[] */
 /* end::transaction[] */

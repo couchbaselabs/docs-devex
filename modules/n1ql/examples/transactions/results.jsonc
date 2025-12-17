@@ -1,101 +1,322 @@
-// tag::extract[]
 // tag::extract-1[]
-[
-  {
-    "batchQuery": "-- Start the transaction\nBEGIN WORK;",
-    "batchQueryResult": [
+cbq> -- Start the transaction
+cbq> BEGIN TRANSACTION;
+{
+    "requestID": "da8567c3-d2d3-4d32-807b-c7e898f66611",
+    "signature": "json",
+    "results": [
 // tag::begin[]
-      {
-        "txid": "d3bbf182-1179-42ba-8900-eb20fda69e42" // <.>
-      }
+    {
+        "nodeUUID": "9803422b02fd9e6c9e7156b8ddb2d840",
+        "txid": "fab2bd20-322e-4ed0-bc4e-035db995f349" // <.>
+    }
 // end::begin[]
-    ]
-  },
-// end::extract-1[]
-// tag::extract-2[]
-  {
-    "batchQuery": "\n\n-- Specify transaction settings\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;",
-    "batchQueryResult": []
-  },
-  {
-    "batchQuery": "\n\n-- Create a booking document\nUPSERT INTO bookings\nVALUES(\"bf7ad6fa-bdb9-4099-a840-196e47179f03\", {\n  \"date\": \"07/24/2021\",\n  \"flight\": \"WN533\",\n  \"flighttime\": 7713,\n  \"price\": 964.13,\n  \"route\": \"63986\"\n});",
-    "batchQueryResult": []
-  },
-// end::extract[]
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "6.8305ms",
+        "executionTime": "6.603708ms",
+        "resultCount": 1,
+        "resultSize": 118,
+        "serviceLoad": 3,
+        "transactionElapsedTime": "6.046625ms",
+        "transactionRemainingTime": "1m59.993945125s"
+    }
+}
+cbq> 
 // tag::ellipsis[]
 // ...
 // end::ellipsis[]
-  {
-    "batchQuery": "\n\n-- Set a savepoint\nSAVEPOINT s1;",
-    "batchQueryResult": []
-  },
-  {
-    "batchQuery": "\n\n-- Update the booking document to include a user\nUPDATE bookings AS b\nSET b.`user` = \"0\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "batchQueryResult": []
-  },
-  {
-    "batchQuery": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM bookings b\nJOIN users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "batchQueryResult": [
-      {
+// end::extract-1[]
+// tag::extract-2[]
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+cbq> -- Specify transaction settings
+cbq> SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+{
+    "requestID": "6ac24c82-76db-45f5-9f44-5a2cf15e1e34",
+    "signature": "json",
+    "results": [
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "231.666µs",
+        "executionTime": "161.333µs",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "transactionElapsedTime": "9.523333ms",
+        "transactionRemainingTime": "1m59.990474875s"
+    }
+}
+cbq> 
+cbq> -- Create a booking document
+cbq> UPSERT INTO bookings
+   > VALUES("bf7ad6fa-bdb9-4099-a840-196e47179f03", {
+   >   "date": "07/24/2021",
+   >   "flight": "WN533",
+   >   "flighttime": 7713,
+   >   "price": 964.13,
+   >   "route": "63986"
+   > });
+{
+    "requestID": "d34e0dba-b15c-407e-b2e5-082def71a6a9",
+    "signature": null,
+    "results": [
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "9.695625ms",
+        "executionTime": "9.6555ms",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "mutationCount": 1,
+        "transactionElapsedTime": "21.353333ms",
+        "transactionRemainingTime": "1m59.97864225s"
+    }
+}
+cbq> 
+cbq> -- Set a savepoint
+cbq> SAVEPOINT s1;
+{
+    "requestID": "1be8ab5b-c00a-4f1f-9891-55d17574d8ce",
+    "signature": "json",
+    "results": [
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "200.25µs",
+        "executionTime": "134.209µs",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "transactionElapsedTime": "22.689167ms",
+        "transactionRemainingTime": "1m59.977309042s"
+    }
+}
+cbq> 
+cbq> -- Update the booking document to include a user
+cbq> UPDATE bookings AS b
+   > USE KEYS "bf7ad6fa-bdb9-4099-a840-196e47179f03"
+   > SET b.`user` = "0";
+{
+    "requestID": "e9476c21-113f-465c-ae40-d76931ba5aef",
+    "signature": null,
+    "results": [
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "1.35775ms",
+        "executionTime": "1.217167ms",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "mutationCount": 1,
+        "transactionElapsedTime": "25.2525ms",
+        "transactionRemainingTime": "1m59.974745208s"
+    }
+}
+cbq> 
+cbq> -- Check the content of the booking and user
+cbq> SELECT b.*, u.name
+   > FROM bookings b
+   > USE KEYS "bf7ad6fa-bdb9-4099-a840-196e47179f03"
+   > JOIN users u
+   > ON KEYS b.`user`;
+{
+    "requestID": "67974697-2614-4b8e-9c47-668bc183e1ea",
+    "signature": {
+        "*": "*",
+        "name": "json"
+    },
+    "results": [
+    {
         "date": "07/24/2021",
         "flight": "WN533",
         "flighttime": 7713,
-        "name": "Keon Hoppe",
         "price": 964.13,
         "route": "63986",
-        "user": "0" // <.>
-      }
-    ]
-  },
+        "user": "0", // <.>
+        "name": "Keon Hoppe"
+    }
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "1.556667ms",
+        "executionTime": "1.492667ms",
+        "resultCount": 1,
+        "resultSize": 193,
+        "serviceLoad": 0,
+        "transactionElapsedTime": "27.824292ms",
+        "transactionRemainingTime": "1m59.972173917s"
+    }
+}
+cbq> 
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
 // end::extract-2[]
 // tag::extract-3[]
-  {
-    "batchQuery": "\n\n-- Set a second savepoint\nSAVEPOINT s2;",
-    "batchQueryResult": []
-  },
-  {
-    "batchQuery": "\n\n-- Update the booking documents to change the user\nUPDATE bookings AS b\nSET b.`user` = \"1\"\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "batchQueryResult": []
-  },
-  {
-    "batchQuery": "\n\n-- Check the content of the booking and user\nSELECT b.*, u.name\nFROM bookings b\nJOIN users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "batchQueryResult": [
-      {
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+cbq> -- Set a second savepoint
+cbq> SAVEPOINT s2;
+{
+    "requestID": "c4084621-f542-41cf-9990-06bedcd19583",
+    "signature": "json",
+    "results": [
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "117.125µs",
+        "executionTime": "81.167µs",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "transactionElapsedTime": "28.638375ms",
+        "transactionRemainingTime": "1m59.971360583s"
+    }
+}
+cbq> 
+cbq> -- Update the booking documents to change the user
+cbq> UPDATE bookings AS b
+   > USE KEYS "bf7ad6fa-bdb9-4099-a840-196e47179f03"
+   > SET b.`user` = "1";
+{
+    "requestID": "4277b2e3-2525-4ff9-ae04-10ba22aa9d8b",
+    "signature": null,
+    "results": [
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "240.458µs",
+        "executionTime": "210µs",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "mutationCount": 1,
+        "transactionElapsedTime": "29.538ms",
+        "transactionRemainingTime": "1m59.970460542s"
+    }
+}
+cbq> 
+cbq> -- Check the content of the booking and user
+cbq> SELECT b.*, u.name
+   > FROM bookings b
+   > USE KEYS "bf7ad6fa-bdb9-4099-a840-196e47179f03"
+   > JOIN users u
+   > ON KEYS b.`user`;
+{
+    "requestID": "11ed6da0-da52-4b79-bb74-da1db8b3a816",
+    "signature": {
+        "*": "*",
+        "name": "json"
+    },
+    "results": [
+    {
         "date": "07/24/2021",
         "flight": "WN533",
         "flighttime": 7713,
-        "name": "Rigoberto Bernier",
         "price": 964.13,
         "route": "63986",
-        "user": "1" // <.>
-      }
-    ]
-  },
+        "user": "1", // <.>
+        "name": "Rigoberto Bernier"
+    }
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "451.959µs",
+        "executionTime": "424.417µs",
+        "resultCount": 1,
+        "resultSize": 200,
+        "serviceLoad": 0,
+        "transactionElapsedTime": "30.652417ms",
+        "transactionRemainingTime": "1m59.969346583s"
+    }
+}
+cbq> 
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
 // end::extract-3[]
 // tag::extract-4[]
-  {
-    "batchQuery": "\n\n-- Roll back the transaction to the second savepoint\nROLLBACK TRAN TO SAVEPOINT s2;",
-    "batchQueryResult": []
-  },
-  {
-    "batchQuery": "\n\n-- Check the content of the booking and user again\nSELECT b.*, u.name\nFROM bookings b\nJOIN users u\nON b.`user` = META(u).id\nWHERE META(b).id = \"bf7ad6fa-bdb9-4099-a840-196e47179f03\";",
-    "batchQueryResult": [
+// tag::ellipsis[]
+// ...
+// end::ellipsis[]
+cbq> -- Roll back the transaction to the second savepoint
+cbq> ROLLBACK TRANSACTION TO SAVEPOINT s2;
+{
+    "requestID": "2ffe8d3b-85f2-4ec2-b7e1-8d774cba1065",
+    "signature": "json",
+    "results": [
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "230.458µs",
+        "executionTime": "167.458µs",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "transactionElapsedTime": "99.111083ms",
+        "transactionRemainingTime": "1m59.900884792s"
+    }
+}
+cbq> 
+cbq> -- Check the content of the booking and user again
+cbq> SELECT b.*, u.name
+   > FROM bookings b
+   > USE KEYS "bf7ad6fa-bdb9-4099-a840-196e47179f03"
+   > JOIN users u
+   > ON KEYS b.`user`;
+{
+    "requestID": "eb45600b-e2e1-4ca4-aa56-3552ae4141eb",
+    "signature": {
+        "*": "*",
+        "name": "json"
+    },
+    "results": [
 // tag::check-3[]
-      {
+    {
         "date": "07/24/2021",
         "flight": "WN533",
         "flighttime": 7713,
-        "name": "Keon Hoppe",
         "price": 964.13,
         "route": "63986",
-        "user": "0" // <.>
-      }
+        "user": "0", // <.>
+        "name": "Keon Hoppe"
+    }
 // end::check-3[]
-    ]
-  },
-  {
-    "batchQuery": "\n\n-- Commit the transaction\nCOMMIT WORK;",
-    "batchQueryResult": []
-  }
-]
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "660.25µs",
+        "executionTime": "621.792µs",
+        "resultCount": 1,
+        "resultSize": 193,
+        "serviceLoad": 0,
+        "transactionElapsedTime": "100.6895ms",
+        "transactionRemainingTime": "1m59.899308625s"
+    }
+}
+cbq> 
+cbq> -- Commit the transaction
+cbq> COMMIT TRANSACTION;
+{
+    "requestID": "126f4882-7fe0-46a8-b0c1-5cf0a74dade8",
+    "signature": "json",
+    "results": [
+    ],
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "20.328375ms",
+        "executionTime": "20.075042ms",
+        "resultCount": 0,
+        "resultSize": 0,
+        "serviceLoad": 0,
+        "transactionElapsedTime": "953.673167ms"
+    }
+}
 // end::extract-4[]

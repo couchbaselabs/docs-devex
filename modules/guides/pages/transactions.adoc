@@ -16,7 +16,7 @@ include::ROOT:partial$component-signpost.adoc[]
 Couchbase transactions enable you to carry out ACID (atomic, consistent, isolated, and durable) actions on the database.
 This how-to guide covers {sqlpp} support for Couchbase transactions.
 Some SDKs also support Couchbase transactions.
-Refer to <<related-links>> for further details.
+For more information, see <<related-links>>.
 
 Only DML (data modification language) statements are permitted within a transaction:
 xref:n1ql:n1ql-language-reference/insert.adoc[INSERT],
@@ -30,7 +30,12 @@ xref:n1ql:n1ql-language-reference/prepare.adoc[PREPARE], or
 xref:n1ql:n1ql-language-reference/execute.adoc[EXECUTE].
 
 include::partial$before-you-begin.adoc[tag=body]
+ifndef::flag-devex-query[]
+To create a transaction using {sqlpp} in Couchbase Capella, you must use the xref:n1ql:n1ql-intro/cbq.adoc[cbq shell].
+endif::flag-devex-query[]
+ifdef::flag-devex-query[]
 include::partial$query-tools.adoc[tags=body;!thumbs]
+endif::flag-devex-query[]
 
 include::partial$data-warning.adoc[]
 
@@ -39,10 +44,15 @@ include::partial$data-warning.adoc[]
 :lead: The following example shows transaction parameters for the examples on this page.
 
 You can specify various settings and parameters to control how transactions work.
-You can access transaction settings and parameters through any of the usual Query tools, such as the Query tab or the cbq shell.
+You can access transaction settings and parameters through
+ifdef::flag-devex-query[]
+any of the usual Query tools, such as the Query tab or
+endif::flag-devex-query[]
+the cbq shell.
 
 [tabs]
 ====
+ifdef::flag-devex-query[]
 Query Tab::
 +
 --
@@ -55,7 +65,7 @@ To specify parameters for a Couchbase transaction, use the Query Options dialog.
 . To specify the transaction timeout, in the *Transaction Timeout* box, enter a value in seconds.
 
 . To specify any other transaction parameters, click the btn:[+] button in the *Named Parameters* section.
-When the new named parameter appears, enter the name in the *name* box and a value in the *value* box.
+For the new named parameter, enter a name in the *name* box and a value in the *value* box.
 
 . To save your preferences and return to the Query tab, click btn:[Save].
 
@@ -65,10 +75,12 @@ When the new named parameter appears, enter the name in the *name* box and a val
 
 image::transactions-preferences.png['The Query Options dialog, with Scan Consistency set to "not_bounded", Transaction Timeout set to "120", and named parameter "durability_level" set to "none"']
 
-* The transaction scan consistency is set to `not_bounded`.
-* The durability level of all the mutations within the transaction is set to `"none"`.
-* The transaction timeout is set to `120`.
+[calloutlist]
+. The transaction scan consistency is set to `not_bounded`.
+. The durability level of all the mutations within the transaction is set to `"none"`.
+. The transaction timeout is set to `120`.
 --
+endif::flag-devex-query[]
 
 CBQ Shell::
 +
@@ -92,7 +104,7 @@ include::n1ql:example$transactions/multiple.n1ql[tag=settings]
 --
 ====
 
-For further details, refer to xref:n1ql:n1ql-language-reference/transactions.adoc#settings-and-parameters[Transaction Settings and Parameters].
+For more information, see xref:n1ql:n1ql-language-reference/transactions.adoc#settings-and-parameters[Transaction Settings and Parameters].
 
 [[single-statement]]
 == Single Statement Transactions
@@ -101,11 +113,11 @@ You can create a Couchbase transaction containing a single DML statement.
 
 [tabs]
 ====
-////
+ifdef::flag-devex-query[]
 Query Tab::
 +
 --
-To execute a single statement as a transaction, simply enter the statement in the Query Editor and click btn:[Run as TX].
+To execute a single statement as a transaction, enter the statement in the query editor and click btn:[Run as TX].
 
 '''
 
@@ -118,7 +130,7 @@ include::partial$query-context.adoc[tag=step]
 include::n1ql:example$transactions/single.n1ql[tag=query]
 ----
 --
-////
+endif::flag-devex-query[]
 
 CBQ Shell::
 +
@@ -138,7 +150,7 @@ include::n1ql:example$transactions/single.n1ql[tags=**]
 --
 ====
 
-For further details, refer to xref:n1ql:n1ql-language-reference/transactions.adoc#query-tools[Query Tools].
+For more information, see xref:n1ql:n1ql-language-reference/transactions.adoc#query-tools[Query Tools].
 
 [[multiple-statement]]
 == Multiple Statement Transactions
@@ -156,15 +168,16 @@ In this case, you must use {sqlpp} transaction statements to support the transac
 
 [tabs]
 ====
+ifdef::flag-devex-query[]
 Query Tab::
 +
 --
 To execute a transaction containing multiple statements:
 
-. Compose the sequence of statements in the Query Editor.
+. Compose the sequence of statements in the query editor.
 Each statement must be terminated with a semicolon.
 
-. After each statement, press kbd:[Shift+Enter] to start a new line _without_ executing the query.
+. After each statement, press kbd:[Shift+Enter] to start a new line without executing the query.
 
 . When you have entered the entire transaction, click btn:[Run] to execute the transaction.
 
@@ -172,6 +185,7 @@ Each statement must be terminated with a semicolon.
 
 {lead}
 --
+endif::flag-devex-query[]
 
 CBQ Shell::
 +
@@ -212,14 +226,14 @@ include::n1ql:example$transactions/results.jsonc[tag=begin]
 <.> Beginning a transaction returns the transaction ID.
 ====
 
-For further details, refer to xref:n1ql:n1ql-language-reference/begin-transaction.adoc[BEGIN TRANSACTION].
+For more information, see xref:n1ql:n1ql-language-reference/begin-transaction.adoc[BEGIN TRANSACTION].
 
 [[set]]
 === Specify Transaction Settings
 
 To specify transaction settings, use the `SET TRANSACTION` statement.
 
-NOTE: Currently, the only available transaction setting is "isolation level read committed".
+NOTE: Currently, the only available transaction setting is `ISOLATION LEVEL READ COMMITTED`.
 This setting is enabled by default.
 The `SET TRANSACTION` statement is therefore optional and may be omitted.
 
@@ -234,7 +248,7 @@ include::n1ql:example$transactions/multiple.n1ql[tag=set]
 {github}
 ====
 
-For further details, refer to xref:n1ql:n1ql-language-reference/set-transaction.adoc[SET TRANSACTION].
+For more information, see xref:n1ql:n1ql-language-reference/set-transaction.adoc[SET TRANSACTION].
 
 [[savepoint]]
 === Set a Savepoint
@@ -252,7 +266,7 @@ include::n1ql:example$transactions/multiple.n1ql[tag=savepoint-1]
 {github}
 ====
 
-For further details, refer to xref:n1ql:n1ql-language-reference/savepoint.adoc[SAVEPOINT].
+For more information, see xref:n1ql:n1ql-language-reference/savepoint.adoc[SAVEPOINT].
 
 [[rollback]]
 === Roll Back a Transaction
@@ -273,7 +287,7 @@ include::n1ql:example$transactions/multiple.n1ql[tag=rollback]
 {github}
 ====
 
-For further details, refer to xref:n1ql:n1ql-language-reference/rollback-transaction.adoc[ROLLBACK TRANSACTION].
+For more information, see xref:n1ql:n1ql-language-reference/rollback-transaction.adoc[ROLLBACK TRANSACTION].
 
 [[commit]]
 === Commit a Transaction
@@ -291,7 +305,7 @@ include::n1ql:example$transactions/multiple.n1ql[tag=commit]
 {github}
 ====
 
-For further details, refer to xref:n1ql:n1ql-language-reference/commit-transaction.adoc[COMMIT TRANSACTION].
+For more information, see xref:n1ql:n1ql-language-reference/commit-transaction.adoc[COMMIT TRANSACTION].
 
 [[related-links]]
 == Related Links
