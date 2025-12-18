@@ -12,36 +12,39 @@ This function has a synonym `IF_INF()`.
 
 === Description
 
-Evaluates a list of expressions and returns the first non-infinite number.
+Evaluates a list of expressions and returns the first finite number.
 
-The function skips `MISSING` and infinite values such as `Inf` and `-Inf`.
-If it encounters `NULL` or any other non-number before finding a finite number, the function returns `NULL`.
+The function ignores `MISSING` and infinite values.
+If it encounters `NULL` or any non-numeric value before finding a finite number, the function returns `NULL`.
 
 === Arguments
 
 expr1, expr2, ...::
-A list of valid expressions to evaluate. 
+A list of expressions to evaluate. 
 You must specify at least 2 expressions.
 
 === Return Value
 
-* A finite number. 
-* `NULL` if the function encounters a non-number input before finding a finite number.
+The function returns one of the following:
+
+* The first finite number.
+* `NULL` if it encounters `NULL` or a non-number before finding a finite number.
 
 === Example
 
-.Find a non-infinite number from a list of numbers
+.Find the 1st non-infinite number from a list of numbers
 ====
 
 .Query
 [source,sqlpp]
 ----
 SELECT IFINF(5, 10, 20),
-       IFINF(10, NULL, 20),
-       IFINF(NULL, 10, 20),
-       IFINF(MISSING, 20, NULL),
-       IFINF(MISSING, NULL, 10, 20),
-       IFINF(1e400, -1e400, 10, 20);
+       IFINF(5, NULL, 10),
+       IFINF(inf(), -inf(), 5, 10),
+       IFINF(POWER(10, 400), 5, 10),
+       IFINF(NULL, 5, 10),
+       IFINF(MISSING, 5, NULL),
+       IFINF(MISSING, NULL, 5, 10);
 ----
 
 .Result
@@ -50,15 +53,17 @@ SELECT IFINF(5, 10, 20),
 [
   {
     "$1": 5,
-    "$2": 10,
-    "$3": null,
-    "$4": 20,
+    "$2": 5,
+    "$3": 5,
+    "$4": 5,
     "$5": null,
-    "$6": 10
+    "$6": 5,
+    "$7": null
   }
 ]
 ----
-In SQL++, `1e400` is equivalent to `Inf` (positive infinity) and `-1e400` is equivalent to `-Inf` (negative infinity).
+The functions `inf()` and `-inf()` return positive and negative infinity, respectively.
+Also, the expression `POWER(10, 400)` results in positive infinity because it exceeds the maximum representable finite number.
 ====
 
 == IFNAN(`expr1`, `expr2`, ...)
@@ -67,9 +72,9 @@ This function has a synonym `IF_NAN()`.
 
 === Description
 
-Evaluates a list of expressions and returns the first non-NaN (Not a Number).
+Evaluates a list of expressions and returns the first non-NaN (Not a Number), that is, a valid number.
 
-The function skips `MISSING` values. 
+The function ignores `MISSING` and NaN values. 
 If it encounters `NULL` or any other non-number before finding a valid number, the function returns `NULL`. 
 
 === Arguments
@@ -79,8 +84,11 @@ A list of valid expressions to evaluate.
 You must specify at least 2 expressions.
 
 === Return Value
-* A valid number that is not `NaN`.
-* `NULL` if the function encounters a non-number input before finding a valid number.
+
+The function returns one of the following:
+
+* The first valid number.
+* `NULL` if it encounters `NULL` or a non-number before finding a number.
 
 === Example
 .Find a non-NaN number from a list of numbers
@@ -88,26 +96,228 @@ You must specify at least 2 expressions.
 .Query
 [source,sqlpp]
 ----
-SELECT IFNAN(3.14, 2.71, NaN),
-         IFNAN(NaN, NULL, 2.71),
-            IFNAN(NULL, 3.14, NaN),
-                IFNAN(MISSING, NaN, NULL),
-                    IFNAN(MISSING, NULL, 3.14, NaN),
-                        IFNAN(NaN, NaN, 2.71, 3.14);
+SELECT IFNAN(5, 10, 20, nan()),
+       IFNAN("abc", 5, NULL, 10),
+       IFNAN(NULL, 5, 10),
+       IFNAN(MISSING, 5, NULL),
+       IFNAN(MISSING, NULL, 5, 10),
+       IFNAN(nan(), 5, 10);
 ----
 .Result
 [source,json]
 ----
 [
-    {
-        "$1": 3.14,
-        "$2": 2.71,
-        "$3": null,
-        "$4": null,
-        "$5": null,
-        "$6": 2.71
-    }
+  {
+    "$1": 5,
+    "$2": null,
+    "$3": null,
+    "$4": 5,
+    "$5": null,
+    "$6": 5
+  }
 ]
 ----
-In SQL++, `NaN` represents a value that is "Not a Number".
+The function `nan()` returns a NaN value.
+====
+
+
+== IFNANORINF(`expr1`, `expr2`, ...)
+
+This function has a synonym `IF_NAN_OR_INF()`.
+
+=== Description
+
+Evaluates a list of expressions and returns the first number that is neither NaN (Not a Number) nor infinite.
+
+The function skips `MISSING`, NaN, and infinite values.
+If it encounters `NULL` or any other non-number before finding a valid number, the function returns `NULL`.
+
+=== Arguments
+
+expr1, expr2, ...::
+A list of valid expressions to evaluate.
+You must specify at least 2 expressions.
+
+=== Return Value
+
+The function returns one of the following:
+
+* The first number that is neither NaN nor infinite.
+* `NULL` if it encounters `NULL` or a non-number before finding such a number.
+
+=== Example
+
+.Find a number that is neither NaN nor infinite from a list of numbers
+====
+.Query
+[source,sqlpp]
+----
+SELECT IFNANORINF(5, 10, nan(), inf()),
+       IFNANORINF("abc", 5, NULL, 10),
+       IFNANORINF(NULL, 5, 10),
+       IFNANORINF(MISSING, 5, NULL),
+       IFNANORINF(MISSING, NULL, 5, 10),
+       IFNANORINF(nan(), -inf(), 5, 10);
+----
+.Result
+[source,json]
+----
+[
+  {
+    "$1": 5,
+    "$2": null,
+    "$3": null,
+    "$4": 5,
+    "$5": null,
+    "$6": 5
+  }
+]
+----
+The function `nan()` returns a NaN value, and the functions `inf()` and `-inf()` return positive and negative infinity, respectively.
+====
+
+== NANIF(`expr1`, `expr2`)
+
+This function has a synonym `NAN_IF()`.
+
+=== Description
+
+Compares two expressions and returns `NaN` (Not a Number) if they are equal; otherwise, it returns the value of the first expression.
+
+=== Arguments
+
+expr1::
+A valid expression.
+
+expr2::
+A valid expression to compare with `expr1`.
+
+=== Return Value
+
+The function returns one of the following:
+
+* `NaN` if `expr1` is equal to `expr2`.
+* `expr1` if the expressions are not equal.
+* `NULL` if either expression is `MISSING` or `NULL`.
+
+=== Example
+.Compare two numbers and return NaN if they are equal
+====
+.Query
+[source,sqlpp]
+----
+SELECT NANIF(10, 10) AS nan_equal,
+       NANIF(10, 5) AS nan_not_equal,
+       NANIF(NULL, 5) AS nan_null;
+----
+.Result
+[source,json]
+----
+[
+  {
+    "nan_equal": "NaN",
+    "nan_not_equal": 10,
+    "nan_null": null
+  }
+]
+----
+====
+
+== NEGINFIF(`expr1`, `expr2`)
+
+This function has a synonym `NEGINF_IF()`.
+
+=== Description
+
+Compares two expressions and returns negative infinity if they are equal; otherwise, it returns the value of the first expression.
+
+=== Arguments
+
+expr1::
+A valid expression.
+
+expr2::
+A valid expression to compare with `expr1`.
+
+=== Return Value
+
+The function returns one of the following:
+
+* `-Infinity` if `expr1` is equal to `expr2`.
+* `expr1` if the expressions are not equal.
+* `NULL` if either expression is `MISSING` or `NULL`.
+
+=== Example
+
+.Compare two numbers and return negative infinity if they are equal
+====
+.Query
+[source,sqlpp]
+----
+SELECT NEGINFIF(10, 10) AS neg_inf_equal,
+       NEGINFIF(10, 5) AS neg_inf_not_equal,
+       NEGINFIF(NULL, 5) AS neg_inf_null;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "neg_inf_equal": "-Infinity",
+    "neg_inf_not_equal": 10,
+    "neg_inf_null": null
+  }
+]
+----
+====
+
+== POSINFIF(`expr1`, `expr2`)
+
+This function has a synonym `POSINF_IF()`.
+
+=== Description
+
+Compares two expressions and returns positive infinity if they are equal; otherwise, it returns the value of the first expression.
+
+=== Arguments
+
+expr1::
+A valid expression.
+
+expr2::
+A valid expression to compare with `expr1`.
+
+=== Return Value
+
+The function returns one of the following:
+
+* `+Infinity` if `expr1` is equal to `expr2`.
+* `expr1` if the expressions are not equal.
+* `NULL` if either expression is `MISSING` or `NULL`.
+
+=== Example
+
+.Compare two numbers and return positive infinity if they are equal
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT POSINFIF(10, 10) AS pos_inf_equal,
+       POSINFIF(10, 5) AS pos_inf_not_equal,
+       POSINFIF(NULL, 5) AS pos_inf_null;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "pos_inf_equal": "+Infinity",
+    "pos_inf_not_equal": 10,
+    "pos_inf_null": null
+  }
+]
+----
 ====
