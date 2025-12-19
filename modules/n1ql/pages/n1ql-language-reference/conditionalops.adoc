@@ -30,6 +30,51 @@ If it is equal to the search expression, the result of this expression is the TH
 * If none of the WHEN expressions are equal to the search expression, then the result of the CASE expression is the ELSE expression.
 * If no ELSE expression was provided, the result is NULL.
 
+=== Example
+
+The following example uses a CASE expression to categorize flights based on their `departed-on` date.
+
+====
+.Query
+[source,sqlpp]
+----
+WITH flight AS (
+   [
+      { "flight-id": "F101", "departed-on": "2025-12-01" },
+      { "flight-id": "F201" },
+      { "flight-id": "F301", "departed-on": "2025-12-02" }
+   ]
+)
+SELECT
+   `flight-id`,
+   CASE `departed-on`
+      WHEN "2025-12-01" THEN "First flight"
+      WHEN "2025-12-02" THEN "Second flight"
+      ELSE "Unknown flight"
+   END AS category
+FROM flight
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "flight-id": "F101",
+    "category": "First flight"
+  },
+  {
+    "flight-id": "F201",
+    "category": "Unknown flight"
+  },
+  {
+    "flight-id": "F301",
+    "category": "Second flight"
+  }
+]
+----
+====
+
 == Searched Case Expressions
 
 [source,ebnf]
@@ -50,29 +95,47 @@ The evaluation process is as follows:
 
 === Example
 
-The following example uses a CASE clause to handle documents that do not have a ship date.
-This scans all orders.
-If an order has a shipped-on date, it is provided in the result set.
-If an order does not have a shipped-on date, default text appears.
+The following example uses a CASE clause to determine whether a flight has departed.
+It scans all flights.
+If the flight has a `departed-on` date, it is provided in the result set.
+If not, the result shows the default text `"not-departed-yet"`.
 
 ====
 .Query
 [source,sqlpp]
 ----
+WITH flight AS (
+   [
+      { "flight-id": "F101", "departed-on": "2025-12-01" },
+      { "flight-id": "F201" },
+      { "flight-id": "F301", "departed-on": "2025-12-10" }
+   ]
+)
 SELECT
-   CASE WHEN `shipped-on`
-   IS NOT NULL THEN `shipped-on`
-   ELSE "not-shipped-yet"
-   END
-   AS shipped
-   FROM orders
+   `flight-id`,
+   CASE 
+      WHEN `departed-on` IS NOT NULL THEN `departed-on`
+      ELSE "not-departed-yet"
+   END AS departed
+FROM flight
 ----
 
 .Result
 [source,json]
 ----
-{ "shipped": "2013/01/02" },
-{ "shipped": "2013/01/12" },
-{ "shipped": "not-shipped-yet" },
+[
+  {
+    "flight-id": "F101",
+    "departed": "2025-12-01"
+  },
+  {
+    "flight-id": "F201",
+    "departed": "not-departed-yet"
+  },
+  {
+    "flight-id": "F301",
+    "departed": "2025-12-10"
+  }
+]
 ----
 ====
