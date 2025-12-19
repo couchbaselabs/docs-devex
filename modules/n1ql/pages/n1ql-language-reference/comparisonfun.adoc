@@ -2,54 +2,186 @@
 :description: Comparison functions determine the greatest or least value from a set of values.
 :page-topic-type: reference
 
+[abstract]
 {description}
 
-== GREATEST(expression1, expression2, \...)
+[[comparison-func-greatest]]
+== GREATEST(`expr1` , `expr2`, ...)
 
 === Description
-Largest non-NULL, non-MISSING value if the values are of the same type; otherwise NULL.
 
-=== Example
+Returns the greatest value from a list of expressions.
 
-.Find the largest value from a list of parameterss
+The function compares values based on the sort order of their data types.
+For example, it compares strings alphabetically and dates chronologically.
+When comparing values of different data types, the function uses xref:n1ql-language-reference/datatypes.adoc#collation[collation rules] to determine precedence.
+
+The function requires at least 2 expressions and ignores `NULL` and `MISSING` when evaluating values.
+
+=== Arguments
+
+expr1, expr2, ...::
+The expressions to compare.
+You must specify at least 2 expressions.
+
+=== Return Value
+
+The function returns:
+
+* The largest value among the provided expressions. 
+* `NULL` if all expressions are `NULL` or `MISSING`.
+
+=== Examples
+
+.Find the greatest value from a list of numbers
 ====
+
 .Query
-[source, sqlpp]
+[source,sqlpp]
 ----
-select GREATEST(30, 20, 26, 12) as biggest
+SELECT GREATEST(19.50, 15, 21.50, 18) AS greatest_number;
 ----
 
 .Result
+[source,json]
 ----
 [
   {
-    "biggest": 30
+    "greatest_number": 21.5
   }
 ]
 ----
 ====
 
-== LEAST(expression1, expression2, \...)
-
-=== Description
-Returns smallest non-NULL, non-MISSING value if the values are of the same type, otherwise returns NULL.
-
-=== Example
-
-.Find the largest value from a list of parameterss
+.Find the greatest value from a list of strings
 ====
+
 .Query
-[source, sqlpp]
+[source,sqlpp]
 ----
-select LEAST(30, 20, 26, 12) as smallest
+SELECT GREATEST("United", "Delta", "American", "Southwest") 
+AS last_airline_name;
 ----
 
 .Result
+[source,json]
 ----
 [
   {
-    "smallest": 12
+    "last_airline_name": "United"
   }
 ]
 ----
+When comparing string values, the function uses alphabetical order to determine the greatest value.
+====
+
+.Find the greatest value from a list with mixed types
+====
+.Query
+[source,sqlpp]
+----
+SELECT GREATEST(42, "airline", "2025-12-01T00:00:00Z", NULL)
+AS greatest_value;
+----
+.Result
+[source,json]
+----
+[
+  {
+    "greatest_value": "airline"
+  }
+]
+----
+The function returns `"airline"` because strings have a higher precedence than numbers and dates.
+====
+
+[[comparison-func-least]]
+== LEAST(`expr1` , `expr2`, ...)
+
+=== Description
+
+Returns the smallest value from a list of expressions.
+
+The function compares values based on the sort order of their data types.
+For example, it compares strings alphabetically and dates chronologically.
+When comparing values of different data types, the function uses xref:n1ql-language-reference/datatypes.adoc#collation[collation rules] to determine precedence.
+
+The function requires at least 2 expressions and ignores `NULL` and `MISSING` when evaluating values.
+
+=== Arguments
+
+expr1, expr2, ...::
+The expressions to compare.
+You must specify at least 2 expressions.
+
+=== Return Value
+
+The function returns:
+
+* The smallest value among the provided expressions.
+* `NULL` if all expressions are `NULL` or `MISSING`.
+
+=== Examples
+
+.Find the least value from a list of numbers
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT LEAST(19.50, 15, 21.50, 18) AS lowest_number;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "lowest_number": 15
+  }
+]
+----
+====
+
+.Find the least value from a list of strings
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT LEAST("United", "Delta", "American", "Southwest") 
+AS first_airline_name; 
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "first_airline_name": "American"
+  }
+]
+----
+When comparing string values, the function uses alphabetical order to determine the least value.
+====
+
+.Find the least value from a list with mixed types
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT LEAST(42, "airline", "2025-12-01T00:00:00Z", NULL)
+AS least_value;
+----
+.Result
+[source,json]
+----
+[
+  {
+    "least_value": 42
+  }
+]
+----
+The function returns `42` because numbers have a lower precedence than strings and dates.
 ====
