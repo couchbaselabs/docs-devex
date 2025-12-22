@@ -21,11 +21,12 @@ If the input [.var]`expression` is `MISSING` or if one of the elements in the ar
 
 === Example
 ====
-Use `ARRAY_AGG` to group a list of three items into an array.
+Group a list of three items into an array.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_AGG(["abc",1,NULL]) AS array_aggregate;
+SELECT ARRAY_AGG( [ "abc", 1, NULL ] ) AS array_aggregate;
 ----
 
 .Results
@@ -56,7 +57,7 @@ It requires a minimum of two arguments and returns an error if there are fewer.
 === Arguments
 expr:: [Required] The array to be appended to.
 
-val1, val2, …:: [At least 1 is required] The text string(s) to be appended.
+val1, val2, …:: [At least 1 is required] The values to be appended.
 
 === Return Values
 A new array with the specified [.var]`val` argument(s) appended.
@@ -71,15 +72,12 @@ If the [.var]`expr` is in the `WHERE` clause of a partial index, this function l
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Append two numbers to the end of a given array.
 
-Use `ARRAY_APPEND` to add a user to the Public Likes array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_APPEND(t.public_likes, "Valerie Smith") AS add_user_likes
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_APPEND( [ 1 , 2 ] , 3 , 4) AS numbers;
 ----
 
 .Results
@@ -87,16 +85,11 @@ LIMIT 1;
 ----
 [
   {
-    "add_user_likes": [
-      "Julius Tromp I",
-      "Corrine Hilll",
-      "Jaeden McKenzie",
-      "Vallie Ryan",
-      "Brian Kilback",
-      "Lilian McLaughlin",
-      "Ms. Moses Feeney",
-      "Elnora Trantow",
-      "Valerie Smith"
+    "numbers": [
+      1,
+      2,
+      3,
+      4
     ]
   }
 ]
@@ -124,12 +117,14 @@ If the array size of [.var]`expr` is 0 (no elements), then it returns `NULL`.
 Any non-number elements in the array [.var]`expr` are ignored.
 
 === Example
-====
-Use `ARRAY_AVG` with a set of numbers.
 
+====
+Find the average from an array of numbers.
+
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_AVG([0,1,1,2,3,5]) AS array_average;
+SELECT ARRAY_AVG( [ 0 , 1 , 1 , 2 , 3 , 5 ] ) AS array_average;
 ----
 
 .Results
@@ -174,16 +169,13 @@ If the input [.var]`expr` is not an array, it returns `NULL`.
 === Example
 
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Find the position of a number in a sorted array.
 
-Find which position "Brian Kilback" is in the sorted `public_likes` array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_BINARY_SEARCH(ARRAY_SORT(t.public_likes), "Brian Kilback")
-AS sorted_position
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_BINARY_SEARCH( [ 1 , 3 , 5 , 7 , 9 ] , 5) 
+AS position;
 ----
 
 .Results
@@ -191,7 +183,7 @@ LIMIT 1;
 ----
 [
   {
-    "sorted_position": 0
+    "position": 2
   }
 ]
 ----
@@ -219,15 +211,13 @@ If any of the input [.var]`expr` arguments is not an array, then it returns `NUL
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Combine two arrays into a single array.
 
-Use `ARRAY_CONCAT` to add two people to the Public Likes array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_CONCAT(t.public_likes, ["John McHill", "Dave Smith"]) AS add_user_likes
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_CONCAT( [ 1 , 2 , 3 ], [ 4 , 5 , 6 ] ) 
+AS combined_array;
 ----
 
 .Results
@@ -235,17 +225,13 @@ LIMIT 1;
 ----
 [
   {
-    "add_user_likes": [
-      "Julius Tromp I",
-      "Corrine Hilll",
-      "Jaeden McKenzie",
-      "Vallie Ryan",
-      "Brian Kilback",
-      "Lilian McLaughlin",
-      "Ms. Moses Feeney",
-      "Elnora Trantow",
-      "John McHill",
-      "Dave Smith"
+    "combined_array": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
     ]
   }
 ]
@@ -273,16 +259,15 @@ If the [.var]`expr` argument is not an array, then it returns `NULL`.
 If the array [.var]`expr` contains [.var]`val`, then it returns `TRUE`; otherwise, it returns `FALSE`.
 
 === Example
+
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Check if the value `3` exists in a given array of numbers.
 
-Use `ARRAY_CONTAINS` with a Boolean function:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_CONTAINS(t.public_likes, "Vallie Ryan") AS array_contains_value
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_CONTAINS( [ 1 , 2 , 3 , 4 , 5 ] , 3 ) 
+AS contains_value;
 ----
 
 .Results
@@ -290,7 +275,7 @@ LIMIT 1;
 ----
 [
   {
-    "array_contains_value": true
+    "contains_value": true
   }
 ]
 ----
@@ -315,16 +300,15 @@ If the [.var]`expr` argument is `NULL`, then it returns `NULL`.
 If the [.var]`expr` argument is not an array, then it returns `NULL`.
 
 === Example
+
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Count the number of elements in a given array.
 
-Use `ARRAY_COUNT` to count the total hotel reviews:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_COUNT(t.reviews) AS total_reviews
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_COUNT( [ 1 , 2 , 3 , 4 , 5 ] )
+AS total_count;
 ----
 
 .Results
@@ -332,7 +316,7 @@ LIMIT 1;
 ----
 [
   {
-    "total_reviews": 2
+    "total_count": 5
   }
 ]
 ----
@@ -355,13 +339,15 @@ If the input [.var]`expr` is `MISSING`, it returns `MISSING`.
 If the input [.var]`expr` is a non-array value, it returns `NULL`.
 
 === Example
-====
-Use `ARRAY_DISTINCT` with a group of items.
 
+====
+Remove duplicate elements from a given array.
+
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_DISTINCT(["apples","bananas","grapes","oranges","apples","mangoes","bananas"])
-AS distinct_fruits;
+SELECT ARRAY_DISTINCT( [ 1 , 2 , 2 , 3 , 4 , 4 , 5 ] )
+AS distinct_numbers;
 ----
 
 .Results
@@ -369,12 +355,12 @@ AS distinct_fruits;
 ----
 [
   {
-    "distinct_fruits": [
-      "oranges",
-      "grapes",
-      "bananas",
-      "mangoes",
-      "apples"
+    "distinct_numbers": [
+      1,
+      2,
+      3,
+      4,
+      5
     ]
   }
 ]
@@ -400,14 +386,15 @@ If any of the arguments is `MISSING`, it returns `MISSING`.
 If any of the arguments is a non-array, it returns `NULL`.
 
 === Examples
-====
-Return an array of even numbers by excluding odd numbers.
 
+====
+Exclude elements of one array from another.
+
+.Query
 [source,sqlpp]
 ----
-WITH Numbers AS ([1, 2, 3, 4, 5, 6]),
-Odd AS ([1, 3, 5])
-SELECT ARRAY_EXCEPT(Numbers, Odd) AS Even;
+SELECT ARRAY_EXCEPT( [ 1 , 2 , 3 , 4 , 5 ] , [ 2 , 4 ] )
+AS result_array;
 ----
 
 .Results
@@ -415,10 +402,10 @@ SELECT ARRAY_EXCEPT(Numbers, Odd) AS Even;
 ----
 [
   {
-    "Even": [
-      2,
-      4,
-      6
+    "result_array": [
+      1,
+      3,
+      5
     ]
   }
 ]
@@ -444,15 +431,20 @@ If one of the arguments is `MISSING`, it returns `MISSING`.
 If the input [.var]`expr` is a non-array, or if the input [.var]`depth` argument is not an integer, it returns `NULL`.
 
 === Examples
-====
-Create a 3-level array of numbers to flatten by 1 level.
 
+====
+Flatten a nested array by 1 and 2 levels.
+
+.Query
 [source,sqlpp]
 ----
-INSERT INTO default (KEY, value)
-             VALUES ("na", {"a":2, "b":[1,2,[31,32,33],4,[[511, 512], 52]]});
-
-SELECT ARRAY_FLATTEN(b,1) AS flatten_by_1 FROM default USE KEYS ["na"];
+SELECT 
+  ARRAY_FLATTEN(
+    [ [ 1, 2 ], [ 3, [ 4, 5 ] ] ], 1
+  ) AS flatten_by_1,
+  ARRAY_FLATTEN(
+    [ [ 1, 2 ], [ 3, [ 4, 5 ] ] ], 2
+  ) AS flatten_by_2;
 ----
 
 .Results
@@ -463,44 +455,18 @@ SELECT ARRAY_FLATTEN(b,1) AS flatten_by_1 FROM default USE KEYS ["na"];
     "flatten_by_1": [
       1,
       2,
-      31,
-      32,
-      33,
-      4,
+      3,
       [
-        511,
-        512
-      ],
-      52
-    ]
-  }
-]
-----
-====
-
-====
-Flatten the above example by 2 levels.
-
-[source,sqlpp]
-----
-SELECT ARRAY_FLATTEN(b,2) AS flatten_by_2 FROM default USE KEYS ["na"];
-----
-
-.Results
-[source,json]
-----
-[
-  {
+        4,
+        5
+      ]
+    ],
     "flatten_by_2": [
       1,
       2,
-      31,
-      32,
-      33,
+      3,
       4,
-      511,
-      512,
-      52
+      5
     ]
   }
 ]
@@ -525,11 +491,13 @@ If the input [.var]`expr` is a non-array, then it returns `NULL`.
 
 === Examples
 ====
-Find the first non-`NULL` value in an array of items.
+Find the first non-NULL value in a given array.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_IFNULL( ["","apples","","bananas","grapes","oranges"]) AS check_null;
+SELECT ARRAY_IFNULL( [ NULL , NULL , 1 , 2 , 3 ] )
+AS first_non_null;
 ----
 
 .Results
@@ -537,33 +505,7 @@ SELECT ARRAY_IFNULL( ["","apples","","bananas","grapes","oranges"]) AS check_nul
 ----
 [
   {
-    "check_null": ""
-  }
-]
-----
-====
-
-====
-include::ROOT:partial$query-context.adoc[tag=example]
-
-Find the first non-`null` hotel reviewers:
-
-[source,sqlpp]
-----
-SELECT ARRAY_IFNULL(t.public_likes) AS if_null
-FROM hotel t
-LIMIT 2;
-----
-
-.Results
-[source,json]
-----
-[
-  {
-    "if_null": "Julius Tromp I"
-  },
-  {
-    "if_null": null
+    "first_non_null": 1
   }
 ]
 ----
@@ -590,16 +532,15 @@ If any of the three arguments are `MISSING`, then it returns `MISSING`.
 If the [.var]`expr` argument is a non-array or if the [.var]`position` argument is not an integer, then it returns `NULL`.
 
 === Example
+
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Insert `55` into the 2nd position of an array. 
 
-Insert "jsmith" into the 2nd position of the `public_likes` array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_INSERT(public_likes, 2, "jsmith") AS insert_val
-FROM hotel
-LIMIT 1;
+SELECT ARRAY_INSERT( [ 1 , 2 , 3 , 4 ] , 2 , 55 ) 
+AS updated_array;
 ----
 
 .Results
@@ -607,16 +548,12 @@ LIMIT 1;
 ----
 [
   {
-    "insert_val": [
-      "Julius Tromp I",
-      "Corrine Hilll",
-      "jsmith",
-      "Jaeden McKenzie",
-      "Vallie Ryan",
-      "Brian Kilback",
-      "Lilian McLaughlin",
-      "Ms. Moses Feeney",
-      "Elnora Trantow"
+    "updated_array": [
+      1,
+      2,
+      55,
+      3,
+      4
     ]
   }
 ]
@@ -643,11 +580,15 @@ If any of the input arguments are non-array values, then it returns `NULL`.
 
 === Examples
 ====
-Compare three arrays of fruit for common elements.
+Compare three arrays to find common elements.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_INTERSECT( ["apples","bananas","grapes","orange"], ["apples","orange"], ["apples","grapes"])
+SELECT ARRAY_INTERSECT( 
+  [ 1 , 2 , 3 , 4 ] , 
+  [ 2 , 4 , 6 ] , 
+  [ 4 , 8 ] )
 AS array_intersection;
 ----
 
@@ -657,7 +598,7 @@ AS array_intersection;
 [
   {
     "array_intersection": [
-      "apples"
+      4
     ]
   }
 ]
@@ -665,11 +606,15 @@ AS array_intersection;
 ====
 
 ====
-Compare three arrays of fruit with no common elements.
+Compare three arrays with no common elements.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_INTERSECT( ["apples","grapes","oranges"], ["apples"],["oranges"],["bananas", "grapes"])
+SELECT ARRAY_INTERSECT( 
+  [ 1 , 2 , 3 ] , 
+  [ 3 , 4 , 5 , 6 ] , 
+  [ 6 , 7 , 8 , 9 ] ) 
 AS array_intersection;
 ----
 
@@ -704,15 +649,13 @@ If the input argument is a non-array value, then it returns `NULL`.
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Find the number of elements in a given array.
 
-Find how many total `public_likes` there are in the `travel-sample` keyspace:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_LENGTH(t.public_likes) AS total_likes
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_LENGTH( [ 1 , 2 , 3 , 4 , 5 ] ) 
+AS total_elements;
 ----
 
 .Results
@@ -720,7 +663,7 @@ LIMIT 1;
 ----
 [
   {
-    "total_likes": 8
+    "total_elements": 5
   }
 ]
 ----
@@ -744,15 +687,14 @@ If the input [.var]`expr` is a non-array value, then it returns `NULL`.
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Find the largest value in a given array.
 
-Find the maximum (last) value of the `public_likes` array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_MAX(t.public_likes) AS max_val
-FROM hotel t
-LIMIT 1;
+SELECT
+  ARRAY_MAX( [ 1 , 3 , 9 , 5 ] ) AS max_num,
+  ARRAY_MAX( [ "delta" , "united" , "southwest" ] ) max_string;
 ----
 
 .Results
@@ -760,7 +702,8 @@ LIMIT 1;
 ----
 [
   {
-    "max_val": "Vallie Ryan"
+    "max_num": 9,
+    "max_string": "united"
   }
 ]
 ----
@@ -784,15 +727,14 @@ If the input [.var]`expr` is a non-array value, then it returns `NULL`.
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Find the smallest value in a given array.
 
-Find the minimum (first) value of the `public_likes` array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_MIN(t.public_likes) AS min_val
-FROM hotel t
-LIMIT 1;
+SELECT
+  ARRAY_MIN( [ 1 , 3 , 9 , 5 ] ) AS min_num,
+  ARRAY_MIN( [ "delta" , "united" , "southwest" ] ) min_string;
 ----
 
 .Results
@@ -800,7 +742,8 @@ LIMIT 1;
 ----
 [
   {
-    "min_val": "Brian Kilback"
+    "min_num": 1,
+    "min_string": "delta"
   }
 ]
 ----
@@ -833,12 +776,13 @@ If the [.var]`expr` argument is a non-array, or if either of the [.var]`val` arg
 
 === Examples
 ====
-Move the first element in the array to the second position in the array.
+Move the 1st element in a given array to the 3rd position in the array.
 
+.Query
 [source,sqlpp]
 ----
-WITH Letters AS (["a", "b", "c", "d", "e", "f"])
-SELECT ARRAY_MOVE(Letters, 0, 1) AS Second;
+SELECT ARRAY_MOVE(["a", "b", "c", "d", "e"], 0, 3) 
+AS updated_array;
 ----
 
 .Results
@@ -846,13 +790,12 @@ SELECT ARRAY_MOVE(Letters, 0, 1) AS Second;
 ----
 [
   {
-    "Second": [
+    "updated_array": [
       "b",
-      "a",
       "c",
       "d",
-      "e",
-      "f"
+      "a",
+      "e"
     ]
   }
 ]
@@ -860,12 +803,13 @@ SELECT ARRAY_MOVE(Letters, 0, 1) AS Second;
 ====
 
 ====
-Move the first element in an array to the penultimate position in the array.
+Move the 1st element in a given array to the penultimate position in the array.
 
+.Query
 [source,sqlpp]
 ----
-WITH Letters AS (["a", "b", "c", "d", "e", "f"])
-SELECT ARRAY_MOVE(Letters, 0, -2) AS Penultimate;
+SELECT ARRAY_MOVE( [ "a" , "b" , "c" , "d" , "e" ] , 0 , -2) 
+AS penultimate;
 ----
 
 .Results
@@ -873,13 +817,12 @@ SELECT ARRAY_MOVE(Letters, 0, -2) AS Penultimate;
 ----
 [
   {
-    "Penultimate": [
+    "penultimate": [
       "b",
       "c",
       "d",
-      "e",
       "a",
-      "f"
+      "e"
     ]
   }
 ]
@@ -913,15 +856,13 @@ If either of the arguments are non-array values, it returns `NULL`.
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Find the position of the value `30` in a given array.
 
-Find which position "Brian Kilback" is in the `public_likes` array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_POSITION(t.public_likes, "Brian Kilback") AS array_position
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_POSITION( [ 10 , 20 , 30 , 40 , 50 ] , 30 )
+AS position;
 ----
 
 .Results
@@ -929,7 +870,7 @@ LIMIT 1;
 ----
 [
   {
-    "array_position": 4
+    "position": 2
   }
 ]
 ----
@@ -957,15 +898,13 @@ If the last argument is a non-array, it returns `NULL`.
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Add the value `0` to the beginning of a given array.
 
-Prepend "Dave Smith" to the front of the `public_likes` array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_PREPEND("Dave Smith",t.public_likes) AS prepend_val
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_PREPEND( 0 , [ 1 , 2 , 3 , 4 , 5 ] )
+AS updated_array;
 ----
 
 .Results
@@ -973,16 +912,13 @@ LIMIT 1;
 ----
 [
   {
-    "prepend_val": [
-      "Dave Smith",
-      "Julius Tromp I",
-      "Corrine Hilll",
-      "Jaeden McKenzie",
-      "Vallie Ryan",
-      "Brian Kilback",
-      "Lilian McLaughlin",
-      "Ms. Moses Feeney",
-      "Elnora Trantow"
+    "updated_array": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
     ]
   }
 ]
@@ -1013,15 +949,12 @@ If the first argument is a non-array, then it returns `NULL`.
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Append the value `5` to a given array of numbers.  
 
-Append "Dave Smith" to the end of the `public_likes` array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_PUT(t.public_likes, "Dave Smith") AS array_put
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_PUT([1, 2, 3, 4], 5) AS updated_array;
 ----
 
 .Results
@@ -1029,16 +962,12 @@ LIMIT 1;
 ----
 [
   {
-    "array_put": [
-      "Julius Tromp I",
-      "Corrine Hilll",
-      "Jaeden McKenzie",
-      "Vallie Ryan",
-      "Brian Kilback",
-      "Lilian McLaughlin",
-      "Ms. Moses Feeney",
-      "Elnora Trantow",
-      "Dave Smith"
+    "updated_array": [
+      1,
+      2,
+      3,
+      4,
+      5
     ]
   }
 ]
@@ -1074,11 +1003,12 @@ If any of the arguments do not start with a digit, then it returns an error.
 
 === Examples
 ====
-Make an array from 0 to 20 by stepping every 5th number.
+Generate an array of numbers from `0` to `20` with a step of `5`.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_RANGE(0, 25, 5) AS gen_array_range_5;
+SELECT ARRAY_RANGE( 0 , 25 , 5 ) AS generated_array;
 ----
 
 .Results
@@ -1086,7 +1016,7 @@ SELECT ARRAY_RANGE(0, 25, 5) AS gen_array_range_5;
 ----
 [
   {
-    "gen_array_range_5": [
+    "generated_array": [
       0,
       5,
       10,
@@ -1099,11 +1029,12 @@ SELECT ARRAY_RANGE(0, 25, 5) AS gen_array_range_5;
 ====
 
 ====
-Make an array from 0.1 to 1.1 by stepping every 2nd number.
+Generate an array of numbers from `0.1` to `1.1` with the default step `1`.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_RANGE(0.1, 2) AS gen_array_range_2;
+SELECT ARRAY_RANGE( 0.1 , 2 ) AS generated_array;
 ----
 
 .Results
@@ -1111,7 +1042,7 @@ SELECT ARRAY_RANGE(0.1, 2) AS gen_array_range_2;
 ----
 [
   {
-    "gen_array_range_2": [
+    "generated_array": [
       0.1,
       1.1
     ]
@@ -1121,11 +1052,12 @@ SELECT ARRAY_RANGE(0.1, 2) AS gen_array_range_2;
 ====
 
 ====
-Make an array from 10 to 3 by stepping down every 3rd number.
+Generate an array from `10` to `3` with a step of `-3`.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_RANGE(10, 3, -3) AS gen_array_range_minus3;
+SELECT ARRAY_RANGE( 10 , 3 , -3 ) AS generated_array;
 ----
 
 .Results
@@ -1133,7 +1065,7 @@ SELECT ARRAY_RANGE(10, 3, -3) AS gen_array_range_minus3;
 ----
 [
   {
-    "gen_array_range-3": [
+    "generated_array": [
       10,
       7,
       4
@@ -1180,15 +1112,13 @@ END AS filtered_names;
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Remove `3` and `5` from an array of numbers.
 
-Remove "Vallie Ryan" from the `public_likes` array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_REMOVE(t.public_likes, "Vallie Ryan") AS remove_val
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_REMOVE( [ 1 , 2 , 3 , 4 , 5 ] , 3, 5 ) 
+AS updated_array;
 ----
 
 .Results
@@ -1196,14 +1126,10 @@ LIMIT 1;
 ----
 [
   {
-    "remove_val": [
-      "Julius Tromp I",
-      "Corrine Hilll",
-      "Jaeden McKenzie",
-      "Brian Kilback",
-      "Lilian McLaughlin",
-      "Ms. Moses Feeney",
-      "Elnora Trantow"
+    "updated_array": [
+      1,
+      2,
+      4
     ]
   }
 ]
@@ -1230,11 +1156,12 @@ If the [.var]`rep_int` argument is not an integer, then it returns `NULL`.
 
 === Example
 ====
-Make an array with "Vallie Ryan" three times.
+Create an array with the value `"hello"` repeated 3 times.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_REPEAT("Vallie Ryan", 3) AS repeat_val;
+SELECT ARRAY_REPEAT("hello", 3) AS repeated_array;
 ----
 
 .Results
@@ -1242,10 +1169,10 @@ SELECT ARRAY_REPEAT("Vallie Ryan", 3) AS repeat_val;
 ----
 [
   {
-    "repeat_val": [
-      "Vallie Ryan",
-      "Vallie Ryan",
-      "Vallie Ryan"
+    "repeated_array": [
+      "hello",
+      "hello",
+      "hello"
     ]
   }
 ]
@@ -1279,15 +1206,12 @@ If the first argument is not an array or if the second argument is `NULL`, then 
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Replace all occurrences of `2` with `99` in a given array.
 
-Replace all occurrences of "Vallie Ryan" with "Valerie Ryan":
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_REPLACE(t.public_likes, "Vallie Ryan", "Valerie Ryan") AS replace_val
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_REPLACE( [ 1 , 2 , 3 , 2 , 4 ] , 2 , 99) AS updated_array;
 ----
 
 .Results
@@ -1295,15 +1219,12 @@ LIMIT 1;
 ----
 [
   {
-    "replace_val": [
-      "Julius Tromp I",
-      "Corrine Hilll",
-      "Jaeden McKenzie",
-      "Valerie Ryan",
-      "Brian Kilback",
-      "Lilian McLaughlin",
-      "Ms. Moses Feeney",
-      "Elnora Trantow"
+    "updated_array": [
+      1,
+      99,
+      3,
+      99,
+      4
     ]
   }
 ]
@@ -1328,15 +1249,13 @@ If the argument is a non-array value, then it returns `NULL`.
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Reverse the order of elements in a given array.
 
-Reverse the values in the `public_likes` array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_REVERSE(t.public_likes) AS reverse_val
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_REVERSE( [ 1 , 2 , 3 , 4 , 5 ] ) 
+AS reversed_array;
 ----
 
 .Results
@@ -1344,15 +1263,12 @@ LIMIT 1;
 ----
 [
   {
-    "reverse_val": [
-      "Elnora Trantow",
-      "Ms. Moses Feeney",
-      "Lilian McLaughlin",
-      "Brian Kilback",
-      "Vallie Ryan",
-      "Jaeden McKenzie",
-      "Corrine Hilll",
-      "Julius Tromp I"
+    "reversed_array": [
+      5,
+      4,
+      3,
+      2,
+      1
     ]
   }
 ]
@@ -1377,15 +1293,13 @@ If the argument is a non-array value, then it returns `NULL`.
 
 === Example
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+Sort the elements of a given array in ascending order.
 
-Sort the `public_likes` array:
-
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_SORT(t.public_likes) AS sorted_array
-FROM hotel t
-LIMIT 1;
+SELECT ARRAY_SORT( [ 5 , 3 , 1 , 4 , 2 ] ) 
+AS sorted_array;
 ----
 
 .Results
@@ -1394,14 +1308,11 @@ LIMIT 1;
 [
   {
     "sorted_array": [
-      "Brian Kilback",
-      "Corrine Hilll",
-      "Elnora Trantow",
-      "Jaeden McKenzie",
-      "Julius Tromp I",
-      "Lilian McLaughlin",
-      "Ms. Moses Feeney",
-      "Vallie Ryan"
+      1,
+      2,
+      3,
+      4,
+      5
     ]
   }
 ]
@@ -1426,25 +1337,14 @@ If the argument is a non-array value, then it returns `NULL`.
 
 === Example
 ====
-Convert a given array of two documents each with five items into an object of five arrays each with two documents.
+Convert a given array of two objects, each with three fields, into an object of three arrays.
 
 [source,sqlpp]
 ----
-SELECT ARRAY_STAR( [
-   {
-    "address": "Capstone Road, ME7 3JE",
-    "city": "Medway",
-    "country": "United Kingdom",
-    "name": "Medway Youth Hostel",
-    "url": "http://www.yha.org.uk"
-  },
-  {
-    "address": "6 rue aux Juifs",
-    "city": "Giverny",
-    "country": "France",
-    "name": "The Robins",
-    "url": "http://givernyguesthouse.com/robin.htm"
-  }]) AS array_star;
+SELECT ARRAY_STAR([
+  { "id": 10226, "airline": "Atifly", "code": "A1F" },
+  { "id": 10123, "airline": "Texas Wings", "code": "TXW" }
+]) AS object_of_arrays;
 ----
 
 .Results
@@ -1452,27 +1352,10 @@ SELECT ARRAY_STAR( [
 ----
 [
   {
-    "array_star": {
-      "address": [
-        "Capstone Road, ME7 3JE",
-        "6 rue aux Juifs"
-      ],
-      "city": [
-        "Medway",
-        "Giverny"
-      ],
-      "country": [
-        "United Kingdom",
-        "France"
-      ],
-      "name": [
-        "Medway Youth Hostel",
-        "The Robins"
-      ],
-      "url": [
-        "http://www.yha.org.uk",
-        "http://givernyguesthouse.com/robin.htm"
-      ]
+    "object_of_arrays": {
+      "airline": [ "Atifly", "Texas Wings"],
+      "code": [ "A1F", "TXW" ],
+      "id": [ 10226, 10123]
     }
   }
 ]
@@ -1480,20 +1363,65 @@ SELECT ARRAY_STAR( [
 ====
 
 === Array References
+
 You can use an asterisk (*) as an array subscript which converts the array to an object of arrays.
-The following example returns an array of the ages of the given contact’s children:
+
+The following example returns an array of airline names from an array of flight objects:
+
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT children[*].age FROM contacts WHERE fname = "Dave"
+WITH sample AS (
+  SELECT [
+    { "airline": "Atifly", "code": "AF" },
+    { "airline": "Texas Wings", "code": "TXW" }
+  ] AS flights
+)
+SELECT flights[*].airline
+FROM sample;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "airline": [
+      "Atifly",
+      "Texas Wings"
+    ]
+  }
+]
 ----
 ====
 
-An equivalent query can be written using the [.api]`array_star()` function:
+You can write an equivalent query using the [.api]`array_star()` function:
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT array_star(children).age FROM contacts WHERE fname = "Dave"
+WITH sample AS (
+  SELECT [
+    { "airline": "Atifly", "code": "AF" },
+    { "airline": "Texas Wings", "code": "TXW" }
+  ] AS flights
+)
+SELECT array_star(flights).airline
+FROM sample;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "airline": [
+      "Atifly",
+      "Texas Wings"
+    ]
+  }
+]
 ----
 ====
 
@@ -1632,9 +1560,10 @@ If the argument is a non-array value, then it returns `NULL`.
 ====
 Find the total of a given array of numbers.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_SUM([0,1,1,2,3,5]) as sum;
+SELECT ARRAY_SUM( [ 0 , 1 , 1 , 2 , 3 , 5 ] ) as sum;
 ----
 
 .Results
@@ -1655,7 +1584,7 @@ This function has a synonym <<fn-array-symdiff1>>.
 
 === Description
 This function returns a new array based on the set symmetric difference, or disjunctive union, of the input [.var]`expression` arrays.
-The new array contains only those elements that appear in _exactly one_ of the input arrays, and it requires a minimum of two arguments.
+The new array contains only those elements that appear in exactly one of the input arrays, and it requires a minimum of two arguments.
 
 === Arguments
 expr1, expr2, …:: [At least 2 are required] The input arrays to compare.
@@ -1678,9 +1607,11 @@ Refer to the following article for more information on the difference between a 
 ====
 Find the elements that appear in exactly one of these three input arrays.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_SYMDIFF([1, 2], [1, 2, 4], [1, 3]) AS symm_diff1;
+SELECT ARRAY_SYMDIFF( [ 1 , 2 ] , [ 1 , 2 , 4 ] , [ 1 , 3 ] ) 
+AS symm_diff1;
 ----
 
 .Results
@@ -1707,7 +1638,7 @@ Synonym of <<fn-array-symdiff>>.
 
 === Description
 This function returns a new array based on the set symmetric difference, or disjunctive union, of the input arrays.
-The new array contains only those elements that appear in _an odd number_ of input arrays, and it requires a minimum of two arguments.
+The new array contains only those elements that appear in an odd number of input arrays, and it requires a minimum of two arguments.
 
 === Arguments
 expr1, expr2, …:: [At least 2 are required] The input arrays to compare.
@@ -1730,9 +1661,11 @@ Refer to the following article for more information on the difference between a 
 ====
 Find the elements that appear in an odd number of these three input arrays.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_SYMDIFFN([1, 2], [1, 2, 4], [1, 3]) AS symm_diffn;
+SELECT ARRAY_SYMDIFFN( [ 1 , 2 ] , [ 1 , 2 , 4 ] , [ 1 , 3 ] ) 
+AS symm_diffn;
 ----
 
 .Results
@@ -1770,9 +1703,11 @@ If any of the arguments is a non-array value, then it returns `NULL`.
 ====
 List the union of three given arrays.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_UNION([1, 2], [1, 2, 4], [1, 3]) AS array_union;
+SELECT ARRAY_UNION( [ 1 , 2 ] , [ 1 , 2 , 4 ] , [ 1 , 3 ] )
+AS array_union;
 ----
 
 .Results
@@ -1794,9 +1729,11 @@ SELECT ARRAY_UNION([1, 2], [1, 2, 4], [1, 3]) AS array_union;
 ====
 List the union of two given arrays with a string.
 
+.Query
 [source,sqlpp]
 ----
-SELECT ARRAY_UNION([1, 2], [1, 2, 4], "abc") AS array_union;
+SELECT ARRAY_UNION( [ 1 , 2 ] , [ 1 , 2 , 4 ] , "abc") 
+AS array_union;
 ----
 
 .Results
