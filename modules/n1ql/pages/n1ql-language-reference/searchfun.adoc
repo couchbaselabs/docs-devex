@@ -17,7 +17,7 @@ For more information, refer to xref:search:create-search-indexes.adoc[].
 
 [NOTE]
 --
-The examples in this page assume that you have a full text search index created with this definition, unless specified otherwise.
+The examples on this page assume you have created a full-text search index using the following definition.
 
 [source,json]
 ----
@@ -266,8 +266,8 @@ Offset and Limit pushdown is possible if the query only has a SEARCH() predicate
 Group aggregates and projection are not pushed.
 
 NOTE: 
-If the `index` setting isn't specified within the options argument of the Search function, {sqlpp} can pick any FTS index available in the system that qualifies for the query. 
-If a number of FTS indexes qualify, then one that is defined most precise will be chosen.
+If you do not specify the `index` setting in the options argument of the Search function, {sqlpp} automatically selects a qualifying FTS index for the query.
+If multiple indexes qualify for the query, {sqlpp} selects the most precise one.
 
 === Examples
 
@@ -407,36 +407,8 @@ As an alternative, you could limit the number of results and order them using th
 
 .Search against a Full Text Search index that carries a custom type mapping
 ====
-.Query
-[source,sqlpp]
-----
-SELECT META(t1).id
-FROM hotel AS t1
-WHERE t1.type = "hotel" AND SEARCH(t1.description, "amazing");
-----
 
-.Results
-[source,json]
-----
-[
-  {
-    "id": "hotel_20422"
-  },
-  {
-    "id": "hotel_22096"
-  },
-  {
-    "id": "hotel_25243"
-  },
-  {
-    "id": "hotel_27741"
-  }
-]
-----
-
-If the Full Text Search index being queried has its default mapping disabled and has a custom type mapping defined, the query needs to specify the type explicitly.
-
-The above query uses the following index definition: 
+Before running this example, create a Search index with a custom type mapping as described below.
 
 [source, json]
 ----
@@ -482,6 +454,35 @@ The above query uses the following index definition:
   "uuid": ""
 }
 ----
+
+.Query
+[source,sqlpp]
+----
+SELECT META(t1).id
+FROM hotel AS t1
+WHERE t1.type = "hotel" AND SEARCH(t1.description, "amazing");
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "id": "hotel_20422"
+  },
+  {
+    "id": "hotel_22096"
+  },
+  {
+    "id": "hotel_25243"
+  },
+  {
+    "id": "hotel_27741"
+  }
+]
+----
+If the Full Text Search index being queried has its default mapping disabled and has a custom type mapping defined, the query needs to specify the type explicitly.
+
 For more information about defining custom type mappings within a Search index, refer to xref:search:create-type-mapping.adoc[Create a Type Mapping].
 Note that for {sqlpp} queries, only Search indexes with one type mapping are searchable.
 Also the supported type identifiers at the moment are "type_field" and "docid_prefix"; "docid_regexp" isn't supported yet for SEARCH queries via {sqlpp}.
