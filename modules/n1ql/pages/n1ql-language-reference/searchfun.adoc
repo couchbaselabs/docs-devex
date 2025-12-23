@@ -265,6 +265,10 @@ Order pushdown is possible only if query ORDER BY has only <<search_score>> on t
 Offset and Limit pushdown is possible if the query only has a SEARCH() predicate, using a single search index -- no IntersectScan or OrderIntersectScan.
 Group aggregates and projection are not pushed.
 
+NOTE: 
+If the `index` setting isn't specified within the options argument of the Search function, {sqlpp} can pick any FTS index available in the system that qualifies for the query. 
+If a number of FTS indexes qualify, then one that is defined most precise will be chosen.
+
 === Examples
 
 include::ROOT:partial$query-context.adoc[tag=section]
@@ -339,7 +343,7 @@ WHERE SEARCH(t1, {
   {
     "name": "New Road Guest House (B&B)"
   },
-  // ...
+  ...
 ]
 ----
 
@@ -381,15 +385,20 @@ WHERE SEARCH(t1, {
 ----
 [
   {
+    "name": "The Aviator Hotel"
+  },
+  {
+    "name": "Premier Inn Birmingham Central East"
+  },
+  {
+    "name": "Castle Hotel"
+  },
+  {
+    "name": "Suites at Fisherman's Wharf"
+  },
+  {
     "name": "Waunifor"
-  },
-  {
-    "name": "Bistro Prego With Rooms"
-  },
-  {
-    "name": "Thornehill Broome Beach Campground"
-  },
-  // ...
+  }
 ]
 ----
 This query returns 5 results, and the results are ordered, as specified by the search options.
@@ -664,7 +673,7 @@ LIMIT 3;
       "score": 0.3471730605306995 // <.>
     }
   },
-  // ...
+  ...
 ]
 ----
 
@@ -765,17 +774,23 @@ LIMIT 3;
 ----
 [{
         "name": "Marina del Rey Marriott",
-        "description": "370 guest rooms offering both water and mountain view.",
+        "description": "370 guest rooms 
+            offering both water and mountain view.",
         "score": 2.1256278997816835
     },
     {
         "name": "Clwydian Holidays",
-        "description": "Log cabin glamping in a rural setting with panoramic views toward the Clwydian Mountain Range.",
+        "description": "Log cabin glamping 
+            in a rural setting with panoramic views 
+            toward the Clwydian Mountain Range.",
         "score": 1.6956645086702617
     },
     {
         "name": "The Royal Victoria Hotel",
-        "description": "3 Star Hotel next to the Mountain Railway terminus and set in 30 acres of grounds which include Dolbadarn Castle",
+        "description": "3 Star Hotel next to 
+          the Mountain Railway terminus 
+          and set in 30 acres of grounds 
+          which include Dolbadarn Castle",
         "score": 1.5030458987111712
     }
 ]
