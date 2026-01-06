@@ -1160,6 +1160,81 @@ LIMIT 3;
 ----
 ====
 
+[[meta-ex4, Example 4]]
+.Return a specific XATTR
+====
+
+To run this example, you must first create a document with key `landmark_1001` and add an XATTR attribute `metadata` to it. 
+
+.Query to insert
+[source, sqlpp]
+----
+INSERT INTO `travel-sample`.`inventory`.`landmark` (KEY, VALUE, OPTIONS)
+VALUES (
+    "landmark_1001",
+    {
+        "title": "Gillingham (Kent)",
+        "name": "Hollywood Bowl",
+        "alt": null,
+        "address": "4 High Street, ME7 1BB",
+        "directions": null,
+        "phone": null,
+        "tollfree": null,
+        "email": null,
+        "url": "http://www.thehollywoodbowl.co.uk",
+        "hours": null,
+        "image": null,
+        "price": null,
+        "content": "A newly extended lively restaurant 
+              located in the high street, 
+              an American Hollywood style restaurant 
+              beautifully decorated with old photos 
+              and a great menu including burgers and ribs.",
+        "geo": {
+            "lat": 51.38937,
+            "lon": 0.5427,
+            "accuracy": "RANGE_INTERPOLATED"
+        },
+        "activity": "eat",
+        "type": "landmark",
+        "id": 10020,
+        "country": "United Kingdom",
+        "city": "Gillingham",
+        "state": null
+    },
+    {
+        "xattrs": {
+            "metadata": {
+                "created_by": "admin",
+                "created_at": "2026-01-05"
+            }
+        }
+    }
+);
+----
+
+Next, run the following query to retrieve the XATTR attribute `metadata`.
+
+.Query to retrieve
+[source,sqlpp]
+----
+SELECT META().xattrs.metadata
+FROM `travel-sample`.`inventory`.`landmark`
+USE KEYS ["landmark_1001"];
+----
+
+.Results
+[source,json]
+----
+[{
+    "metadata": {
+        "created_at": "2026-01-05",
+        "created_by": "admin"
+    }
+}]
+----
+====
+
 For examples showing how to index metadata information, refer to xref:n1ql-language-reference/indexing-meta-info.adoc[Indexing Meta Info].
 
 For examples showing how to use metadata information in the predicate of an ANSI JOIN clause, refer to xref:n1ql:n1ql-language-reference/join.adoc[JOIN Clause].
