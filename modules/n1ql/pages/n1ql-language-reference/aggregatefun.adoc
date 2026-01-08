@@ -36,7 +36,7 @@ In Couchbase Server Enterprise Edition, aggregate functions can also be used as 
 
 include::partial$n1ql-language-reference/window-intro.adoc[tag=syntax]
 
-[[agg-func-syntax]]
+[[aggregate-syntax]]
 == Syntax
 
 This section describes the generic syntax of aggregate functions.
@@ -123,90 +123,112 @@ All other aggregate functions return NULL.
 
 === Description
 
-This function returns an array of all non-MISSING values from a specified expression.
+This function takes all non-MISSING values from an expression and returns them as an array. 
+The function ignores MISSING values, but includes NULL values in the resulting array.
 
 You can use the following quantifiers to control the values in the resulting array: 
 
-* `ALL` - Includes all non-MISSING values, including NULL.
-* `DISTINCT` - Includes only distinct non-MISSING values, including NULL.
+* `ALL` - includes every non-MISSING value.  
+This is the default behavior.
+* `DISTINCT` - includes only distinct values and removes duplicates.
+
+For more information about quantifiers, see <<aggregate-quantifier>>.
 
 === Arguments
 
-See <<agg-func-syntax>>.
+expression:: [Required] 
+A valid {expression}[expression] that contains the values to aggregate.
+
+NOTE: You can also add optional clauses like FILTER and OVER to this function. 
+For more information, see <<aggregate-syntax>>.
 
 === Return Value
 
-An array of non-MISSING values.
+An array of aggregated values. 
+
+The function returns NULL if all values in the group are either MISSING or empty.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.List all airlines into an array
 ====
-List all values of the `Cleanliness` reviews given:
-
 .Query
 [source,sqlpp]
 ----
-SELECT ARRAY_AGG() AS 
+SELECT ARRAY_AGG(airline) AS result
+FROM ["United", "Delta", "United", 
+      "Southwest", NULL, MISSING] 
+AS airline;
 ----
 
 .Results
 [source,json]
 ----
-[
-  {
-    "Reviews": [
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      // ...
+[{
+    "result": [
+        null,
+        "Delta",
+        "Southwest",
+        "United",
+        "United"
     ]
-  }
-]
+}]
 ----
 ====
 
+.List unique airlines into an array
 ====
-List all unique values of the `Cleanliness` reviews given:
-
 .Query
 [source,sqlpp]
 ----
-SELECT ARRAY_AGG(DISTINCT reviews[0].ratings.Cleanliness) AS Reviews
-FROM hotel;
+SELECT ARRAY_AGG( DISTINCT airline) AS result
+FROM ["United", "Delta", "United", 
+      "Southwest", NULL, MISSING] 
+AS airline;
 ----
 
 .Results
 [source,json]
 ----
-[
-  {
-    "UniqueReviews": [
-      -1,
-      1,
-      2,
-      3,
-      4,
-      5
+[{
+    "result": [
+        null,
+        "Delta",
+        "Southwest",
+        "United"
     ]
-  }
-]
+}]
 ----
 ====
 
 [[avg,AVG()]]
 == [[avg_distinct]]AVG( {startsb} ALL | DISTINCT {endsb} `expression`)
 
-This function has an alias <<mean>>.
+This function has a synonym <<mean>>.
+
+=== Description
+
+This function computes the arithmetic mean (average) of all numeric values in an expression.
+
+You can use the ALL or DISTINCT quantifiers to control the values used in the calculation.
+By default, the function uses the ALL quantifier and includes every non-MISSING value. 
+The DISTINCT quantifier uses only distinct values and helps remove duplicates from the calculation. 
+For more information about these quantifiers, see <<aggregate-quantifier>>.
+
+==== Arguments
+
+ALL | DISTINCT:: [Optional] Specifies whether to include all values or only distinct values in the calculation.
+
+expression:: [Required]
+A valid {expression}[expression] that contains values to aggregate.
+
+NOTE: You can also add optional clauses like FILTER and OVER as arguments to this function. 
+For more information, see <<aggregate-syntax>>.
 
 === Return Value
-With the `ALL` quantifier, or no quantifier, returns the arithmetic mean (average) of all the number values in the group.
 
-With the `DISTINCT` quantifier, returns the arithmetic mean (average) of all the distinct number values in the group.
-
-Returns NULL if there are no number values in the group.
+The function returns a number that represents the arithmetic mean.
+It returns NULL if all values in the group are MISSING, non-numeric, or NULL.
 
 === Examples
 include::ROOT:partial$query-context.adoc[tag=section]
@@ -248,6 +270,14 @@ Results in 0.5 since all routes have only 1 or 0 stops.
 
 [[count_all,COUNT(*)]]
 == COUNT(*)
+
+=== Description
+
+This function counts all input rows for the group, regardless of value.
+
+=== Arguments
+
+*:: [Required] A wildcard that specifies counting all input rows.
 
 === Return Value
 Returns count of all the input rows for the group, regardless of value. footnote:count[{doc-count}]
