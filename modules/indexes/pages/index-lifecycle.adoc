@@ -13,9 +13,13 @@ By carefully planning the structure of your data, and storing documents of diffe
 
 == Index Creation
 
-Index creation happens in two phases: the [def]_creation phase_ and the [def]_build phase_.
+Index creation happens in 2 phases: the creation phase and the build phase.
 During the creation phase, the Index Service validates the user input, decides the host node for the index, and creates the index metadata on the host node.
 The build phase cannot start until the creation phase is complete.
+
+NOTE: When migrating data using XDCR, avoid creating any indexes before the migration to achieve higher throughput.
+You can create the indexes after the migration to assist with query performance.
+For more information, see xref:learn:clusters-and-availability/xdcr-with-scopes-and-collections.adoc#migration[Migration].
 
 == Index Building
 
@@ -25,14 +29,14 @@ image::index-lifecycle-build.png[align=center]
 
 . The projector requests a DCP stream on the specified collection.
 . DCP streams only the documents in the collection.
-. The projector evaluates each document and extracts the indexed field(s).
+. The projector evaluates each document and extracts the indexed fields.
 . The indexed fields are forwarded to the indexer.
 
 Creating and building indexes can take a long time on keyspaces with lots of existing documents.
-When you create an index, you can choose to _defer_ the build phase, and then build the deferred index later.
+When you create an index, you can choose to defer the build phase, and then build the deferred index later.
 This allows multiple indexes to be built at once rather than having to re-scan the entire keyspace for each index.
 
-For more information and examples, refer to xref:n1ql:n1ql-language-reference/createprimaryindex.adoc[CREATE PRIMARY INDEX], xref:n1ql:n1ql-language-reference/createindex.adoc[CREATE INDEX], and xref:n1ql:n1ql-language-reference/build-index.adoc[BUILD INDEX].
+For more information and examples, see xref:n1ql:n1ql-language-reference/createprimaryindex.adoc[CREATE PRIMARY INDEX], xref:n1ql:n1ql-language-reference/createindex.adoc[CREATE INDEX], and xref:n1ql:n1ql-language-reference/build-index.adoc[BUILD INDEX].
 
 == Index Updates
 
@@ -42,13 +46,13 @@ image::index-lifecycle-update-1.png[align=center]
 
 image::index-lifecycle-update-2.png[align=center]
 
-. The projector keeps a _bucket-level_ DCP stream open for updates -- this limits the number of DCP connections.
+. The projector keeps a bucket-level DCP stream open for updates -- this limits the number of DCP connections.
 . When a document within the collection is updated, the projector utilizes the collection ID available with each mutation, and only evaluates the indexes defined for that collection.
 . The projector only sends updated indexed fields for the qualified indexes within the collection.
 
-There is no additional processing or disk overhead for indexes on unrelated collections.
+Indexes on unrelated collections have no additional processing or disk overhead.
 
-Refer to xref:learn:clusters-and-availability/intra-cluster-replication.adoc#database-change-protocol[Database Change Protocol (DCP)] for further details.
+For more information, see xref:learn:clusters-and-availability/intra-cluster-replication.adoc#database-change-protocol[Database Change Protocol (DCP)].
 
 == Index Scans
 
@@ -61,4 +65,4 @@ image::index-lifecycle-scan.png[align=center]
 
 The scan coordinator does not need to wait for indexes on other collections to be updated, even if documents in other collections are being mutated.
 
-Refer to xref:index-scans.adoc[Index Scans] and xref:index-replication.adoc#index-consistency[Index Consistency] for further details.
+For more information, see xref:index-scans.adoc[Index Scans] and xref:index-replication.adoc#index-consistency[Index Consistency].
