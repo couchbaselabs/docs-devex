@@ -74,13 +74,19 @@ This means the total size of the index can be much bigger than the amount of mem
 In Couchbase Server Enterprise Edition, standard index storage is supported by the Plasma storage engine.
 In this case, compaction is handled automatically.
 
-Each index is represented on disk by up to 4 Log Structured Stores (LSS).
-A single LSS is made up of multiple append only segment files.
-Index compaction and space reclamation are triggered when the LSS segment files reach a maximum file size, which by default is 512{nbsp}MiB on Microsoft Windows and 4{nbsp}GiB on GNU Linux and macOS.
+Each plasma instance has a data log and a recovery log to run.
+The log is based on Log-Structured Storage (LSS).
+The data LSS contains index data, while the recovery LSS stores metadata required for recovery.
+If the index is created on a default scope and collection, plasma uses a pair of dedicated LSS.
+For non-default scope or collection, instances will use shared LSS.
 
-To change the maximum LSS segment file size, use the xref:index-rest-settings:index.adoc[Index Settings REST API] to set the `indexer.plasma.LSSSegmentFileSize` property.
+The default threshold for the LSS Cleaner to run is 16MB per LSS.
+This means the LSS/Recovery cleaner will remove stale blocks only when the LSS used space exceeds 16MB.
+Plasma minimizes disk fragmentation by using hole punching on filesystems that support it.
+Once the cleaner trims the LSS, hole punching occurs in fixed 64MB granularity.
+This means that the disk log file must expand to at least 80MB (64MB + 16MB) before blocks can be reclaimed or hole punched.
 
-For installations of Couchbase Server Enterprise Edition running on Linux, hole punching is required to enable auto-compaction of Global Secondary Indexes using standard index storage.
+In 8.0, we have made the hole punching granularity configurable. (link:https://jira.issues.couchbase.com/browse/MB-65161[MB-65161^] )
 ****
 
 ****
