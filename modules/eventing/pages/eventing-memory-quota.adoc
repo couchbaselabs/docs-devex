@@ -88,16 +88,20 @@ JavaScript runtime heaps may still contain live (non-garbage) objects that:
 As a result, setting a memory quota does not guarantee that Eventing Functions remain within that limit.
 
 [#no-enforce-c-groups]
-=== No OS-Level Enforcement Outside cgroups
+=== Memory Management in Containerized vs Non-Containerized Environments
 
-In non-containerized environments, the operating system does not enforce the memory quota.
+In a non-containerised environment (for example, bare-metal servers, virtual machines, or EC2 instances), the Eventing runtime deploys 2 classes of processes, the eventing-producer and the multiple eventing-consumer processes. 
+These processes effectively have no hard upper bound on memory usage. 
+Collectively, these processes can consume all available system memory. 
 
-You must monitor the Eventing Service's memory usage using system tools.
+This can lead to unintended consequences, such as out-of-memory (OOM) conditions that might trigger the OS OOM killer and result in abrupt process termination resulting in service downtime. 
+For this reason, proper system sizing is critical and should not be overlooked. 
+This includes planning total system memory as well as the number of workers configured across all Eventing functions.
 
-If you configure too many workers for your Eventing Functions, you can cause memory exhaustion in your cluster. 
-High memory-consuming Eventing Functions can affect your overall system stability.
+In a containerised environment, all the Eventing runtime processes like the eventing-producer and eventing-consumer, run within containers governed by cgroups with explicit memory limits. 
+In this case, memory enforcement occurs at the cgroup level and not at the overall host system level. 
+As a result, the underlying system constrains the Eventing processes based on the configured container memory limits, providing more predictable and controlled resource usage.
 
-Again, the Eventing Service does not automatically stop or throttle execution when total memory exceeds the quota. 
 
 [#worker-sizing-memory]
 === Worker Sizing Impacts Memory
