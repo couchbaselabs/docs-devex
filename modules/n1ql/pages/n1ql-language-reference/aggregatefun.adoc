@@ -129,75 +129,76 @@ The function ignores MISSING values, but includes NULL values in the resulting a
 You can use the following quantifiers to control the values in the resulting array: 
 
 * `ALL` - includes every non-MISSING value.  
-This is the default behavior.
+By default, the function uses this quantifier.
 * `DISTINCT` - includes only distinct values and removes duplicates.
 
 For more information about quantifiers, see <<aggregate-quantifier>>.
 
 === Arguments
 
-expression:: [Required] 
-A valid {expression}[expression] that contains the values to aggregate.
-
-NOTE: You can also add optional clauses like FILTER and OVER to this function. 
-For more information, see <<aggregate-syntax>>.
+See <<aggregate-syntax>>.
 
 === Return Value
 
-An array of aggregated values. 
+The function returns 1 of the following:
 
-The function returns NULL if all values in the group are either MISSING or empty.
+* An array of aggregated values. 
+* NULL if all values in the group are either MISSING or empty.
 
 === Examples
 
-.List all airlines into an array
+.Aggregate all values into an array
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT ARRAY_AGG(airline) AS result
-FROM ["United", "Delta", "United", 
-      "Southwest", NULL, MISSING] 
-AS airline;
+SELECT ARRAY_AGG(input) AS agg_all
+FROM [1, 2, 2, 3, "abc", MISSING, NULL] 
+AS input;
 ----
 
 .Results
 [source,json]
 ----
-[{
-    "result": [
-        null,
-        "Delta",
-        "Southwest",
-        "United",
-        "United"
+[
+  {
+    "agg_all": [
+      null,
+      1,
+      2,
+      2,
+      3,
+      "abc"
     ]
-}]
+  }
+]
 ----
 ====
 
-.List unique airlines into an array
+.Aggregate distinct values into an array
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT ARRAY_AGG( DISTINCT airline) AS result
-FROM ["United", "Delta", "United", 
-      "Southwest", NULL, MISSING] 
-AS airline;
+SELECT ARRAY_AGG(DISTINCT input) AS agg_distinct
+FROM [1, 2, 2, 3, "abc", MISSING, NULL] 
+AS input;
 ----
 
 .Results
 [source,json]
 ----
-[{
-    "result": [
-        null,
-        "Delta",
-        "Southwest",
-        "United"
+[
+  {
+    "agg_distinct": [
+      null,
+      1,
+      2,
+      3,
+      "abc"
     ]
-}]
+  }
+]
 ----
 ====
 
@@ -208,7 +209,7 @@ This function has a synonym <<mean>>.
 
 === Description
 
-This function computes the arithmetic mean (average) of all numeric values in an expression.
+Returns the arithmetic mean (average) of all numeric values in an expression.
 
 You can use the ALL or DISTINCT quantifiers to control the values used in the calculation.
 By default, the function uses the ALL quantifier and includes every non-MISSING value. 
@@ -217,55 +218,56 @@ For more information about these quantifiers, see <<aggregate-quantifier>>.
 
 ==== Arguments
 
-ALL | DISTINCT:: [Optional] Specifies whether to include all values or only distinct values in the calculation.
-
-expression:: [Required]
-A valid {expression}[expression] that contains values to aggregate.
-
-NOTE: You can also add optional clauses like FILTER and OVER as arguments to this function. 
-For more information, see <<aggregate-syntax>>.
+See <<aggregate-syntax>>.
 
 === Return Value
 
-The function returns a number that represents the arithmetic mean.
+The function returns 1 of the following:
+
+* A number that represents the arithmetic mean.
+* NULL if there are no numeric values in the group.
+
 It returns NULL if all values in the group are MISSING, non-numeric, or NULL.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Find the average of all numbers in a mixed array
 ====
-Find the average altitude of airports in the `airport` keyspace:
-
 .Query
 [source,sqlpp]
 ----
-include::example$functions/avg.n1ql[]
+SELECT AVG(input) AS avg_number
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
 [source,json]
 ----
-include::example$functions/avg.jsonc[]
+[{
+    "avg_number": 1.8
+}]
 ----
 ====
 
+.Find the average of distinct numbers in a mixed array
 ====
-Find the average number of stops per route vs. the average of distinct numbers of stops:
-
 .Query
 [source,sqlpp]
 ----
-include::example$functions/avg-all.n1ql[]
+SELECT AVG(DISTINCT input) AS avg_distinct_number
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
 ----
 
-Results in 0.0002 since nearly all routes have 0 stops.
-
+.Results
 [source,sqlpp]
 ----
-include::example$functions/avg-distinct.n1ql[]
+[{
+    "avg_distinct_number": 2
+}]
 ----
-
-Results in 0.5 since all routes have only 1 or 0 stops.
+The calculation considers only the distinct numeric values and the average is (1 + 2 + 3) / 3 = 2.
 ====
 
 [[count_all,COUNT(*)]]
@@ -273,25 +275,33 @@ Results in 0.5 since all routes have only 1 or 0 stops.
 
 === Description
 
-This function counts all input rows for the group, regardless of value.
+Returns the count of all input rows in a group. footnote:count[{doc-count}]
+
+The wildcard (`*`) indicates all rows are to be counted, including rows with NULL and MISSING values.
+
+TIP: To count only non-NULL and non-MISSING values in an expression, use <<count, COUNT(`expression`)>>.
 
 === Arguments
 
-*:: [Required] A wildcard that specifies counting all input rows.
+This function does not take any arguments. 
 
 === Return Value
-Returns count of all the input rows for the group, regardless of value. footnote:count[{doc-count}]
+
+A number that represents the count of all objects. 
+
+The function returns `0` if the group is empty. 
 
 === Example
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Count all values in a mixed array
 ====
-Find the number of documents in the `landmark` keyspace:
 
 .Query
 [source,sqlpp]
 ----
-SELECT COUNT(*) AS CountAll FROM landmark;
+SELECT COUNT(*) AS count_all
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -299,7 +309,7 @@ SELECT COUNT(*) AS CountAll FROM landmark;
 ----
 [
   {
-    "CountAll": 4495
+    "count_all": 8
   }
 ]
 ----
@@ -308,21 +318,36 @@ SELECT COUNT(*) AS CountAll FROM landmark;
 [[count,COUNT()]]
 == [[count_distinct]]COUNT( {startsb} ALL | DISTINCT {endsb} `expression`)
 
-=== Return Value
-With the `ALL` quantifier, or no quantifier, returns count of all the non-NULL and non-MISSING values in the group. footnote:count[]
+=== Description
 
-With the `DISTINCT` quantifier, returns count of all the distinct non-NULL and non-MISSING values in the group.
+Returns the count of non-NULL and non-MISSING values in an expression. footnote:count[]
+
+You can specify a quantifier to control which values to count: 
+
+* `ALL` - Counts every value in the expression.
+By default, the function uses this quantifier.
+* `DISTINCT` - Counts only unique values and ignores duplicates.
+
+In both cases, the function ignores MISSING and NULL values.
+
+TIP: To count all values including NULL and MISSING, use <<count_all, COUNT(*)>>.
+
+=== Return Value
+
+A number that represents the count of values.
+
+The function returns `0` if all values are MISSING, NULL, or empty.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Count all values 
 ====
-Find the number of documents with an airline route stop in the `route` keyspace regardless of its value:
-
 .Query
 [source,sqlpp]
 ----
-SELECT COUNT(stops) AS CountOfStops FROM route;
+SELECT COUNT(input) AS count_all
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -330,20 +355,20 @@ SELECT COUNT(stops) AS CountOfStops FROM route;
 ----
 [
   {
-    "CountOfStops": 24024
+    "count_all": 6
   }
 ]
 ----
 ====
 
+.Count unique values
 ====
-Find the number of unique values of airline route stops in the `route` keyspace:
-
 .Query
 [source,sqlpp]
 ----
-SELECT COUNT(DISTINCT stops) AS CountOfDistinctStops
-FROM route;
+SELECT COUNT(DISTINCT input) AS count_all
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -351,35 +376,45 @@ FROM route;
 ----
 [
   {
-    "CountOfSDistinctStops": 2 <1>
+    "count_all": 4
   }
 ]
 ----
-
-<1> Results in 2 because there are only 0 or 1 stops.
 ====
 
 [[countn,COUNTN()]]
 == COUNTN( {startsb} ALL {vbar} DISTINCT {endsb} `expression` )
 
-=== Return Value
-With the `ALL` quantifier, or no quantifier, returns a count of all the numeric values in the group. footnote:count[]
+=== Description
 
-With the `DISTINCT` quantifier, returns a count of all the distinct numeric values in the group.
+Returns the count of numeric values in an expression. footnote:count[]
+
+You can specify a quantifier to control which numeric values to include: 
+
+* `ALL` - Counts every numeric value.
+By default, the function uses this quantifier.
+* `DISTINCT` - Counts only unique numeric values and ignores duplicates.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
+
+=== Return Value
+
+A number that represents the count of numeric values.
+
+The function returns `0` if there are no numeric values.
 
 === Examples
-====
-The count of numeric values in a mixed group.
 
+.Count all numeric values 
+====
+.Query
 [source,sqlpp]
 ----
-SELECT COUNTN(list.val) AS CountOfNumbers
-FROM [
-  {"val":1},
-  {"val":1},
-  {"val":2},
-  {"val":"abc"}
-] AS list;
+SELECT COUNTN(input) AS count_all
+FROM [ 1, 1, 2, 2, 3, "abc", MISSING, NULL] 
+AS input;
 ----
 
 .Results
@@ -387,24 +422,21 @@ FROM [
 ----
 [
   {
-    "CountOfNumbers": 3
+    "count_all": 5
   }
 ]
 ----
 ====
 
-====
-The count of unique numeric values in a mixed group.
+.Count distinct numeric values 
+==== 
 
+.Query
 [source,sqlpp]
 ----
-SELECT COUNTN(DISTINCT list.val) AS CountOfNumbers
-FROM [
-  {"val":1},
-  {"val":1},
-  {"val":2},
-  {"val":"abc"}
-] AS list;
+SELECT COUNTN(DISTINCT input) AS count_distinct
+FROM [ 1, 1, 2, 2, 3, "abc", MISSING, NULL] 
+AS input;
 ----
 
 .Results
@@ -412,7 +444,7 @@ FROM [
 ----
 [
   {
-    "CountOfNumbers": 2
+    "count_distinct": 3
   }
 ]
 ----
