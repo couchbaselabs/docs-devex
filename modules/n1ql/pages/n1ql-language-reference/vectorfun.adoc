@@ -3,6 +3,7 @@
 :page-topic-type: reference
 :page-status: Couchbase Server 7.6.6
 :page-partial:
+:stem: latexmath
 :example-caption!:
 :keywords: similarity
 
@@ -31,12 +32,12 @@ The array must have the same dimensions as the vector field.
 metric:: A string representing the distance metric to use when comparing the vectors.
 +
 [horizontal.compact]
-COSINE;; xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
-DOT;; xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
+COSINE;; <<cosine>>
+DOT;; <<dot>>
 L2;;
-EUCLIDEAN;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
+EUCLIDEAN;; <<euclidean>>
 L2_SQUARED;;
-EUCLIDEAN_SQUARED;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean Squared Distance]
+EUCLIDEAN_SQUARED;; <<euclidean-squared>>
 
 === Return Value
 
@@ -98,3 +99,74 @@ The results show how the distance changes as the similarity decreases.
 ]
 ----
 ====
+
+[#vector_similarity]
+== Vector Similarity Metrics
+
+You use metrics (also known as distance functions) to find similar vectors.
+When you use a vector function, you must specify which metric to use to compare vectors.
+Each metric works best for certain applications and types of data.
+
+Couchbase {product-name} supports four metrics:
+
+[#euclidean]
+=== Euclidean Distance
+
+Euclidean Distance (also known as L2) calculates the geometric distance between two vectors by finding the distance between the individual dimensions in the vectors.
+This method is most sensitive to the distance between the vectors in space, rather than their alignment.
+It's also sensitive to the scale of the vectors, where the length of one vector versus the other affects the relationship between the vectors.
+Use this method when the actual distance of the vectors and their magnitudes are important.
+This method is useful if the distance between vectors represents a real-world value.
+
+NOTE: When you select Euclidean Distance or L2 as the metric for a vector index, Couchbase {product-name} internally uses the <<#euclidean-squared>> metric (explained in the next section) to perform vector comparisons.
+This approach improves performance because it avoids performing a computationally expensive square root operation.
+Vector searches using the Euclidean Squared metric return the same relevant vectors and ranking of results as Euclidean Distance.
+If your query materializes or projects the actual distance between vectors, Couchbase {product-name} calculates the actual Euclidean Distance.
+For example, if your query returns the distance between vectors as a column, Couchbase {product-name} calculates the square root of the Euclidean Squared distance to return the actual Euclidean Distance.
+
+[#euclidean-squared]
+=== Euclidean Squared Distance
+
+Euclidean Squared Distance (also known as L2 Squared or L2^2^) is similar to Euclidean Distance.
+However, it does not take the square root of the sum distances between the vectors:
+
+
+Euclidean Distance Formula::
+latexmath:[L2(x, y) = \sqrt{\sum_{i=1}^n (x_i - y_i)^2}]
+
+
+Euclidean Squared Distance Formula::
+latexmath:[L2^2(x, y) = \sum_{i=1}^n (x_i - y_i)^2]
+
+
+Because it does not take the square root of the sums, Euclidean Squared Distance is faster to calculate than Euclidean Distance.
+However, it does not represent the actual distance between the vectors.
+The results of a vector search using L2 Squared as a metric always returns the same rankings that an L2 search returns.
+In cases where the dimensions of the vectors represent real-world values, L2 is more intuitive to use because it returns the actual distance between the vectors.
+
+Use this method when you need higher performance than Euclidean Distance.
+It's better in cases when comparing literal distances is less important than performance and where having the ranking of search results is sufficient.
+
+[#dot]
+=== Dot Product
+
+This metric finds related vectors by comparing the magnitude (length) and alignment of the vectors.
+Here, the proximity of the vectors in space is less important than whether they point in a similar direction and have the a similar magnitude.
+Vectors that point in similar directions (have a low angle between them) and have similar magnitude are strongly associated with each other.
+This method uses the similarity of the vectors' magnitudes to rank their relation.
+
+Use this method for tasks where ranking confidence is key.
+The magnitude of the vectors is important when determining the strength of the relationship.
+
+[#cosine]
+=== Cosine Similarity
+
+This metric is similar to the dot product.
+However, it normalizes the vectors (making them the same length) during comparison.
+Normalization means their magnitudes are not taken into account, just their alignment.
+This normalization makes this method better for comparing textual data because it's less sensitive to the length of the data.
+The magnitude of a vector generated by some text embedding models depend on the length of the source text.
+Normalizing vector magnitudes emphasizes the semantic meaning when performing comparisons.
+Therefore, Cosine Similarity can find the semantic relationship between a short question and a long article that's relevant to answering it.
+
+Use this method when you're performing searches that rely on semantic meaning.
