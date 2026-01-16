@@ -123,16 +123,12 @@ All other aggregate functions return NULL.
 
 === Description
 
-This function takes all non-MISSING values from an expression and returns them as an array. 
-The function ignores MISSING values, but includes NULL values in the resulting array.
+Returns an array of non-MISSING values from an aggregated group.
 
-You can specify a quantifier to control what values to include in the resulting array:
-
-* `ALL` - includes every non-MISSING value.  
-By default, the function uses this quantifier.
-* `DISTINCT` - includes only distinct values and removes duplicates.
-
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
 For more information, see <<aggregate-quantifier>>.
+
+The function ignores `MISSING` values, but includes `NULL` values.
 
 === Arguments
 
@@ -142,12 +138,12 @@ See <<aggregate-syntax>>.
 
 The function returns 1 of the following:
 
-* An array of aggregated values. 
-* NULL if all values in the group are either MISSING or empty.
+* An array of non-MISSING values. 
+* `NULL` if all values are `MISSING`.
 
 === Examples
 
-.Aggregate all values into an array
+.List all values into an array
 ====
 .Query
 [source,sqlpp]
@@ -175,7 +171,7 @@ AS input;
 ----
 ====
 
-.Aggregate distinct values into an array
+.List distinct values into an array
 ====
 .Query
 [source,sqlpp]
@@ -209,19 +205,10 @@ This function has a synonym <<mean>>.
 
 === Description
 
-Returns the arithmetic mean (average) of all numeric values in an expression.
+Returns the arithmetic mean (average) of all numeric values in an aggregated group.
 
-//tag::quantifiers[]
-
-You can specify a quantifier to control what values to include in the calculation.
-
-* `ALL` - Includes every numeric value.
-By default, the function uses this quantifier.
-* `DISTINCT` - Includes only unique numeric values and ignores duplicates.
-
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
 For more information, see <<aggregate-quantifier>>.
-
-//end::quantifiers[]
 
 ==== Arguments
 
@@ -231,82 +218,17 @@ See <<aggregate-syntax>>.
 
 The function returns 1 of the following:
 
-* A number that represents the arithmetic mean.
-* NULL if there are no numeric values in the group.
-
-It returns NULL if all values in the group are MISSING, non-numeric, or NULL.
+* A number that represents the mean.
+* `NULL` if all values are non-numeric, `MISSING`, or `NULL`.
 
 === Examples
 
-.Find the average of all numbers in a mixed array
+.Find the average of all numbers
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT AVG(input) AS avg_number
-FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
-AS input;
-----
-
-.Results
-[source,json]
-----
-[{
-    "avg_number": 1.8
-}]
-----
-====
-
-.Find the average of distinct numbers in a mixed array
-====
-.Query
-[source,sqlpp]
-----
-SELECT AVG(DISTINCT input) AS avg_distinct_number
-FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
-AS input;
-----
-
-.Results
-[source,sqlpp]
-----
-[{
-    "avg_distinct_number": 2
-}]
-----
-The calculation considers only the distinct numeric values and the average is (1 + 2 + 3) / 3 = 2.
-====
-
-[[count_all,COUNT(*)]]
-== COUNT(*)
-
-=== Description
-
-Returns the count of all input rows in an aggregated group. footnote:count[{doc-count}]
-
-The wildcard (*) indicates all rows are to be counted, including rows with `NULL` and `MISSING` values.
-
-TIP: To count only non-NULL and non-MISSING values in an expression, use <<count, COUNT(expression)>>.
-
-=== Arguments
-
-This function does not take any arguments. 
-
-=== Return Value
-
-A number that represents the count of all rows. 
-
-The function returns `0` if the group is empty. 
-
-=== Example
-
-.Count all values in a mixed array
-====
-
-.Query
-[source,sqlpp]
-----
-SELECT COUNT(*) AS count_all
+SELECT AVG(input) AS avg_all
 FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
 AS input;
 ----
@@ -316,7 +238,74 @@ AS input;
 ----
 [
   {
-    "count_all": 8
+    "avg_all": 1.8
+  }
+]
+----
+====
+
+.Find the average of distinct numbers
+====
+.Query
+[source,sqlpp]
+----
+SELECT AVG(DISTINCT input) AS avg_distinct
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
+----
+
+.Results
+[source,sqlpp]
+----
+[
+  {
+    "avg_distinct": 2
+  }
+]
+----
+In this example, the average is (1 + 2 + 3) / 3 = 2.
+====
+
+[[count_all,COUNT(*)]]
+== COUNT(`*`)
+
+=== Description
+
+Returns the total count of all rows in an aggregated group. footnote:count[{doc-count}]
+
+The `*` wildcard indicates that the function should count all rows, including those with `NULL` and `MISSING` values.
+
+TIP: To get the count of only non-NULL and non-MISSING values in a group, use <<count, COUNT(expression)>>.
+
+=== Arguments
+
+This function does not take any arguments. 
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number that represents the count of all rows. 
+* `0` if the group is empty. 
+
+=== Example
+
+.Find the count of all rows 
+====
+.Query
+[source,sqlpp]
+----
+SELECT COUNT(*) AS count_all_rows
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "count_all_rows": 8
   }
 ]
 ----
@@ -327,29 +316,23 @@ AS input;
 
 === Description
 
-Returns the count of non-NULL and non-MISSING values in an expression. footnote:count[]
+Returns the count of all non-NULL and non-MISSING values in an aggregated group. footnote:count[]
 
-You can specify a quantifier to control which values to count: 
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
 
-* `ALL` - Counts every value in the expression.
-By default, the function uses this quantifier.
-* `DISTINCT` - Counts only unique values and ignores duplicates.
-
-In both cases, the function ignores `MISSING` and `NULL` values.
-
-For more information about quantifiers, see <<aggregate-quantifier>>.
-
-TIP: To count all values including `NULL` and `MISSING`, use <<count_all, COUNT(*)>>.
+TIP: To get the count of all rows, including those with `NULL` and `MISSING` values, use <<count_all, COUNT(*)>>.
 
 === Return Value
 
-A number that represents the count of values.
+The function returns 1 of the following:
 
-The function returns `0` if all values are `MISSING`, `NULL`, or empty.
+* A number that represents the count. 
+* `0` if all values are `MISSING` or `NULL`.
 
 === Examples
 
-.Count all values 
+.Find the count of all values 
 ====
 .Query
 [source,sqlpp]
@@ -370,12 +353,12 @@ AS input;
 ----
 ====
 
-.Count unique values
+.Find the count of distinct values 
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT COUNT(DISTINCT input) AS count_all
+SELECT COUNT(DISTINCT input) AS count_distinct
 FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
 AS input;
 ----
@@ -385,7 +368,7 @@ AS input;
 ----
 [
   {
-    "count_all": 4
+    "count_distinct": 4
   }
 ]
 ----
@@ -396,14 +379,9 @@ AS input;
 
 === Description
 
-Returns the count of numeric values in an expression. footnote:count[]
+Returns the count of numeric values in an aggregated group. footnote:count[]
 
-You can specify a quantifier to control which numeric values to include: 
-
-* `ALL` - Counts every numeric value.
-By default, the function uses this quantifier.
-* `DISTINCT` - Counts only unique numeric values and ignores duplicates.
-
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
 For more information, see <<aggregate-quantifier>>.
 
 === Arguments
@@ -412,13 +390,14 @@ See <<aggregate-syntax>>.
 
 === Return Value
 
-A number that represents the count of numeric values.
+The function returns 1 of the following:
 
-The function returns `0` if there are no numeric values.
+* A number that represents the count.
+* `0` if there are no numeric values.
 
 === Examples
 
-.Count all numeric values 
+.Find the count of all numeric values 
 ====
 .Query
 [source,sqlpp]
@@ -439,7 +418,7 @@ AS input;
 ----
 ====
 
-.Count distinct numeric values 
+.Find the count of distinct numeric values 
 ==== 
 
 .Query
@@ -466,7 +445,7 @@ AS input;
 
 === Description
 
-Returns the maximum value in an expression.
+Returns the maximum value in an aggregated group.
 The function ignores `MISSING` and `NULL` values.
 
 When comparing values of different data types, the function uses {sqlpp} xref:n1ql-language-reference/datatypes.adoc#collation[collation rules] to determine precedence.
@@ -487,12 +466,12 @@ The function returns 1 of the following:
 
 === Examples
 
-.Maximum value in a numeric list
+.Find the max value from a group of numbers
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT MAX(input) AS max_value
+SELECT MAX(input) AS max_value_num
 FROM [1, 3, 2, 3, MISSING, NULL]
 AS input;
 ----
@@ -502,18 +481,18 @@ AS input;
 ----
 [
   {
-    "max_value": 3
+    "max_value_num": 3
   }
 ]
 ----
 ====
 
-.Maximum value in a list with mixed types
+.Find the max value from a group with mixed types
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT MAX(input) AS max_value
+SELECT MAX(input) AS max_value_all
 FROM [1, 2, 3, "airline", "2025-12-01T00:00:00Z", NULL]
 AS input;
 ----
@@ -523,19 +502,19 @@ AS input;
 ----
 [
   {
-    "max_value": "airline"
+    "max_value_all": "airline"
   }
 ]
 ----
-The function returns "airline" because strings have a higher precedence than numbers and dates. 
+The function returns `airline` because strings have a higher precedence than numbers and dates. 
 ====
 
-.Maximum value in a string list
+.Find the max value from a group of strings
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT MAX(input) AS max_value
+SELECT MAX(input) AS max_value_string
 FROM ["United", "Delta", "American", "Southwest"]
 AS input;
 ----
@@ -545,7 +524,7 @@ AS input;
 ----
 [
   {
-    "max_value": "United"
+    "max_value_string": "United"
   }
 ]
 ----
@@ -562,14 +541,9 @@ Synonym of <<avg>>.
 
 === Description
 
-Returns the median of all numeric values in an expression.
+Returns the median of all numeric values in an aggregated group.
 
-You can specify a quantifier to control which values to include in the calculation:
-
-* `ALL` - Includes every numeric value.
-By default, the function uses this quantifier.
-* `DISTINCT` - Includes only unique numeric values and ignores duplicates.
-
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
 For more information, see <<aggregate-quantifier>>.
 
 === Arguments
@@ -581,12 +555,12 @@ See <<aggregate-syntax>>.
 The function returns 1 of the following:
 
 * A number that represents the median value.
-* A number that represents the mean of the two median values if there is an even number of numeric values.
-* NULL if there are no numeric values in the group.
+* A number that represents the mean of the 2 median values if the count of numeric values is even.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
 
-.Find the median of all values with an odd count
+.Find the median when the number of values is odd
 ====
 
 .Query
@@ -606,10 +580,10 @@ AS input;
  }
 ]
 ----
-Since the number of numeric values is odd, the median is the middle value (`3`).
+In this example, the median is the middle value `3`.
 ====
 
-.Find the median of all values with an even count
+.Find the median when the number of values is even
 ====
 
 .Query
@@ -629,7 +603,7 @@ AS input;
  }
 ]
 ----
-Since the count of numeric values is even, the median is the mean of the two middle values (`3` and `3`), which is `3`.
+In this example, the median is the mean of the 2 middle values (`3` and `3`), which is `3`.
 ====
 
 .Find the median of distinct values
@@ -651,7 +625,8 @@ AS input;
   }
 ]
 ----
-Since the count of distinct numeric values is even, the median is the mean of the two middle values (`2` and `3`), which is `2.5`.
+In this example, the number of distinct numeric values is even.
+THerefore, the median is the mean of the 2 middle values (`2` and `3`), which is `2.5`.
 ====
 
 [[min,MIN()]]
@@ -659,7 +634,7 @@ Since the count of distinct numeric values is even, the median is the mean of th
 
 === Description
 
-Returns the minimum value in an expression.
+Returns the minimum value in an aggregated group.
 The function ignores `MISSING` and `NULL` values.
 
 When comparing values of different data types, the function uses {sqlpp} xref:n1ql-language-reference/datatypes.adoc#collation[collation rules] to determine precedence.
@@ -680,13 +655,13 @@ The function returns 1 of the following:
 
 === Examples
 
-.Find the minimum value in a numeric list
+.Find the minimum value from a group of numbers
 ====
 
 .Query
 [source,sqlpp]
 ----
-SELECT MIN(input) AS min_value
+SELECT MIN(input) AS min_value_num
 FROM [3, 1, 2, 1, MISSING, NULL]
 AS input;
 ----
@@ -696,18 +671,18 @@ AS input;
 ----
 [
   {
-    "min_value": 1
+    "min_value_num": 1
   }
 ]
 ----
 ====
 
-.Find the minimum value in a list with mixed types
+.Find the minimum value from a group with mixed types
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT MIN(input) AS min_value
+SELECT MIN(input) AS min_value_all
 FROM [1, 2, 3, "airline", "2025-12-01T00:00:00Z", NULL]
 AS input; 
 ----
@@ -717,19 +692,19 @@ AS input;
 ----
 [
   {
-    "min_value": 1
+    "min_value_all": 1
   }
 ]
 ----
 The function returns `1` because numbers have a lower precedence than strings and dates.
 ====
 
-.Find the minimum value in a string list
+.Find the minimum value from a group of strings
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT MIN(input) AS min_value
+SELECT MIN(input) AS min_value_string 
 FROM ["United", "Delta", "American", "Southwest"]
 AS input;
 ----  
@@ -738,7 +713,7 @@ AS input;
 ----
 [
   {
-    "min_value": "American"
+    "min_value_string": "American"
   }
 ]
 ----
@@ -750,16 +725,16 @@ When comparing string values, the function uses alphabetical order to determine 
 
 === Description
 
-Returns the <<eqn_samp_std_dev, corrected sample standard deviation>> of all numeric values in an expression.
+Returns the <<eqn_samp_std_dev, corrected sample standard deviation>> of all numeric values in an aggregated group.
 
-You can specify a quantifier to control which values to include in the calculation:
-* `ALL` - Includes every numeric value.
-By default, the function uses this quantifier.
-* `DISTINCT` - Includes only unique numeric values and ignores duplicates.
-
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
 For more information, see <<aggregate-quantifier>>.
 
+NOTE: This function is similar to <<stddev_samp>>. 
+However, it returns `0` if there is only 1 matching value, while <<stddev_samp>> returns `NULL` in such cases.
+
 === Arguments
+
 See <<aggregate-syntax>>.
 
 === Return Value
@@ -768,17 +743,17 @@ The function returns 1 of the following:
 
 * A number that represents the corrected sample standard deviation.
 * `0` if the group contains only 1 numeric value.
-* NULL if there are no numeric values in the group.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
 
-.Find the sample standard deviation of all values
+.Find the standard deviation of all values
 ====
 
 .Query
 [source,sqlpp]
 ----
-SELECT STDDEV(input) AS std_dev_all
+SELECT STDDEV(input) AS std_deviation_all
 FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
 AS input;
 ----
@@ -788,39 +763,18 @@ AS input;
 ----
 [
   {
-    "std_dev_all": 1.3038404810405297
+    "std_deviation_all": 1.3038404810405297
   }
 ]
 ----
 ====
 
-.Find the sample standard deviation when there is only one numeric value
+.Find the standard deviation of distinct values
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT STDDEV(input) AS std_dev_single
-FROM [3, NULL, "abc"]
-AS input;
-----
-.Results
-[source,json]
-----
-[
-  {
-    "std_dev_single": 0
-  }
-]
-----
-There is only one numeric value in the input, so the standard deviation is `0`.
-====
-
-.Find the sample standard deviation of distinct values
-====
-.Query
-[source,sqlpp]
-----
-SELECT STDDEV(DISTINCT input) AS std_dev_distinct
+SELECT STDDEV(DISTINCT input) AS std_deviation_distinct
 FROM [1, 2, 2, 3, 4, 4, MISSING, NULL, "abc"]
 AS input; 
 ----
@@ -830,7 +784,27 @@ AS input;
 ----
 [
   {
-    "std_dev_distinct": 1.2909944487358056
+    "std_deviation_distinct": 1.2909944487358056
+  }
+]
+----
+====
+
+.Find the standard deviation of a single numeric value
+====
+.Query
+[source,sqlpp]
+----
+SELECT STDDEV(input) AS std_deviation_single
+FROM [3, NULL, "abc"]
+AS input;
+----
+.Results
+[source,json]
+----
+[
+  {
+    "std_deviation_single": 0
   }
 ]
 ----
@@ -841,14 +815,9 @@ AS input;
 
 === Description
 
-Returns the <<eqn_pop_std_dev,population standard deviation>> of all numeric values in an expression.
+Returns the <<eqn_pop_std_dev,population standard deviation>> of all numeric values in an aggregated group.
 
-You can specify a quantifier to control which values to include in the calculation:
-
-* `ALL` - Includes every numeric value.
-By default, the function uses this quantifier.
-* `DISTINCT` - Includes only unique numeric values and ignores duplicates.
-
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
 For more information, see <<aggregate-quantifier>>.
 
 === Arguments
@@ -858,9 +827,9 @@ See <<aggregate-syntax>>.
 
 The function returns 1 of the following:
 
-* A number that represents the population standard deviation.
+* A number that represents the population standard deviation. 
 * `0` if the group contains only 1 numeric value.
-* NULL if there are no numeric values in the group.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
 
@@ -869,7 +838,7 @@ The function returns 1 of the following:
 .Query
 [source,sqlpp]
 ----
-SELECT STDDEV_POP(input) AS pop_std_dev
+SELECT STDDEV_POP(input) AS pop_deviation_all
 FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
 AS input;
 ----
@@ -879,7 +848,7 @@ AS input;
 ----
 [
   {
-    "pop_std_dev": 1.16619037896906
+    "pop_deviation_all": 1.16619037896906
   }
 ]
 ----
@@ -890,7 +859,7 @@ AS input;
 .Query
 [source,sqlpp]
 ----
-SELECT STDDEV_POP(DISTINCT input) AS pop_std_dev_distinct
+SELECT STDDEV_POP(DISTINCT input) AS pop_deviation_distinct
 FROM [1, 2, 2, 3, 4, 4, MISSING, NULL, "abc"]
 AS input; 
 ----
@@ -900,7 +869,7 @@ AS input;
 ----
 [
   {
-    "pop_std_dev_distinct": 1.118033988749895
+    "pop_deviation_distinct": 1.118033988749895
   }
 ]
 ----
@@ -911,10 +880,13 @@ AS input;
 
 === Description
 
-Returns the <<eqn_samp_std_dev, corrected sample standard deviation>> of all numeric values in an expression.
+Returns the <<eqn_samp_std_dev, corrected sample standard deviation>> of all numeric values in an aggregated group.
 
-The function is similar to <<stddev>>, but it returns `NULL` if there is only one matching element. 
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
 
+NOTE: This function is similar to <<stddev>>.
+However, it returns `NULL` if there is only 1 matching value, while <<stddev>> returns `0` in such cases.
 
 === Arguments
 
@@ -924,12 +896,54 @@ See <<aggregate-syntax>>.
 
 The function returns 1 of the following:
 
-* A number that represents the corrected sample standard deviation.
-* NULL if there are fewer than 2 numeric values in the group.
+* A number that represents the sample standard deviation.
+* `NULL` if there are fewer than 2 numeric values in the group.
 
 === Example
 
-.Find the sample standard deviation
+.Find the sample standard deviation of all values
+====
+.Query
+[source,sqlpp]
+----
+SELECT STDDEV_SAMP(input) AS std_deviation_all
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "std_deviation_all": 1.3038404810405297
+  }
+]
+----
+====
+
+.Find the sample standard deviation of distinct values
+====
+.Query
+[source,sqlpp]
+----
+SELECT STDDEV_SAMP(DISTINCT input) AS std_deviation_distinct
+FROM [1, 2, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
+----  
+
+.Results
+[source,json]
+----
+[
+  {
+    "std_deviation_distinct": 1.2909944487358056
+  }
+]
+----
+====
+
+.Find the sample standard deviation of a single numeric value
 ====
 .Query
 [source,sqlpp]
@@ -948,7 +962,6 @@ AS input;
   }
 ]
 ----
-There is only one numeric value in the group, so the function returns NULL.
 ====
 
 [[sum,SUM()]]
@@ -956,13 +969,9 @@ There is only one numeric value in the group, so the function returns NULL.
 
 === Description
 
-Returns the arithmetic sum of all number values in an expression. 
+Returns the arithmetic sum of all number values in an aggregated group. 
 
-You can specify a quantifier to control which values to include in the calculation:
-* `ALL` - Includes every number value.
-By default, the function uses this quantifier.
-* `DISTINCT` - Includes only unique number values and ignores duplicates.
-
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
 For more information, see <<aggregate-quantifier>>.
 
 === Arguments
@@ -973,17 +982,17 @@ See <<aggregate-syntax>>.
 
 The function returns 1 of the following:
 
-* A number that represents the arithmetic sum.
-* NULL if there are no number values in the group.
+* A number that represents the sum.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
 
-.Find the sum total of all numbers
+.Find the sum of all numbers
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT SUM(input) AS total_sum
+SELECT SUM(input) AS sum_all
 FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
 AS input;
 ----
@@ -993,18 +1002,18 @@ AS input;
 ----
 [
   {
-    "total_sum": 14
+    "sum_all": 14
   }
 ]
 ----
 ====
 
-.Find the sum total of distinct numbers
+.Find the sum of distinct numbers
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT SUM(DISTINCT input) AS total_sum
+SELECT SUM(DISTINCT input) AS sum_distinct
 FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
 AS input;
 ----
@@ -1014,7 +1023,7 @@ AS input;
 ----
 [
   {
-    "total_sum": 10
+    "sum_distinct": 10
   }
 ]
 ----
@@ -1025,17 +1034,13 @@ AS input;
 
 === Description
 
-Returns the unbiased sample variance (the square of the <<eqn_samp_std_dev,corrected sample standard deviation>>) of all numeric values in an expression.
+Returns the unbiased sample variance (the square of the <<eqn_samp_std_dev,corrected sample standard deviation>>) of all numeric values in an aggregated group.
 
-You can specify a quantifier to control which values to include in the calculation:
-* `ALL` - Includes every numeric value.
-By default, the function uses this quantifier.
-* `DISTINCT` - Includes only unique numeric values and ignores duplicates.
-
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
 For more information, see <<aggregate-quantifier>>.
 
-NOTE: This function is similar to <<variance_samp>>, but it returns `0` if there is only one matching element.
-Whereas `VARIANCE_SAMP()` returns `NULL` in that case.
+NOTE: This function is similar to <<variance_samp>>. 
+However, it returns `0` if there is only 1 matching value, while <<variance_samp>> returns `NULL` in such cases.
 
 === Arguments
 
@@ -1047,7 +1052,7 @@ The function returns 1 of the following:
 
 * A number that represents the unbiased sample variance.
 * `0` if the group contains only 1 numeric value.
-* NULL if there are no numeric values in the group.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
 
@@ -1056,7 +1061,7 @@ The function returns 1 of the following:
 .Query
 [source,sqlpp]
 ----
-SELECT VARIANCE(input) AS variance
+SELECT VARIANCE(input) AS variance_all
 FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
 AS input;
 ----
@@ -1066,7 +1071,28 @@ AS input;
 ----
 [
   {
-    "variance": 1.7
+    "variance_all": 1.7
+  }
+]
+----
+====
+
+.Find the sample variance of distinct values
+====
+.Query
+[source,sqlpp]
+----
+SELECT VARIANCE(DISTINCT input) AS variance_distinct
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "variance_distinct": 1.6666666666666667
   }
 ]
 ----
@@ -1091,28 +1117,6 @@ AS input;
   }
 ]
 ----
-There is only matching value in the input, so the variance is `0`.
-====
-
-.Find the sampling variance of distinct values
-====
-.Query
-[source,sqlpp]
-----
-SELECT VARIANCE(DISTINCT input) AS variance
-FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
-AS input;
-----
-
-.Results
-[source,json]
-----
-[
-  {
-    "variance": 1.6666666666666667
-  }
-]
-----
 ====
 
 [[variance_pop,VARIANCE_POP()]]
@@ -1122,13 +1126,9 @@ This function has a synonym <<var_pop>>.
 
 === Description
 
-Returns the population variance (the square of the <<eqn_pop_std_dev,population standard deviation>>) of all numeric values in an expression.
+Returns the population variance (the square of the <<eqn_pop_std_dev,population standard deviation>>) of all numeric values in an aggregated group.
 
-You can specify a quantifier to control which values to include in the calculation:
-* `ALL` - Includes every numeric value.
-By default, the function uses this quantifier.
-* `DISTINCT` - Includes only unique numeric values and ignores duplicates.
-
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
 For more information, see <<aggregate-quantifier>>.
 
 === Arguments
@@ -1140,7 +1140,7 @@ See <<aggregate-syntax>>.
 The function returns 1 of the following:
 
 * A number that represents the population variance.
-* NULL if there are no numeric values in the group.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
 
@@ -1186,6 +1186,27 @@ AS input;
 ----
 ====
 
+.Find the population variance of a single numeric value
+====
+.Query
+[source,sqlpp]
+----  
+SELECT VARIANCE_POP(input) AS pop_variance_single
+FROM [3, NULL, "abc"]
+AS input;
+----
+
+.Results
+[source,json]
+----  
+[
+  {
+    "pop_variance_single": null
+  }
+]
+----
+====
+
 [[variance_samp,VARIANCE_SAMP()]]
 == [[variance_samp_distinct]]VARIANCE_SAMP( {startsb} ALL | DISTINCT {endsb} `expression`)
 
@@ -1193,17 +1214,13 @@ This function has a synonym <<var_samp>>.
 
 === Description
 
-Returns the unbiased sample variance (the square of the <<eqn_samp_std_dev,corrected sample standard deviation>>) of all numeric values in an expression.
+Returns the unbiased sample variance (the square of the <<eqn_samp_std_dev,corrected sample standard deviation>>) of all numeric values in an aggregated group.
 
-You can specify a quantifier to control which values to include in the calculation:
-* `ALL` - Includes every numeric value.
-By default, the function uses this quantifier.
-* `DISTINCT` - Includes only unique numeric values and ignores duplicates.
-
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
 For more information, see <<aggregate-quantifier>>.
 
-NOTE: This function is similar to <<variance>>, but it returns `NULL` when there is only one matching element.
-Whereas `VARIANCE()` returns `0` in that case.
+NOTE: This function is similar to <<variance>>. 
+However, it returns `NULL` if there is only 1 matching value, while <<variance>> returns `0` in such cases.
 
 === Arguments
 
@@ -1212,17 +1229,18 @@ See <<aggregate-syntax>>.
 === Return Value
 
 The function returns 1 of the following:
-* A number that represents the unbiased sample variance.
-* NULL if there is fewer than 2 numeric values in the group.
+
+* A number that represents the sample variance.
+* `NULL` if there is fewer than 2 numeric values in the group.
 
 === Examples
 
-.Find the sample standard deviation of all values
+.Find the sample standard variance of all values
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT VARIANCE_SAMP(input) AS variance_samp
+SELECT VARIANCE_SAMP(input) AS variance_all
 FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
 AS input;
 ----
@@ -1232,7 +1250,28 @@ AS input;
 ----
 [
   {
-    "variance_samp": 1.7
+    "variance_all": 1.7
+  }
+]
+----
+====
+
+.Find the sample variance of distinct values
+====
+.Query
+[source,sqlpp]
+----
+SELECT VARIANCE_SAMP(DISTINCT input) AS variance_distinct
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
+----    
+
+.Results
+[source,json]
+----
+[
+  {
+    "variance_distinct": 1.6666666666666667
   }
 ]
 ----
@@ -1273,7 +1312,7 @@ Synonym of <<variance_samp>>.
 
 [[eqn_samp_std_dev]]
 .Corrected Sample Standard Deviation
-The corrected sample standard deviation is calculated according to the following formula.
+Formula for calculating the corrected sample standard deviation: 
 
 [stem]
 ++++
@@ -1282,7 +1321,7 @@ s = sqrt(1/(n-1) sum_(i=1)^n (x_i - barx)^2)
 
 [[eqn_pop_std_dev]]
 .Population Standard Deviation
-The population standard deviation is calculated according to the following formula.
+Formula for calculating the population standard deviation: 
 
 [stem]
 ++++
