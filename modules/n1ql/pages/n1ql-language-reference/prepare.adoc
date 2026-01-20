@@ -205,31 +205,29 @@ Auto-prepare is disabled for {sqlpp} requests which contain parameters, if they 
 == Auto-Reprepare
 [.status]#Couchbase Server 7.6.9#
 
-When the auto-reprepare feature is active, a prepared statement automatically updates (reprepares) its plan whenever the GSI metadata version changes. 
-This happens when you create or drop an index, allowing prepared statements to use newer, more efficient indexes as they become available.
+When the auto-reprepare feature is active, the Query Service automatically reprepares the execution plan of a prepared statement whenever the GSI metadata version changes.
+This allows prepared statements to use newer, more efficient indexes as they become available.
 
 To enable this feature, you must set bit 23 (0×800000 or 8388608) of the `n1ql-feat-ctrl` setting. 
 For information about how to set this value, see the table in the xref:learn:services-and-indexes/indexes/query-without-index.adoc#manage-sequential-scans[Manage Sequential Scans] section. 
 
-By default, a prepared statement is only reprepared if an index in its current plan becomes unavailable.
-With auto-reprepare, prepared statements can adapt to new indexes as well. 
-For example: 
+By default, the Query Service only reprepares a prepared statement if an index in its current plan becomes unavailable.
 
-* *When the feature is inactive*: 
-If no indexes exist when you prepare a statement, then the prepared plan uses a sequential scan.
-If you create a primary index or a secondary index later, the statement still continues to use the sequential scan and does not automatically benefit from the new indexes.
+When you enable auto-reprepare, the service monitors index changes and flags affected statements for repreparation.
+During the next execution, the service generates a new execution plan for the statement.
 
-* *When the feature is active*: 
-If you create a primary index after preparing a statement, the next time the statement executes, the Query Service generates a new plan using the primary index.
-Similarly, if a more optimal secondary index becomes available, the service flags the statement again and generates a new plan on the next execution using the new index.
+For example, if you prepare statement when no indexes exist, the service generates a plan that uses a sequential scan.
+If you then create a primary index, the service flags the statement and generates a new plan using that index during the next execution.
+If you later create a more optimal secondary index, the service flags the statement again and generates another plan using the secondary index during the next execution.
 
-Although this feature improves performance, it has a potential drawback. 
-Any change to indexes, even those unrelated to a specific statement, can trigger an update. 
-For example, creating an unrelated secondary index or dropping an unused primary index can cause a statement to be reprepared. 
-While the statement may select the existing plan again, this can lead to additional load.
+If the feature is inactive, the statement continues to use the original sequential scan plan even after you create indexes.
+
+While this feature generates more performant query plans, it can increase load on the Query Service.
+Any index modification causes the service to reprepare statements, even if the change is unrelated to the statement.
+For example, creating an unrelated secondary index or dropping an unused primary index triggers a repreparation. 
 If index changes are infrequent, the impact is minimal.
 
-To manage this effectively, you can enable or disable this feature as needed. 
+To manage performance, you can change the state of this feature as needed. 
 For example, you can enable the feature before creating new indexes and then disable it after all statements are reprepared.
 
 === Manual Reprepare
