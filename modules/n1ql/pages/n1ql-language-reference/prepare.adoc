@@ -217,18 +217,20 @@ For information about how to set this value, see the table in the xref:learn:ser
 When active, the Query Service monitors index changes and flags statements for repreparation.
 During the next execution, the service generates a new plan. 
 
-The following sequence explains how the service optimizes a plan as you add indexes: 
-
-* No indexes: The service creates a plan using a sequential scan.
-* On adding a primary index: The service generates a new plan using the primary index during the next execution.
-* On adding a secondary index: The service again generates a new plan using the secondary index during the subsequent execution.
+For example, if you prepare a statement and no indexes exist, the service creates a plan that uses a sequential scan.
+If you then add a primary index, the service generates a new plan that uses this index the next time you run the statement.
+If you later add a secondary index, the service generates another plan that uses the secondary index during the next execution.
 
 If the feature is inactive, the statement continues to use the original plan (sequential scan) even after you create new indexes.
 
+[NOTE]
+====
 While auto-reprepare generates optimized query plans, it can increase the load on the Query Service.
-Any index modification triggers a repreparation, even if the change does not relate to a specific statement (such as dropping an unused primary index).
+Any index modification triggers a repreparation, even if the change does not affect a specific statement (such as dropping an unused primary index).
+
 To manage this, you can enable the feature temporarily when you create or drop indexes and disable it after repreparing all statements.
 If index changes are infrequent, the effect is minimal.
+====
 
 === Manual Reprepare
 
