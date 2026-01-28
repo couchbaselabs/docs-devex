@@ -1,0 +1,84 @@
+= Mapping Collections, Objects, and Fields
+:page-topic-type: concept
+:description: The Search Service has distinct mapping types for collections, objects, and fields in a Search index.
+
+[abstract]
+{description}
+Use these mappings to add documents and specific fields to your Search index: 
+
+* <<collections,>>
+
+[#collections]
+== Collection Mappings
+
+The mapping for a collection is also called a type mapping.
+
+A type mapping includes or excludes specific documents in a collection from an index.
+A document must match the collection and document type set by a type mapping to be included in a Search index.
+
+You can control the type of a document by xref:search:set-type-identifier.adoc[setting a type identifier]. 
+
+You can create 2 types of type mappings with the Search Service: 
+
+. *Dynamic type mappings*: When you do not know the structure of your data fields ahead of time, use a dynamic type mapping to add all available fields from a matching document type to an index.
+For example, you could create a dynamic type mapping to include all documents from the `hotel` collection in your Search index, or include all fields under a JSON object from your document schema.
+
+. *Static type mappings*: When your data fields are stable and unlikely to change, use a static type mapping to add and define only specific fields from a matching document type to an index. 
+For example, you could create a static type mapping to only include the contents of the `city` field from the `hotel` collection in your Search index, as a text field with an `en` analyzer.
+
+Add <<objects,>> and <<fields,>> to a type mapping to make it static. 
+
+For more information about how to create a type mapping in the standard editor, see xref:search:create-type-mapping.adoc[].
+For more information about how to configure settings for mappings and type mappings in the Quick Editor, see xref:quick-index-field-options.adoc[].
+
+=== Collection Names
+
+You cannot use a collection name that contains a period (`.`) inside a Search index. 
+
+The Search Service uses periods (`.`) to separate collection names from xref:search:customize-index.adoc#type-identifiers[type identifiers]. 
+If you used a collection name that contained a period, the Search Service would interpret anything after the period as a filter value on your type mapping. 
+
+For example, if you wanted to include the following document in your Search index, with a `type` value of `shorthair`: 
+
+[source,json]
+----
+include::example$about-mappings.jsonc[]
+----
+
+If you used a collection name of `cat.breeds` and used the default *JSON type field* type identifier, the Search Service would only include documents that had a value of `breeds` in their `type` field.
+That means that the British Shorthair document would not match the type mapping, and would not be included in the Search index. 
+
+[#objects]
+== Object Mappings 
+
+Use an object mapping to add a nested JSON object from your documents to your Search index.
+
+For example, you would use an object mapping to add the `origin` object and its child fields to your Search index: 
+
+[source,json]
+----
+include::example$about-mappings.jsonc[lines=1..8]
+----
+
+Like <<collections,>>, object mappings can be static or dynamic.
+You can add <<fields,>> to make an object mapping static.
+
+== See Also
+
+// Use the See Also section to add links to related procedures, concepts, or reference information.
+
+// Use an unordered list to organize the xrefs.
+
+// The structure of this xref is:
+// * Component name (server:)
+// * Module name (learn:)
+// * Family name (services-and-indexes/)
+// * Subfolder name (indexes/)
+// * File name (indexes.adoc)
+* xref:server:learn:services-and-indexes/indexes/indexes.adoc[]
+// The structure of this xref is:
+// * Component name (cloud:)
+// * Module name (organizations:)
+// * Family name (ui-auth/)
+// * File name (add-sso-auth.adoc)
+* xref:cloud:organizations:ui-auth/add-sso-auth.adoc[]
