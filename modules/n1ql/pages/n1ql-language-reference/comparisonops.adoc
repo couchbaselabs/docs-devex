@@ -90,16 +90,30 @@ include::partial$grammar/n1ql.ebnf[tag=like-expr]
 
 image::n1ql-language-reference/like-expr.png["Syntax diagram", align=left]
 
-[cols="100,326,213"]
+[cols="1a,3a,1a"]
 |===
 | Operator | Description | Returns
 
 | LIKE
-| Match string with a wildcard expression.
-Use % for zero or more wildcards and _ to match any character at this place in a string.
+| Match string against a character pattern expression. 
 
-The wildcard characters can be escaped by preceding them with a backslash (\).
-Backslash itself can also be escaped by preceding it with another backslash.
+The expression can contain the following wildcards:
+
+* Percent sign (%): Matches zero or more characters.
+* Underscore (_): Matches a single character at that specific position in the string. 
+
+To match literal instances of the wildcard characters, use an escape character.
+The default escape character is the backslash (\).
+
+To define a new escape character, use the `ESCAPE` clause. 
+For example, to use the hash sign (\#) as an escape character, write: `LIKE "abc#%def" ESCAPE "#"`. 
+This pattern matches the string `"abc%def"`.
+
+You can also escape the escape character itself. 
+
+NOTE: An empty pattern matches only an empty string. 
+To match any string (including an empty string), use the pattern %. 
+
 | TRUE or FALSE
 
 | NOT LIKE
@@ -107,6 +121,34 @@ Backslash itself can also be escaped by preceding it with another backslash.
 Return TRUE if string is not similar to given string.
 | TRUE or FALSE
 |===
+
+
+=== Examples
+
+.Match strings using LIKE
+====
+.Query
+[source,sqlpp]
+----
+SELECT "hello world" LIKE "h_llo%" AS match_1,
+       "hello world" LIKE "h%world" AS match_2,
+       "hello world" LIKE "h%z%" AS match_3,
+       "hello% world" LIKE "hello#% world" ESCAPE "#" AS match_4;
+----
+
+.Returns
+[source,json]
+----
+[
+  {
+    "match_1": true,
+    "match_2": true,
+    "match_3": false,
+    "match_4": true
+  }
+]
+----
+====
 
 == IS
 
