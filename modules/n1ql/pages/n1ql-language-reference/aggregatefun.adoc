@@ -32,14 +32,15 @@ The function names are case insensitive.
 You can only use aggregate functions in `SELECT`, `LETTING`, `HAVING`, and `ORDER BY` clauses.
 When using an aggregate function in a query, the query operates as an aggregate query.
 
-In Couchbase Server Enterprise Edition, aggregate functions can also be used as {windowfun}[window functions] when they are used with a window specification, which is introduced by the `OVER` keyword.
+In Couchbase Server Enterprise Edition, you can use aggregate functions as {windowfun}[window functions] by specifying a window definition using the <<over-clause>>.
 
 include::partial$n1ql-language-reference/window-intro.adoc[tag=syntax]
 
+[[aggregate-syntax]]
 == Syntax
 
 This section describes the generic syntax of aggregate functions.
-Refer to sections below for details of individual aggregate functions.
+For details of individual aggregate functions, see the sections that follow.
 
 [source,ebnf]
 ----
@@ -68,15 +69,13 @@ include::partial$grammar/n1ql.ebnf[tag=aggregate-quantifier]
 
 image::n1ql-language-reference/aggregate-quantifier.png["Syntax diagram", align=left]
 
-The *aggregate quantifier* determines whether the function aggregates all values in the group, or distinct values only.
+An aggregate quantifier determines whether the function aggregates all values in a group or only distinct values.
+You can use the quantifiers only with aggregate functions.
 
-`ALL`:: All objects are included in the computation.
-`DISTINCT`:: Only distinct objects are included in the computation.
+`ALL`:: Includes all values in the computation.
+`DISTINCT`:: Includes only distinct values in the computation.
 
-This quantifier can only be used with aggregate functions.
-
-This quantifier is optional.
-If omitted, the default value is `ALL`.
+These quantifiers are optional and the default value is `ALL`.
 
 [[filter-clause]]
 === FILTER Clause
@@ -120,22 +119,36 @@ All other aggregate functions return NULL.
 [[array_agg,ARRAY_AGG()]]
 == [[array_agg_distinct]]ARRAY_AGG( {startsb} ALL | DISTINCT {endsb} `expression`)
 
-=== Return Value
-With the `ALL` quantifier, or no quantifier, returns an array of the non-MISSING values in the group, including NULL values.
+=== Description
 
-With the `DISTINCT` quantifier, returns an array of the distinct non-MISSING values in the group, including NULL values.
+Returns an array of non-MISSING values from an expression.
+
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+The function ignores `MISSING` values, but includes `NULL` values.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* An array of non-MISSING values. 
+* `NULL` if all values are `MISSING`.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.List all values into an array
 ====
-List all values of the `Cleanliness` reviews given:
-
 .Query
 [source,sqlpp]
 ----
-SELECT ARRAY_AGG(reviews[0].ratings.Cleanliness) AS Reviews
-FROM hotel;
+SELECT ARRAY_AGG(input) AS agg_all
+FROM [1, 2, 2, 3, "abc", MISSING, NULL] 
+AS input;
 ----
 
 .Results
@@ -143,27 +156,27 @@ FROM hotel;
 ----
 [
   {
-    "Reviews": [
-      -1,
-      -1,
-      -1,
-      -1,
-      -1,
-      // ...
+    "agg_all": [
+      null,
+      1,
+      2,
+      2,
+      3,
+      "abc"
     ]
   }
 ]
 ----
 ====
 
+.List distinct values into an array
 ====
-List all unique values of the `Cleanliness` reviews given:
-
 .Query
 [source,sqlpp]
 ----
-SELECT ARRAY_AGG(DISTINCT reviews[0].ratings.Cleanliness) AS Reviews
-FROM hotel;
+SELECT ARRAY_AGG(DISTINCT input) AS agg_distinct
+FROM [1, 2, 2, 3, "abc", MISSING, NULL] 
+AS input;
 ----
 
 .Results
@@ -171,13 +184,12 @@ FROM hotel;
 ----
 [
   {
-    "UniqueReviews": [
-      -1,
+    "agg_distinct": [
+      null,
       1,
       2,
       3,
-      4,
-      5
+      "abc"
     ]
   }
 ]
@@ -187,69 +199,36 @@ FROM hotel;
 [[avg,AVG()]]
 == [[avg_distinct]]AVG( {startsb} ALL | DISTINCT {endsb} `expression`)
 
-This function has an alias <<mean>>.
+This function has a synonym <<mean>>.
+
+=== Description
+
+Returns the arithmetic mean (average) of all numeric values in an expression.
+
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+==== Arguments
+
+See <<aggregate-syntax>>.
 
 === Return Value
-With the `ALL` quantifier, or no quantifier, returns the arithmetic mean (average) of all the number values in the group.
 
-With the `DISTINCT` quantifier, returns the arithmetic mean (average) of all the distinct number values in the group.
+The function returns 1 of the following:
 
-Returns NULL if there are no number values in the group.
+* A number that represents the mean.
+* `NULL` if all values are non-numeric, `MISSING`, or `NULL`.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Find the average of all numbers
 ====
-Find the average altitude of airports in the `airport` keyspace:
-
 .Query
 [source,sqlpp]
 ----
-include::example$functions/avg.n1ql[]
-----
-
-.Results
-[source,json]
-----
-include::example$functions/avg.jsonc[]
-----
-====
-
-====
-Find the average number of stops per route vs. the average of distinct numbers of stops:
-
-.Query
-[source,sqlpp]
-----
-include::example$functions/avg-all.n1ql[]
-----
-
-Results in 0.0002 since nearly all routes have 0 stops.
-
-[source,sqlpp]
-----
-include::example$functions/avg-distinct.n1ql[]
-----
-
-Results in 0.5 since all routes have only 1 or 0 stops.
-====
-
-[[count_all,COUNT(*)]]
-== COUNT(*)
-
-=== Return Value
-Returns count of all the input rows for the group, regardless of value. footnote:count[{doc-count}]
-
-=== Example
-include::ROOT:partial$query-context.adoc[tag=section]
-
-====
-Find the number of documents in the `landmark` keyspace:
-
-.Query
-[source,sqlpp]
-----
-SELECT COUNT(*) AS CountAll FROM landmark;
+SELECT AVG(input) AS avg_all
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -257,7 +236,74 @@ SELECT COUNT(*) AS CountAll FROM landmark;
 ----
 [
   {
-    "CountAll": 4495
+    "avg_all": 1.8
+  }
+]
+----
+====
+
+.Find the average of distinct numbers
+====
+.Query
+[source,sqlpp]
+----
+SELECT AVG(DISTINCT input) AS avg_distinct
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
+----
+
+.Results
+[source,sqlpp]
+----
+[
+  {
+    "avg_distinct": 2
+  }
+]
+----
+In this example, the average is (1 + 2 + 3) / 3 = 2.
+====
+
+[[count_all,COUNT(*)]]
+== COUNT(`*`)
+
+=== Description
+
+Returns the total count of all rows in an aggregated group. footnote:count[{doc-count}]
+
+The `*` wildcard indicates that the function should count all rows, including those with `NULL` and `MISSING` values.
+
+TIP: To get the count of only non-NULL and non-MISSING values in a group, use <<count, COUNT(expression)>>.
+
+=== Arguments
+
+This function does not take any arguments. 
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number that represents the count of all rows. 
+* `0` if the group is empty. 
+
+=== Example
+
+.Find the count of all rows 
+====
+.Query
+[source,sqlpp]
+----
+SELECT COUNT(*) AS count_all_rows
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "count_all_rows": 8
   }
 ]
 ----
@@ -266,21 +312,32 @@ SELECT COUNT(*) AS CountAll FROM landmark;
 [[count,COUNT()]]
 == [[count_distinct]]COUNT( {startsb} ALL | DISTINCT {endsb} `expression`)
 
-=== Return Value
-With the `ALL` quantifier, or no quantifier, returns count of all the non-NULL and non-MISSING values in the group. footnote:count[]
+=== Description
 
-With the `DISTINCT` quantifier, returns count of all the distinct non-NULL and non-MISSING values in the group.
+Returns the count of all non-NULL and non-MISSING values in an expression. footnote:count[]
+
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+TIP: To get the count of all rows, including those with `NULL` and `MISSING` values, use <<count_all, COUNT(*)>>.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number that represents the count. 
+* `0` if all values are `MISSING` or `NULL`.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Find the count of all values 
 ====
-Find the number of documents with an airline route stop in the `route` keyspace regardless of its value:
-
 .Query
 [source,sqlpp]
 ----
-SELECT COUNT(stops) AS CountOfStops FROM route;
+SELECT COUNT(input) AS count_all
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -288,20 +345,20 @@ SELECT COUNT(stops) AS CountOfStops FROM route;
 ----
 [
   {
-    "CountOfStops": 24024
+    "count_all": 6
   }
 ]
 ----
 ====
 
+.Find the count of distinct values 
 ====
-Find the number of unique values of airline route stops in the `route` keyspace:
-
 .Query
 [source,sqlpp]
 ----
-SELECT COUNT(DISTINCT stops) AS CountOfDistinctStops
-FROM route;
+SELECT COUNT(DISTINCT input) AS count_distinct
+FROM [1, 1, 2, 2, 3, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -309,35 +366,43 @@ FROM route;
 ----
 [
   {
-    "CountOfSDistinctStops": 2 <1>
+    "count_distinct": 4
   }
 ]
 ----
-
-<1> Results in 2 because there are only 0 or 1 stops.
 ====
 
 [[countn,COUNTN()]]
 == COUNTN( {startsb} ALL {vbar} DISTINCT {endsb} `expression` )
 
-=== Return Value
-With the `ALL` quantifier, or no quantifier, returns a count of all the numeric values in the group. footnote:count[]
+=== Description
 
-With the `DISTINCT` quantifier, returns a count of all the distinct numeric values in the group.
+Returns the count of numeric values in an expression. footnote:count[]
+
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number that represents the count.
+* `0` if there are no numeric values.
 
 === Examples
-====
-The count of numeric values in a mixed group.
 
+.Find the count of all numeric values 
+====
+.Query
 [source,sqlpp]
 ----
-SELECT COUNTN(list.val) AS CountOfNumbers
-FROM [
-  {"val":1},
-  {"val":1},
-  {"val":2},
-  {"val":"abc"}
-] AS list;
+SELECT COUNTN(input) AS count_all
+FROM [ 1, 1, 2, 2, 3, "abc", MISSING, NULL] 
+AS input;
 ----
 
 .Results
@@ -345,24 +410,21 @@ FROM [
 ----
 [
   {
-    "CountOfNumbers": 3
+    "count_all": 5
   }
 ]
 ----
 ====
 
-====
-The count of unique numeric values in a mixed group.
+.Find the count of distinct numeric values 
+==== 
 
+.Query
 [source,sqlpp]
 ----
-SELECT COUNTN(DISTINCT list.val) AS CountOfNumbers
-FROM [
-  {"val":1},
-  {"val":1},
-  {"val":2},
-  {"val":"abc"}
-] AS list;
+SELECT COUNTN(DISTINCT input) AS count_distinct
+FROM [ 1, 1, 2, 2, 3, "abc", MISSING, NULL] 
+AS input;
 ----
 
 .Results
@@ -370,7 +432,7 @@ FROM [
 ----
 [
   {
-    "CountOfNumbers": 2
+    "count_distinct": 3
   }
 ]
 ----
@@ -379,23 +441,37 @@ FROM [
 [[max,MAX()]]
 == MAX( {startsb} ALL | DISTINCT {endsb} `expression`)
 
+=== Description
+
+Returns the maximum value in an expression.
+The function ignores `MISSING` and `NULL` values.
+
+When comparing values of different data types, the function uses {sqlpp} xref:n1ql-language-reference/datatypes.adoc#collation[collation rules] to determine precedence.
+
+NOTE: The `ALL` and `DISTINCT` quantifiers do not affect the result of this function. 
+The maximum value remains the same whether or not duplicates are included.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
+
 === Return Value
 
-Returns the maximum non-NULL, non-MISSING value in the group in {sqlpp} collation order.
+The function returns 1 of the following:
 
-This function returns the same result with the `ALL` quantifier, the `DISTINCT` quantifier, or no quantifier.
+* The maximum value in the group.
+* `NULL` if all values are either `MISSING` or `NULL`.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
-.Max of an integer field
+.Find the max value from a group of numbers
 ====
-Find the northernmost latitude of any hotel in the `hotel` keyspace:
-
 .Query
 [source,sqlpp]
 ----
-SELECT MAX(geo.lat) AS MaxLatitude FROM hotel;
+SELECT MAX(input) AS max_value_num
+FROM [1, 3, 2, 3, MISSING, NULL]
+AS input;
 ----
 
 .Results
@@ -403,20 +479,20 @@ SELECT MAX(geo.lat) AS MaxLatitude FROM hotel;
 ----
 [
   {
-    "MaxLatitude": 60.15356
+    "max_value_num": 3
   }
 ]
 ----
 ====
 
-.Max of a string field
+.Find the max value from a group with mixed types
 ====
-Find the hotel whose name is last alphabetically in the `hotel` keyspace:
-
 .Query
 [source,sqlpp]
 ----
-SELECT MAX(name) AS MaxName FROM hotel;
+SELECT MAX(input) AS max_value_all
+FROM [1, 2, 3, "airline", "2025-12-01T00:00:00Z", NULL]
+AS input;
 ----
 
 .Results
@@ -424,23 +500,21 @@ SELECT MAX(name) AS MaxName FROM hotel;
 ----
 [
   {
-    "MaxName": "pentahotel Birmingham"
+    "max_value_all": "airline"
   }
 ]
 ----
+The function returns `airline` because strings have a higher precedence than numbers and dates. 
 ====
 
-That result might have been surprising since lowercase letters come after uppercase letters and are therefore "higher" than uppercase letters.
-To avoid this uppercase/lowercase confusion, you should first make all values uppercase or lowercase, as in the following example.
-
-.Max of a string field, regardless of case
+.Find the max value from a group of strings
 ====
-Find the hotel whose name is last alphabetically in the `hotel` keyspace:
-
 .Query
 [source,sqlpp]
 ----
-SELECT MAX(UPPER(name)) AS MaxName FROM hotel;
+SELECT MAX(input) AS max_value_string
+FROM ["United", "Delta", "American", "Southwest"]
+AS input;
 ----
 
 .Results
@@ -448,41 +522,51 @@ SELECT MAX(UPPER(name)) AS MaxName FROM hotel;
 ----
 [
   {
-    "MaxName": "YOSEMITE LODGE AT THE FALLS"
+    "max_value_string": "United"
   }
 ]
 ----
+When comparing string values, the function uses alphabetical order to determine the maximum value.
 ====
 
 [[mean,MEAN()]]
 == [[mean_distinct]]MEAN( {startsb} ALL | DISTINCT {endsb} `expression`)
 
-Alias for <<avg>>.
+Synonym of <<avg>>.
 
 [[median,MEDIAN()]]
 == [[median_distinct]]MEDIAN( {startsb} ALL | DISTINCT {endsb} `expression`)
 
+=== Description
+
+Returns the median of all numeric values in an expression.
+
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
+
 === Return Value
 
-With the `ALL` quantifier, or no quantifier, returns the median of all the number values in the group.
-If there is an even number of number values, returns the mean of the median two values.
+The function returns 1 of the following:
 
-With the `DISTINCT` quantifier, returns the median of all the distinct number values in the group.
-If there is an even number of distinct number values, returns the mean of the median two values.
-
-Returns NULL if there are no number values in the group.
+* A number that represents the median value.
+* A number that represents the mean of the 2 median values if the number of numeric values is even.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Find the median when the number of values is odd
 ====
-Find the median altitude of airports in the `airport` keyspace:
 
 .Query
 [source,sqlpp]
 ----
-SELECT MEDIAN(geo.alt) AS MedianAltitude
-FROM airport;
+SELECT MEDIAN(input) AS median_value
+FROM [1, 2, 3, 3, 4, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -490,19 +574,22 @@ FROM airport;
 ----
 [
   {
-    "MedianAltitude": 361.5
-  }
+    "median_value": 3
+ }
 ]
 ----
+In this example, the median is the middle value `3`.
 ====
 
+.Find the median when the number of values is even
 ====
-Find the median of distinct altitudes of airports in the `airport` keyspace:
 
 .Query
 [source,sqlpp]
 ----
-SELECT MEDIAN(DISTINCT geo.alt) AS MedianAltitude FROM airport;
+SELECT MEDIAN(input) AS median_value
+FROM [1, 2, 3, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -510,101 +597,163 @@ SELECT MEDIAN(DISTINCT geo.alt) AS MedianAltitude FROM airport;
 ----
 [
   {
-    "MedianDistinctAltitude": 758
+    "median_value": 3
+ }
+]
+----
+In this example, the median is the mean of the 2 middle values (`3` and `3`), which is `3`.
+====
+
+.Find the median of distinct values
+====
+.Query
+[source,sqlpp]
+----
+SELECT MEDIAN(DISTINCT input) AS median_value
+FROM [1, 2, 3, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
+----  
+
+.Results
+[source,json]
+----
+[
+  {
+    "median_value": 2.5
   }
 ]
 ----
+In this example, the number of distinct numeric values is even.
+Therefore, the median is the mean of the 2 middle values (`2` and `3`), which is `2.5`.
 ====
 
 [[min,MIN()]]
 == MIN( {startsb} ALL | DISTINCT {endsb} `expression`)
 
+=== Description
+
+Returns the minimum value in an expression.
+The function ignores `MISSING` and `NULL` values.
+
+When comparing values of different data types, the function uses {sqlpp} xref:n1ql-language-reference/datatypes.adoc#collation[collation rules] to determine precedence.
+
+NOTE: The `ALL` and `DISTINCT` quantifiers do not affect the result of this function.
+The minimum value remains the same whether or not duplicates are included.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
+
 === Return Value
 
-Returns the minimum non-NULL, non-MISSING value in the group in {sqlpp} collation order.
+The function returns 1 of the following:
 
-This function returns the same result with the `ALL` quantifier, the `DISTINCT` quantifier, or no quantifier.
+* The minimum value in the group.
+* `NULL` if all values are either `MISSING` or `NULL`.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
-.Min of an integer field
+.Find the minimum value from a group of numbers
 ====
-Find the southernmost latitude of any hotel in the `hotel` keyspace:
 
 .Query
 [source,sqlpp]
 ----
-include::example$functions/min-num.n1ql[]
+SELECT MIN(input) AS min_value_num
+FROM [3, 1, 2, 1, MISSING, NULL]
+AS input;
 ----
 
 .Results
 [source,json]
 ----
-include::example$functions/min-num.jsonc[]
+[
+  {
+    "min_value_num": 1
+  }
+]
 ----
 ====
 
-.Min of a string field
+.Find the minimum value from a group with mixed types
 ====
-Find the hotel whose name is first alphabetically in the `hotel` keyspace:
-
 .Query
 [source,sqlpp]
 ----
-include::example$functions/min-string.n1ql[]
+SELECT MIN(input) AS min_value_all
+FROM [1, 2, 3, "airline", "2025-12-01T00:00:00Z", NULL]
+AS input; 
 ----
 
 .Results
 [source,json]
 ----
-include::example$functions/min-string.jsonc[]
+[
+  {
+    "min_value_all": 1
+  }
+]
 ----
+The function returns `1` because numbers have a lower precedence than strings and dates.
 ====
 
-That result might have been surprising since some symbols come before letters and are therefore "lower" than letters.
-To avoid this symbol confusion, you can specify letters only, as in the following example.
-
-.Min of a string field, regardless of preceding non-letters
+.Find the minimum value from a group of strings
 ====
-Find the first hotel alphabetically in the `hotel` keyspace:
-
 .Query
 [source,sqlpp]
 ----
-include::example$functions/min-filter.n1ql[]
-----
-
+SELECT MIN(input) AS min_value_string 
+FROM ["United", "Delta", "American", "Southwest"]
+AS input;
+----  
 .Results
 [source,json]
 ----
-include::example$functions/min-filter.jsonc[]
+[
+  {
+    "min_value_string": "American"
+  }
+]
 ----
+When comparing string values, the function uses alphabetical order to determine the minimum value.
 ====
 
 [[stddev,STDDEV()]]
 == [[stddev_distinct]]STDDEV( {startsb} ALL | DISTINCT {endsb} `expression`)
 
+=== Description
+
+Returns the <<eqn_samp_std_dev, corrected sample standard deviation>> of all numeric values in an expression.
+
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+NOTE: This function is similar to <<stddev_samp>>. 
+However, it returns `0` if there is only 1 matching value, while <<stddev_samp>> returns `NULL` in such cases.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
+
 === Return Value
 
-With the `ALL` quantifier, or no quantifier, returns the <<eqn_samp_std_dev,corrected sample standard deviation>> of all the number values in the group.
+The function returns 1 of the following:
 
-With the `DISTINCT` quantifier, returns the <<eqn_samp_std_dev,corrected sample standard deviation>> of all the distinct number values in the group.
-
-Returns NULL if there are no number values in the group.
+* A number that represents the corrected sample standard deviation.
+* `0` if the group contains only 1 numeric value.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Find the standard deviation of all values
 ====
-Find the sample standard deviation of all values:
 
 .Query
 [source,sqlpp]
 ----
-SELECT STDDEV(reviews[0].ratings.Cleanliness) AS StdDev
-FROM hotel
-WHERE city="London";
+SELECT STDDEV(input) AS std_deviation_all
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -612,21 +761,20 @@ WHERE city="London";
 ----
 [
   {
-    "StdDev": 2.0554275433769753
+    "std_deviation_all": 1.3038404810405297
   }
 ]
 ----
 ====
 
+.Find the standard deviation of distinct values
 ====
-Find the sample standard deviation of a single value:
-
 .Query
 [source,sqlpp]
 ----
-SELECT STDDEV(reviews[0].ratings.Cleanliness) AS StdDevSingle
-FROM hotel
-WHERE name="Sachas Hotel";
+SELECT STDDEV(DISTINCT input) AS std_deviation_distinct
+FROM [1, 2, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input; 
 ----
 
 .Results
@@ -634,31 +782,27 @@ WHERE name="Sachas Hotel";
 ----
 [
   {
-    "StdDevSingle": 0 <1>
+    "std_deviation_distinct": 1.2909944487358056
   }
 ]
 ----
-
-<1> There is only one matching result in the input, so the function returns `0`.
 ====
 
+.Find the standard deviation of a single numeric value
 ====
-Find the sample standard deviation of distinct values:
-
 .Query
 [source,sqlpp]
 ----
-SELECT STDDEV(DISTINCT reviews[0].ratings.Cleanliness) AS StdDev
-FROM hotel
-WHERE city="London";
+SELECT STDDEV(input) AS std_deviation_single
+FROM [3, NULL, "abc"]
+AS input;
 ----
-
 .Results
 [source,json]
 ----
 [
   {
-    "StdDevDistinct": 2.1602468994692865
+    "std_deviation_single": 0
   }
 ]
 ----
@@ -667,26 +811,34 @@ WHERE city="London";
 [[stddev_pop,STDDEV_POP()]]
 == [[stddev_pop_distinct]]STDDEV_POP( {startsb} ALL | DISTINCT {endsb} `expression`)
 
+=== Description
+
+Returns the <<eqn_pop_std_dev,population standard deviation>> of all numeric values in an expression.
+
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+=== Arguments
+See <<aggregate-syntax>>.
+
 === Return Value
 
-With the `ALL` quantifier, or no quantifier, returns the <<eqn_pop_std_dev,population standard deviation>> of all the number values in the group.
+The function returns 1 of the following:
 
-With the `DISTINCT` quantifier, returns the <<eqn_pop_std_dev,population standard deviation>> of all the distinct number values in the group.
-
-Returns NULL if there are no number values in the group.
+* A number that represents the population standard deviation. 
+* `0` if the group contains only 1 numeric value.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Find the population standard deviation of all values
 ====
-Find the population standard deviation of all values:
-
 .Query
 [source,sqlpp]
 ----
-SELECT STDDEV_POP(reviews[0].ratings.Cleanliness) AS PopStdDev
-FROM hotel
-WHERE city="London";
+SELECT STDDEV_POP(input) AS pop_deviation_all
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -694,21 +846,20 @@ WHERE city="London";
 ----
 [
   {
-    "PopStdDev": 2.0390493736539432
+    "pop_deviation_all": 1.16619037896906
   }
 ]
 ----
 ====
 
+.Find the population standard deviation of distinct values
 ====
-Find the population standard deviation of distinct values:
-
 .Query
 [source,sqlpp]
 ----
-SELECT STDDEV_POP(DISTINCT reviews[0].ratings.Cleanliness) AS PopStdDev
-FROM hotel
-WHERE city="London";
+SELECT STDDEV_POP(DISTINCT input) AS pop_deviation_distinct
+FROM [1, 2, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input; 
 ----
 
 .Results
@@ -716,7 +867,7 @@ WHERE city="London";
 ----
 [
   {
-      "PopStdDevDistinct": 1.9720265943665387
+    "pop_deviation_distinct": 1.118033988749895
   }
 ]
 ----
@@ -725,21 +876,37 @@ WHERE city="London";
 [[stddev_samp,STDDEV_SAMP()]]
 == [[stddev_samp_distinct]]STDDEV_SAMP( {startsb} ALL | DISTINCT {endsb} `expression`)
 
-A near-synonym for <<stddev>>.
-The only difference is that `STDDEV_SAMP()` returns NULL if there is only one matching element.
+=== Description
+
+Returns the <<eqn_samp_std_dev, corrected sample standard deviation>> of all numeric values in an expression.
+
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+NOTE: This function is similar to <<stddev>>.
+However, it returns `NULL` if there is only 1 matching value, while <<stddev>> returns `0` in such cases.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number that represents the sample standard deviation.
+* `NULL` if there are fewer than 2 numeric values in the group.
 
 === Example
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Find the sample standard deviation of all values
 ====
-Find the sample standard deviation of a single value:
-
 .Query
 [source,sqlpp]
 ----
-SELECT STDDEV_SAMP(reviews[0].ratings.Cleanliness) AS StdDevSingle
-FROM hotel
-WHERE name="Sachas Hotel";
+SELECT STDDEV_SAMP(input) AS std_deviation_all
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -747,59 +914,85 @@ WHERE name="Sachas Hotel";
 ----
 [
   {
-    "StdDevSamp": null <1>
+    "std_deviation_all": 1.3038404810405297
   }
 ]
 ----
+====
 
-<1> There is only one matching result in the input, so the function returns NULL.
+.Find the sample standard deviation of distinct values
+====
+.Query
+[source,sqlpp]
+----
+SELECT STDDEV_SAMP(DISTINCT input) AS std_deviation_distinct
+FROM [1, 2, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
+----  
+
+.Results
+[source,json]
+----
+[
+  {
+    "std_deviation_distinct": 1.2909944487358056
+  }
+]
+----
+====
+
+.Find the sample standard deviation of a single numeric value
+====
+.Query
+[source,sqlpp]
+----
+SELECT STDDEV_SAMP(input) AS std_dev_sample
+FROM [3, NULL, "abc"]
+AS input;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "std_dev_sample": null
+  }
+]
+----
 ====
 
 [[sum,SUM()]]
 == [[sum_distinct]]SUM( {startsb} ALL | DISTINCT {endsb} `expression`)
 
+=== Description
+
+Returns the arithmetic sum of all number values in an expression. 
+
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
+
 === Return Value
 
-With the `ALL` quantifier, or no quantifier, returns the sum of all the number values in the group.
+The function returns 1 of the following:
 
-With the `DISTINCT` quantifier, returns the arithmetic sum of all the distinct number values in the group.
-
-Returns NULL if there are no number values in the group.
+* A number that represents the sum.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Find the sum of all numbers
 ====
-Find the sum total of all airline route stops in the `route` keyspace:
-
 .Query
 [source,sqlpp]
 ----
-SELECT SUM(stops) AS SumOfStops FROM route;
-----
-
-NOTE: In the `route` keyspace, nearly all flights are non-stop (0 stops) and only six flights have 1 stop, so we expect 6 flights of 1 stop each, a total of 6.
-
-.Results
-[source,json]
-----
-[
-  {
-    "SumOfStops": 6 <1>
-  }
-]
-----
-
-<1> There are 6 routes with 1 stop each.
-====
-
-====
-Find the sum total of all unique numbers of airline route stops in the `route` keyspace:
-
-.Query
-[source,sqlpp]
-----
-SELECT SUM(DISTINCT stops) AS SumOfStops FROM route;
+SELECT SUM(input) AS sum_all
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -807,40 +1000,68 @@ SELECT SUM(DISTINCT stops) AS SumOfStops FROM route;
 ----
 [
   {
-    "SumOfDistinctStops": 1 <1>
+    "sum_all": 14
   }
 ]
 ----
+====
 
-<1> There are only 0 and 1 stops per route; and 0 + 1 = 1.
+.Find the sum of distinct numbers
+====
+.Query
+[source,sqlpp]
+----
+SELECT SUM(DISTINCT input) AS sum_distinct
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "sum_distinct": 10
+  }
+]
+----
 ====
 
 [[variance,VARIANCE()]]
 == [[variance_distinct]]VARIANCE( {startsb} ALL | DISTINCT {endsb} `expression`)
 
+=== Description
+
+Returns the unbiased sample variance (the square of the <<eqn_samp_std_dev,corrected sample standard deviation>>) of all numeric values in an expression.
+
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+NOTE: This function is similar to <<variance_samp>>. 
+However, it returns `0` if there is only 1 matching value, while <<variance_samp>> returns `NULL` in such cases.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
+
 === Return Value
 
-With the `ALL` quantifier, or no quantifier, returns the unbiased sample variance (the square of the <<eqn_samp_std_dev,corrected sample standard deviation>>) of all the number values in the group.
+The function returns 1 of the following:
 
-With the `DISTINCT` quantifier, returns the unbiased sample variance (the square of the <<eqn_samp_std_dev,corrected sample standard deviation>>) of all the distinct number values in the group.
-
-Returns NULL if there are no number values in the group.
-
-This function has a near-synonym <<variance_samp>>.
-The only difference is that `VARIANCE()` returns NULL if there is only one matching element.
+* A number that represents the unbiased sample variance.
+* `0` if the group contains only 1 numeric value.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Find the sample variance of all values
 ====
-Find the sample variance of all values:
-
 .Query
 [source,sqlpp]
 ----
-SELECT VARIANCE(reviews[0].ratings.Cleanliness) AS Variance
-FROM hotel
-WHERE city="London";
+SELECT VARIANCE(input) AS variance_all
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -848,21 +1069,20 @@ WHERE city="London";
 ----
 [
   {
-    "Variance": 4.224782386072708
+    "variance_all": 1.7
   }
 ]
 ----
 ====
 
+.Find the sample variance of distinct values
 ====
-Find the sample variance of a single value:
-
 .Query
 [source,sqlpp]
 ----
-SELECT VARIANCE(reviews[0].ratings.Cleanliness) AS VarianceSingle
-FROM hotel
-WHERE name="Sachas Hotel";
+SELECT VARIANCE(DISTINCT input) AS variance_distinct
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -870,23 +1090,20 @@ WHERE name="Sachas Hotel";
 ----
 [
   {
-    "VarianceSingle": 0 <1>
+    "variance_distinct": 1.6666666666666667
   }
 ]
 ----
-
-<1> There is only one matching result in the input, so the function returns `0`.
 ====
 
+.Find the sample variance of a single numeric value
 ====
-Find the sampling variance of distinct values:
-
 .Query
 [source,sqlpp]
 ----
-SELECT VARIANCE(DISTINCT reviews[0].ratings.Cleanliness) AS Variance
-FROM hotel
-WHERE city="London";
+SELECT VARIANCE(input) AS variance_single
+FROM [3, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -894,7 +1111,7 @@ WHERE city="London";
 ----
 [
   {
-    "VarianceDistinct": 4.666666666666667
+    "variance_single": 0
   }
 ]
 ----
@@ -903,28 +1120,36 @@ WHERE city="London";
 [[variance_pop,VARIANCE_POP()]]
 == [[variance_pop_distinct]]VARIANCE_POP( {startsb} ALL | DISTINCT {endsb} `expression`)
 
-This function has an alias <<var_pop>>.
+This function has a synonym <<var_pop>>.
+
+=== Description
+
+Returns the population variance (the square of the <<eqn_pop_std_dev,population standard deviation>>) of all numeric values in an expression.
+
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
 
 === Return Value
 
-With the `ALL` quantifier, or no quantifier, returns the population variance (the square of the <<eqn_pop_std_dev,population standard deviation>>) of all the number values in the group.
+The function returns 1 of the following:
 
-With the `DISTINCT` quantifier, returns the population variance (the square of the <<eqn_pop_std_dev,population standard deviation>>) of all the distinct number values in the group.
-
-Returns NULL if there are no number values in the group.
+* A number that represents the population variance.
+* `NULL` if there are no numeric values in the group.
 
 === Examples
-include::ROOT:partial$query-context.adoc[tag=section]
 
+.Find the population variance of all values
 ====
-Find the population variance of all values:
-
 .Query
 [source,sqlpp]
 ----
-SELECT VARIANCE_POP(reviews[0].ratings.Cleanliness) AS PopVariance
-FROM hotel
-WHERE city="London";
+SELECT VARIANCE_POP(input) AS pop_variance_all
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -932,21 +1157,20 @@ WHERE city="London";
 ----
 [
   {
-    "PopVariance": 4.157722348198537
+    "pop_variance_all": 1.3599999999999999
   }
 ]
 ----
 ====
 
+.Find the population variance of distinct values
 ====
-Find the population variance of distinct values:
-
 .Query
 [source,sqlpp]
 ----
-SELECT VARIANCE_POP(DISTINCT reviews[0].ratings.Cleanliness) AS PopVarianceDistinct
-FROM hotel
-WHERE city="London";
+SELECT VARIANCE_POP(DISTINCT input) AS pop_variance_distinct
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -954,7 +1178,28 @@ WHERE city="London";
 ----
 [
   {
-      "PopVarianceDistinct": 3.8888888888888893
+    "pop_variance_distinct": 1.25
+  }
+]
+----
+====
+
+.Find the population variance of a single numeric value
+====
+.Query
+[source,sqlpp]
+----  
+SELECT VARIANCE_POP(input) AS pop_variance_single
+FROM [3, NULL, "abc"]
+AS input;
+----
+
+.Results
+[source,json]
+----  
+[
+  {
+    "pop_variance_single": null
   }
 ]
 ----
@@ -963,23 +1208,39 @@ WHERE city="London";
 [[variance_samp,VARIANCE_SAMP()]]
 == [[variance_samp_distinct]]VARIANCE_SAMP( {startsb} ALL | DISTINCT {endsb} `expression`)
 
-A near-synonym for <<variance>>.
-The only difference is that `VARIANCE_SAMP()` returns NULL if there is only one matching element.
+This function has a synonym <<var_samp>>.
 
-This function has an alias <<var_samp>>.
+=== Description
 
-=== Example
-include::ROOT:partial$query-context.adoc[tag=section]
+Returns the unbiased sample variance (the square of the <<eqn_samp_std_dev,corrected sample standard deviation>>) of all numeric values in an expression.
 
+You can use the `ALL` or `DISTINCT` quantifier to specify which values to include in the calculation.
+For more information, see <<aggregate-quantifier>>.
+
+NOTE: This function is similar to <<variance>>. 
+However, it returns `NULL` if there is only 1 matching value, while <<variance>> returns `0` in such cases.
+
+=== Arguments
+
+See <<aggregate-syntax>>.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number that represents the sample variance.
+* `NULL` if there is fewer than 2 numeric values in the group.
+
+=== Examples
+
+.Find the sample standard variance of all values
 ====
-Find the sample standard deviation of a single value:
-
 .Query
 [source,sqlpp]
 ----
-SELECT VARIANCE_SAMP(reviews[0].ratings.Cleanliness) AS VarianceSamp
-FROM hotel
-WHERE name="Sachas Hotel";
+SELECT VARIANCE_SAMP(input) AS variance_all
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
 ----
 
 .Results
@@ -987,29 +1248,69 @@ WHERE name="Sachas Hotel";
 ----
 [
   {
-    "VarianceSamp": null <1>
+    "variance_all": 1.7
   }
 ]
 ----
+====
 
-<1> There is only one matching result in the input, so the function returns NULL.
+.Find the sample variance of distinct values
+====
+.Query
+[source,sqlpp]
+----
+SELECT VARIANCE_SAMP(DISTINCT input) AS variance_distinct
+FROM [1, 2, 3, 4, 4, MISSING, NULL, "abc"]
+AS input;
+----    
+
+.Results
+[source,json]
+----
+[
+  {
+    "variance_distinct": 1.6666666666666667
+  }
+]
+----
+====
+
+.Find the sample variance of a single numeric value
+====
+.Query
+[source,sqlpp]
+----
+SELECT VARIANCE_SAMP(input) AS variance_single
+FROM [3, NULL, "abc"]
+AS input;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "variance_single": null
+  }
+]
+----
 ====
 
 [[var_pop,VAR_POP()]]
 == [[var_pop_distinct]]VAR_POP( {startsb} ALL | DISTINCT {endsb} `expression`)
 
-Alias for <<variance_pop>>.
+Synonym of <<variance_pop>>.
 
 [[var_samp,VAR_SAMP()]]
 == [[var_samp_distinct]]VAR_SAMP( {startsb} ALL | DISTINCT {endsb} `expression`)
 
-Alias for <<variance_samp>>.
+Synonym of <<variance_samp>>.
 
 == Formulas
 
 [[eqn_samp_std_dev]]
 .Corrected Sample Standard Deviation
-The corrected sample standard deviation is calculated according to the following formula.
+Formula for calculating the corrected sample standard deviation: 
 
 [stem]
 ++++
@@ -1018,7 +1319,7 @@ s = sqrt(1/(n-1) sum_(i=1)^n (x_i - barx)^2)
 
 [[eqn_pop_std_dev]]
 .Population Standard Deviation
-The population standard deviation is calculated according to the following formula.
+Formula for calculating the population standard deviation: 
 
 [stem]
 ++++
