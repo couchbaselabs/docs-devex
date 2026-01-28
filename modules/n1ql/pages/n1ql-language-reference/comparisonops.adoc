@@ -95,30 +95,31 @@ image::n1ql-language-reference/like-expr.png["Syntax diagram", align=left]
 | Operator | Description | Returns
 
 | LIKE
-| Match string against a character pattern expression. 
+| Matches a string against a pattern.
+Returns TRUE if they match.
 
-The expression can contain the following wildcards:
+The pattern can include regular characters and the following wildcards:
 
-* Percent sign (%): Matches zero or more characters.
-* Underscore (_): Matches a single character at that specific position in the string. 
+* Percent sign (`%`): Matches zero or more characters.
+* Underscore (`_`): Matches a single character at that specific position in the string. 
 
-To match literal instances of the wildcard characters, use an escape character.
-The default escape character is the backslash (\).
+To match a literal wildcard character, use an escape character.
+The default escape character is the backslash (`\`).
 
-To define a new escape character, use the `ESCAPE` clause. 
-For example, to use the hash sign (\#) as an escape character, write: `LIKE "abc#%def" ESCAPE "#"`. 
-This pattern matches the string `"abc%def"`.
+To define a custom escape character, use the `ESCAPE` clause. 
+For example, to use hash (`\#`) as an escape character to match the string `"abc%def"`, use the following:
+`LIKE "abc#%def" ESCAPE "#"`. 
 
-You can also escape the escape character itself. 
+To match the escape character itself, escape it with another escape character (for example, `\\`).
 
-NOTE: An empty pattern matches only an empty string. 
-To match any string (including an empty string), use the pattern %. 
+An empty pattern matches only an empty string. 
+To match any string, including an empty string, use `%`.
 
 | TRUE or FALSE
 
 | NOT LIKE
 | Inverse of LIKE.
-Return TRUE if string is not similar to given string.
+Returns TRUE if the string does not match the given pattern.
 | TRUE or FALSE
 |===
 
@@ -131,9 +132,10 @@ Return TRUE if string is not similar to given string.
 [source,sqlpp]
 ----
 SELECT "hello world" LIKE "h_llo%" AS match_1,
-       "hello world" LIKE "h%world" AS match_2,
-       "hello world" LIKE "h%z%" AS match_3,
-       "hello% world" LIKE "hello#% world" ESCAPE "#" AS match_4;
+       "hello world" NOT LIKE "h_llo%" AS match_2,
+       "hello world" LIKE "h%world" AS match_3,
+       "hello world" LIKE "h%z%" AS match_4,
+       "hello% world" LIKE "hello#% world" ESCAPE "#" AS match_5;
 ----
 
 .Returns
@@ -142,9 +144,10 @@ SELECT "hello world" LIKE "h_llo%" AS match_1,
 [
   {
     "match_1": true,
-    "match_2": true,
-    "match_3": false,
-    "match_4": true
+    "match_2": false,
+    "match_3": true,
+    "match_4": false,
+    "match_5": true
   }
 ]
 ----
