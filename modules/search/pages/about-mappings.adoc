@@ -1,12 +1,19 @@
-= Mapping Collections, Objects, and Fields
+= Map Document Collections, Objects, and Fields
 :page-topic-type: concept
 :description: The Search Service has distinct mapping types for collections, objects, and fields in a Search index.
 
 [abstract]
 {description}
-Use these mappings to add documents and specific fields to your Search index: 
+Mappings control the specific documents and fields that you can return in a xref:search:run-searches.adoc[Search query].
+
+You can create the following types of mappings: 
 
 * <<collections,>>
+* <<objects,>>
+* <<fields,>>
+* <<xattrs,>>
+
+These mappings can be <<static,>> or <<dynamic,>>.
 
 [#collections]
 == Collection Mappings
@@ -17,23 +24,18 @@ A type mapping includes or excludes specific documents in a collection from an i
 A document must match the collection and document type set by a type mapping to be included in a Search index.
 
 You can control the type of a document by xref:search:set-type-identifier.adoc[setting a type identifier]. 
+Your type identifier tells the Search Service how to interpret a document's type.
+Only documents that pass the filter from your type identifier can be included in your Search index under a specific type mapping, and potentially returned in search results.
 
-You can create 2 types of type mappings with the Search Service: 
-
-. *Dynamic type mappings*: When you do not know the structure of your data fields ahead of time, use a dynamic type mapping to add all available fields from a matching document type to an index.
-For example, you could create a dynamic type mapping to include all documents from the `hotel` collection in your Search index, or include all fields under a JSON object from your document schema.
-
-. *Static type mappings*: When your data fields are stable and unlikely to change, use a static type mapping to add and define only specific fields from a matching document type to an index. 
-For example, you could create a static type mapping to only include the contents of the `city` field from the `hotel` collection in your Search index, as a text field with an `en` analyzer.
-
-Add <<objects,>> and <<fields,>> to a type mapping to make it static. 
+Type mappings can be <<static,>> or <<dynamic,>>.
+Add <<objects,>> and <<fields,>> to make a collection type mapping a static mapping.
 
 For more information about how to create a type mapping in the standard editor, see xref:search:create-type-mapping.adoc[].
 For more information about how to configure settings for mappings and type mappings in the Quick Editor, see xref:quick-index-field-options.adoc[].
 
 === Collection Names
 
-You cannot use a collection name that contains a period (`.`) inside a Search index. 
+You cannot use a collection name that contains a period (`.`) in a Search index type mapping. 
 
 The Search Service uses periods (`.`) to separate collection names from xref:search:customize-index.adoc#type-identifiers[type identifiers]. 
 If you used a collection name that contained a period, the Search Service would interpret anything after the period as a filter value on your type mapping. 
@@ -60,25 +62,81 @@ For example, you would use an object mapping to add the `origin` object and its 
 include::example$about-mappings.jsonc[lines=1..8]
 ----
 
-Like <<collections,>>, object mappings can be static or dynamic.
-You can add <<fields,>> to make an object mapping static.
+Like <<collections,>>, object mappings can be <<static,static>> or <<dynamic,dynamic>>.
+You can add <<fields,>> to make an object mapping a static type mapping.
+
+=== Object Names
+
+Avoid using an object name that contains a period (`.`) in a Search index object mapping.
+
+The Search Service uses periods to maintain object and child field relationships after flattening. 
+For example, the `country` and `region` fields inside the `origin` object would be represented as `origin.country` and `origin.region` inside your Search index: 
+
+[source,json]
+----
+include::example$about-mappings.jsonc[lines=1..8]
+----
+
+If you tried to create an object mapping for another object called `origin.country`, the Search Service would return results from that mapping alongside the nested `country` field in the `origin` object. 
+
+To avoid issues with overlapping field and object names in a Search index, do not use periods (`.`) in your JSON document field or object names.
+
+[#fields]
+== Child Field Mappings
+
+Use a child field mapping to add a specific document field from your documents to your Search index. 
+
+A child field mapping can exist at the top-level of your document hierarchy and be created directly under a <<collections,collection type mapping>>, or it can exist as a nested field underneath an <<objects,object mapping>> or <<xattrs,XATTRs mapping>>.
+
+Use a child field mapping to turn a parent mapping into a static mapping.
+
+For example, you could create a child field mapping for the `type`, `name`, and `category` fields underneath the collection type mapping for this document.
+You could also create a child field mapping under the object mapping for the `origin` object for the `country` and `region` fields:
+
+[source,json]
+----
+include::example$about-mappings.jsonc[lines=1..8]
+----
+
+Just like <<collection-names,>> and <<object-names,>>, to avoid undesired results in your Search queries, avoid using periods (`.`) in your child field names.
+See <<object-names,>> for examples and an explanation. 
+
+[#xattrs]
+== XATTRs Mappings
+
+IMPORTANT: You can only use XATTRs mappings on Couchbase Server version 7.6.2 or later.
+
+Extended Attributes (XATTRs) mappings add fields and metadata from your document's XATTRs and let you query them inside a Search index.
+
+XATTRs mappings can be <<static,static>> or <<dynamic,dynamic>>, based on whether you add <<fields,>>.
+
+Just like <<collection-names,>>, <<object-names,>>, and <<fields,>>, to avoid undesired results in your Search queries, avoid using periods (`.`) in the names of fields in your document metadata.
+See <<object-names,>> for examples and an explanation. 
+
+[#static]
+== Static Mappings
+
+When your data fields are stable and unlikely to change, use a static type mapping to add and define only specific fields from a matching document type to an index.
+If you're unsure about your document structure and how it might change, use <<dynamic,>>, instead.
+
+For example, you could create a static type mapping to only include the contents of the `city` field from the `hotel` collection in your Search index, as a text field with an `en` analyzer.
+
+Add <<objects,>> and <<fields,>> to a type mapping to make it static.
+Or, in the xref:create-quick-index.adoc[Quick Editor], select a document field in your document schema to create a static type mapping.
+
+[#dynamic]
+== Dynamic Mappings
+
+When you do not know the structure of your data fields ahead of time, use a dynamic type mapping to add all available fields from a matching document type to an index.
+If your document structure is more stable and unlikely to change, use <<static,>> to get the best results from the Search Service. 
+
+For example, you could create a dynamic type mapping to include all documents from the `hotel` collection in your Search index, or include all fields under a JSON object from your document schema.
+
 
 == See Also
 
-// Use the See Also section to add links to related procedures, concepts, or reference information.
-
-// Use an unordered list to organize the xrefs.
-
-// The structure of this xref is:
-// * Component name (server:)
-// * Module name (learn:)
-// * Family name (services-and-indexes/)
-// * Subfolder name (indexes/)
-// * File name (indexes.adoc)
-* xref:server:learn:services-and-indexes/indexes/indexes.adoc[]
-// The structure of this xref is:
-// * Component name (cloud:)
-// * Module name (organizations:)
-// * Family name (ui-auth/)
-// * File name (add-sso-auth.adoc)
-* xref:cloud:organizations:ui-auth/add-sso-auth.adoc[]
+* xref:set-type-identifier.adoc[]
+* xref:create-type-mapping.adoc[]
+* xref:create-child-mapping.adoc[]
+* xref:create-child-field.adoc[]
+* xref:create-xattrs-mapping.adoc[]
