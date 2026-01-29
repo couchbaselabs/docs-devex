@@ -90,23 +90,68 @@ include::partial$grammar/n1ql.ebnf[tag=like-expr]
 
 image::n1ql-language-reference/like-expr.png["Syntax diagram", align=left]
 
-[cols="100,326,213"]
+[cols="1a,3a,1a"]
 |===
 | Operator | Description | Returns
 
 | LIKE
-| Match string with a wildcard expression.
-Use % for zero or more wildcards and _ to match any character at this place in a string.
+| Matches a string against a pattern.
+Returns TRUE if they match.
 
-The wildcard characters can be escaped by preceding them with a backslash (\).
-Backslash itself can also be escaped by preceding it with another backslash.
+The pattern can include regular characters and the following wildcards:
+
+* Percent sign (`%`): Matches zero or more characters.
+* Underscore (`_`): Matches a single character at that specific position in the string. 
+
+To match a literal wildcard character, use an escape character.
+The default escape character is the backslash (`\`).
+
+To define a custom escape character, use the `ESCAPE` clause. 
+For example, to use hash (`\#`) as an escape character to match the string `"abc%def"`, use the following:
+`LIKE "abc#%def" ESCAPE "#"`. 
+
+To match the escape character itself, escape it with another escape character (for example, `\\`).
+
+An empty pattern matches only an empty string. 
+To match any string, including an empty string, use `%`.
+
 | TRUE or FALSE
 
 | NOT LIKE
 | Inverse of LIKE.
-Return TRUE if string is not similar to given string.
+Returns TRUE if the string does not match the given pattern.
 | TRUE or FALSE
 |===
+
+
+=== Examples
+
+.Match strings using LIKE
+====
+.Query
+[source,sqlpp]
+----
+SELECT "hello world" LIKE "h_llo%" AS match_1,
+       "hello world" NOT LIKE "h_llo%" AS match_2,
+       "hello world" LIKE "h%world" AS match_3,
+       "hello world" LIKE "h%z%" AS match_4,
+       "hello% world" LIKE "hello#% world" ESCAPE "#" AS match_5;
+----
+
+.Returns
+[source,json]
+----
+[
+  {
+    "match_1": true,
+    "match_2": false,
+    "match_3": true,
+    "match_4": false,
+    "match_5": true
+  }
+]
+----
+====
 
 == IS
 
