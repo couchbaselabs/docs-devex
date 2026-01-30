@@ -24,8 +24,8 @@ The mapping for a collection is also called a type mapping.
 A type mapping includes or excludes specific documents in a collection from an index.
 A document must match the collection and document type set by a type mapping to be included in a Search index.
 
-You can control the type of a document by xref:search:set-type-identifier.adoc[setting a type identifier]. 
-Your type identifier tells the Search Service how to interpret a document's type.
+You can also choose to control the type of a document by xref:search:set-type-identifier.adoc[setting a type identifier].
+A type identifier is an optional configuration that tells the Search Service how to interpret a document's type.
 Only documents that pass the filter from your type identifier can be included in your Search index under a specific type mapping, and potentially returned in search results.
 
 Type mappings can be <<static,>> or <<dynamic,>>.
@@ -34,12 +34,10 @@ Add <<objects,>> and <<fields,>> to make a collection type mapping a static mapp
 For more information about how to create a type mapping in the standard editor, see xref:search:create-type-mapping.adoc[].
 For more information about how to configure settings for mappings and type mappings in the Quick Editor, see xref:quick-index-field-options.adoc[].
 
-=== Collection Names
-
-You cannot use a collection name that contains a period (`.`) in a Search index type mapping. 
+=== Collection Type Mapping Names
 
 The Search Service uses periods (`.`) to separate collection names from xref:search:customize-index.adoc#type-identifiers[type identifiers]. 
-If you used a collection name that contained a period, the Search Service would interpret anything after the period as a filter value on your type mapping. 
+If you add a period to the name of your collection type mapping, the Search Service would interpret anything after the period as a filter value. 
 
 For example, if you wanted to include the following document in your Search index, with a `type` value of `shorthair`: 
 
@@ -48,7 +46,7 @@ For example, if you wanted to include the following document in your Search inde
 include::example$about-mappings.jsonc[]
 ----
 
-If you used a collection name of `cat.breeds` and used the default *JSON type field* type identifier, the Search Service would only include documents that had a value of `breeds` in their `type` field.
+If you used a collection type mapping called `cat.breeds` and used the default *JSON type field* type identifier, the Search Service would only include documents that had a value of `breeds` in their `type` field.
 That means that the British Shorthair document would not match the type mapping, and would not be included in the Search index. 
 
 [#objects]
@@ -78,7 +76,9 @@ For example, the `country` and `region` fields inside the `origin` object would 
 include::example$about-mappings.jsonc[lines=1..8]
 ----
 
-If you tried to create an object mapping for another object called `origin.country`, the Search Service would return results from that mapping alongside the nested `country` field in the `origin` object. 
+If you created a mapping for a field called `origin.country` as well as a `country` field mapping inside the `origin` object, the Search Service creates a single field index for both fields.
+If you tried to query `origin.country` in a Search query with an analyzer, the Search Service would fail to pick the right analyzer for the `origin.country` field because of the 2 overlapping mappings.
+This can cause undesired or unexpected search results.
 
 To avoid issues with overlapping field and object names in a Search index, do not use periods (`.`) in your JSON document field or object names.
 
