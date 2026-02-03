@@ -1967,22 +1967,26 @@ LIMIT  1;
 ====
 
 [[redact,REDACT()]]
-== REDACT (`expr` [ , `filter-obj1`, `filter-obj2`, ... ] )
+== REDACT (`expression` [ , `filter-obj1`, `filter-obj2`, ... ] )
 
 === Description
 
-Redacts field names or values in a JSON object based on specified filtering criteria.
-The function can either mask values with a specified character or omit fields entirely from the output. 
+Redacts field names or values in a JSON object based on specific filtering criteria.
 
-You can use this function to protect sensitive data such as credit card numbers or personally identifiable information (PII).
+Use this function to protect sensitive data such as credit card numbers or personally identifiable information (PII).
+You can either mask data with a specified string or omit it entirely from the output.
+
+NOTE: Masking applies to only string values. 
+The function cannot mask non-string data types such as numbers, booleans, or dates. 
+To redact non-string values, you must omit the fields entirely from the output instead.
 
 === Arguments
 
-expr:: [Required] An expression that resolves to a JSON object that you want to redact.
+expression:: [Required] An expression resolving to a JSON object that you want to redact.
 
-filter-obj1, filter-obj2, ...:: [Optional] One or more objects that specify specify redaction rules, such as which fields to redact, how to redact them, and whether to exclude certain fields.
+filter-obj1, filter-obj2, ...:: [Optional] One or more JSON objects that specify filtering criteria, such as which fields to redact, how to redact them, and whether to redact field names, values, or both.
 +
-Each filter object can contain the following fields:
+Each object can include the following fields:
 +
 [options="header", cols="1a,3a,1a"]
 |===
@@ -1991,63 +1995,77 @@ Each filter object can contain the following fields:
 | *pattern* +
 __optional__
 | A pattern to match against the field names in the object to redact.
-Only fields matching the pattern are redacted.
 
-The pattern matches only single-level field names.
-You cannot match nested paths.
-For example, a single pattern like `"parent.child"` cannot match the nested field  
+The function only redacts fields that match the pattern and only supports single-level field names.
+It does not support nested field paths.
+For example, the pattern `"parent.child"` cannot match the nested field  
 `{ "parent": { "child": "value" } }`.
 
-If you do not provide a pattern, the filter applies to all fields.
+If you do not specify a pattern, the function redacts all fields based on other filters.
+
 | String
 
 | *regex* +
 __optional__
-| Indicates whether the pattern is a regular expression or a simple string match.
+| Specifies whether the pattern is a regular expression or a simple string.
 
-If `true`, the pattern is treated as a regular expression.
-If `false`, the pattern is treated as a simple string match.
+If `true`, treats the pattern as a regular expression.
+
+If `false`, treats the pattern as a simple string.
 
 *Default:* `false`
 | Boolean
 
 | *exact* +
 __optional__
-| Indicates whether the pattern must match the entire field name or just a portion of it. 
+| Specifies whether the pattern must match the entire field name or just a portion of it. 
 
 If `true`, the pattern must match the entire field name.
+
 If `false`, the pattern can match any part of the field name.
+
+*Default:* `false`
+| Boolean
+
+| *ignorecase* +
+__optional__
+| Specifies whether pattern matching is case-sensitive.
+
+If `true`, the pattern matching ignores case.
+
+If `false`, the pattern matching is case-sensitive.
 
 *Default:* `false`
 | Boolean
 
 | *name* +
 __optional__
-| Indicates whether to redact field names in addition to field values. 
+| Specifies whether to redact field names in addition to field values. 
 
-If `true`, both field names and values are redacted.
-If `false`, only field values are redacted.
+If `true`, redacts both field names and values.
+
+If `false`, redacts only field values.
 
 *Default:* `false`
 | Boolean
 
 | *strict* +
 __optional__
-| Indicates whether to apply strict value redaction.
+| Specifies whether to apply strict value redaction.
 
-If `true`, the redaction does not preserve whitespace or formatting in string values.
-The entire value will be replaces with the mask, without maintaining the original structure.
+If `true`, the redaction replaces the entire value with the mask and does not preserve whitespace or formatting.
 
-If `false`, the redaction preserves whitespace and formatting in string values.
+If `false`, the redaction preserves whitespace and formatting.
 
 *Default:* `false`
 | Boolean
 
 | *omit* +
 __optional__
-| Indicates whether to omit fields entirely from the output.
+| Specifies whether to omit fields entirely from the output.
 
-If `true`, matching fields are removed entirely.
+If `true`, removes matching fields entirely.
+
 If `false`, the fields remain in the output but their values are redacted according to the other filters.
 
 *Default:* `false`
@@ -2055,32 +2073,32 @@ If `false`, the fields remain in the output but their values are redacted accord
 
 | *mask* +
 __optional__
-| The string used to replace redacted fields/values.
+| The string to mask the redacted string values.
 
 *Default:* `"x"`
 | String
 
 | *fixedlength* +
 __optional__
-| Indicates whether to replace string values with a single instance of the mask. 
+| Specifies whether to replace string values with a single instance of the mask. 
 
-If `true`, an entire string is replaced with one instance of the mask.
-If `false`, each character in the string is masked individually, preserving the original length of the string.
+If `true`, replaces the entire string with one instance of the mask.
 
-This option does not apply to fields identified as valid dates.
+If `false`, replaces each character in the string with the mask, preserving the original length of the string.
 
 *Default:* `false`
 | Boolean
 
 | *exclude* +
 __optional__
-| Indicates whether to invert the filter logic.
+| Specifies whether to invert the redaction logic.
 
-If `true`, fields matching the pattern are excluded from redaction; while fields that do not match the pattern are redacted. 
-When you use this option, any subsequent filters are ignored.
-To ensure all other rules are applied, place this as the last filter in the list or use it as the only filter.
+If `true`, the function redacts fields that do not match the pattern and excludes fields that do match.
 
-If `false`, fields matching the pattern are redacted. 
+When you use `exclude`, the function ignores any remaining filters. 
+Place this filter last in the list or use it as the only filter to ensure the function applies all other rules.
+
+If `false`, the function redacts fields that match the pattern. 
 
 *Default:* `false`
 | Boolean
@@ -2089,24 +2107,202 @@ If `false`, fields matching the pattern are redacted.
 
 === Usage 
 
-If you do not provide any filter-object, the function applies a default redaction behavior, which is to redact only the values of the fields in the JSON object. This means:
+If you do not specify a filter object, the function applies a default behavior that redacts only field values. 
+In this case, the field names remain visible, and the function replaces values with a default mask, `"x"`. 
+See <<redact-ex1>>. 
 
-The field names will remain visible.
-Only the values of the fields will be replaced with a default mask (e.g., "x").
+To redact both field names and values, set `"name": true` in the filter object.
+See <<redact-ex3>>.
 
-By default, the REDACT() function only redacts values of the fields, leaving the field names visible.
-To redact field names as well, you need to include the name: true option in the filter-object.
+When you provide multiple filter objects, the function evaluates them in the order you specify. 
+For each field in the input object, the function applies the first filter that matches the field's criteria.
+Once applied, it does not consider any other filter objects for that field, even if they also match.
+See <<redact-ex4>>.
 
-When multiple filter-object arguments are provided to the REDACT() function, they are evaluated in the order they are specified.
-For each field in the JSON object, the function checks the filters one by one. As soon as it finds a filter that applies to a specific field, it uses that filter and ignores the rest.
-This means that the order of the filters matters. If you want a specific filter to take precedence, you should place it earlier in the list of filters.
-
-If a JSON object contains nested objects, the redaction behavior for the nested fields will follow the filter applied to the parent field by default.
-However, if there is a specific filter that directly applies to a nested field, it will override the parent field's filter.
+For nested objects, the nested fields inherit the redaction behavior of their parent by default.
+However, if you define a filter that specifically targets a nested field, that filter overrides the parent field's filter.
 
 === Return Value
 
-A JSON object with the specified fields redacted.
+A JSON object with field names/values redacted.
+
+=== Examples
+
+.Redact field values using default behavior
+[[redact-ex1, Example 1]]
+====
+.Query
+[source,sqlpp]
+----
+WITH sample AS ([
+  {
+    "flight": "AA123",
+    "passenger": "Alex Johnson",
+    "email": "alex.johnson@example.com",
+    "passport": "X12345678",
+    "address": "123 Maple Street, New York, NY"
+  }
+])
+SELECT REDACT(sample) AS redacted_data;
+----
+
+.Results
+[source,json]
+----
+[{
+    "redacted_data": [{
+        "address": "xxx xxxxx xxxxxx, xxx xxxx, xx",
+        "email": "xxxx.xxxxxxx@xxxxxxx.xxx",
+        "flight": "xxxxx",
+        "passenger": "xxxx xxxxxxx",
+        "passport": "xxxxxxxxx"
+    }]
+}]
+---- 
+====
+
+.Redact values using custom patterns and mask
+[[redact-ex2, Example 2]]
+====
+.Query
+[source,sqlpp]
+----
+WITH sample AS ([
+  {
+    "flight": "AA123",
+    "passenger": "Alex Johnson",
+    "email": "alex.johnson@example.com",
+    "passport": "X12345678",
+    "address": "123 Maple Street, New York, NY"
+  }
+])
+SELECT REDACT(sample,
+    {"pattern": "ad.*", "regex": true},
+    {"pattern": "email|passport", "regex": true, "mask": "#"}
+) AS redacted_data;
+----
+
+.Results
+[source,json]
+----
+[{
+    "redacted_data": [{
+        "address": "xxx xxxxx xxxxxx, xxx xxxx, xx",
+        "email": "####.#######@#######.###",
+        "flight": "AA123",
+        "passenger": "Alex Johnson",
+        "passport": "#########"
+    }]
+}]
+----
+====
+
+.Redact both field names and values
+[[redact-ex3, Example 3]]
+====
+.Query
+[source,sqlpp]
+----
+WITH sample AS ([
+  {
+    "flight": "AA123",
+    "passenger": "Alex Johnson",
+    "email": "alex.johnson@example.com",
+    "passport": "X12345678",
+    "address": "123 Maple Street, New York, NY"
+  }
+])
+SELECT REDACT(sample,
+    {"pattern": "passport", "name":true},
+    {"pattern": "email", "omit": true}
+) AS redacted_data;
+----
+
+.Results
+[source,json]
+----
+[{
+    "redacted_data": [{
+        "address": "123 Maple Street, New York, NY",
+        "f0004": "xxxxxxxxx",
+        "flight": "AA123",
+        "passenger": "Alex Johnson"
+    }]
+}]
+----
+====
+
+.Redact when there are multiple filters for the same field
+[[redact-ex4, Example 4]]
+====
+.Query
+[source,sqlpp]
+----
+WITH sample AS ([
+  {
+    "flight": "AA123",
+    "passenger": "Alex Johnson",
+    "email": "alex.johnson@example.com",
+    "passport": "X12345678",
+    "address": "123 Maple Street, New York, NY"
+  }
+])
+SELECT REDACT(sample,
+    {"pattern": "passenger|passport", "regex": true},
+    {"pattern": "passenger", "omit": true}
+) AS redacted_data;
+----
+
+.Results
+[source,json]
+----
+[{
+    "redacted_data": [{
+        "address": "123 Maple Street, New York, NY",
+        "email": "alex.johnson@example.com",
+        "flight": "AA123",
+        "passenger": "xxxx xxxxxxx",
+        "passport": "xxxxxxxxx"
+    }]
+}]
+----
+In this example, the second filter is not applied to `passenger` because the first filter already matched it.
+====
+
+.Redact all fields except those matching a pattern
+[[redact-ex5, Example 5]]
+====
+.Query
+[source,sqlpp]
+----
+WITH sample AS ([
+  {
+    "flight": "AA123",
+    "passenger": "Alex Johnson",
+    "email": "alex.johnson@example.com",
+    "passport": "X12345678",
+    "address": "123 Maple Street, New York, NY"
+  }
+])
+SELECT REDACT(sample,
+    {"pattern": "passenger|passport", "regex": true, "exclude": true}
+) AS redacted_data;
+----
+
+.Results
+[source,json]
+----
+[{
+    "redacted_data": [{
+        "address": "xxx xxxxx xxxxxx, xxx xxxx, xx",
+        "email": "xxxx.xxxxxxx@xxxxxxx.xxx",
+        "flight": "xxxxx",
+        "passenger": "Alex Johnson",
+        "passport": "X12345678"
+    }]
+}]
+----
+====
 
 [[unnest-pos,UNNEST_POS()]]
 == UNNEST_POS(`expr`)
