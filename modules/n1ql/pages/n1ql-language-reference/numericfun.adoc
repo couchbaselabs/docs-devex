@@ -1,124 +1,1202 @@
 = Number Functions
-:description: Number functions are functions that are performed on a numeric field.
+:description: Number functions perform various mathematical calculations and transformations on numeric data.
 :page-topic-type: reference
 
+[abstract]
 {description}
 
-ABS(expression)
+== ABS(`expression`)
 
-Returns absolute value of the number.
+Returns the absolute value of a numeric expression.
 
-ACOS(expression)
+The absolute value is the non-negative value of a number without regard to its sign. 
 
-Returns arccosine in radians.
+=== Arguments
 
-ASIN(expression)
+expression:: [Required] A valid numeric expression.
 
-Returns arcsine in radians.
+=== Return Value
 
-ATAN(expression)
+The function returns 1 of the following:
 
-Returns arctangent in radians.
+* A number representing the absolute value.
+* `NULL` if the input is a non-numeric value or `NULL`.
 
-ATAN2(expression1, expression2)
+=== Example
 
-Returns arctangent of expression2/expression1.
+.Absolute value of a number
+====
 
-CEIL(expression)
-
-Returns smallest integer not less than the number.
-
-COS(expression)
-
-Returns cosine.
-
-DEGREES(expression)
-
-Returns radians to degrees.
-
-E()
-
-Base of natural logarithms.
-
-EXP(expression)
-
-Returns e^expression^.
-
-LN(expression)
-
-Returns log base e.
-
-LOG(expression)
-
-Returns log base 10.
-
-FLOOR(expression)
-
-Largest integer not greater than the number.
-
-PI()
-
-Returns PI.
-
-POWER(expression1, expression2):
-
-Returns expression1^expression2^.
-
-RADIANS(expression)
-
-Returns degrees to radians.
-
-RANDOM([ expression ])
-
-Returns pseudo-random number with optional seed.
-
-ROUND(expression [, digits ])
-
-Rounds the value to the given number of integer digits to the right of the decimal point (left if digits is negative).
-Digits is 0 if not given.
-
-SIGN(expression)
-
-Valid values:  -1, 0, or 1 for negative, zero, or positive numbers respectively.
-
-SIN(expression)
-
-Returns sine.
-
-SQRT(expression)
-
-Returns square root.
-
-TAN(expression)
-
-Returns tangent.
-
-TRUNC(expression [, digits ])
-
-Truncates the number to the given number of integer digits to the right of the decimal point (left if digits is negative).
-Digits is 0 if not given.
-
-Example
-
+.Query
+[source,sqlpp]
 ----
-SELECT
-    AVG(reviews.rating) / 5 AS normalizedRating,
-    ROUND((avg(reviews.rating) / 5), 2) AS roundedRating,
-    TRUNC((avg(reviews.rating) / 5), 3) AS truncRating
-    FROM reviews AS reviews
-    WHERE reviews.customerId = "customer62"
+SELECT ABS(-15) AS absValue_1,
+       ABS(15) AS absValue_2,
+       ABS(POWER(-2,5)) AS absValue_3, 
+       ABS(NULL) AS absValue_4;
 ----
 
-Returns
+.Result
+[source,json]
+----
+[
+  {
+    "absValue_1": 15,
+    "absValue_2": 15,
+    "absValue_3": 32,
+    "absValue_4": null
+  }
+]
+----
+====
 
+== ACOS(`expression`)
+
+Returns the arccosine (inverse cosine) value of a numeric expression, in radians. 
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the arccosine value in radians.
+* `NULL` if the input is a non-numeric value or `NULL`.
+* `"NaN"` if the input is outside the range of -1 to 1. 
+This is because the cosine of an angle is always between -1 and 1.
+
+=== Example
+
+.Arccosine of a number
+====
+.Query
+[source,sqlpp]
 ----
-{
-   "results": [
-     {
-       "normalizedRating": 0.42000000000000004,
-       "roundedRating": 0.42,
-       "truncRating": 0.42
-     }
-   ]
- }
+SELECT ACOS(0.5) AS acosValue_1,
+       ACOS(-1) AS acosValue_2,
+       ACOS(2) AS acosValue_3,
+       ACOS(NULL) AS acosValue_4;
+----  
+
+.Result
+[source,json]
 ----
+[
+  {
+    "acosValue_1": 1.0471975511965976,
+    "acosValue_2": 3.141592653589793,
+    "acosValue_3": "NaN",
+    "acosValue_4": null
+  }
+]
+----
+====
+
+== ASIN(`expression`)
+
+Returns the arcsine (inverse sine) value of a numeric expression, in radians.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the arcsine value in radians.
+* `NULL` if the input is a non-numeric value or `NULL`.
+* `"NaN"` if the input is outside the range of -1 to 1. 
+This is because the sine of an angle is always between -1 and 1. 
+
+=== Example
+
+.Arcsine of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT ASIN(0.5) AS asinValue_1,
+       ASIN(-1) AS asinValue_2,
+       ASIN(2) AS asinValue_3,
+       ASIN(NULL) AS asinValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "asinValue_1": 0.5235987755982989,
+    "asinValue_2": -1.5707963267948966,
+    "asinValue_3": "NaN",
+    "asinValue_4": null
+  }
+]
+----
+====
+
+== ATAN(`expression`)
+
+Returns the arctangent (inverse tangent) value of a numeric expression, in radians.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the arc tangent value in radians.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Arctangent of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT ATAN(1) AS atanValue_1,
+       ATAN(0) AS atanValue_2,
+       ATAN(-2) AS atanValue_3,
+       ATAN(NULL) AS atanValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "atanValue_1": 0.7853981633974483,
+    "atanValue_2": 0,
+    "atanValue_3": -1.1071487177940904,
+    "atanValue_4": null
+  }
+]
+----
+====
+
+== ATAN2(`expression1`, `expression2`)
+
+Returns the arctangent (inverse tangent) value of 2 numeric expressions (`expression2`/`expression1`), in radians.
+
+=== Arguments
+
+expression1:: [Required] A valid numeric expression representing the y-coordinate.
+expression2:: [Required] A valid numeric expression representing the x-coordinate.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the arctangent value in radians.
+* `0` if both input values are `0`.
+* `NULL` if either input is a non-numeric value or `NULL`.
+
+=== Example
+.Arctangent of 2 numbers
+====
+.Query
+[source,sqlpp]
+----
+SELECT ATAN2(1, 1) AS atan2Value_1,
+       ATAN2(1, -1) AS atan2Value_2,
+       ATAN2(-1, -2) AS atan2Value_3,
+       ATAN2(0, 0) AS atan2Value_5;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "atan2Value_1": 0.7853981633974483,
+    "atan2Value_2": 2.356194490192345,
+    "atan2Value_3": -2.677945044588987,
+    "atan2Value_5": 0
+  }
+]
+----
+====
+
+== CEIL(`expression`)
+
+Returns the smallest integer that's greater than or equal to the specified numeric expression.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the ceiling value.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Ceiling value of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT CEIL(6.3) AS ceilValue_1,
+       CEIL(-6.3) AS ceilValue_2,
+       CEIL(5.0) AS ceilValue_3,
+       CEIL(NULL) AS ceilValue_4;
+----  
+
+.Result
+[source,json]
+----
+[
+  {
+    "ceilValue_1": 7,
+    "ceilValue_2": -6,
+    "ceilValue_3": 5,
+    "ceilValue_4": null
+  }
+]
+----
+====
+
+== COS(`expression`)
+
+Returns the cosine value of a numeric expression.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the cosine value.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Cosine of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT COS(0) AS cosValue_1,
+        COS(PI()/3) AS cosValue_2,
+        COS(PI()) AS cosValue_3,
+        COS(NULL) AS cosValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "cosValue_1": 1,
+    "cosValue_2": 0.5000000000000001,
+    "cosValue_3": -1,
+    "cosValue_4": null
+  }
+]
+----
+====
+
+== DEGREES(`expression`)
+
+Converts a numeric expression from radians to degrees.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression (in radians).
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the value in degrees.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Radians to degrees conversion
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT DEGREES(PI()/2) AS degreesValue_1,
+       DEGREES(PI()) AS degreesValue_2,
+       DEGREES(1) AS degreesValue_3,
+       DEGREES(NULL) AS degreesValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "degreesValue_1": 90,
+    "degreesValue_2": 180,
+    "degreesValue_3": 57.29577951308232,
+    "degreesValue_4": null
+  }
+]
+----
+====
+
+
+== E()
+
+Returns the base of the natural logarithm `e`, which is approximately 2.71828.
+
+=== Arguments
+
+This function does not take any arguments.
+
+=== Return Value
+
+A number representing the value of `e`.
+
+=== Example
+
+.Value of e
+====
+.Query
+[source,sqlpp]
+----
+SELECT E() AS eValue;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "eValue": 2.718281828459045
+  }
+]
+----
+====
+
+
+== EXP(`expression`)
+
+Returns the value of <<e, e>> raised to the power of the given numeric expression.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the exponential value.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Exponential value of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT EXP(10) AS expValue_1,
+       EXP(0) AS expValue_2,
+       EXP(-1) AS expValue_3,
+       EXP(NULL) AS expValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "expValue_1": 22026.465794806718,
+    "expValue_2": 1,
+    "expValue_3": 0.36787944117144233,
+    "expValue_4": null
+  }
+]
+----
+====
+
+== FLOOR(`expression`)
+
+Returns the largest integer that's less than or equal to the specified numeric expression.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the floor value.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+.Floor value of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT FLOOR(6.7) AS floorValue_1,
+        FLOOR(-6.7) AS floorValue_2,
+        FLOOR(5.0) AS floorValue_3,
+        FLOOR(NULL) AS floorValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "floorValue_1": 6,
+    "floorValue_2": -7,
+    "floorValue_3": 5,
+    "floorValue_4": null
+  }
+]
+----
+====
+
+[[imod]]
+== IMOD(`expression1`, `expression2`)
+
+Returns the remainder of the division of 1 number by another, but returns only integer values.
+
+NOTE: If you want the result to include both integer and floating-point numbers, use the <<mod, MOD function>> instead.
+
+=== Arguments
+
+expression1:: [Required] A valid numeric expression representing the dividend.
+expression2:: [Required] A valid numeric expression representing the divisor.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* An integer representing the modulus value.
+* `NULL` if either dividend or divisor is `NULL` or non-numeric, or if the divisor is `0`.
+
+=== Example
+
+.Integer modulus of 2 numbers
+====
+.Query
+[source,sqlpp]
+----
+SELECT IMOD(10.5, 3) AS imodValue_1,
+       IMOD(-10, 3) AS imodValue_2,
+       IMOD(10, -3) AS imodValue_3,
+       IMOD(10, 0) AS imodValue_4,
+       IMOD(NULL, 3) AS imodValue_5;
+----
+
+.Result
+----
+[
+  {
+    "imodValue_1": 1,
+    "imodValue_2": -1,
+    "imodValue_3": 1,
+    "imodValue_4": null,
+    "imodValue_5": null
+  }
+]
+----
+====
+
+== INF()
+
+Returns the special value `"Infinity"` that represents positive infinity.
+
+=== Arguments
+
+This function does not take any arguments.
+
+=== Return Value
+
+A string representing the value `"Infinity"`.
+
+=== Example
+
+.Value of infinity
+====
+.Query
+[source,sqlpp]
+----
+SELECT INF() AS infValue;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "infValue": "Infinity"
+  }
+]
+----
+====
+
+== -INF()
+
+Returns the special value `"-Infinity"` that represents negative infinity.
+
+=== Arguments
+
+This function does not take any arguments.
+
+=== Return Value
+
+A string representing the value `"-Infinity"`.
+
+=== Example
+
+.Value of negative infinity
+====
+.Query
+[source,sqlpp]
+----
+SELECT -INF() AS negInfValue;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "negInfValue": "-Infinity"
+  }
+]
+----
+====
+
+== LN(`expression`)
+
+Returns the natural logarithm (base e) of a numeric expression.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the natural logarithm value.
+* `NULL` if the input is a non-numeric value or `NULL`.
+* `"NaN"` if the input is less than or equal to 0 (since the natural logarithm is undefined for such values).
+* `"-Infinity"` if the input is `0`.
+
+=== Example
+
+.Natural logarithm of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT LN(10) AS lnValue_1,
+       LN(1) AS lnValue_2,
+       LN(0) AS lnValue_3,
+       LN(-5) AS lnValue_4,
+       LN(NULL) AS lnValue_5;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "lnValue_1": 2.302585092994046,
+    "lnValue_2": 0,
+    "lnValue_3": "-Infinity",
+    "lnValue_4": "NaN",
+    "lnValue_5": null
+  }
+]
+----
+====
+
+== LOG(`expression`)
+
+Returns the base 10 logarithm of a numeric expression.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the base 10 logarithm value.
+* `NULL` if the input is a non-numeric value or `NULL`.
+* `"NaN"` if the input is less than or equal to 0 (since the base 10 logarithm is undefined for such values).
+* `"-Infinity"` if the input is `0`.
+
+=== Example
+
+.Base 10 logarithm of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT LOG(100) AS logValue_1,
+        LOG(1) AS logValue_2,
+        LOG(0) AS logValue_3,
+        LOG(-10) AS logValue_4,
+        LOG(NULL) AS logValue_5;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "logValue_1": 2,
+    "logValue_2": 0,
+    "logValue_3": "-Infinity",
+    "logValue_4": "NaN",
+    "logValue_5": null
+  }
+]
+----
+====
+
+[[mod]]
+== MOD(`expression1`, `expression2`)
+
+Returns the remainder of the division of 1 number by another.
+
+NOTE: This function can return both integer and floating-point numbers.
+If you want the result to include only integer values, use the <<imod, IMOD function>> instead.
+
+=== Arguments
+
+expression1:: [Required] A valid numeric expression representing the dividend.
+expression2:: [Required] A valid numeric expression representing the divisor.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the modulus value. 
+* `NULL` if either dividend or divisor is `NULL` or non-numeric, or if the divisor is `0`.
+
+=== Example
+
+.Modulus of 2 numbers
+====
+.Query
+[source,sqlpp]
+----
+SELECT MOD(10.5, 3) AS modValue_1,
+       MOD(-10, 3) AS modValue_2,
+       MOD(10, -3) AS modValue_3,
+       MOD(10, 0) AS modValue_4,
+       MOD(NULL, 3) AS modValue_5;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "modValue_1": 1.5,
+    "modValue_2": -1,
+    "modValue_3": 1,
+    "modValue_4": null,
+    "modValue_5": null
+  }
+]
+----
+====
+
+== NAN()
+
+Returns the special value `"NaN"` (Not a Number) that represents an undefined value in numeric calculations.
+
+=== Arguments
+
+This function does not take any arguments.
+
+=== Return Value
+
+A string representing the value `"NaN"`.
+
+=== Example
+
+.Value of NaN
+====
+.Query
+[source,sqlpp]
+----
+SELECT NAN() AS nanValue;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "nanValue": "NaN"
+  }
+]
+----
+====
+
+== PI()
+
+Returns the mathematical constant π (pi), which is approximately 3.14159.
+
+=== Arguments
+
+This function does not take any arguments.
+
+=== Return Value
+
+A number representing the value of π (pi).
+
+=== Example
+
+.Value of pi
+====
+.Query
+[source,sqlpp]
+----
+SELECT PI() AS piValue;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "piValue": 3.141592653589793
+  }
+]
+----
+====
+
+== POWER(`expression1`, `expression2`)
+
+Returns the value of `expression1` raised to the power of `expression2`.
+
+=== Arguments
+
+expression1:: [Required] A valid numeric expression representing the base.
+expression2:: [Required] A valid numeric expression representing the exponent.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the power value.
+* `NULL` if either input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Power of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT POWER(2, 3) AS powerValue_1,
+       POWER(5, 0) AS powerValue_2,
+       POWER(4, -1) AS powerValue_3,
+       POWER(NULL, 2) AS powerValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "powerValue_1": 8,
+    "powerValue_2": 1,
+    "powerValue_3": 0.25,
+    "powerValue_4": null
+  }
+]
+----
+====
+
+== RADIANS(`expression`)
+
+Converts a numeric expression from degrees to radians.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression (in degrees).
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the value in radians.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Degrees to radians conversion
+====
+.Query
+[source,sqlpp]
+----
+SELECT RADIANS(90) AS radiansValue_1,
+       RADIANS(180) AS radiansValue_2,
+       RADIANS(45) AS radiansValue_3,
+       RADIANS(NULL) AS radiansValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "radiansValue_1": 1.5707963267948966,
+    "radiansValue_2": 3.141592653589793,
+    "radiansValue_3": 0.7853981633974483,
+    "radiansValue_4": null
+  }
+]
+----
+====
+
+== RANDOM([ `expression` ])
+
+Returns a pseudo-random number between `0` (inclusive) and `1` (exclusive).
+
+You can optionally specify a numeric expression as a seed value.
+If specified, the random number generator uses this value to initialize itself.
+Using the same seed value always produces the same sequence of random numbers.
+
+=== Arguments
+
+expression:: [Optional] A valid numeric expression to use as a seed value.
+
+=== Return Value
+
+A number representing the pseudo-random value.
+
+=== Example
+.Random number generation
+====
+.Query
+[source,sqlpp]
+----
+SELECT RANDOM() AS randomValue_1,
+       RANDOM(42) AS randomValue_2,
+       RANDOM(42) AS randomValue_3, 
+       RANDOM(100) AS randomValue_4;
+----
+.Result
+[source,json]
+----
+[
+  {
+    "randomValue_1": 0.2427792851991457,
+    "randomValue_2": 0.3730283610466326,
+    "randomValue_3": 0.3730283610466326,
+    "randomValue_4": 0.8165026937796166
+  }
+]
+----
+====
+
+[[round]]
+== ROUND(`expression` [, `digits` ])
+
+Rounds a numeric expression to the nearest integer or to a specified number of decimal places.
+
+You can specify the number of places to round to using the optional `digits` parameter.
+
+* If `digits` is a positive integer, rounds to the specified number of places to the right of the decimal point.
+* If `digits` is `0` or not provided, rounds to the nearest whole integer.
+* If `digits` is a negative integer, rounds digits to the left of the decimal point.
+For example, `-1` rounds to the nearest 10, `-2` to the nearest 100, and so on.
+
+TIP: If you want to truncate a number without rounding, use the <<trunc, TRUNC function>>.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+digits:: [Optional] An integer representing the number of decimal places to round to.
+The default value is `0`.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the rounded value.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Rounding a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT ROUND(12.3456) AS roundValue_1,
+       ROUND(12.3456, 2) AS roundValue_2,
+       ROUND(12.3456, -1) AS roundValue_3,
+       ROUND(NULL, 2) AS roundValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "roundValue_1": 12,
+    "roundValue_2": 12.35,
+    "roundValue_3": 10,
+    "roundValue_4": null
+  }
+]
+----
+====
+
+== SIGN(`expression`)
+
+Returns the sign of a numeric expression.
+
+The function does not return the actual sign symbol.
+Instead, it returns a numeric representation of the sign.
+
+* `-1` if the input value is negative.
+* `0` if the input value is zero.
+* `1` if the input value is positive.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* `1` for positive numbers.
+* `0` for zero.
+* `-1` for negative numbers.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Sign of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT SIGN(10) AS signValue_1,
+       SIGN(0) AS signValue_2,
+       SIGN(-5) AS signValue_3,
+       SIGN(NULL) AS signValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "signValue_1": 1,
+    "signValue_2": 0,
+    "signValue_3": -1,
+    "signValue_4": null
+  }
+]
+----
+====
+
+== SIN(`expression`)
+
+Returns the sine value of a numeric expression.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the sine value.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Sine of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT SIN(0) AS sinValue_1,
+       SIN(PI()/2) AS sinValue_2,
+       SIN(PI()) AS sinValue_3,
+       SIN(NULL) AS sinValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "sinValue_1": 0,
+    "sinValue_2": 1,
+    "sinValue_3": 0.00000000000000012246467991473515,
+    "sinValue_4": null
+  }
+]
+----
+====
+
+== SQRT(`expression`)
+
+Returns the square root of a numeric expression.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the square root.
+* `NULL` if the input is a non-numeric value or `NULL`.
+* `"NaN"` if the input is negative. 
+
+=== Example
+
+.Square root of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT SQRT(16) AS sqrtValue_1,
+       SQRT(2) AS sqrtValue_2,
+       SQRT(-4) AS sqrtValue_3,
+       SQRT(NULL) AS sqrtValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "sqrtValue_1": 4,
+    "sqrtValue_2": 1.4142135623730951,
+    "sqrtValue_3": "NaN",
+    "sqrtValue_4": null
+  }
+]
+----
+====
+
+== TAN(`expression`)
+
+Returns the tangent value of a numeric expression.
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the tangent value.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Tangent of a number
+====
+.Query
+[source,sqlpp]
+----
+SELECT TAN(0) AS tanValue_1,
+       TAN(PI()/4) AS tanValue_2,
+       TAN(PI()/2) AS tanValue_3,
+       TAN(NULL) AS tanValue_4;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "tanValue_1": 0,
+    "tanValue_2": 0.9999999999999998,
+    "tanValue_3": 16331239353195392,
+    "tanValue_4": null
+  }
+]
+----
+====
+
+[[trunc]]
+== TRUNC(`expression` [, `digits` ])
+
+Truncates a numeric expression to a specified number of decimal places.
+Unlike the <<round, ROUND function>>, this function simply removes digits without adjusting the remaining value.
+
+You can specify the number of places to truncate to using the optional `digits` parameter.
+
+* If `digits` is a positive integer, truncates to the specified number of places to the right of the decimal point.
+* If `digits` is `0` or not provided, truncates the expression to the nearest whole integer.
+* If `digits` is a negative integer, truncates digits to the left of the decimal point.
+For example, `-1` truncates to the nearest 10, `-2` to the nearest 100, and so on. 
+
+=== Arguments
+
+expression:: [Required] A valid numeric expression.
+digits:: [Optional] An integer representing the number of decimal places to truncate to.
+The default value is `0`.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A number representing the truncated value.
+* `NULL` if the input is a non-numeric value or `NULL`.
+
+=== Example
+
+.Truncating a number
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT TRUNC(12.3456) AS truncValue_1,
+        TRUNC(12.3456, 2) AS truncValue_2,
+        TRUNC(12.3456, -1) AS truncValue_3,
+        TRUNC(NULL, 2) AS truncValue_4;
+---- 
+
+.Result
+[source,json]
+----
+[
+  {
+    "truncValue_1": 12,
+    "truncValue_2": 12.34,
+    "truncValue_3": 10,
+    "truncValue_4": null
+  }
+]
+----
+====
