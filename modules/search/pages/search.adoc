@@ -18,7 +18,35 @@ For example, you can use the Search Service with:
 * CIDR notation
 * Geospatial data 
 
-Use a <<indexes,Search index>> to efficiently store your data, and retrieve it with a <<queries,Search query>>.
+Use a <<indexes,Search index>> to efficiently store your data and retrieve it with a <<queries,Search query>>.
+
+== Overview
+
+The search service is implemented using https://github.com/blevesearch[Bleve], an open-source indexing and search framework,
+developed and maintained by Couchbase.
+
+The search engine ingests data from the nodes within a cluster
+and builds an index as a list of word tokens.
+The indexed tokens are stored with metadata used to link the tokens to the original documents.
+The tokens are stored in an inverted index data structure,
+whereby each token is associated with a list of documents where the token can be found.
+
+[mermaid]
+.Search Engine Architecture
+----
+flowchart LR
+    jsons@{ shape: docs, label: "JSON documents" }
+
+    subgraph engine [Search Engine]
+        analyzer@{shape: process, label: "Text Analyzer"}
+        index@{shape: flip-tri, label: "Inverted\nindex"}
+        database@{shape: lin-cyl, label: "Databases"}
+    end
+
+    jsons --> analyzer
+    analyzer --> index
+    index --> database
+----
 
 [#indexes]
 == Search Indexes
