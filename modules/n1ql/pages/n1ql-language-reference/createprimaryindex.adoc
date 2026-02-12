@@ -205,7 +205,7 @@ nodes;;
 [.edition]#{community}#
 
 In Couchbase Server Community Edition, a single primary index of type `GSI` can be placed on a single node that runs the Indexing Service.
-If you specify the `nodes` property, the Index planner places the index on one of the nodes in the array.
+The `nodes` property enables you to specify the node that the index is placed on.
 (((default index placement)))If `nodes` is not specified, the Index planner may place the index on any of the nodes running the Indexing Service.
 ****
 +
@@ -215,12 +215,14 @@ If you specify the `nodes` property, the Index planner places the index on one o
 In Couchbase Server Enterprise Edition, you can specify multiple nodes to distribute replicas of an index across nodes running the Indexing Service: for example, `WITH {"nodes": ["node1:8091", "node2:8091", "node3:8091"]}`.
 For details and examples, refer to {index-replication}[Index Replication].
 
-If you specify the `nodes` property by itself, the index is placed on one of the destination nodes, and one replica is placed on each of the others.
 (((default index placement)))If `nodes` is not specified, then the system places the new index and any replicas on any of the nodes running the Indexing Service, in order to achieve the best resource utilization.
 This is done by taking into account the current resource usage statistics of index nodes.
 
+If you specify the `nodes` property by itself, the index is placed on one of the destination nodes, and a replica is placed on each of the others.
+
 If you specify both `nodes` and `num_replica`, the Index planner chooses from the set of specified nodes to place the index and its replicas.
-In this case, the number of nodes in the array must be greater than the specified number of replicas, otherwise the index creation fails.
+In this case, the number of nodes in the array must be greater than the specified number of replicas.
+Otherwise, the index creation fails.
 ****
 +
 IMPORTANT: A node name passed to the `nodes` property must include the cluster administration port, by default 8091.
@@ -251,8 +253,8 @@ The indexer will automatically distribute these replicas amongst index nodes in 
 The indexer will attempt to distribute the replicas based on the server groups in use in the cluster where possible.
 
 The value of this property must be lower than the number of index nodes in the cluster.
-If `nodes` is specified, the value of this property must be lower than the number of nodes.
-If the value of this property is too high, then the index creation fails.
+If `nodes` is specified, the value of this property must be lower than the number of nodes in the array.
+Otherwise, the index creation fails.
 ****
 
 Partitioned indexes support further options.
