@@ -5,23 +5,31 @@
 {description}
 
 [#description]
-== Description: What is RBAC
+== What is RBAC
 
 Couchbase provides _Role-Based Access Control_ (RBAC), in which access privileges are assigned to fixed roles, which are in turn assigned to users, (each of which may be an administrator or an application) either _directly_ or _indirectly_, through _user-groups_.
 
-Couchbase Server Enterprise Edition provides RBAC with multiple roles for finer access control.
-Community Edition provides multiple users that can be assigned to a limited set of roles.
-There are three fixed roles in the community edition of Couchbase providing coarser access control: Bucket Full Access (`bucket_full_access[*]`), Admin (`admin`), and Read Only Admin (`ro_admin`).
-
-A Couchbase-Server _role_ permits one or more _resources_ to be accessed according to defined _privileges_.
+A Couchbase _role_ permits one or more _resources_ to be accessed according to defined _privileges_.
 Roles can be assigned to individual users, and to groups, by means of either the UI or the REST API.
 
-For a complete list of roles, see xref:learn:security/roles.adoc[Roles].
-Note that most roles can be assigned only on the _Enterprise Edition_ of Couchbase Server: on the _Community Edition_ of Couchbase Server, only the `bucket_full_access`,
-`admin`, and `ro_admin` roles can be assigned.
+Couchbase Server Enterprise Edition provides RBAC with multiple roles for finer access control.
+Community Edition provides multiple users that can be assigned to a limited set of roles.
 
-For more information, see xref:learn:security/authorization-overview.adoc[Authorization], and xref:manage:manage-security/manage-users-and-roles.adoc[Manage Users, Groups, and Roles].
+To be able to use the Eventing service through the UI, you need to have one of the following RBAC roles: 
+* The Organization Owner, Project Creator, or Organization Member role, as described in xref:organizations:organization-user-roles.adoc[Organization User Roles].
 
+* The Project Owner, Cluster Manager, or Data Writer role, as described in xref:projects:project-roles.adoc[Project Roles]. 
+
+To be able to use the Eventing service, via an SDK or a REST API, your client application must have cluster access credentials with Read or Read/write access to the buckets, scopes, and collections that your Eventing functions listen to. 
+Also, you need Write or Read/Write access to the buckets, scopes, and collections that the Eventing functions write to, as described in xref:clusters:manage-database-users.adoc[Manage Cluster Access Credentials]
+
+Note: Most roles are assigned only on the _Enterprise Edition_ of Couchbase Server: on the _Community Edition_ of Couchbase Server, only the `bucket_full_access`, `admin`, and `ro_admin` roles can be assigned.
+
+//I am not sure if the above Note is applicable to Capella as well! Kindly confirm if we need to keep it or delete it. 
+
+For more information, see xref:learn:security/authorization-overview.adoc[Authorization], xref:learn:security/roles.adoc[Roles], and xref:manage:manage-security/manage-users-and-roles.adoc[Manage Users, Groups, and Roles].
+
+//We will be adding more information on fine-grain RBAC later. Hence am not sure if the following sections are required in the Capella docs for now! Kindly confirm if we need to keep them or delete them. 
 == Function Scope
 
 A bucket.scope combination is used for identifying functions belonging to the same group.
@@ -58,102 +66,5 @@ For standard or non-privileged users, refer to Role-Based Access Control.
 NOTE: If a user role of either "Full Admin" or "Eventing Full Admin", then this user, by default, has all the necessary access to every resource in a cluster required to run the Eventing Service and create and manage Eventing Functions.
 
 _In RBAC, although you can assign roles directly to a *USER*, it is generally more flexible to define a *GROUP* and assign that group or set of roles to a *USER*.
-This allows reusing a *GROUP* across multiple users._
-
-== Minimal Eventing RBAC role
-
-The following minimal resources are required for a non-privileged user to access the Eventing Service and create and manage Eventing Functions.
-
-* Data Reader
-** Eventing Storage keyspace or Scratchpad
-* Data Writer
-** Eventing Storage keyspace or Scratchpad
-* Data DCP reader
-** Mutation Source
-* Eventing / Manage Scope Function
-** bucket.scope or bucket.
-
-== Minimal Eventing RBAC role example
-
-* Access the Couchbase Web Console > Security and Select "ADD GROUP".
-+
-image::rbac_min_add_add_group.png[,%100]
-
-* Configure the group as follows:
- ** `Data Reader` and `Data Writer` are required for the Eventing Storage or scratchpad.
- ** `Data DCP Reader` is required to fetch the mutations from DCP.
-+
-NOTE: this item was defined as `bulk.data`. which would allow building Evening functions that can listen to any collection under `bulk.data`.
-+
-image::rbac_min_a.png[,538,align=middle]
-+
-The final item required is defining the *Function Scope* under "Eventing / Manage Scope Function". Since we will be listing to mutations in a collection under `bulk.data`, it makes sense to use this as our grouping.
-+
-image::rbac_min_b.png[,538,align=middle]
-
-* Hit *Save* to store the GROUP to the system.
-
-* Access the Couchbase Web Console > Security and Select "ADD USER".
-+
-image::rbac_min_add_add_user.png[,%100]
-
-* Associate the GROUP to the user so the user can inherit all the roles in the group.
-+
-image::rbac_min_c.png[,538,align=middle]
-
-* Add your password and verify it in the lower two boxes
-
-* Hit *Save* to store the USER to the system.
-
-* Access the Couchbase Web Console > Security 
-
-* Select GROUPS on the right, you should see your definition for GROUP `eventing_min`.
-+
-image::rbac_min_groups.png[,%100]
-
-* Select USERS on the right, you should see your definition for USER `user_min`.
-+
-image::rbac_min_users.png[,%100]
-
-== Beyond a Minimal Eventing RBAC role
-
-You may consider adding
-
-* Data Reader
-** Mutation Source
-* Data Writer
-** Mutation Source
-* Data Monitor
-** Mutation Source
-** Eventing Storage keyspace or Scratchpad
-
-If you have any Bindings in your Eventing Function of type `Bucket Alias`,
- you will need to have one or more additional settings if not already allowed.
-
-* Data Reader
-** Bucket Alias
-* Data Writer
-** Bucket Alias
-
-If you plan to use {sqlpp} consider adding at lease SELECT privileges
-
-* Query & Index / Query Select
-** Mutation Source
-
-== Multi-tenancy in Eventing
-
-The "Function Scope" in an Eventing Function works with the RBAC selection in "Eventing / Manage Scope Function" to limit access to between tenants in both the UI and the REST API. 
-
-A tenant might be based on company departments such as administration, sales, production and support.
-
-Below we have two tenants example (an admin and a limited user) and four Eventing Functions each with a different *Function Scope*. 
-We logged into the UI with either an `Eventing Full Admin` or `Full Admin` role, and thus we can access all the Eventing Functions.
-
-image::rbac_admin_view.png[,%100]
-
-Now log out of the UI console and log back in as a non-privileged user,
-(for example, we use the USER `user_min` as defined above).
-Because of the privileges defined, we are only allowed access to Eventing Functions that have a *Function Scope* of 'bulk.data'.
-
-image::rbac_user_view.png[,%100]
+This allows reusing a *GROUP* across multiple users.
 
