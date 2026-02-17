@@ -38,7 +38,7 @@ You can then build the index using the {build-index}[BUILD INDEX] command.
 
 You can create multiple identical primary indexes on a keyspace and place them on separate nodes for better index availability.
 The recommended way to do this is using the `num_replicas` option.
-See <<index-with,WITH Clause>> for more details.
+For more information, see <<index-with,WITH Clause>>.
 
 == Prerequisites
 
@@ -212,13 +212,17 @@ include::partial$n1ql-language-reference/file-based-index-rebalance-note.adoc[]
 
 '''
 
-You can specify multiple nodes to distribute replicas of an index across nodes running the indexing service: for example, `WITH {"nodes": ["node1:8091", "node2:8091", "node3:8091"]}`.
-For details and examples, see {index-replication}[Index Replication].
+You can specify multiple nodes to distribute replicas of an index across nodes running the Indexing Service: for example, `WITH {"nodes": ["node1:8091", "node2:8091", "node3:8091"]}`.
+For more information and examples, see {index-replication}[Index Replication].
 
-If specifying both [.var]`nodes` and [.var]`num_replica`, the number of nodes in the array must be one greater than the specified number of replicas otherwise the index creation will fail.
-
-(((default index placement)))If [.var]`nodes` is not specified, then the system chooses nodes on which to place the new index and any replicas, in order to achieve the best resource utilization across nodes running the indexing service.
+(((default index placement)))If `nodes` is not specified, then the system places the new index and any replicas on any of the nodes running the Indexing Service, in order to achieve the best resource utilization.
 This is done by taking into account the current resource usage statistics of index nodes.
+
+If you specify the `nodes` property by itself, the index is placed on one of the destination nodes, and a replica is placed on each of the others.
+
+If you specify both `nodes` and `num_replica`, the Index planner chooses from the set of specified nodes to place the index and its replicas.
+In this case, the number of nodes in the array must be greater than the specified number of replicas.
+Otherwise, the index creation fails.
 
 '''
 A node name passed to the `nodes` property must include the cluster administration port, by default 8091.
@@ -247,7 +251,9 @@ __optional__
 The indexer will automatically distribute these replicas amongst index nodes in the cluster for load-balancing and high availability purposes.
 The indexer will attempt to distribute the replicas based on the server groups in use in the cluster where possible.
 
-If the value of this property is not less than the number of index nodes in the cluster, then the index creation will fail.
+The number of replicas must be lower than the number of index nodes in the cluster.
+If `nodes` is specified, the number of replicas must be lower than the number of nodes in the array.
+Otherwise, the index creation fails.
 
 **Default:** `1`
 |Integer
