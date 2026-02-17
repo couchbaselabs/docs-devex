@@ -20,7 +20,7 @@ include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 The `CREATE PRIMARY INDEX` statement allows you to create a primary index.
 Primary indexes contain a full set of keys in a given keyspace.
-Primary indexes are optional and are only required for running ad hoc queries on a keyspace that is not supported by a secondary index.
+Primary indexes are optional and are only required for running ad hoc queries on a keyspace that's not supported by a secondary index.
 
 == Purpose
 
@@ -38,7 +38,7 @@ You can then build the index using the {build-index}[BUILD INDEX] command.
 You can create multiple identical primary indexes on a keyspace and place them on separate nodes for better index availability.
 In Couchbase Server Enterprise Edition, the recommended way to do this is using the `num_replicas` option.
 In Couchbase Server Community Edition, you need to create multiple identical indexes and place them using the `nodes` option.
-Refer to <<index-with,WITH Clause>> below for more details.
+For more information, see <<index-with,WITH Clause>> below.
 
 == Prerequisites
 
@@ -46,7 +46,7 @@ Refer to <<index-with,WITH Clause>> below for more details.
 ===== RBAC Privileges
 
 Users executing the `CREATE PRIMARY INDEX` statement must have the _Query Manage Index_ privilege granted on the keyspace.
-For more details about user roles, see
+For more information about user roles, see
 {authorization-overview}[Authorization].
 
 == Syntax
@@ -56,7 +56,7 @@ For more details about user roles, see
 include::partial$grammar/ddl.ebnf[tag=create-primary-index]
 ----
 
-image::n1ql-language-reference/create-primary-index.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/create-primary-index.png["Syntax diagram: see source code listing", align=left]
 
 // TODO: Automatic links in EBNF.
 
@@ -70,16 +70,16 @@ The minimum length of an index name is 1 character and there is no maximum lengt
 When querying, if the index name contains a `&num;` or `&lowbar;` character, you must enclose the index name within backticks.
 
 keyspace-ref:: [Required] Specifies the keyspace where the index is created.
-Refer to <<keyspace-ref>> below.
+See <<keyspace-ref>> below.
 
 index-partition:: (Optional) Specifies index partitions.
-Refer to <<index-partition>> below.
+See <<index-partition>> below.
 
 index-using:: (Optional) Specifies the index type.
-Refer to <<index-using>> below.
+See <<index-using>> below.
 
 index-with:: (Optional) Specifies options for the index.
-Refer to <<index-with>> below.
+See <<index-with>> below.
 
 [[note-index-name,note]]
 NOTE: You can drop unnamed primary indexes using the `DROP PRIMARY INDEX` statement, and named primary indexes using the `DROP INDEX` statement.
@@ -102,13 +102,13 @@ If a primary index with the same name already exists within the specified keyspa
 include::partial$grammar/dql.ebnf[tag=keyspace-ref]
 ----
 
-image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: see source code listing", align=left]
 
 Specifies the keyspace for which the index needs to be created.
 The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
 
 NOTE: If there is a hyphen (-) inside any part of the keyspace reference, you must wrap that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+See the examples below.
 
 [[keyspace-path,keyspace path]]
 ==== Keyspace Path
@@ -118,7 +118,7 @@ Refer to the examples below.
 include::partial$grammar/dql.ebnf[tag=keyspace-path]
 ----
 
-image::n1ql-language-reference/keyspace-path.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-path.png["Syntax diagram: see source code listing", align=left]
 
 If the keyspace is a named collection, or the default collection in the default scope within a bucket, the keyspace reference may be a keyspace path.
 In this case, the {query-context}[query context] should not be set.
@@ -154,7 +154,7 @@ Similarly, `default:{backtick}travel-sample{backtick}.inventory.airline` indicat
 include::partial$grammar/dql.ebnf[tag=keyspace-partial]
 ----
 
-image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: see source code listing", align=left]
 
 Alternatively, if the keyspace is a named collection, the keyspace reference may be just the collection name with no path.
 In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
@@ -184,7 +184,7 @@ For more information, see {index-partitioning}[Index Partitioning].
 include::partial$grammar/ddl.ebnf[tag=index-using]
 ----
 
-image::n1ql-language-reference/index-using.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/index-using.png["Syntax diagram: see source code listing", align=left]
 
 The index type for a primary index must be Global Secondary Index (GSI).
 The `USING GSI` keywords are optional and may be omitted.
@@ -197,7 +197,7 @@ The `USING GSI` keywords are optional and may be omitted.
 include::partial$grammar/ddl.ebnf[tag=index-with]
 ----
 
-image::n1ql-language-reference/index-with.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/index-with.png["Syntax diagram: see source code listing", align=left]
 
 Use the WITH clause to specify additional options.
 
@@ -218,20 +218,24 @@ include::partial$n1ql-language-reference/file-based-index-rebalance-note.adoc[]
 '''
 [.edition]#{community}#
 
-In Couchbase Server Community Edition, a single primary index of type `GSI` can be placed on a single node that runs the indexing service.
-The `nodes` property allows you to specify the node that the index is placed on.
-(((default index placement)))If `nodes` is not specified, one of the nodes running the indexing service is randomly picked for the index.
+In Couchbase Server Community Edition, a single primary index of type `GSI` can be placed on a single node that runs the Indexing Service.
+The `nodes` property enables you to specify the node that the index is placed on.
+(((default index placement)))If `nodes` is not specified, the Index planner may place the index on any of the nodes running the Indexing Service.
 
 '''
 [.edition]#{enterprise}#
 
-In Couchbase Server Enterprise Edition, you can specify multiple nodes to distribute replicas of an index across nodes running the indexing service: for example, `WITH {"nodes": ["node1:8091", "node2:8091", "node3:8091"]}`.
-For details and examples, refer to {index-replication}[Index Replication].
+In Couchbase Server Enterprise Edition, you can specify multiple nodes to distribute replicas of an index across nodes running the Indexing Service: for example, `WITH {"nodes": ["node1:8091", "node2:8091", "node3:8091"]}`.
+For more information, see {index-replication}[Index Replication].
 
-If specifying both [.var]`nodes` and [.var]`num_replica`, the number of nodes in the array must be one greater than the specified number of replicas otherwise the index creation will fail.
-
-(((default index placement)))If [.var]`nodes` is not specified, then the system chooses nodes on which to place the new index and any replicas, in order to achieve the best resource utilization across nodes running the indexing service.
+(((default index placement)))If `nodes` is not specified, then the system places the new index and any replicas on any of the nodes running the Indexing Service, in order to achieve the best resource utilization.
 This is done by taking into account the current resource usage statistics of index nodes.
+
+If you specify the `nodes` property by itself, the index is placed on one of the destination nodes, and a replica is placed on each of the others.
+
+If you specify both `nodes` and `num_replica`, the Index planner chooses from the set of specified nodes to place the index and its replicas.
+In this case, the number of nodes in the array must be greater than the specified number of replicas.
+Otherwise, the index creation fails.
 
 '''
 A node name passed to the `nodes` property must include the cluster administration port, by default 8091.
@@ -264,7 +268,9 @@ The number of {index-replication}[replicas] of the index to create.
 The indexer will automatically distribute these replicas amongst index nodes in the cluster for load-balancing and high availability purposes.
 The indexer will attempt to distribute the replicas based on the server groups in use in the cluster where possible.
 
-If the value of this property is not less than the number of index nodes in the cluster, then the index creation will fail.
+The number of replicas must be lower than the number of index nodes in the cluster.
+If `nodes` is specified, the number of replicas must be lower than the number of nodes in the array.
+Otherwise, the index creation fails.
 
 **Default:** `1`
 |Integer
@@ -300,7 +306,7 @@ You must drop the failed index using the `DROP INDEX` command.
 
 For a primary index scan on any keyspace size, the query engine guarantees that the client is not exposed to scan timeout if the indexer throws a scan timeout after it has returned a greater than zero sized subset of primary keys.
 To complete the scan, the query engine performs successive scans of the primary index until all the primary keys have been returned.
-It is possible that the indexer throws scan timeout without returning any primary keys, and in this event the query engine returns scan timeout to the client.
+It's possible that the indexer may throw scan timeout without returning any primary keys, and in this event the query engine returns scan timeout to the client.
 
 For example, if the indexer cannot find a snapshot that satisfies the consistency guarantee of the query within the timeout limit, it will timeout without returning any primary keys.
 
