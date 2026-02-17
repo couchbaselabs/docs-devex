@@ -9,13 +9,15 @@ You can control the scan consistency for individual queries.
 // Cross-references
 :index-service: xref:services-and-indexes/services/index-service.adoc
 :index-partitioning: xref:n1ql:n1ql-language-reference/index-partitioning.adoc
+:createindex: xref:n1ql:n1ql-language-reference/createindex.adoc
+:createprimaryindex: xref:n1ql:n1ql-language-reference/createprimaryindex.adoc
 :failover: xref:learn:clusters-and-availability/failover.adoc
 :database-change-protocol: xref:learn:clusters-and-availability/intra-cluster-replication.adoc#database-change-protocol
 :index-storage-mode: xref:manage:manage-settings/general-settings.adoc#index-storage-mode
-:index-storage-settings-via-cli: xref:manage:manage-settings/general-settings.adoc#index-storage-settings-via-cli
-:index-settings-via-rest: xref:manage:manage-settings/general-settings.adoc#index-settings-via-rest
+:index-storage-settings-via-cli: xref:cli:cbcli/couchbase-cli-setting-index.adoc
+:index-settings-via-rest: xref:rest-api:post-settings-indexes.adoc
 :install-sample-buckets: xref:manage:manage-settings/install-sample-buckets.adoc
-:query: xref:n1ql:query.adoc
+:query: xref:n1ql:n1ql-language-reference/index.adoc
 :query-preferences: xref:tools:query-workbench.adoc#query-preferences
 :scan_consistency: xref:settings:query-settings.adoc#scan_consistency
 
@@ -33,20 +35,26 @@ include::ROOT:partial$query-context.adoc[tag=statement]
 [#index-replication]
 == Index Replication
 
-Secondary indexes can be replicated across cluster-nodes.
-This ensures:
+[.edition]#{enterprise}#
 
-* _Availability_: If one Index-Service node is lost, the other continues to provide access to replicated indexes.
-* _High Performance_: If original and replica copies are available, incoming queries are load-balanced across them.
+You can replicate primary and secondary indexes across cluster nodes running the {index-service}[Index Service].
+This feature is available only in Couchbase Server Enterprise Edition.
+Index replication has the following benefits:
 
-Index-replicas can be created with the {sqlpp} `CREATE INDEX` statement.
-Note that whenever a given number of index-replicas is specified for creation, the number must be less than the number of cluster-nodes currently running the {index-service}[Index Service].
-If it is not, the index creation fails.
-Note also that if, following creation of the maximum number of copies, the number of nodes running the Index Service decreases, Couchbase Server progressively assigns replacement index-replicas to any and all Index-Service nodes subsequently be added to the cluster, until the required number of index-replicas again exists for each replicated index.
+* *Availability*: If one Index Service node is lost, the others continues to provide access to replicated indexes.
+* *High Performance*: If original and replica copies are available, incoming queries are load-balanced across them.
 
-Index-replicas can be created as follows:
+If the number of nodes running the Index Service decreases, and index replicas are lost, Couchbase Server progressively assigns replacement index replicas to all Index Service nodes subsequently added to the cluster, until the required number of index replicas again exists for each replicated index.
 
-* Specifying, by means of the `WITH` clause, the destination nodes.
+=== Creating Index Replicas for a Single Index
+
+You can create index replicas using the {sqlpp} {createindex}[CREATE INDEX] and {createprimaryindex}[CREATE PRIMARY INDEX] statements.
+
+To create index replicas for a single index, do one of the following:
+
+* In the `WITH` clause, use the `nodes` attribute to specify the destination nodes.
+When you use this attribute by itself, the index is placed on one of the destination nodes, and one replica is placed on each of the others.
++
 In the following example, an index with two replicas is created.
 The active index is on `node1`, and the replicas are on `node2` and `node3`:
 +
@@ -56,8 +64,11 @@ The active index is on `node1`, and the replicas are on `node2` and `node3`:
 include::example$services-and-indexes/indexes/replication-nodes.n1ql[]
 ----
 
-* Specifying _no_ destination nodes; but specifying instead, by means of the `WITH` clause and the `num_replica` attribute, only the _number_ of replicas required.
-The replicas are automatically distributed across those nodes of the cluster that are running the Index Service: the distribution-pattern is based on a projection of optimal index-availability, given the number and disposition of Index-Service nodes across defined server-groups.
+* In the `WITH` clause, use the `num_replica` attribute to specify the number of replicas required.
+When you use this attribute by itself, the index and the required number of replicas are automatically distributed across Index Service nodes.
+The distribution pattern is based on a projection of optimal index availability, given the number and disposition of Index Service nodes across defined server groups.
+The required number of replicas must be smaller than the number of cluster nodes currently running the Index Service.
+If it's not, the index creation fails.
 +
 In the following example, an index is created with two replicas, with no destination-nodes specified:
 +
@@ -65,35 +76,43 @@ In the following example, an index is created with two replicas, with no destina
 ----
 include::example$services-and-indexes/indexes/replication-num.n1ql[]
 ----
-+
-Note that if `nodes` and `num_replica` are both specified in the `WITH` clause, the specified number of nodes must be _one greater_ than `num_replica`.
 
-* Specifying a number of index-replicas to be created by the Index Service whenever `CREATE INDEX` is invoked.
-The default is `0`.
-If the default is changed to, say, `2`, creation of a single index is henceforth accompanied by the creation of two replicas, which are automatically distributed across the nodes of the cluster running the Index Service.
-No explicit specification within the `CREATE INDEX` statement is required.
-+
-With credentials that provide appropriate authorization, this default can be changed by means of the `curl` command, as follows:
-+
+* In the `WITH` clause, use the `nodes` and `num_replica` attributes together.
+In this case, the Index planner chooses from the set of specified nodes to place the index and the required number of replicas.
+The required number of replicas must be smaller than the number of specified nodes.
+If it's not, the index creation fails.
+
+For more information on using {sqlpp}, see {query}[].
+
+=== Creating Index Replicas Automatically
+
+The Index Service can create a number of index replicas automatically whenever {createindex}[CREATE INDEX] or {createprimaryindex}[CREATE PRIMARY INDEX] is invoked.
+The default number of replicas is `0`.
+For example, if you change the number of automatic replicas to `2`, from that point on creation of a single index is accompanied by the creation of two replicas, which are automatically distributed across the nodes of the cluster running the Index Service.
+No explicit specification is required within the {sqlpp} statement.
+
+The following example changes the index replication settings using the GSI Settings REST API:
+
 [source,sh]
 ----
 curl -X POST -u 'Administrator:password' \
 'http://localhost:8091/settings/indexes' \
 -d 'numReplica=2'
 ----
-+
-Here, `numReplica` is an integer that establishes the default number of replicas that must be created whenever `CREATE INDEX` is invoked.
-Note that this call only succeeds if the cluster contains enough Index Service nodes to host each new index and its replicas: for example, if `2` is specified as the default number of replicas, the Index Service must have been established on at least 3 nodes.
-+
-Note also that whenever explicit specification of replica-numbers is made within the `CREATE INDEX` statement, this explicit specification takes precedence over any established default.
 
-You can change index replication settings via the {index-storage-mode}[UI] or the {index-settings-via-rest}[REST API].
-For further information on using {sqlpp}, refer to {query}[Query Fundamentals].
+Here, `numReplica` is an integer that establishes the default number of replicas that must be created whenever an index is created.
+This call only succeeds if the cluster contains enough Index Service nodes to host each new index and its replicas: for example, if you specify `2` as the default number of replicas, the Index Service must have been established on at least 3 nodes.
+
+When you explicitly specify the number of replicas with the {createindex}[CREATE INDEX] or {createprimaryindex}[CREATE PRIMARY INDEX] statement, the explicit specification takes precedence over the index replication settings.
+
+You can change the index replication settings using the {index-storage-mode}[UI], the {index-storage-settings-via-cli}[CLI], or the {index-settings-via-rest}[REST API].
 
 [[index-partitioning]]
 == Index Partitioning
 
-_Index Partitioning_ increases query performance, by dividing and spreading a large index of documents across multiple nodes. This feature is available only in Couchbase Server Enterprise Edition.
+[.edition]#{enterprise}#
+
+Index partitioning increases query performance, by dividing and spreading a large index of documents across multiple nodes. This feature is available only in Couchbase Server Enterprise Edition.
 
 The benefits include:
 
@@ -105,7 +124,7 @@ The benefits include:
 
 * Provision of a low-latency range query, while allowing indexes to be scaled out as needed.
 
-For detailed information, refer to {index-partitioning}[Index Partitioning].
+For more information, see {index-partitioning}[Index Partitioning].
 
 [[index-consistency]]
 == Index Consistency
@@ -113,15 +132,17 @@ For detailed information, refer to {index-partitioning}[Index Partitioning].
 (((scan consistency)))
 (((consistency)))
 (((consistent)))
-Whereas Couchbase Server handles data-mutations with _full consistency_ — all mutations to a given key are applied to the same vBucket, and become immediately available — it maintains indexes with degrees of _eventual consistency_, determined by means of the following query consistency-options, specified per query:
+Couchbase Server handles data mutations with full consistency — all mutations to a given key are applied to the same vBucket, and become immediately available.
+In contrast, Couchbase Server maintains indexes with degrees of eventual consistency.
+For every query, you can specify the following consistency options:
 
 // tag::scan_consistency[]
 * `not_bounded`: Executes the query immediately, without requiring any consistency for the query.
-If index-maintenance is running behind, out-of-date results may be returned.
+If index maintenance is running behind, out-of-date results may be returned.
 * `at_plus`: Executes the query, requiring indexes first to be updated to the timestamp of the last update.
-If index-maintenance is running behind, the query waits for it to catch up.
-* `request_plus`: Executes the query, requiring the indexes first to be updated to the timestamp of the current query-request.
-If index-maintenance is running behind, the query waits for it to catch up.
+If index maintenance is running behind, the query waits for it to catch up.
+* `request_plus`: Executes the query, requiring the indexes first to be updated to the timestamp of the current query request.
+If index maintenance is running behind, the query waits for it to catch up.
 * `statement_plus`: Executes the query with strong consistency per statement.
 Before processing each statement, the service obtains a current vector timestamp and uses it as a lower bound for that statement.
 
@@ -133,8 +154,8 @@ You can specify the scan consistency via the {query-preferences}[run-time prefer
 [[index-snapshots]]
 == Index Snapshots
 
-One or more _index snapshots_ are maintained on disk, to permit rapid recovery if node-failures are experienced.
-In cases where recovery requires an Index-Service node to be restarted, the node’s indexes are rebuilt from the snapshots retained on disk.
+Couchbase Server maintains one or more index snapshots on disk, to permit rapid recovery if nodes fail.
+In cases where recovery requires an Index Service node to be restarted, the node's indexes are rebuilt from the snapshots retained on disk.
 
 By default, two index snapshots are stored on disk.
 You can change index snapshot settings via the {index-storage-settings-via-cli}[CLI] or the {index-settings-via-rest}[REST API].
