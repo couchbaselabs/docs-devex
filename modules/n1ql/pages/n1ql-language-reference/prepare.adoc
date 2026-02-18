@@ -124,16 +124,24 @@ See <<ex-prepare-positions>>.
 [[result]]
 == Result
 
-A JSON object is returned that contains the following properties:
+A JSON object that contains the following properties:
 
 name:: The full name of the prepared statement.
 This has the format `[host:port]local-name-or-UUID`, and consists of:
 +
-* The host and port of the node where the prepared statement was created, in square brackets, followed by
-* The local name that you specified for the prepared statement, or a UUID that was generated from the statement text.
-
+--
+* The host and port of the node where you created the prepared statement, enclosed in square brackets. 
+* The local name you specified for the prepared statement, or a UUID that was generated from the statement text.
+--
 +
-The host and port can be used when executing to retrieve the prepared statement from the node where it was created.
+You can use this name to execute a prepared statement without resending the entire statement text.
+When executing a prepared statement by its name:
++
+--
+* The Query Service first checks whether the executing node contains the prepared statement.
+* If not found, the service uses the host information in the name to retrieve the prepared statement from the node where you originally created it.
+* If the service cannot find the prepared statement on the original node either, it returns an error. 
+--
 
 operator:: The execution plan of the statement being prepared.
 
