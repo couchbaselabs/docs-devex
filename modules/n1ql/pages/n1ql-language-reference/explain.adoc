@@ -11,13 +11,14 @@ include::partial$n1ql-language-reference/collapsible-style.adoc[]
 
 == Prerequisites
 
-Irrespective of the type of cluster access credentials you are using (basic or advanced), your client must have the same privileges required to execute the query being explained.
+To execute the `EXPLAIN` statement, your client must have the same privileges required to run the query being explained, regardless of whether you use basic or advanced cluster access credentials.
 
-For example, if you're using basic cluster access credentials and if you are explaining an INSERT statement, the client must have the `Write` privilege on the target keyspace. 
+For example, to explain an `INSERT` statement, your client must have:
 
-Similarly, if you're using advanced cluster access credentials and if you are explaining an INSERT statement, the client must have the `Query Insert` privilege on the target keyspace.
+* The `Write` privilege on the target keyspace, if you're using basic cluster access credentials.
+* The `Query Insert` privilege on the target keyspace, if you're using advanced cluster access credentials.
 
-For more information about cluster access privileges, see xref:clusters:cluster-rbac.adoc[].
+For more information about access privileges, see xref:clusters:cluster-rbac.adoc[Cluster Access].
 
 .RBAC Examples
 [%collapsible]
@@ -25,9 +26,7 @@ For more information about cluster access privileges, see xref:clusters:cluster-
 ======
 include::ROOT:partial$query-context.adoc[tag=example]
 
-ifdef::granular-rbac[]
-To execute the following statement, your client must have the _Query Insert_ privilege on the `landmark` keyspace and the _Query Select_ privilege on the `pass:c[`beer-sample`]` keyspace.
-endif::granular-rbac[]
+The following example assumes you're using basic cluster access credentials.
 
 To execute the following statement, your client must have the `Write` privilege on `landmark` and the `Read` privilege on `beer-sample`.
 
@@ -37,10 +36,6 @@ EXPLAIN INSERT INTO landmark (KEY foo, VALUE bar)
         SELECT META(doc).id AS foo, doc AS bar
         FROM `beer-sample` AS doc WHERE type = "brewery";
 ----
-
-ifdef::granular-rbac[]
-To execute the following statement, your client must have the _Query Insert_, _Query Update_, and _Query Select_ privileges on the `testbucket` keyspace.
-endif::granular-rbac[]
 
 To execute the following statement, your client must have both `Write` and `Read` privileges on `testbucket`.
 
