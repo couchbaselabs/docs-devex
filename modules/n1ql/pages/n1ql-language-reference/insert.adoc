@@ -70,15 +70,19 @@ WARNING: You cannot insert documents into a SASL bucket if you have a read-only 
 
 === RBAC Privileges
 
-ifdef::granular-rbac[]
-To execute the INSERT statement, your client must have the _Query Insert_ privilege on the target keyspace.
-If the statement has any SELECT or RETURNING data-read clauses, then the _Query Select_ privilege is also required on the keyspaces referred in the respective clauses.
-For more details about roles and privileges, see {authorization-overview}[].
-endif::granular-rbac[]
+To execute this statement, your client must have necessary privileges on the target keyspace.
+The required privileges depend on your xref:clusters:cluster-rbac.adoc#cluster-access-credential-types[cluster access credential type] and whether the statement includes a `SELECT` or `RETURNING` clause.
 
-To execute the INSERT statement, your client must have the `Write` privilege on the target keyspace.
-If the statement includes any clauses that read data, such as a SELECT clause or a RETURNING clause, the client must also have `Read` privileges on the keyspaces referenced in those clauses.
-For more information about access privileges, see xref:clusters:manage-database-users.adoc[].
+[cols="1a,1a,1a", options="header"]
+|===
+| Credential Type | Privilege for INSERT | Privilege for SELECT or RETURNING
+| Basic
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Write`]
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Read`] on all keyspaces referenced in the clause
+| Advanced
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Insert`]
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Read`] on all keyspaces referenced in the clause
+|===
 
 .RBAC Examples
 [%collapsible]
@@ -86,9 +90,7 @@ For more information about access privileges, see xref:clusters:manage-database-
 ======
 include::ROOT:partial$query-context.adoc[tag=example]
 
-ifdef::granular-rbac[]
-// To execute the following statement, your client must have the _Query Insert_ privilege on `hotel`.
-endif::granular-rbac[]
+The following privileges apply if you use the basic cluster access credentials. 
 
 To execute the following statement, your client must have the `Write` privilege on `hotel`.
 
@@ -98,9 +100,6 @@ INSERT INTO hotel (KEY, VALUE)
 VALUES ("key1", { "type" : "hotel", "name" : "new hotel" });
 ----
 
-ifdef::granular-rbac[]
-// To execute the following statement, your client must have the _Query Insert_ and _Query Select_ privileges on `hotel`.
-endif::granular-rbac[]
 To execute the following statement, your client must have both `Write` and `Read` privileges on `hotel`.
 
 [source,sqlpp]
@@ -108,10 +107,6 @@ To execute the following statement, your client must have both `Write` and `Read
 INSERT INTO hotel (KEY, VALUE)
 VALUES ("key1", { "type" : "hotel", "name" : "new hotel" }) RETURNING *;
 ----
-
-ifdef::granular-rbac[]
-// To execute the following statement, your client must have the _Query Insert_ privilege on `hotel` and _Query Select_ privilege on `pass:c[`beer-sample`]`.
-endif::granular-rbac[]
 
 To execute the following statement, your client must have the `Write` privilege on `hotel` and the `Read` privilege on `beer-sample`.
 
@@ -121,10 +116,6 @@ INSERT INTO landmark (KEY foo, VALUE bar)
 SELECT META(doc).id AS foo, doc AS bar
 FROM `beer-sample` AS doc WHERE type = "brewery";
 ----
-
-ifdef::granular-rbac[]
-// To execute the following statement, your client must have the _Query Insert_ and _Query Select_ privileges on `hotel`.
-endif::granular-rbac[]
 
 To execute the following statement, your client must have both `Write` and `Read` privileges on `hotel`.
 

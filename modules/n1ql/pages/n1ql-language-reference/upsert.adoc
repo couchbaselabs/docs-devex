@@ -36,15 +36,22 @@ Refer to xref:clusters:data-service/import-data-documents.adoc#import-sample-dat
 
 == Prerequisites
 
-To execute the UPSERT statement, your client must have 1 of the following privileges:
+o execute this statement, your client must have necessary privileges on the keyspace.
+The required privileges depend on your xref:clusters:cluster-rbac.adoc#cluster-access-credential-types[cluster access credential type] and whether the statement includes a `SELECT` or `RETURNING` clause.
 
-* If you're using basic cluster access credentials, your client must have the xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Write`] privilege on the target keyspace.
-If the statement includes any RETURNING clauses, the client must also have `Read` privileges on the keyspaces referenced in those clauses.
-* If you're using advanced cluster access credentials, your client must have the xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Update`] and xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Insert`] privileges on the target keyspace.
-If the statement includes any RETURNING clauses, the client must also have `Query Read` privileges on the keyspaces referenced in those clauses.
-+
+[cols="1a,1a,1a", options="header"]
+|===
+| Credential Type | Privilege for UPDATE | Privilege for SELECT / RETURNING
+| Basic
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Write`]
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Read`] on all keyspaces referred in the clause
+| Advanced
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Update`]
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Read`] on all keyspaces referred in the clause
+|===
+
 NOTE: A user with the `Data Manage` privilege may set documents to expire.
-When the document expires, the data service deletes the document, even though the user may not have the `Query Delete` privilege.
+When the document expires, the Data Service deletes the document, even though the user may not have the `Query Delete` privilege.
 
 .RBAC Examples
 [%collapsible]
@@ -52,9 +59,7 @@ When the document expires, the data service deletes the document, even though th
 ======
 include::ROOT:partial$query-context.adoc[tag=example]
 
-ifdef::granular-rbac[]
-To execute the following statement, your client must have the _Query Update_ and _Query Insert_ privileges on `hotel`.
-endif::granular-rbac[]
+The following privileges apply if you use the basic cluster access credentials.
 
 To execute the following statement, your client must have the `Write` privilege on `hotel`.
 
@@ -62,10 +67,6 @@ To execute the following statement, your client must have the `Write` privilege 
 ----
 include::example$dml/upsert-rbac.n1ql[]
 ----
-
-ifdef::granular-rbac[]
-To execute the following statement, your client must have the _Query Update_ and _Query Insert_ privileges on `hotel` and the _Query Select_ privilege on `hotel` also (for RETURNING clause).
-endif::granular-rbac[]
 
 To execute the following statement, your client must have both the `Write` privilege and the `Read` privilege (for the RETURNING clause) on `hotel`.
 
@@ -79,10 +80,6 @@ include::example$dml/upsert-rbac-return.n1ql[]
 ----
 include::example$dml/upsert-rbac-return.jsonc[]
 ----
-
-ifdef::granular-rbac[]
-To execute the following statement, your client must have the _Query Update_ and _Query Insert_ privileges on `landmark` and _Query Select_ privilege on `pass:c[`beer-sample`]`.
-endif::granular-rbac[]
 
 To execute the following statement, your client must have the `Write` privilege on `landmark` and the `Read` privilege on `beer-sample`.
 

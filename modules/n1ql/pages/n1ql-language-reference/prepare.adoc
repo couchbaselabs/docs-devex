@@ -20,11 +20,18 @@ If you know that a statement text will be executed repeatedly, you can request t
 [[authorization]]
 == Prerequisites
 
-To execute the PREPARE statement, your client must have the necessary RBAC privileges for the statement being prepared.
+To execute this statement, your client must have the necessary privileges depending on the xref:clusters:cluster-rbac.adoc#cluster-access-credential-types[cluster access credential type] and the statement being prepared.
 
-For example, if you're using basic cluster access credentials and if the statement being prepared is a SELECT statement, the client must have the `Read` privilege on the keyspaces being accessed. 
-Similarly, if you're using advanced cluster access credentials and if the statement being prepared is a SELECT statement, the client must have the `Query Read` privilege on the keyspaces being accessed.
-For more details about cluster access privileges, refer to xref:clusters:cluster-rbac.adoc[].
+For example, if the statement being prepared is a `SELECT` statement:
+
+[cols="1a,1a", options="header"]
+|===
+| Credential Type | Privilege 
+| Basic
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Read`]
+| Advanced
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Read`]
+|===
 
 .RBAC Examples
 [%collapsible]
@@ -32,9 +39,7 @@ For more details about cluster access privileges, refer to xref:clusters:cluster
 ======
 include::ROOT:partial$query-context.adoc[tag=example]
 
-ifdef::granular-rbac[]
-To execute the following statement, user must have the _Query Select_ privilege on both keyspaces `pass:c[airport]` and `pass:c[landmark]`.
-endif::granular-rbac[]
+The following privileges apply if you're using basic cluster access credentials. 
 
 To execute the following statement, user must have `Read` privileges on both keyspaces `pass:c[airport]` and `pass:c[landmark]`.
 
@@ -44,9 +49,6 @@ PREPARE SELECT * FROM airport
 WHERE city = (SELECT RAW city FROM landmark)
 ----
 
-ifdef::granular-rbac[]
-To execute the following statement, user must have the _Query Update_ and _Query Select_ privileges on `pass:c[hotel]`.
-endif::granular-rbac[]
 To execute the following statement, user must have both `Write` and `Read` privileges on `pass:c[hotel]`.
 
 [source,sqlpp]

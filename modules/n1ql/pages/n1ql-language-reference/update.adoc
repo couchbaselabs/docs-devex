@@ -29,22 +29,30 @@ Refer to xref:clusters:data-service/import-data-documents.adoc#import-sample-dat
 
 == Prerequisites
 
-To execute the UPDATE statement, your client must have 1 of the following privileges:
+To execute this statement, your client must have necessary privileges on the keyspace.
+The required privileges depend on your xref:clusters:cluster-rbac.adoc#cluster-access-credential-types[cluster access credential type] and whether the statement includes a `SELECT` or `RETURNING` clause.
 
-* If you're using basic cluster access credentials, your client must have the xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Write`] privilege on the target keyspace.
-If the statement includes any clauses that read data, such as a SELECT clause or a RETURNING clause, the client must also have `Read` privileges on the keyspaces referenced in those clauses.
-* If you're using advanced cluster access credentials, your client must have the xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Update`] privilege on the keyspace.
-If the statement includes any clauses that read data, such as a SELECT clause or a RETURNING clause, the client must also have `Query Read` privileges on the keyspaces referenced in those clauses.
-+
+[cols="1a,1a,1a", options="header"]
+|===
+| Credential Type | Privilege for UPDATE | Privilege for SELECT / RETURNING
+| Basic
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Write`]
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Read`] on all keyspaces referred in the clause
+| Advanced
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Update`]
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Read`] on all keyspaces referred in the clause
+|===
+
 NOTE: A user with the `Data Manage` privilege may set documents to expire.
-When the document expires, the data service deletes the document, even though the user may not have the `Query Delete` privilege.
+When the document expires, the Data Service deletes the document, even though the user may not have the `Query Delete` privilege.
 
 .RBAC Examples
 [%collapsible]
 ====
 ======
 include::ROOT:partial$query-context.adoc[tag=example]
-In addition, the following examples assume that you're using basic cluster access credentials. 
+
+The following privileges apply if you're using basic cluster access credentials. 
 
 To execute the following statement, your client must have the `Write` privilege on `airport`.
 

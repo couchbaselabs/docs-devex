@@ -49,18 +49,22 @@ Since it is standard compliant and more flexible, we recommend you to use ANSI m
 
 == Privileges
 
-To execute the MERGE statement, your client must have the following privileges:
+To execute this statement, your client must have necessary privileges on all keyspaces referenced in the statement.
+The required privileges depend on your xref:clusters:cluster-rbac.adoc#cluster-access-credential-types[cluster access credential type]. 
 
-* If you're using basic cluster access credentials:
-** `Read` privilege on the source keyspace.
-** `Write` privilege on the target keyspace as per the MERGE actions.
-** `Read` privileges on the keyspaces referred in the RETURNING clause.
+[cols="1a,2a,1a", options="header"]
+|===
+| Credential Type | Privilege for MERGE | Privilege for RETURNING
+| Basic
+| * xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Read`] on the source keyspace
+* xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Write`] on the target keyspace for any MERGE action
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Read`] on all keyspaces referenced in the clause
+| Advanced
+| * xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Select`] on the source keyspace
+* xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Insert` / `Query Update` / `Query Delete`] on the target keyspace for any MERGE action
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Select`] on all keyspaces referenced in the clause
+|===
 
-* If you're using advanced cluster access credentials:
-** `Query Select` privilege on the source keyspace.
-** `Query Insert`, `Query Update`, or `Query Delete` privilege on the target keyspace as per the MERGE actions.
-** `Query Select` privileges on the keyspaces referred in the RETURNING clause.
-+
 NOTE: A user with the `Data Manage` privilege can set documents to expire.
 When the document expires, the Data Service deletes the document, even though the user may not have the `Query Delete` privilege.
 
