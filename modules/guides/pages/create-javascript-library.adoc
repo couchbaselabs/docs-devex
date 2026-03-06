@@ -1,5 +1,5 @@
 = Creating a JavaScript Library
-:description: How to create a JavaScript library.
+:description: How to create a JavaScript library to store and organize your JavaScript functions.
 :page-pagination:
 :page-edition: Enterprise Edition
 :page-topic-type: guide
@@ -15,46 +15,10 @@ include::ROOT:partial$component-signpost.adoc[]
 == Introduction
 
 You can create an external library for storing JavaScript functions.
-When you create a new library you can add a new JavaScript function to the library at the same time.
+Creating a JavaScript library for your JavaScript functions is optional, but simplifies organization and access control for user-defined functions.
 
 include::partial$before-you-begin.adoc[tag=body]
-include::partial$query-tools.adoc[tags=body;!thumbs]
 
-[#creating-the-library-and-adding-your-first-function]
-== Creating the Library and Adding JavaScript Code
-
-You can use the Query Workbench UI or the REST API to create a  library.
-The process for creating the library is as follows:
-
-include::partial$javascript-udfs/diagrams.adoc[tags=javascript-udf-library-creation-sequence]
-
-*(1) Create library*:: Create the library by creating the logical storage for the library.
-
-*(2) Add the JavaScript function to the library*:: Edit the library to add your JavaScript function.
-
-*(3) Create {sqlpp} User-Defined Function*:: The {sqlpp} User Defined Function is needed so that it can be called as part of {sqlpp} statements (such as `SELECT` and `EXECUTE FUNCTION`).
-Creating the {sqlpp} User-Defined Function is covered in xref:create-user-defined-function.adoc[].
-
-As shown in  xref:create-library-udf-sequence[xrefstyle=short], the library is created and the first function is added in the same step.
-
-[tabs] 
-====
-Query Workbench::
-+
---
-
-. Select btn:[Query] to access the Query Workbench, then select btn:[UDF] Query Workbench menu.
-+
-image::javascript-udfs/navigate-to-udf-query.png[alt="route to the user-defined functions screen"]
-
-. Click on the *{plus} add function library* link in the `JavaScript Function Libraries` table to show the `Add Library` screen.
-
-. Select your `Namespace` from the drop-down lists.
-In this example, the namespace has been set to the `inventory` scope inside the `travel-sample` bucket. 
-You also have the option of leaving the Namespace unset, which will the library accessible at the cluster level.
-+
-image::javascript-udfs/add-scoped-library.png[,500]
-+
 .A Note on Namespaces
 [sidebar]
 ****
@@ -63,36 +27,170 @@ The `Namespace` defines the `scope` of the library within the containing bucket.
 Setting the namespace means that functions in the library can only be called users who have their context set to the same scope.
 ****
 
-. Enter a name for the library in the `Library Name` field.
 
-. Add your own function to the library, for example:
+[#creating-the-library-and-adding-your-first-function]
+== Creating a JavaScript Library and Adding JavaScript Code
+
+When you create a JavaScript library, you can add JavaScript functions to the library at the same time.
+
+You can create a JavaScript library with the Couchbase Web Console or a REST API call.
+
+[tabs]
+====
+Couchbase Web Console::
 +
+--
+To create a JavaScript library:
+
+. In the Couchbase Web Console, go to menu:Query[UDF].
+
+. Under *JavaScript Function Libraries*, click the *{plus}{nbsp}add function library* link.
+The *Add Library* dialog is displayed.
+
+. In the *Namespace* drop-down list, select *(global)* for a global library, or select a bucket and scope for a scoped library.
+
+. In the *Library Name* box, enter a name for the library.
+
+. Specify *Parameters* for the function.
+
+. Edit the library to add your own JavaScript functions.
+
+. Click btn:[Save].
+
+'''
+
+The following code adds a JavaScript function called `getBusinessDays`.
+
 [source, javascript]
 ----
 include::example$javascript-udfs/get-business-days.js[]
 ----
-. Save the library by pressing the btn:[Save] button.
-+
-TIP: You can, of course, create an empty library and add functions to it later.
---
 
+--
 
 REST API::
 +
 --
-. Start a shell session.
-. Run a `curl` command to create a JavaScript library within a desired scope.
-+
+To create a JavaScript library with the Query Functions REST API:
+
+. Use the xref:n1ql-rest-functions:index.adoc#post_library[`POST /evaluator/v1/libraries/{library}`] endpoint.
+
+. Pass the name of the library as a path parameter.
+
+. To create a scoped library, pass the bucket and scope as query parameters.
+
+. Pass a string containing the JavaScript code for all functions in the library as the request body.
+
+'''
+
+The following request creates a JavaScript library in the `inventory` scope within the `travel-sample` bucket.
+
 [source, console]
 ----
 include::example$javascript-udfs/create-scoped-javascript-function-with-rest.sh[]
 ----
-The parameters in the URL denote that the function should reside in the `travel-sample` bucket, under the `inventory` scope within that bucket.
 --
 ====
 
 When you have created an external library and added JavaScript code, you must create an {sqlpp} user-defined function to reference the JavaScript code in the library, so it can be called as part of any {sqlpp} statement.
 
+[#add-functions-later]
+== Updating an Existing JavaScript Library
+
+You can add or edit functions in an existing JavaScript library with the Couchbase Web Console or a REST API call.
+
+[tabs]
+====
+Couchbase Web Console::
++
+--
+To add or edit functions in an existing JavaScript library:
+
+. In the Couchbase Web Console, go to menu:Query[UDF].
+
+. FIXME: Under *JavaScript Function Libraries*, click the *{plus}{nbsp}add function library* link.
+The *Add Library* dialog is displayed.
+
+. In the *Namespace* drop-down list, select *(global)* for a global library, or select a bucket and scope for a scoped library.
+
+. In the *Library Name* box, enter a name for the library.
+
+. Specify *Parameters* for the function.
+
+. Edit the library to add your own JavaScript functions.
+
+. Click btn:[Save].
+--
+
+REST API::
++
+--
+To update an existing JavaScript library with the Query Functions REST API:
+
+. Use the xref:n1ql-rest-functions:index.adoc#post_library[`POST /evaluator/v1/libraries/{library}`] endpoint.
+
+. Pass the name of the library as a path parameter.
+
+. To update a scoped library, pass the bucket and scope as query parameters.
+
+. Pass a string containing the JavaScript code for all functions, including the added or edited functions, as the request body.
+--
+====
+
+[#delete-udf]
+== Deleting a JavaScript Library
+
+Before you can delete a library, you must first drop all {sqlpp} user-defined functions which point to any of the JavaScript functions within that library.
+For more information, see xref:n1ql:n1ql-language-reference/dropfunction.adoc[].
+
+You can delete a JavaScript library with the Couchbase Web Console or a REST API call.
+
+[tabs]
+====
+Couchbase Web Console::
++
+--
+To delete a JavaScript library:
+
+. In the Couchbase Web Console, go to menu:Query[UDF].
+
+. FIXME: Under *JavaScript Function Libraries*, click the *{plus}{nbsp}add function library* link.
+The *Add Library* dialog is displayed.
+
+. In the *Namespace* drop-down list, select *(global)* for a global library, or select a bucket and scope for a scoped library.
+
+. In the *Library Name* box, enter a name for the library.
+
+. Specify *Parameters* for the function.
+
+. Edit the library to add your own JavaScript functions.
+
+. Click btn:[Save].
+--
+
+REST API::
++
+--
+To delete a JavaScript library with the Query Functions REST API:
+
+. Use the xref:n1ql-rest-functions:index.adoc#delete_library[`DELETE /evaluator/v1/libraries/{library}`] endpoint.
+
+. Pass the name of the library as a path parameter.
+
+. To delete a scoped library, pass the bucket and scope as query parameters.
+
+'''
+
+The following request deletes a JavaScript library in the `inventory` scope within the `travel-sample` bucket.
+
+[source, console]
+----
+include::example$javascript-udfs/remove-library.sh[]
+----
+--
+====
+
 == Related Links
 
-include::partial$javascript-udfs/further-reading.adoc[tags="user-defined-functions-ui;rest-create-library-call"]
+
+* xref:n1ql-rest-functions:index.adoc[]

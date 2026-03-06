@@ -1,4 +1,4 @@
-= Calling a User-Defined Function
+= Call a User-Defined Function
 :description: How to call a user-defined function from {sqlpp} statements.
 :page-pagination: prev
 :page-edition: Enterprise Edition
@@ -14,69 +14,76 @@ include::ROOT:partial$component-signpost.adoc[]
 
 == Introduction
 
+// tag::intro[]
 A user-defined function can be called like any other {sqlpp} function.
+// end::intro[]
 
-== Calling the {sqlpp} User-Defined Function
+include::partial$before-you-begin.adoc[tag=body]
+include::partial$query-tools.adoc[tags=body;!thumbs]
 
-An {sqlpp} user-defined function can be called from anywhere that a standard {sqlpp} function can be called.
+== Executing a {sqlpp} User-Defined Function
 
-[tabs]
+To execute a user-defined function, use the `EXECUTE FUNCTION` statement.
+
+. Specify the name of the function:
+
+* To execute a function within the current query context, specify the function name alone.
+
+* To execute a global function, prefix the function name with the `default:` namespace.
+
+* To execute a scoped function, prefix the function name with the namespace, bucket, and scope, such as ``default:`travel-sample`.inventory``.
+
+. Specify the function parameters within brackets.
+
+
+. Set the context to match the namespace of the function you're calling.
+
 ====
-Query Workbench::
-+
---
-. Access the Query Workbench UI from the Administration Console.
-+
-image::javascript-udfs/select-query-tool-ui.png[,500, alt="accessing the query tool"]
+The following query executes a function called `GetBusinessDays`, which was created in the current query context.
 
-. Set the context to match the namespace of the function you are calling.
-+
-image::javascript-udfs/switch-context-to-travel-sample.png[]
-
-. Enter the {sqlpp} statement in the query editor to run your function:
-+
 [source, sqlpp]
 ----
 include::example$javascript-udfs/execute-javascript-function.n1ql[]
 ----
---
 
-REST API::
-+
---
-. Open up a shell session.
-. Execute a `curl` command to run the function:
-+
-[source, console]
-----
-include::example$javascript-udfs/execute-scoped-function.sh[]
-----
---
-
-{sqlpp}::
-+
---
-
-Run the `EXECUTE FUNCTION` function in the CBQ Shell.
+The following query executes a function called `GetBusinessDays`, which was created in the `inventory` scope within the `travel-sample` bucket.
 
 [source, sqlpp]
 ----
 include::example$javascript-udfs/execute-scoped-function.n1ql[]
 ----
+====
 
-[NOTE]
-=====
+For more information, see xref:n1ql:n1ql-language-reference/executefunction.adoc[].
+
+== Calling a {sqlpp} User-Defined Function
+
 The {sqlpp} user-defined function can be used in any {sqlpp} statement in exactly the same way as a standard built-in function.
+
+To call a user-defined function in any {sqlpp} statement:
+
+. Specify the name of the function:
+
+* To call a function within the current query context, specify the function name alone.
+
+* To call a global function, prefix the function name with the `default:` namespace.
+
+* To call a scoped function, prefix the function name with the namespace, bucket, and scope, such as ``default:`travel-sample`.inventory``.
+
+. Specify the function parameters within brackets.
+
+=====
+The following query calls the `GetBusinessDays` function from a `SELECT` statement.
 
 [source, sqlpp]
 ----
 include::example$javascript-udfs/select-true-alias-get-business-days.n1ql[]
 ----
 =====
---
-====
 
+For more information and examples, see xref:n1ql:n1ql-language-reference/userfun.adoc[].
 
 == Related Links
 
-include::partial$javascript-udfs/further-reading.adoc[tags="create-function;user-defined-functions"]
+* 
+* 
