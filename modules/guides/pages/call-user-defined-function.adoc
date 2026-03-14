@@ -16,27 +16,29 @@ include::ROOT:partial$component-signpost.adoc[]
 
 // tag::intro[]
 A user-defined function can be called like any other {sqlpp} function.
-// end::intro[]
+
+* When you call a *global* function, any partial keyspace references within the function definition are resolved against the `default:` namespace, regardless of the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
+
+* When you call a *scoped* function, any partial keyspace references within the function definition are resolved against the function's bucket and scope, regardless of the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
 
 include::partial$before-you-begin.adoc[tag=body]
 include::partial$query-tools.adoc[tags=body;!thumbs]
 
 == Executing a {sqlpp} User-Defined Function
 
-To execute a user-defined function, use the `EXECUTE FUNCTION` statement.
+To execute a user-defined function:
 
-. Specify the name of the function:
+. If required, xref:select.adoc#query-context[set the query context] for a scoped function, or unset the context for a global function.
+
+. Use the `EXECUTE FUNCTION` statement and specify the name of the function:
 
 * To execute a function within the current query context, specify the function name alone.
 
-* To execute a global function, prefix the function name with the `default:` namespace.
+* To execute a global function outside of the current query context, prefix the function name with the `default:` namespace.
 
-* To execute a scoped function, prefix the function name with the namespace, bucket, and scope, such as ``default:`travel-sample`.inventory``.
+* To execute a scoped function outside of the current query context, prefix the function name with the namespace, bucket, and scope, such as ``default:`travel-sample`.inventory``.
 
 . Specify the function parameters within brackets.
-
-
-. Set the context to match the namespace of the function you're calling.
 
 ====
 The following query executes a function called `GetBusinessDays`, which was created in the current query context.
@@ -45,16 +47,7 @@ The following query executes a function called `GetBusinessDays`, which was crea
 ----
 include::example$javascript-udfs:execute-javascript-function.n1ql[]
 ----
-
-The following query executes a function called `GetBusinessDays`, which was created in the `inventory` scope within the `travel-sample` bucket.
-
-[source, sqlpp]
-----
-include::example$javascript-udfs/execute-scoped-function.n1ql[]
-----
 ====
-
-For more information, see xref:n1ql:n1ql-language-reference/executefunction.adoc[].
 
 == Calling a {sqlpp} User-Defined Function
 
@@ -62,18 +55,20 @@ The {sqlpp} user-defined function can be used in any {sqlpp} statement in exactl
 
 To call a user-defined function in any {sqlpp} statement:
 
+. If required, xref:select.adoc#query-context[set the query context] for a scoped function, or unset the context for a global function.
+
 . Specify the name of the function:
 
 * To call a function within the current query context, specify the function name alone.
 
-* To call a global function, prefix the function name with the `default:` namespace.
+* To call a global function outside of the current query context, prefix the function name with the `default:` namespace.
 
-* To call a scoped function, prefix the function name with the namespace, bucket, and scope, such as ``default:`travel-sample`.inventory``.
+* To call a scoped function outside of the current query context, prefix the function name with the namespace, bucket, and scope, such as ``default:`travel-sample`.inventory``.
 
 . Specify the function parameters within brackets.
 
 =====
-The following query calls the `GetBusinessDays` function from a `SELECT` statement.
+The following query calls the `GetBusinessDays` function, which was created in the current query context, from a `SELECT` statement.
 
 [source.no-callouts, sqlpp]
 ----
