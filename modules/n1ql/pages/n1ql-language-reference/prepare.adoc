@@ -124,16 +124,24 @@ See <<ex-prepare-positions>>.
 [[result]]
 == Result
 
-A JSON object is returned that contains the following properties:
+A JSON object that contains the following properties:
 
 name:: The full name of the prepared statement.
 This has the format `[host:port]local-name-or-UUID`, and consists of:
 +
-* The host and port of the node where the prepared statement was created, in square brackets, followed by
-* The local name that you specified for the prepared statement, or a UUID that was generated from the statement text.
-
+--
+* The host and port of the node where you created the prepared statement, enclosed in square brackets. 
+* The local name you specified for the prepared statement, or a UUID that was generated from the statement text.
+--
 +
-The host and port can be used when executing to retrieve the prepared statement from the node where it was created.
+You can use this name to execute a prepared statement without resending the entire statement text.
+When executing a prepared statement by its name:
++
+--
+* The Query Service first checks whether the executing node contains the prepared statement.
+* If not found, the service uses the host information in the name to retrieve the prepared statement from the node where you originally created it.
+* If the service cannot find the prepared statement on the original node either, it returns an error. 
+--
 
 operator:: The execution plan of the statement being prepared.
 
@@ -204,36 +212,39 @@ Auto-prepare is disabled for {sqlpp} requests which contain parameters, if they 
 [[auto-reprepare]]
 == Auto-Reprepare
 
-When the auto-reprepare feature is active, a prepared statement automatically updates (reprepares) its plan whenever the GSI metadata version changes. 
-This happens when you create or drop an index, allowing prepared statements to use newer, more efficient indexes as they become available.
+The auto-reprepare feature automatically updates (reprepares) a prepared statement's execution plan whenever the GSI metadata version changes.
+This typically occurs when you create or drop indexes. 
 
-To enable this feature, you must set bit 23 (0×800000 or 8388608) of the `n1ql-feat-ctrl` setting. 
+By default, the Query Service only reprepares a statement when an index in its current plan becomes unavailable.
+With auto-reprepare, statements can use newer and more efficient indexes as they become available.
+
+To enable this feature, set bit 23 (0×800000 or 8388608) of the `n1ql-feat-ctrl` setting. 
 For information about how to set this value, see the table in the xref:learn:services-and-indexes/indexes/query-without-index.adoc#manage-sequential-scans[Manage Sequential Scans] section. 
 
-By default, a prepared statement is only reprepared if an index in its current plan becomes unavailable.
-With auto-reprepare, prepared statements can adapt to new indexes as well. 
-For example: 
+When the feature is active, the Query Service monitors index changes and flags statements for repreparation.
+The next time a flagged statement runs, the service generates a new plan for it.
 
-* *When the feature is inactive*: 
-If no indexes exist when you prepare a statement, then the prepared plan uses a sequential scan.
-If you create a primary index or a secondary index later, the statement still continues to use the sequential scan and does not automatically benefit from the new indexes.
+The following example shows how a plan improves as you add new indexes for a statement:
 
-* *When the feature is active*: 
-If you create a primary index after preparing a statement, the next time the statement executes, the Query Service generates a new plan using the primary index.
-Similarly, if a more optimal secondary index becomes available, the service flags the statement again and generates a new plan on the next execution using the new index.
+* If you prepare a statement and no suitable indexes exist to support it, the Query Service creates a plan that uses a sequential scan.
+* If you then create a primary index that better supports the statement, the service flags the statement.
+On the next execution, the service generates a new plan that uses the primary index.
+* If you later create a secondary index that is an even better choice for the statement, the service flags the statement again.
+On the next execution, the service generates a new plan that uses the secondary index.
 
-Although this feature improves performance, it has a potential drawback. 
-Any change to indexes, even those unrelated to a specific statement, can trigger an update. 
-For example, creating an unrelated secondary index or dropping an unused primary index can cause a statement to be reprepared. 
-While the statement may select the existing plan again, this can lead to additional load.
-If index changes are infrequent, the impact is minimal.
+If the feature is inactive, the statement continues to use the original plan (such as a sequential scan) even after you create new indexes.
 
-To manage this effectively, you can enable or disable this feature as needed. 
-For example, you can enable the feature before creating new indexes and then disable it after all statements are reprepared.
+While auto-reprepare generates optimized query plans, it can increase the load on the Query Service. 
+Any index modification, even if it's unrelated to a statement, can trigger a repreparation.
+For example, creating or dropping an index that a statement does not use can still flag it for repreparation.
+In such cases, the statement reprepares only to select the same plan again, resulting in redundant work for the service.
+
+To manage this, you can enable the feature temporarily when you create or drop indexes and disable it after repreparing all statements.
+If index changes are infrequent, the effect is minimal.
 
 === Manual Reprepare
 
-In addition to the automatic mode, you can also manually reprepare a statement. 
+You can also can manually reprepare a specific statement. 
 To do this, update xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[system:prepareds] and unset the `planPreparedTime` field for the statement.
 
 For example, to reprepare a prepared statement named `NumParam` on a node with the IP address `127.0.0.1` and port `8091`, use the following query:
@@ -242,8 +253,7 @@ For example, to reprepare a prepared statement named `NumParam` on a node with t
 ----
 UPDATE system:prepareds USE KEYS ["[127.0.0.1:8091]NumParam"] UNSET planPreparedTime;
 ----
-
-You can repeat this operation after creating each relevant index to refresh the prepared statement's plan.
+You can repeat this operation after creating each relevant index and refresh the prepared statement's plan.
 
 [[auto-execute]]
 == Auto-Execute

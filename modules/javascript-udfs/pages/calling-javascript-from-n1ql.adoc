@@ -1,5 +1,6 @@
-= Calling JavaScript from {sqlpp}
-:description: Using a {sqlpp} User-Defined Function to call JavaScript functions.
+= Call JavaScript from {sqlpp}
+:description: You can use user-defined functions (UDFs) to call JavaScript code from {sqlpp} queries.
+:page-topic-type: reference
 :page-edition: Enterprise Edition
 :page-toclevels: 2
 :keywords: scopes, variadic
@@ -7,60 +8,65 @@
 [abstract]
 {description}
 
-== Introduction
+For more information about user-defined functions in Capella, see xref:guides:javascript-udfs.adoc[].
 
-Before you can call a JavaScript function, you must first create a {sqlpp} User-Defined Function to call it.
-The process to do this is explained in the xref:guides:create-user-defined-function.adoc#creating-the-n1ql-udf-function[Creating the {sqlpp} User-Defined Function] section of the xref:guides:javascript-udfs.adoc[] guide.
+== Create a Scoped User-Defined Function with {sqlpp}
 
-If you are unfamiliar with creating User-Defined Functions to call JavaScript, then the xref:guides:javascript-udfs.adoc[guide] is the best place to start.
-
-In this section, you're going to take a closer look at concepts around {sqlpp} User-Defined Functions, such as variadic parameter lists.
-
-== Scopes and {sqlpp} User-Defined Functions
-
-A JavaScript function can be xref:guides:create-javascript-library.adoc#creating-the-library-and-adding-your-first-function[created through the WorkBench or through the REST API]. 
+For example, the following JavaScript function calculates the number of business days between a given start date and end date: 
 
 [source, javascript, role="no-callouts"]
 ----
 include::example$get-business-days.js[]
 ----
 
-And the corresponding {sqlpp} User-Defined Function can be created through the xref:guides:create-user-defined-function.adoc#creating-the-n1ql-udf-function[Query Workbench] or by executing a {sqlpp} statement:
+You could define this JavaScript function as part of an xref:guides:create-javascript-library.adoc[external library] or as a xref:guides:create-user-defined-function.adoc#create-inline[{sqlpp} managed user-defined function].
+
+If the JavaScript is already defined in an external library, you can xref:guides:create-user-defined-function.adoc[create the user-defined function] from the Query tab or by running a {sqlpp} statement. 
+
+The following {sqlpp} statement creates the `GetBusinessDays` function inside the `travel-sample`.`inventory` namespace.
+
+It references the `GetBusinessDays` function stored inside the `my-library` UDF library, also stored in `travel-sample`.`inventory`.
+`GetBusinessDays` becomes a *Scoped* function:
 
 [source, sqlpp]
 ----
 include::example$create-scoped-n1ql-udf.n1ql[] 
 ----
-<.> The new {sqlpp} User-Defined Function is called `GetBusinessDays` and takes the `inventory` scope inside the `travel-sample` bucket.
-As well as providing a logical separation between JavaScript libraries, using scopes provides a means of securing access to the library: a user must have a context that matches the scope of the library in order to access it.
-<.> This function will reference the `getBusinessDays` JavaScript function …
-<.> … in a library called `my-library` which is set to the `inventory` scope within the `travel-sample` bucket.
 
-=== Global Library Path
+If you created this function, you cannot create another function called `GetBusinessDays` inside the `travel-sample`.`inventory`.`my-library` scope.
 
-Of course, you can define the library at the cluster level, where it will be accessible to anyone who has access rights to the cluster. 
-Functions in the global library are accessible across the cluster.
+=== Create a Global User-Defined Function with {sqlpp}
 
-.Creating a {sqlpp} User-Defined Function to access the JavaScript function in the global library
+You can also define *Global* user-defined functions from the Query Workbench using {sqlpp}. 
+Any function added globally will be accessible across your cluster: 
+
 [source, sqlpp]
 ----
 include::example$create-globally-scoped-n1ql-udf.n1ql[]
 ----
-<.> There is no prefix path before `my-library` which means the library is a globally accessible library defined at the cluster level.
 
-=== Relative Library Path
+If you do not add a prefix before the library name in your {sqlpp} statement, the user-defined function will be created as a *Global* function.
+You cannot create another global function called `GetBusinessDays` on your cluster, but you can create a scoped function called `GetBusinessDays`.
 
-You can also use relative paths for the library location:
+=== Create a User-Defined Function with {sqlpp} and a Relative Library Path
+
+You can also use {sqlpp} and define a relative path for your external library location.
+If you use a relative path, the library location will resolve based on the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
+
+For example, the following {sqlpp} statement creates the user-defined function in `my-library`, relative to the current query context:
 
 [source, sqlpp]
 ----
 include::example$create-relatively-scoped-n1ql-udf.n1ql[]
 ----
-<.> In this case, the User-Defined Function will be created for the JavaScript function under the current xref:tools:query-workbench.adoc#query-context[query context].
 
-== Calling the Function
+Based on the current query context, you would not be able to create another function called `GetBusinessDays` in that scope.
 
-Once the {sqlpp} User-Defined Function is defined, it can be called as if it were a built-in {sqlpp} function:
+== Call a User-Defined Function with {sqlpp}
+
+After you create your user-defined function, you can call it like any built-in {sqlpp} function. 
+
+For example, you could use the following to call the `GetBusinessDays` function:
 
 .Query
 [source, sqlpp]
@@ -68,7 +74,7 @@ Once the {sqlpp} User-Defined Function is defined, it can be called as if it wer
 include::example$select-get-business-days.n1ql[]
 ---- 
 
-which will return the following result:
+The function would return the following result, in JSON format: 
 
 .Result
 [source, json]
@@ -83,7 +89,7 @@ You can also use the `EXECUTE FUNCTION` statement to execute the function:
 include::example$execute-javascript-function.n1ql[]
 ----
 
-or as part of a complex statement:
+Or, you can call a function as part of a complex statement: 
 
 [source, n1ql, role=no-callouts]
 ----
@@ -91,40 +97,45 @@ include::example$select-true-alias-get-business-days.n1ql[]
 ----
 
 [#variadic-parameters]
-== Variadic Parameters
+== Create and Call Functions with a Variadic Parameter
 
-You can define a {sqlpp} User-Defined Function with a variadic parameter, which means that the parameter will accept a list of values which it will pass to the JavaScript function it references.
-You can create the `GetBusinessDays` function using a variadic parameter rather than the `startDate` and `endDate` parameters:
+You can define user-defined functions with a *variadic parameter*. 
+Variadic parameters accept a list of values, which they pass to your defined JavaScript function. 
+
+For example, you could define the `GetBusinessDays` function to use a variadic parameter, instead of setting both the `startDate` and `endDate` parameters: 
 
 [source, sqlpp]
 ----
 include::example$create-variadic-n1ql-udf.n1ql[]
 ----
-Note that the statement used three dots (...) rather than a list of parameter list. This indicates a variable length parameter list. 
-The underlying JavaScript function will reference the parameter list as named variables:
+
+You can add a variadic parameter to any user-defined function by using 3 periods (...) instead of a list of parameters. 
+The 3 periods indicate a variable length parameter list. 
+
+If you use a user-defined function that has a variadic parameter list, but the original JavaScript function has named variables, the JavaScript function still references the variadic parameter list as named variables: 
 
 [source, javascript, role=no-callouts]
 ----
 include::example$get-business-days-no-ops.js[]
 ----
 
-You can also use a variable length parameter list in the JavaScript function itself:
+When you define your JavaScript function, you can also use a variable length parameter list.
+
+For example, the following function iterates through a variadic parameter list, and returns the sum of all the numbers it contains: 
 
 [source, javascript]
 ----
 include::example$variadic-sum.js[]
 ----
-<.> JavaScript uses three dots (...) followed by a parameter name to denote a parameter that is an array of values.
-<.> Scans through the variadic parameter list, summing all the numbers it contains.
 
-A {sqlpp} User-Defined Function can now be created that takes a variable length list of numbers as an argument:
+Then, you can create a user-defined function that takes a variable length list of numbers as an argument:
 
 [source, sqlpp]
 ----
 include::example$create-sum-function.n1ql[]
 ----
 
-which can then be called with a variable length list of numbers as a parameter
+You can then call the user-defined function in a query, with a variable length list of numbers as a parameter:
 
 .Query
 [source, sqlpp]
