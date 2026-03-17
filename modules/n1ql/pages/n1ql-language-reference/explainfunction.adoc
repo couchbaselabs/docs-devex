@@ -1,5 +1,5 @@
 = EXPLAIN FUNCTION
-:description: For a specified user-defined function, you use EXPLAIN FUNCTION to expose the execution plan for the {sqlpp} subqueries or embedded statements that it contains. 
+:description: Use EXPLAIN FUNCTION to expose the execution plan for the {sqlpp} subqueries or embedded statements that a specified user-defined function contains.
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 
@@ -13,14 +13,12 @@ include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 You can request the execution plan for an inline or external user-defined function.
 
-* For an inline function, EXPLAIN FUNCTION returns the query plans for all of the subqueries present in the function body.
-+
-For more information about inline functions, see xref:n1ql-language-reference/userfun.adoc[].
+* Inline functions are defined using {sqlpp} expressions.
+For an inline function, EXPLAIN FUNCTION returns the query plans for all of the subqueries present in the function body.
 
-* For an external function, EXPLAIN FUNCTION returns the query plans for all embedded {sqlpp} queries inside the referenced JavaScript body, or the line number on which a N1QL() call appears.
+* External functions are defined using JavaScript.
+For an external function, EXPLAIN FUNCTION returns the query plans for all embedded {sqlpp} queries inside the referenced JavaScript body, or the line number on which a N1QL() call appears.
 Line numbers are calculated from the beginning of the JavaScript function definition.
-+
-For more information about user-defined functions with JavaScript, see xref:guides:javascript-udfs.adoc[].
 
 The following constraints apply:
 
@@ -59,7 +57,7 @@ xref:learn:security/authorization-overview.adoc[Authorization].
 include::partial$grammar/utility.ebnf[tag=explain-function]
 ----
 
-image::n1ql-language-reference/explain-function.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/explain-function.png["Syntax diagram: see source code listing", align=left]
 
 [horizontal.compact]
 function:: <<name>> icon:caret-down[]
@@ -80,9 +78,9 @@ In this case, the path to the function is determined by the current xref:n1ql:n1
 
 To get the plan for a global function in a particular namespace, the function name must be a qualified identifier with a namespace, such as `default:func1`.
 Similarly, to get the plan for a scoped function in a particular scope, the function name must be a qualified identifier with the full path to a scope, such as `default:{backtick}travel-sample{backtick}.inventory.func1`.
-Refer to xref:n1ql-language-reference/createfunction.adoc#context[Global Functions and Scoped Functions] for more information.
+See xref:n1ql-language-reference/createfunction.adoc#context[Global Functions and Scoped Functions] for more information.
 
-NOTE: The name of a user-defined function _is_ case-sensitive, unlike that of a built-in function.
+NOTE: The name of a user-defined function is case-sensitive, unlike that of a built-in function.
 You must get the plan for the user-defined function using the same case that was used when it was created.
 
 == Examples
@@ -105,9 +103,9 @@ include::n1ql:example$utility/explainfunction.jsonc[]
 
 .External Function Example
 ====
-This example assumes that you have defined a JavaScript library named  `lib1`.
+This example assumes that you have defined a JavaScript library named `lib1`.
 
-You then add a JavaScript function named `function1` to that library as follows:
+Add a JavaScript function named `function1` to that library:
 
 [source,javascript]
 ----
@@ -117,9 +115,9 @@ include::n1ql:example$utility/explainfunctionjs.js[]
 <.> An embedded {sqlpp} statement.
 <.> A N1QL() call that executes a {sqlpp} statement.
 
-You then create the corresponding {sqlpp} user-defined function for that JavaScript function, named `jsfunction1`, and request the plan information for the statements within the function definition:
+Then create the corresponding {sqlpp} user-defined function for that JavaScript function, named `jsfunction1`, and request the plan information for the statements within the function definition:
 
-[source,SQL++]
+[source,sqlpp]
 ----
 include::n1ql:example$utility/explainfunctionjs.n1ql[]
 ----
@@ -136,7 +134,8 @@ include::n1ql:example$utility/explainfunctionjs.jsonc[]
 
 == Related Links
 
-* For guides to user-defined functions, see xref:guides:javascript-udfs.adoc[].
+* For an introduction to user-defined functions, see xref:guides:javascript-udfs.adoc[].
+* For more information about JavaScript functions, see xref:javascript-udfs:javascript-functions-with-couchbase.adoc[].
 * To manage JavaScript libraries, see xref:n1ql-rest-functions:index.adoc[].
 * To create user-defined functions, see xref:n1ql-language-reference/createfunction.adoc[].
 * To execute a user-defined function, see xref:n1ql-language-reference/execfunction.adoc[].

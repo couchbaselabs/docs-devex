@@ -17,35 +17,35 @@ include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 include::javascript-udfs:partial$javascript-udf-introduction.adoc[]
 
-External functions in {sqlpp} support most of the language constructs available in ECMAScript.
+JavaScript functions in the Query Service support most of the language constructs available in ECMAScript.
 For more information about the restrictions and extensions that come with the Couchbase implementation, see xref:javascript-udfs:javascript-functions-with-couchbase.adoc[].
+
+include::javascript-udfs:partial$sqlpp-managed-udfs.adoc[]
+
+include::javascript-udfs:partial$libraries-and-scopes.adoc[tags=extract]
 
 [[context]]
 === Global Functions and Scoped Functions
 
 You can create user-defined functions at two different levels of the {sqlpp} xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy[logical hierarchy].
 
-* A [.term]#global function# is created within a namespace, at the same level as the buckets within the namespace.
+* A ((global function)) is created within a namespace, at the same level as the buckets within the namespace.
 When you call a global function, any partial keyspace references within the function definition are resolved against the function's namespace, regardless of the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
 +
 For example, when you call a global function `default:global()` which contains the keyspace reference `{backtick}travel-sample{backtick}`, the keyspace reference is always resolved within the context of the function to the `default:{backtick}travel-sample{backtick}` bucket.
 
-* A [.term]#scoped function# is created within a scope, at the same level as the collections within the scope.
+* A ((scoped function)) is created within a scope, at the same level as the collections within the scope.
 When you call a scoped function, any partial keyspace references within the function definition are resolved against the function's scope, regardless of the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
 +
 For example, when you call a scoped function `default:{backtick}travel-sample{backtick}.inventory.scope()` which contains the keyspace reference `route`, the keyspace reference is always resolved within the context of the function to `default:{backtick}travel-sample{backtick}.inventory.route`.
 
-When you create a user-defined function, the current query context determines whether it is created as a global function or a scoped function.
+When you create a user-defined function, the current query context determines whether it's created as a global function or a scoped function.
 If you want to create a user-defined function outside of the current query context, you must include the full path to the function when you specify the function name.
 
 Similarly, when you call a user-defined function, the current query context determines the path to the function.
 If you want to call a user-defined function outside of the current query context, you must include the full path to the function when you specify the function name.
 
-Finally, it is important to note that a global function is _not_ the same as a scoped function stored in the default scope in a bucket.
-
-include::javascript-udfs:partial$libraries-and-scopes.adoc[tags=extract]
-
-include::javascript-udfs:partial$sqlpp-managed-udfs.adoc[]
+NOTE: A global function is not the same as a scoped function stored in the default scope in a bucket.
 
 == Prerequisites
 
@@ -66,7 +66,7 @@ include::javascript-udfs:partial$sqlpp-managed-udfs.adoc[]
 | *Manage Scope External Functions* role, with permissions on the specified bucket and scope.
 |===
 
-Users with the *Manage Scope External Functions* role also have read-only access to any global external library.
+Users with the *Manage Scope External Functions* role also have read-only access to any global JavaScript library.
 
 [cols="2,3"]
 |===
@@ -85,26 +85,26 @@ Users with the *Manage Scope External Functions* role also have read-only access
 | *Execute Scope External Functions* role, with permissions on the specified bucket and scope.
 |===
 
-For more details about user roles, see
+For more information about user roles, see
 xref:learn:security/authorization-overview.adoc[Authorization].
 
 == Syntax
 
-The `CREATE FUNCTION` statement takes a different syntax depending on the type of function you are creating.
-Refer to <<create-function-inline>> or <<create-function-external>> below.
+The `CREATE FUNCTION` statement takes a different syntax depending on the type of function you're creating.
+See <<create-function-inline>> or <<create-function-external>> below.
 
 [source,ebnf]
 ----
 include::partial$grammar/ddl.ebnf[tag=create-function]
 ----
 
-image::n1ql-language-reference/create-function.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/create-function.png["Syntax diagram: see source code listing", align=left]
 
 [[create-function-inline]]
 :section: inline
 === Inline Functions
 
-There are two alternative syntaxes for defining an inline function: a syntax with braces `{}` and a syntax using the `LANGUAGE` keyword.
+The CREATE FUNCTION statement provides two possible syntaxes for defining an inline function: a syntax with braces `{}` and a syntax using the `LANGUAGE` keyword.
 The two syntaxes are synonymous.
 
 [source,ebnf]
@@ -112,7 +112,7 @@ The two syntaxes are synonymous.
 include::partial$grammar/ddl.ebnf[tag=create-function-inline]
 ----
 
-image::n1ql-language-reference/create-function-inline.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/create-function-inline.png["Syntax diagram: see source code listing", align=left]
 
 // TODO: Automatic links in EBNF.
 
@@ -128,7 +128,7 @@ body:: <<inline-expression>> icon:caret-down[]
 The optional `OR REPLACE` clause enables you to redefine a user-defined function if it already exists, whereas the optional `IF NOT EXISTS` clause enables the statement to complete successfully without replacing the function.
 
 When a function with the same name already exists within the same context:
-footnote:context[That is, you are creating a global function, and a function with the same name already exists within the same namespace; or, you are creating a scoped function, and a function with the same name already exists within the same scope.]
+footnote:context[In other words, you're creating a global function, and a function with the same name already exists within the same namespace; or, you're creating a scoped function, and a function with the same name already exists within the same scope.]
 
 * If the `OR REPLACE` clause is present, the existing function is replaced.
 
@@ -150,7 +150,7 @@ If the statement contains both the `OR REPLACE` clause and the `IF NOT EXISTS` c
 include::partial$grammar/ddl.ebnf[tag=function]
 ----
 
-image::n1ql-language-reference/function.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/function.png["Syntax diagram: see source code listing", align=left]
 
 The function name specifies the name of the function to create.
 It is recommended to use an unqualified identifier for the function name, such as `func1` or `{backtick}func-1{backtick}`.
@@ -170,12 +170,12 @@ A function name with a specified namespace or scope may have the same name as a 
 include::partial$grammar/ddl.ebnf[tag=params]
 ----
 
-image::n1ql-language-reference/params.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/params.png["Syntax diagram: see source code listing", align=left]
 
 [Optional] The function parameter list specifies parameters for the function.
 If you specify named parameters for the function, then you must call the function with exactly the same number of arguments at execution time.
 If you specify no parameters, then you must call the function with no arguments.
-To create a variadic function, that is, a function which you can call with any number of arguments or none, specify `\...` as the only parameter.
+To create a variadic function (a function which you can call with any number of arguments or none), specify `\...` as the only parameter.
 // end::arguments[]
 
 [[inline-expression]]
@@ -201,14 +201,14 @@ If you need to return multiple values, construct an array.
 :section: external
 === External Functions
 
-There are two alternative syntaxes for defining an external function: one where the function code is stored in an external library, and one for creating a {sqlpp} managed user-defined function.
+The CREATE FUNCTION statement provides two possible syntaxes for defining an external function: one where the function code is stored in a JavaScript library, and one for creating a {sqlpp} managed user-defined function.
 
 [source,ebnf]
 ----
 include::partial$grammar/ddl.ebnf[tag=create-function-external]
 ----
 
-image::n1ql-language-reference/create-function-external.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/create-function-external.png["Syntax diagram: see source code listing", align=left]
 
 // TODO: Automatic links in EBNF.
 
@@ -226,7 +226,7 @@ include::createfunction.adoc[tag=arguments]
 [[external-object]]
 ==== External Object
 
-[Optional] Use this parameter where the function code is stored in an external library.
+[Optional] Use this parameter where the function code is stored in a JavaScript library.
 
 The name of the JavaScript function that you want to use for the user-defined function.
 This parameter is a string and must be wrapped in quotes.
@@ -234,12 +234,12 @@ This parameter is a string and must be wrapped in quotes.
 [[external-library]]
 ==== External Library
 
-[Optional] Use this parameter where the function code is stored in an external library.
+[Optional] Use this parameter where the function code is stored in a JavaScript library.
 
 The name of the JavaScript library that contains the JavaScript function you want to use.
 This parameter is a string and must be wrapped in quotes.
 
-The name of a scoped external library must include the bucket name, the scope name, and the library name, separated by slashes.
+The name of a scoped JavaScript library must include the bucket name, the scope name, and the library name, separated by slashes.
 For example, to refer to a scoped library called `my-library` located in the `inventory` scope within the `travel-sample` bucket, you would specify the library name as `travel-sample/inventory/my-library`.
 
 [[javascript]]
@@ -514,7 +514,8 @@ At this level of precision, the geohash should appear to be in almost exactly th
 
 == Related Links
 
-* For guides to user-defined functions, see xref:guides:javascript-udfs.adoc[].
+* For an introduction to user-defined functions, see xref:guides:javascript-udfs.adoc[].
+* For more information about JavaScript functions, see xref:javascript-udfs:javascript-functions-with-couchbase.adoc[].
 * To manage JavaScript libraries, see xref:n1ql-rest-functions:index.adoc[].
 * To execute a user-defined function, see xref:n1ql-language-reference/execfunction.adoc[].
 * To see the execution plan for a user-defined function, see xref:n1ql-language-reference/explainfunction.adoc[].
