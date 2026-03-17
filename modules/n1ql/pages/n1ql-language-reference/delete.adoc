@@ -7,6 +7,7 @@
 :logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
 :returning-clause: xref:n1ql-language-reference/insert.adoc#returning-clause
 :use-keys-clause: xref:n1ql-language-reference/hints.adoc#use-keys-clause
+:use-clause: xref:n1ql-language-reference/hints.adoc
 
 :from: xref:n1ql-language-reference/from.adoc
 :from-keyspace-ref: {from}#from-keyspace-ref
@@ -137,21 +138,18 @@ If you assign an alias to the keyspace reference, the `AS` keyword may be omitte
 
 [[use-clause]]
 === USE Clause
+
 You can use a `USE` clause to provide hints for the delete target.
 
-The `USE` clause supports the following:
+The clause supports the following hints: 
 
-* `USE KEYS`: Specifies the keys of the data items to be deleted.
-* `USE INDEX`: Specifies an index to use for the delete operation.
+* `USE KEYS`: Specifies the keys of the data items to delete.
+* `USE INDEX`: Specifies the index to use for the delete operation.
 
+For more information, see {use-clause}[USE Clause].
 
-USE KEYS or USE INDEX hints can be used in a USE clause. 
-
-You can use a `USE KEYS` hint on the delete target to specify the keys of the data items to be deleted.
-For more information, see {use-keys-clause}[USE KEYS Clause].
-
-NOTE: You cannot specify a hint for the same keyspace using both the USE KEYS clause and an <<hint-comment,optimizer hint>>. 
-If you do this, the USE KEYS clause and the <<hint-comment,optimizer hint>> are both marked as erroneous and ignored by the optimizer.
+NOTE: You cannot specify a hint for the same keyspace using both the `USE` clause and an <<hint-comment,optimizer hint>>. 
+If you do this, the `USE` clause and the <<hint-comment,optimizer hint>> are both marked as erroneous and ignored by the optimizer.
 
 [[where-clause]]
 === WHERE Clause
@@ -354,5 +352,26 @@ If you examine the plan for this query, you can see that the query uses the sugg
 [source,json,indent=0]
 ----
 include::example$dml/delete-optimizer-hint.jsonc[tag=index]
+----
+====
+
+[[ex-delete-use-clause]]
+.Delete query with a USE INDEX clause
+====
+
+The following query hints the Query Service to use the index, `def_inventory_hotel_city`. 
+This is equivalent to <<ex-delete-opt-hint>> but uses a `USE INDEX` clause instead of an optimizer hint.
+
+[source,sqlpp]
+----
+include::example$dml/delete-use-index.n1ql[]
+----
+
+If you examine the plan for this query, you can see that the query uses the suggested index.
+
+.Results
+[source,json,indent=0]
+----
+include::example$dml/delete-use-index.jsonc[tag=index]
 ----
 ====
