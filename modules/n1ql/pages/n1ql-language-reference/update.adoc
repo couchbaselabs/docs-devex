@@ -10,6 +10,7 @@
 :meta: xref:n1ql-language-reference/metafun.adoc#meta
 :returning-clause: xref:n1ql-language-reference/insert.adoc#returning-clause
 :use-keys-clause: xref:n1ql-language-reference/hints.adoc#use-keys-clause
+:use-clause: xref:n1ql-language-reference/hints.adoc
 :preserve_expiry: xref:n1ql:n1ql-manage/query-settings.adoc#preserve_expiry
 
 :from: xref:n1ql-language-reference/from.adoc
@@ -83,7 +84,7 @@ image::n1ql-language-reference/update.png["Syntax diagram: refer to source code 
 [horizontal.compact]
 hint-comment:: <<hint-comment>> icon:caret-down[]
 target-keyspace:: <<update-target>> icon:caret-down[]
-use-keys:: <<update-hint>> icon:caret-down[]
+use-clause:: <<use-clause>> icon:caret-down[]
 set-clause:: <<set-clause>> icon:caret-down[]
 unset-clause:: <<unset-clause>> icon:caret-down[]
 where-clause:: <<where-clause>> icon:caret-down[]
@@ -154,14 +155,20 @@ For details, refer to {as-clause}[AS Clause].
 Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
 
-[[update-hint]]
-=== USE KEYS Clause
+[[use-clause]]
+=== USE Clause
 
-You can use a `USE KEYS` hint on the update target to specify the keys of the data items to be updated.
-For details, refer to {use-keys-clause}[USE KEYS Clause].
+You can use a `USE` clause to provide hints for the delete target.
 
-NOTE: You cannot specify a hint for the same update target using both the USE KEYS clause and an <<hint-comment,optimizer hint>>.
-If you do this, the USE KEYS clause and the <<hint-comment,optimizer hint>> are both marked as erroneous and ignored by the optimizer.
+The clause supports the following hints: 
+
+* `USE KEYS`: Specifies the keys of the data items to delete.
+* `USE INDEX`: Specifies the index to use for the delete operation.
+
+For more information, see {use-clause}[USE Clause].
+
+NOTE: You cannot specify a hint for the same update target using both the `USE` clause and an <<hint-comment,optimizer hint>>.
+If you do this, the `USE` clause and the <<hint-comment,optimizer hint>> are both marked as erroneous and ignored by the optimizer.
 
 [[set-clause]]
 === SET Clause
@@ -493,3 +500,23 @@ include::example$dml/update-optimizer-hint.jsonc[tag=index]
 ----
 ====
 
+[[example-13]]
+.Update with a USE INDEX hint
+====
+
+The following query hints the Query Service to use the index `def_inventory_airport_city`.
+This is equivalent to <<example-12>> but uses a `USE INDEX` clause instead of an optimizer hint.
+
+[source,sqlpp]
+----
+include::example$dml/update-use-index.n1ql[]
+----
+
+If you examine the plan for this query, you can see that it uses the suggested index.
+
+.Result
+[source,json,indent=0]
+----
+include::example$dml/update-use-index.jsonc[tag=index]
+----
+====
