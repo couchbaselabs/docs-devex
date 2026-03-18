@@ -269,21 +269,19 @@ A more realistic variadic function would make use of all the supplied arguments.
 
 [source,sqlpp]
 ----
-CREATE FUNCTION celsius(...) LANGUAGE INLINE AS (args[0] - 32) * 5/9;
+include::example$udf/create-inline-language.n1ql[]
 ----
 
 .Test
 [source,sqlpp]
 ----
-EXECUTE FUNCTION celsius(100);
+include::example$udf/test-inline-language.n1ql[]
 ----
 
 .Result
 [source,json]
 ----
-[
-  37.77777777777778
-]
+include::example$udf/test-inline-language.json[]
 ----
 ====
 
@@ -298,21 +296,19 @@ A more realistic variadic function would make use of all the supplied arguments.
 
 [source,sqlpp]
 ----
-CREATE FUNCTION fahrenheit(...) { (args[0] * 9/5) + 32 };
+include::example$udf/create-inline-braces.n1ql[]
 ----
 
 .Test
 [source,sqlpp]
 ----
-EXECUTE FUNCTION fahrenheit(100, "ignore this");
+include::example$udf/test-inline-braces.n1ql[]
 ----
 
 .Result
 [source,json]
 ----
-[
-  212
-]
+include::example$udf/test-inline-braces.json[]
 ----
 
 As the function is variadic, you can use any number of arguments when you call the function.
@@ -327,24 +323,19 @@ The expression expects two named arguments: `vString`, which is the string to wo
 
 [source,sqlpp]
 ----
-CREATE FUNCTION lstr(vString, vLen) LANGUAGE INLINE AS SUBSTR(vString, 0, vLen);
+include::example$udf/create-inline-params-language.n1ql[]
 ----
 
 .Test
 [source,sqlpp]
 ----
-EXECUTE FUNCTION lstr("Couchbase", 5, "ignore this");
+include::example$udf/test-inline-params-language.n1ql[]
 ----
 
 .Result
 [source,json]
 ----
-[
-  {
-    "code": 10104,
-    "msg": "Incorrect number of arguments supplied to function lstr - cause: lstr"
-  }
-]
+include::example$udf/test-inline-params-language.json[]
 ----
 
 As the arguments were specified by the function definition, you must use the same number of arguments when you call the function.
@@ -359,21 +350,19 @@ The expression expects two named arguments: `vString`, which is the string to wo
 
 [source,sqlpp]
 ----
-CREATE FUNCTION rstr(vString, vLen) { SUBSTR(vString, LENGTH(vString) - vLen, vLen) };
+include::example$udf/create-inline-params-braces.n1ql[]
 ----
 
 .Test
 [source,sqlpp]
 ----
-EXECUTE FUNCTION rstr("Couchbase", 4);
+include::example$udf/test-inline-params-braces.n1ql[]
 ----
 
 .Result
 [source,json]
 ----
-[
-  "base"
-]
+include::example$udf/test-inline-params-braces.json[]
 ----
 ====
 
@@ -409,21 +398,19 @@ The function takes no arguments.
 
 [source,sqlpp]
 ----
-CREATE FUNCTION phi() { 2 * SIN(RADIANS(54)) };
+include::example$udf/create-inline-niladic.n1ql[]
 ----
 
 .Test
 [source,sqlpp]
 ----
-EXECUTE FUNCTION phi();
+include::example$udf/test-inline-niladic.n1ql[]
 ----
 
 .Result
 [source,json]
 ----
-[
-  1.618033988749895
-]
+include::example$udf/test-inline-niladic.json[]
 ----
 
 The following statement redefines the function so that it calculates &phi; using a different method.
@@ -431,21 +418,19 @@ The following statement redefines the function so that it calculates &phi; using
 .Replace
 [source,sqlpp]
 ----
-CREATE OR REPLACE FUNCTION phi() { (1 + SQRT(5)) / 2 };
+include::example$udf/replace-inline-niladic.n1ql[]
 ----
 
 .Test
 [source,sqlpp]
 ----
-EXECUTE FUNCTION phi();
+include::example$udf/test-inline-niladic.n1ql[]
 ----
 
 .Result
 [source,json]
 ----
-[
-  1.618033988749895
-]
+include::example$udf/test-inline-niladic.json[]
 ----
 ====
 
@@ -456,22 +441,19 @@ The following statement creates external JavaScript function code and the corres
 
 [source,sqlpp]
 ----
-CREATE FUNCTION add100(num) LANGUAGE JAVASCRIPT AS
-"function add100(param1) {return param1+100;}";
+include::example$udf/create-javascript-managed.n1ql[]
 ----
 
 .Test
 [source,sqlpp]
 ----
-EXECUTE FUNCTION add100(100);
+include::example$udf/test-javascript-managed.n1ql[]
 ----
 
 .Result
 [source,json]
 ----
-[
-  200
-]
+include::example$udf/test-javascript-managed.json[]
 ----
 ====
 
@@ -486,89 +468,7 @@ footnote:[Credit: https://github.com/davetroy/geohash-js]
 
 [source,sh]
 ----
-curl -v -X POST \
-http://localhost:8093/evaluator/v1/libraries/geohash-js \
--u Administrator:password \
--H 'content-type: application/json' \
--d 'function encodeGeoHash(latitude, longitude) {
-
-  var BITS = [16, 8, 4, 2, 1];
-  var BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
-
-  var is_even = 1;
-  var i = 0, mid;
-  var lat = []; var lon = [];
-  var bit = 0;
-  var ch = 0;
-  var precision = 12;
-  var geohash = "";
-
-  lat[0] = -90.0; lat[1] = 90.0;
-  lon[0] = -180.0; lon[1] = 180.0;
-
-  while (geohash.length < precision) {
-    if (is_even) {
-      mid = (lon[0] + lon[1]) / 2;
-      if (longitude > mid) {
-        ch |= BITS[bit];
-        lon[0] = mid;
-      } else
-        lon[1] = mid;
-    } else {
-      mid = (lat[0] + lat[1]) / 2;
-      if (latitude > mid) {
-        ch |= BITS[bit];
-        lat[0] = mid;
-      } else
-        lat[1] = mid;
-    }
-
-    is_even = !is_even;
-    if (bit < 4)
-      bit++;
-    else {
-      geohash += BASE32[ch];
-      bit = 0;
-      ch = 0;
-    }
-  }
-
-  return geohash;
-}
-
-function calculateAdjacent(srcHash, dir) {
-
-  var BITS = [16, 8, 4, 2, 1];
-  var BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
-
-  var NEIGHBORS = { right  : { even : "bc01fg45238967deuvhjyznpkmstqrwx" },
-                    left   : { even : "238967debc01fg45kmstqrwxuvhjyznp" },
-                    top    : { even : "p0r21436x8zb9dcf5h7kjnmqesgutwvy" },
-                    bottom : { even : "14365h7k9dcfesgujnmqp0r2twvyx8zb" } };
-
-  var BORDERS   = { right  : { even : "bcfguvyz" },
-                    left   : { even : "0145hjnp" },
-                    top    : { even : "prxz" },
-                    bottom : { even : "028b" } };
-
-  NEIGHBORS.bottom.odd = NEIGHBORS.left.even;
-  NEIGHBORS.top.odd = NEIGHBORS.right.even;
-  NEIGHBORS.left.odd = NEIGHBORS.bottom.even;
-  NEIGHBORS.right.odd = NEIGHBORS.top.even;
-
-  BORDERS.bottom.odd = BORDERS.left.even;
-  BORDERS.top.odd = BORDERS.right.even;
-  BORDERS.left.odd = BORDERS.bottom.even;
-  BORDERS.right.odd = BORDERS.top.even;
-
-  srcHash = srcHash.toLowerCase();
-  var lastChr = srcHash.charAt(srcHash.length - 1);
-  var type = (srcHash.length % 2) ? "odd" : "even";
-  var base = srcHash.substring(0, srcHash.length - 1);
-  if (BORDERS[dir][type].indexOf(lastChr) != -1)
-    base = calculateAdjacent(base, dir);
-  return base + BASE32[NEIGHBORS[dir][type].indexOf(lastChr)];
-}'
+include::example$udf/create-javascript-external.sh[]
 ----
 
 The following statements create two functions:
@@ -578,25 +478,19 @@ The following statements create two functions:
 
 [source,sqlpp]
 ----
-CREATE FUNCTION geohash(lat, lon)
-  LANGUAGE JAVASCRIPT AS "encodeGeoHash" AT "geohash-js";
-
-CREATE FUNCTION adjacent(src, dir)
-  LANGUAGE JAVASCRIPT AS "calculateAdjacent" AT "geohash-js";
+include::example$udf/create-javascript-external.n1ql[]
 ----
 
 .Test `geohash`
 [source,sqlpp]
 ----
-EXECUTE FUNCTION geohash(53.353744, -2.27495);
+include::example$udf/test-javascript-external-geohash.n1ql[]
 ----
 
 .Result
 [source,json]
 ----
-[
-  "gcqrs0z2jfdr"
-]
+include::example$udf/test-javascript-external-geohash.json[]
 ----
 
 To view the geohash on a map, go to http://geohash.org/gcqrs0z2jfdr and follow one of the links provided.
@@ -605,15 +499,13 @@ At the specified latitude, the geohash represents an area of approximately 11 ð
 .Test `adjacent`
 [source,sqlpp]
 ----
-EXECUTE FUNCTION adjacent(geohash(53.353744, -2.27495), "top");
+include::example$udf/test-javascript-external-adjacent.n1ql[]
 ----
 
 .Result
 [source,json]
 ----
-[
-  "gcqrs0z2jff2"
-]
+include::example$udf/test-javascript-external-adjacent.json[]
 ----
 
 To view the geohash on a map, go to http://geohash.org/gcqrs0z2jff2 and follow one of the links provided.
