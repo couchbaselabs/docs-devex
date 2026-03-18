@@ -201,7 +201,7 @@ If you need to return multiple values, construct an array.
 :section: external
 === External Functions
 
-The CREATE FUNCTION statement provides two possible syntaxes for defining an external function: one where the function code is stored in a JavaScript library, and one for creating a {sqlpp} managed user-defined function.
+The CREATE FUNCTION statement provides two possible syntaxes for defining an external function: one where the function code is stored in a JavaScript library, and one for creating a {sqlpp} managed JavaScript function.
 
 [source,ebnf]
 ----
@@ -245,11 +245,14 @@ For example, to refer to a scoped library called `my-library` located in the `in
 [[javascript]]
 ==== Function Body
 
-[Optional] Use this parameter to create a {sqlpp} managed user-defined function.
+[Optional] Use this parameter to create a {sqlpp} managed JavaScript function.
 
 The external JavaScript function code.
 This must contain a function with the same name and the same number of parameters as the {sqlpp} user-defined function.
 This parameter is a string and must be wrapped in quotes.
+
+If you specified named parameters for the function, you can use these in the expression to represent arguments passed to the function at execution time.
+If you specified that the function is variadic, any arguments passed to the function at execution time are held in an array named `args`.
 
 The JavaScript code can contain multiple function definitions, but these functions can only be referenced within the JavaScript code for this {sqlpp} user-defined function, and cannot be shared.
 
@@ -435,7 +438,7 @@ include::example$udf/test-inline-niladic.json[]
 ====
 
 [[ex-managed]]
-.{sqlpp} managed user-defined function
+.{sqlpp} managed JavaScript function
 ====
 The following statement creates external JavaScript function code and the corresponding {sqlpp} user-defined function in one operation.
 
