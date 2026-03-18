@@ -1,0 +1,29 @@
+[mermaid]
+----
+flowchart LR
+    subgraph Memory 
+    A@{ shape: docs, label: "JSON Documents" }
+    B@{ shape: rect, label: "Text Analysis" }
+    C@{ shape: lean-r, label: "Token Stream" }
+    E@{ shape: rect, label: "FAISS" }
+    
+    A --> B
+    B --> C 
+    C --> D
+    A --> E 
+    E --> F
+
+    subgraph Segment
+        D@{ shape: cyl, label: "Inverted Index + Term Dictionary" }
+        F@{ shape: cyl, label: "Vector Index" }
+    end
+
+    G@{ shape: rect, label: "Disk Write Queue" }
+    Segment --> G
+    end
+    G --> Disk
+    subgraph Disk
+        H@{ shape: docs, label: "LSM Tree of Segments" }
+        I@{ shape: cyl, label: "Metadata Store" }
+    end
+----

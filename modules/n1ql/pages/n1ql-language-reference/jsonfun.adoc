@@ -1,32 +1,223 @@
 = JSON Functions
-:description: DECODE_JSON(expression)
+:description: Functions for encoding, decoding, and evaluating JSON values.
 :page-topic-type: reference
 
+[abstract]
 {description}
 
-Unmarshals the JSON-encoded string into a {sqlpp} value.
-The empty string is MISSING.
+== DECODE_JSON(`expression`)
 
-ENCODE_JSON(expression)
+Converts a JSON-encoded string into a {sqlpp} value.
 
-Marshals the {sqlpp} value into a JSON-encoded string.
-MISSING becomes the empty string.
+=== Arguments
 
-ENCODED_SIZE(expression)
+expression:: [Required] An expression that represents a JSON-encoded string.
 
-Number of bytes in an uncompressed JSON encoding of the value.
-The exact size is implementation-dependent.
-Always returns an integer, and never MISSING or NULL.
-Returns 0 for MISSING.
+=== Return Value
 
-POLY_LENGTH(expression)
+The function returns 1 of the following:
 
-Returns length of the value after evaluating the expression.
-The exact meaning of length depends on the type of the value:
+* A {sqlpp} value.
+* `NULL` if the input is NULL or not a valid JSON value.
+* `MISSING` if the input is empty.
 
-* MISSING: MISSING
-* NULL: NULL
-* String: The length of the string.
-* Array: The number of elements in the array.
-* Object: The number of name/value pairs in the object
-* Any other value: NULL
+=== Example
+
+.Decode a JSON string into a {sqlpp} value
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT DECODE_JSON(
+    "{\"airline\":
+        { \"callsign\": \"Mile-Air\",
+          \"country\": \"United States\", 
+          \"iata\": \"Q5\", 
+          \"id\": 10, 
+          \"name\": \"40-mile Air\", 
+          \"type\": \"airline\"
+        }
+    }"
+) as decoded_value;
+----    
+
+.Result
+[source,json]
+----
+[
+  {
+    "decoded_value": {
+      "airline": {
+        "callsign": "Mile-Air",
+        "country": "United States",
+        "iata": "Q5",
+        "id": 10,
+        "name": "40-mile Air",
+        "type": "airline"
+      }
+    }
+  }
+]
+----
+====
+
+== ENCODE_JSON(`expression`)
+
+Converts a {sqlpp} value into a JSON-encoded string.
+
+=== Arguments
+
+expression:: [Required] A {sqlpp} expression to be encoded.
+
+=== Return Value
+
+The function returns 1 of the following:
+
+* A JSON encoded string.
+* `NULL` if the input is `NULL`.
+* `MISSING` if the input is `MISSING`.
+
+=== Example
+
+.Encode a {sqlpp} value into a JSON string
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT ENCODE_JSON(
+    {
+        "airline": {
+            "callsign": "Mile-Air",
+            "country": "United States",
+            "iata": "Q5",
+            "id": 10,
+            "name": "40-mile Air",
+            "type": "airline"
+        }
+    }
+) as encoded_value;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "encoded_value":
+        "{ \"airline\":
+             { \"callsign\":\"Mile-Air\",
+               \"country\":\"United States\",
+               \"iata\":\"Q5\",
+               \"id\":10,
+               \"name\":\"40-mile Air\",
+               \"type\":\"airline\"
+            }
+        }"
+  }
+]
+----
+====
+
+== ENCODED_SIZE(`expression`)
+
+Returns the number of bytes in an uncompressed JSON encoding of a value.
+The exact size depends on the implementation and may vary. 
+
+=== Arguments
+
+expression:: [Required] An expression to evaluate.
+
+=== Return Value
+
+An integer representing the size in bytes. 
+
+The function never returns `NULL` or `MISSING`. 
+If the input value is `MISSING`, the function returns `0`.
+
+=== Example
+
+.Calculate the size of a JSON-encoded value
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT ENCODED_SIZE(
+    {
+        "airline": {
+            "callsign": "Mile-Air",
+            "country": "United States",
+            "iata": "Q5",
+            "id": 10,
+            "name": "40-mile Air",
+            "type": "airline"
+        }
+    }
+) as encoded_size;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "encoded_size": 119
+  }
+]
+----
+====
+
+== POLY_LENGTH(`expression`)
+
+Evaluates an expression and returns the length of the resulting value.
+The definition of length depends on the type of the evaluated value. 
+For more information, see the <<poly-length-return-value>> section.
+
+=== Arguments
+
+expression:: [Required] An expression to evaluate.
+
+[[poly-length-return-value]]
+=== Return Value
+
+The function returns a value based on the data type of the result: 
+
+* String: Returns the number of characters in the string.
+* Array: Returns the number of elements in the array.
+* Object: Returns the number of name/value pairs in the object.
+* MISSING: Returns `MISSING`.
+* NULL: Returns `NULL`.
+* Any other value: Returns `NULL`.
+
+=== Example
+
+.Find the length of a string, array, and object
+====
+
+.Query
+[source,sqlpp]
+----
+SELECT 
+    POLY_LENGTH("Flight 101") as string_length,
+    POLY_LENGTH(["Flight 101", "Flight 202", "Flight 303"]) as array_length,
+    POLY_LENGTH({
+        "flight": 101, 
+        "airline": "Mile-Air", 
+        "destination": "United States"
+    }) as object_length;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "string_length": 10,
+    "array_length": 3,
+    "object_length": 3
+  }
+]
+----
+====

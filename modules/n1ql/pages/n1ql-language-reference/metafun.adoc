@@ -2053,9 +2053,10 @@ If `false`, redacts only field values.
 __optional__
 | Specifies whether to apply strict value redaction.
 
-If `true`, the redaction replaces the entire value with the mask and does not preserve whitespace or formatting.
+If `true`, applies the mask to all characters including whitespaces and special characters. 
+See <<redact-ex6>>.
 
-If `false`, the redaction preserves whitespace and formatting.
+If `false`, applies the mask only to alphanumeric characters and preserves whitespaces and special characters.
 
 *Default:* `false`
 | Boolean
@@ -2107,9 +2108,14 @@ If `false`, the function redacts fields that match the pattern.
 
 === Usage 
 
-If you do not specify a filter object, the function applies a default behavior that redacts only field values. 
-In this case, the field names remain visible, and the function replaces values with a default mask, `"x"`. 
+The function applies redaction based on the filter objects you specify.
+If you do not specify a filter object, it redacts only field values. 
+The field names remain visible and the function replaces values with a default mask, `"x"`. 
 See <<redact-ex1>>. 
+
+By default, the function masks only to alphanumeric characters while preserving whitespaces and special characters (such as `@`, `#`).
+To redact all characters in a value, including symbols and spaces, set `"strict": true` in the filter object.
+See <<redact-ex6>>.
 
 To redact both field names and values, set `"name": true` in the filter object.
 See <<redact-ex3>>.
@@ -2299,6 +2305,37 @@ SELECT REDACT(sample,
         "flight": "xxxxx",
         "passenger": "Alex Johnson",
         "passport": "X12345678"
+    }]
+}]
+----
+====
+
+[[redact-ex6, Example 6]]
+.Redact all values including spaces and special characters
+====
+
+.Query
+[source,sqlpp]
+----
+WITH sample AS ([
+  {
+    "email": "alex.johnson@example.com",
+    "password": "P@ssw0rd!",
+    "address": "123 Maple Street, New York, NY"
+  }
+])
+SELECT REDACT(sample,
+    {"pattern": ".*", "regex": true, "strict": true}
+) AS redacted_data;
+----
+.Results
+[source,json]
+----
+[{
+    "redacted_data": [{
+        "address": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "email": "xxxxxxxxxxxxxxxxxxxxxxxx",
+        "password": "xxxxxxxxx"
     }]
 }]
 ----
