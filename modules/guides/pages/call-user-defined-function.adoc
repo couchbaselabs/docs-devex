@@ -1,88 +1,80 @@
 = Call a User-Defined Function
-:description: Call a user-defined JavaScript function from the Query Tab or cbq and use it with your Capella operational cluster.
+:description: How to call a user-defined function from {sqlpp} statements.
 :page-pagination: prev
 :page-topic-type: guide
 :page-toclevels: 2
 :imagesdir: ../assets/images
-:tabs:
+:no-escape-hatch:
 
 [abstract]
 {description}
 
 include::ROOT:partial$component-signpost.adoc[]
 
+== Introduction
+
 A user-defined function can be called like any other {sqlpp} function.
 
-== Prerequisites
+* When you call a *global* function, any partial keyspace references within the function definition are resolved against the `default:` namespace, regardless of the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
 
-* If you want to use cbq to run your user-defined function, you must complete the prerequisites for using cbq. 
-For more information, see xref:n1ql:n1ql-intro/cbq.adoc#prerequisites[Prerequisites].
-* You have created a user-defined function.
-For more information, see xref:create-user-defined-function.adoc[].
+* When you call a *scoped* function, any partial keyspace references within the function definition are resolved against the function's bucket and scope, regardless of the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
 
-== Procedure
+include::partial$before-you-begin.adoc[tag=body]
+include::partial$query-tools.adoc[tags=body;!thumbs]
 
-You can run user-defined functions from the Query Tab or cbq. 
+== Executing a {sqlpp} User-Defined Function
 
-[tabs]
+To execute a user-defined function:
+
+. If required, xref:select.adoc#query-context[set the query context] for a scoped function, or unset the context for a global function.
+
+. Use the `EXECUTE FUNCTION` statement and specify the name of the function.
+
+. Specify the function parameters within parentheses `()`.
+
 ====
-Query Tab::
-+
---
-To run a user-defined function from the Query Tab: 
+The following query executes a function called `GetBusinessDays`, which was created in the current query context.
 
-. On the *Operational Clusters* page, select the operational cluster where you want to work with your user-defined function. 
-. Go to menu:Data Tools[Query].
-. Enter a {sqlpp} statement in the query editor to run your function.
-+
-If you created a scoped user-defined function, make sure your xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context] is set to the same bucket and scope as the namespace for your function.
-+
-For example, the following statement executes a function called `GetBusinessDays`, which takes 2 dates:
-+
 [source, sqlpp]
 ----
-include::example$javascript-udfs/execute-javascript-function.n1ql[]
+include::javascript-udfs:example$execute-javascript-function.n1ql[]
 ----
-+
-You can also use a user-defined function in any {sqlpp} statement, just like a standard built-in function. 
-For example: 
-+
-[source, sqlpp]
-----
-include::example$javascript-udfs/select-true-alias-get-business-days.n1ql[]
-----
---
-
-cbq::
-+
---
-To run a user-defined function using the command line tool, cbq: 
-
-. Open a terminal window. 
-. Navigate to the directory where you installed cbq.
-. Connect to your Capella operational cluster.
-For more information, see xref:n1ql:n1ql-intro/cbq.adoc#cbq-connect-to-cluster[Connecting to the Cluster].
-. Run the `EXECUTE FUNCTION` command with your user-defined function.
-+
-For example, the following command executes a function called `GetBusinessDays`, which takes 2 dates, on the `travel-sample`/`inventory` keyspace:
-+
-[source, sqlpp]
-----
-include::example$javascript-udfs/execute-scoped-function.n1ql[]
-----
-+
-You can also use a user-defined function in any {sqlpp} statement, just like a standard built-in function. 
-For example: 
-+
-[source, console]
-----
-include::example$javascript-udfs/select-true-alias-get-business-days-cbq.sh[]
-----
---
 ====
 
-== See Also
+== Calling a {sqlpp} User-Defined Function
 
-include::partial$javascript-udfs/further-reading.adoc[tags="create-function;user-defined-functions"]
-* xref:n1ql:n1ql-language-reference/execfunction.adoc[]
+The {sqlpp} user-defined function can be used in any {sqlpp} statement in exactly the same way as a standard built-in function.
+
+To call a user-defined function in any {sqlpp} statement:
+
+. If required, xref:select.adoc#query-context[set the query context] for a scoped function, or unset the context for a global function.
+
+. Specify the name of the function.
+
+. Specify the function parameters within parentheses `()`.
+
+=====
+The following query calls the `GetBusinessDays` function, which was created in the current query context, from a `SELECT` statement.
+
+[source.no-callouts, sqlpp]
+----
+include::javascript-udfs:example$select-true-alias-get-business-days.n1ql[]
+----
+=====
+
+For more information and examples, see xref:n1ql:n1ql-language-reference/userfun.adoc[].
+
+== Related Links
+
+Reference:
+
 * xref:javascript-udfs:javascript-functions-with-couchbase.adoc[]
+* xref:n1ql:n1ql-language-reference/createfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/execfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/explainfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/dropfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/userfun.adoc[] -- using user-defined functions (UDFs) in {sqlpp} statements
+
+Administrator guides:
+
+* xref:n1ql:n1ql-intro/sysinfo.adoc#sys-functions[Monitor Functions]
