@@ -1,8 +1,4 @@
-curl -v -X POST \
-http://localhost:8093/evaluator/v1/libraries/geohash-js \
--u Administrator:password \
--H 'content-type: application/json' \
--d 'function encodeGeoHash(latitude, longitude) {
+function encodeGeoHash(latitude, longitude) {
 
   var BITS = [16, 8, 4, 2, 1];
   var BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
@@ -80,4 +76,4 @@ function calculateAdjacent(srcHash, dir) {
   if (BORDERS[dir][type].indexOf(lastChr) != -1)
     base = calculateAdjacent(base, dir);
   return base + BASE32[NEIGHBORS[dir][type].indexOf(lastChr)];
-}'
+}
