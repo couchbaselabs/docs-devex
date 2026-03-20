@@ -7,6 +7,7 @@
 :logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
 :returning-clause: xref:n1ql-language-reference/insert.adoc#returning-clause
 :use-keys-clause: xref:n1ql-language-reference/hints.adoc#use-keys-clause
+:use-clause: xref:n1ql-language-reference/hints.adoc
 
 :from: xref:n1ql-language-reference/from.adoc
 :from-keyspace-ref: {from}#from-keyspace-ref
@@ -63,7 +64,7 @@ image::n1ql-language-reference/delete.png["Syntax diagram: refer to source code 
 
 [horizontal.compact]
 target-keyspace:: <<delete-target>> icon:caret-down[]
-use-keys-clause:: <<delete-hint>> icon:caret-down[]
+use-clause:: <<delete-hint>> icon:caret-down[]
 where-clause:: <<where-clause>> icon:caret-down[]
 limit-clause:: <<limit-clause>> icon:caret-down[]
 offset-clause:: <<offset-clause>> icon:caret-down[]
@@ -124,8 +125,14 @@ If you assign an alias to the keyspace reference, the `AS` keyword may be omitte
 [[delete-hint]]
 === Delete Hint
 
-You can use a `USE KEYS` hint on the delete target to specify the keys of the data items to be deleted.
-For details, refer to {use-keys-clause}[USE KEYS Clause].
+You can use a `USE` clause to provide hints for the delete target.
+
+The clause supports the following hints: 
+
+* `USE KEYS`: Specifies the keys of the data items to delete.
+* `USE INDEX`: Specifies the index to use for the delete operation.
+
+For more information, see {use-clause}[USE Clause].
 
 [[where-clause]]
 === WHERE Clause
@@ -309,4 +316,24 @@ include::example$dml/delete-offset.jsonc[]
 
 <.> Documents with the first 10 ids--the offset--remain in the airline collection.
 <.> After deleting 10 documents--the limit--1 more document remains in the collection.
+====
+
+[[ex-delete-use-clause]]
+.Delete query with a USE INDEX clause
+====
+
+The following query hints the Query Service to use the index, `def_inventory_hotel_city`. 
+
+[source,sqlpp]
+----
+include::example$dml/delete-use-index.n1ql[]
+----
+
+If you examine the plan for this query, you can see that the query uses the suggested index.
+
+.Results
+[source,json,indent=0]
+----
+include::example$dml/delete-use-index.jsonc[tag=index]
+----
 ====

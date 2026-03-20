@@ -10,6 +10,7 @@
 :meta: xref:n1ql-language-reference/metafun.adoc#meta
 :returning-clause: xref:n1ql-language-reference/insert.adoc#returning-clause
 :use-keys-clause: xref:n1ql-language-reference/hints.adoc#use-keys-clause
+:use-clause: xref:n1ql-language-reference/hints.adoc
 :preserve_expiry: xref:n1ql:n1ql-manage/query-settings.adoc#preserve_expiry
 
 :from: xref:n1ql-language-reference/from.adoc
@@ -82,7 +83,7 @@ image::n1ql-language-reference/update.png["Syntax diagram: refer to source code 
 
 [horizontal.compact]
 target-keyspace:: <<update-target>> icon:caret-down[]
-use-keys:: <<update-hint>> icon:caret-down[]
+use-clause:: <<update-hint>> icon:caret-down[]
 set-clause:: <<set-clause>> icon:caret-down[]
 unset-clause:: <<unset-clause>> icon:caret-down[]
 where-clause:: <<where-clause>> icon:caret-down[]
@@ -144,8 +145,14 @@ If you assign an alias to the keyspace reference, the `AS` keyword may be omitte
 [[update-hint]]
 === Update Hint
 
-You can use a `USE KEYS` hint on the update target to specify the keys of the data items to be updated.
-For details, refer to {use-keys-clause}[USE KEYS Clause].
+You can use a `USE` clause to provide hints for the update target.
+
+The clause supports the following hints: 
+
+* `USE KEYS`: Specifies the keys of the data items to update.
+* `USE INDEX`: Specifies the index to use for the update operation.
+
+For more information, see {use-clause}[USE Clause].
 
 [[set-clause]]
 === SET Clause
@@ -408,5 +415,25 @@ Alternatively, if the request-level {preserve_expiry}[preserve_expiry] parameter
 [source,sqlpp]
 ----
 include::example$dml/update-unset-expire-alt.n1ql[]
+----
+====
+
+[[example-10]]
+.Update with a USE INDEX hint
+====
+
+The following query hints the Query Service to use the index `def_inventory_airport_city`.
+
+[source,sqlpp]
+----
+include::example$dml/update-use-index.n1ql[]
+----
+
+If you examine the plan for this query, you can see that it uses the suggested index.
+
+.Result
+[source,json,indent=0]
+----
+include::example$dml/update-use-index.jsonc[tag=index]
 ----
 ====
