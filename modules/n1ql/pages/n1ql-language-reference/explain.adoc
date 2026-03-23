@@ -31,8 +31,7 @@ For example, to explain an `INSERT` statement, your client must have:
 ======
 include::ROOT:partial$query-context.adoc[tag=example]
 
-The following privileges apply if you use the basic cluster access credentials. 
-To execute the following statement, your client must have the `Write` privilege on `landmark` and the `Read` privilege on `beer-sample`.
+To execute the following statement, your client must have the `Write` / `Query Insert` privilege on `landmark` and the `Read` / `Query Read` privilege on `beer-sample`.
 
 [source,sqlpp]
 ----
@@ -41,11 +40,14 @@ EXPLAIN INSERT INTO landmark (KEY foo, VALUE bar)
         FROM `beer-sample` AS doc WHERE type = "brewery";
 ----
 
-To execute the following statement, your client must have both `Write` and `Read` privileges on `testbucket`.
+To execute the following statement, your client must have `Write` / `Query Update` and `Read` / `Query Read` privileges on `landmark`.
 
 [source,sqlpp]
 ----
-EXPLAIN UPSERT INTO testbucket VALUES ("key1", { "a" : "b" }) RETURNING meta().cas;
+EXPLAIN UPDATE landmark
+        USE KEYS "landmark_10090"
+        SET nickname = "Squiggly Bridge"
+        RETURNING landmark.nickname;
 ----
 ======
 ====
