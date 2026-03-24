@@ -17,13 +17,21 @@ Sometimes planning may take more time than actually executing a request.
 
 If you know that a statement text will be executed repeatedly, you can request the {sqlpp} service to prepare the execution plan beforehand, and then request to execute the prepared plan as many times as needed, thereby avoiding the cost of repeated planning.
 
+[[authorization]]
 == Prerequisites
 
-[[authorization]]
-=== RBAC Privileges
+To execute this statement, your client must have the necessary privileges depending on the xref:clusters:cluster-rbac.adoc#cluster-access-credential-types[cluster access credential type] and the statement being prepared.
 
-The client executing the PREPARE statement must have the RBAC privileges of the statement being prepared.
-For more details about cluster access privileges, refer to xref:clusters:manage-database-users.adoc[].
+For example, if the statement being prepared is a `SELECT` statement:
+
+[cols="1a,1a", options="header"]
+|===
+| Credential Type | Privilege 
+| Basic
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Read`]
+| Advanced
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Read`]
+|===
 
 .RBAC Examples
 [%collapsible]
@@ -31,7 +39,7 @@ For more details about cluster access privileges, refer to xref:clusters:manage-
 ======
 include::ROOT:partial$query-context.adoc[tag=example]
 
-To execute the following statement, user must have the _Query Select_ privilege on both keyspaces `pass:c[airport]` and `pass:c[landmark]`.
+To execute the following statement, user must have `Read` / `Query Read` privileges on both keyspaces `pass:c[airport]` and `pass:c[landmark]`.
 
 [source,sqlpp]
 ----
@@ -39,7 +47,7 @@ PREPARE SELECT * FROM airport
 WHERE city = (SELECT RAW city FROM landmark)
 ----
 
-To execute the following statement, user must have the _Query Update_ and _Query Select_ privileges on `pass:c[hotel]`.
+To execute the following statement, user must have `Write` / `Query Update` and `Read` / `Query Read` privileges on `pass:c[hotel]`.
 
 [source,sqlpp]
 ----

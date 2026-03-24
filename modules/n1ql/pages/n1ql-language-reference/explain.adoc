@@ -11,9 +11,19 @@ include::partial$n1ql-language-reference/collapsible-style.adoc[]
 
 == Prerequisites
 
-To execute the EXPLAIN statement, your client must have the privileges required for the {sqlpp} statement that is being explained.
-For more details about cluster access privileges, see
-xref:clusters:manage-database-users.adoc[].
+To execute this statement, your client must have the same privileges required to run the query being explained.
+The required privileges depend on your xref:clusters:cluster-rbac.adoc#cluster-access-credential-types[cluster access credential type].
+
+For example, to explain an `INSERT` statement, your client must have:
+
+[cols="1a,1a", options="header"]
+|===
+| Credential Type | Privilege 
+| Basic
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Write`]
+| Advanced
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Insert`]
+|===
 
 .RBAC Examples
 [%collapsible]
@@ -21,7 +31,7 @@ xref:clusters:manage-database-users.adoc[].
 ======
 include::ROOT:partial$query-context.adoc[tag=example]
 
-To execute the following statement, your client must have the _Query Insert_ privilege on the `landmark` keyspace and the _Query Select_ privilege on the `pass:c[`beer-sample`]` keyspace.
+To execute the following statement, your client must have the `Write` / `Query Insert` privilege on `landmark` and the `Read` / `Query Read` privilege on `beer-sample`.
 
 [source,sqlpp]
 ----
@@ -30,11 +40,14 @@ EXPLAIN INSERT INTO landmark (KEY foo, VALUE bar)
         FROM `beer-sample` AS doc WHERE type = "brewery";
 ----
 
-To execute the following statement, your client must have the _Query Insert_, _Query Update_, and _Query Select_ privileges on the `testbucket` keyspace.
+To execute the following statement, your client must have `Write` / `Query Update` and `Read` / `Query Read` privileges on `landmark`.
 
 [source,sqlpp]
 ----
-EXPLAIN UPSERT INTO testbucket VALUES ("key1", { "a" : "b" }) RETURNING meta().cas;
+EXPLAIN UPDATE landmark
+        USE KEYS "landmark_10090"
+        SET nickname = "Squiggly Bridge"
+        RETURNING landmark.nickname;
 ----
 ======
 ====

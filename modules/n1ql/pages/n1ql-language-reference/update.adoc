@@ -30,15 +30,22 @@ Refer to xref:clusters:data-service/import-data-documents.adoc#import-sample-dat
 
 == Prerequisites
 
-=== RBAC Privileges
+To execute this statement, your client must have necessary privileges on the keyspace.
+The required privileges depend on your xref:clusters:cluster-rbac.adoc#cluster-access-credential-types[cluster access credential type] and whether the statement includes a `SELECT` or `RETURNING` clause.
 
-The client executing the UPDATE statement must have the _Query Update_ privilege on the target keyspace.
-If the statement has any clauses that needs data read, such as SELECT clause, or RETURNING clause, then _Query Select_ privilege is also required on the keyspaces referred in the respective clauses.
-For more details about cluster access privileges, see {authorization-overview}[].
+[cols="1a,1a,1a", options="header"]
+|===
+| Credential Type | Privilege for UPDATE | Privilege for SELECT / RETURNING
+| Basic
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Write`]
+| xref:clusters:cluster-rbac.adoc#basic-access-credentials[`Read`] on all keyspaces referenced in the clause
+| Advanced
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Update`]
+| xref:clusters:cluster-rbac.adoc#privileges-for-advanced-access-credentials[`Query Read`] on all keyspaces referenced in the clause
+|===
 
-[NOTE]
-A user with the _Data Writer_ privilege may set documents to expire.
-When the document expires, the data service deletes the document, even though the user may not have the _Query Delete_ privilege.
+NOTE: A user with the `Data Manage` privilege may set documents to expire.
+When the document expires, the Data Service deletes the document, even though the user may not have the `Query Delete` privilege.
 
 .RBAC Examples
 [%collapsible]
@@ -46,21 +53,21 @@ When the document expires, the data service deletes the document, even though th
 ======
 include::ROOT:partial$query-context.adoc[tag=example]
 
-To execute the following statement, your client must have the _Query Update_ privilege on `airport`.
+To execute the following statement, your client must have the `Write` / `Query Update` privilege on `airport`.
 
 [source,sqlpp]
 ----
 include::example$dml/update-rbac.n1ql[]
 ----
 
-To execute the following statement, your client must have the _Query Update_ privilege on `airport` and _Query Select_ privilege on `pass:c[`beer-sample`]`.
+To execute the following statement, your client must have the `Write` / `Query Update` privilege on `airport` and `Read` / `Query Read` privilege on `pass:c[`beer-sample`]`.
 
 [source,sqlpp]
 ----
 include::example$dml/update-rbac-sub.n1ql[]
 ----
 
-To execute the following statement, your client must have the _Query Update_ and _Query Select_ privileges on `airport`.
+To execute the following statement, your client must have `Write` / `Query Update` and `Read` / `Query Read` privileges on `airport`.
 
 [source,sqlpp]
 ----
