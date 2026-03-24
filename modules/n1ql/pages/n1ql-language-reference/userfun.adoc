@@ -10,22 +10,19 @@
 == Description
 
 When you have created a user-defined function, you can call it in any expression, just like a built-in function.
-User-defined functions have the same syntax as built-in functions, with brackets `()` to contain any arguments.
+User-defined functions have the same syntax as built-in functions, with parentheses `()` to contain any arguments.
 
 The name of the function is usually an unqualified identifier, such as `func1` or `{backtick}func-1{backtick}`.
 In this case, the path to the function is determined by the current xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[query context].
 
 To call a global function in a particular namespace, the function name must be a qualified identifier with a namespace, such as `default:func1`.
 Similarly, to call a scoped function in a particular scope, the function name must be a qualified identifier with the full path to a scope, such as `default:{backtick}travel-sample{backtick}.inventory.func1`.
-Refer to xref:n1ql-language-reference/createfunction.adoc#context[Global Functions and Scoped Functions] for more details.
+For more information, see xref:n1ql-language-reference/createfunction.adoc#context[Global Functions and Scoped Functions].
 
-You cannot have 2 functions with the same name in the same scope.
-You can have 2 functions in the same name across different scopes.
-
-NOTE: The name of a user-defined function _is_ case-sensitive, unlike that of a built-in function.
+NOTE: The name of a user-defined function is case-sensitive, unlike that of a built-in function.
 You must call the user-defined function using the same case that was used when it was created.
 
-It is not possible to call a user-defined function in an expression if the function has side effects, such as performing mutations.
+It's not possible to call a user-defined function in an expression if the function has side effects, such as performing mutations.
 When you do this, an error is generated.
 
 == Prerequisites
@@ -59,12 +56,12 @@ include::partial$n1ql-language-reference/udf-output.adoc[]
 
 == Examples
 
-Refer to xref:n1ql-language-reference/createfunction.adoc[CREATE FUNCTION] for details on creating user-defined functions.
+See xref:n1ql-language-reference/createfunction.adoc[CREATE FUNCTION] for details on creating user-defined functions.
 
 For simplicity, none of these examples implement any data validation or error checking.
 If necessary, you can use xref:n1ql:n1ql-language-reference/conditionalops.adoc[conditional operators] to check the parameters of a user-defined function, and the xref:n1ql:n1ql-language-reference/metafun.adoc#abort[ABORT()] function to generate an error if something is wrong.
 
-include::ROOT:partial$query-context.adoc[tag=statement]
+include::ROOT:partial$query-context.adoc[tag=section]
 
 .Inline function with expression
 ====
@@ -72,7 +69,7 @@ The following statement creates a function called `to_meters`, which converts fe
 
 [source,sqlpp]
 ----
-CREATE FUNCTION to_meters(...) { args[0] * 0.3048 };
+CREATE FUNCTION to_meters(feet) { feet * 0.3048 };
 ----
 
 The following query uses the `to_meters` function to express the elevation of the selected airports in meters above mean sea level (mamsl).
@@ -124,7 +121,7 @@ include::example$n1ql-language-reference/udf-locations-define.n1ql[]
 ----
 
 The following query uses the `locations` function as the FROM term in a SELECT query.
-Compare this query with xref:n1ql-language-reference/from.adoc#ex-subquery-1[Example 2 in FROM Subquery].
+Compare this query with the example xref:n1ql-language-reference/from.adoc#ex-subquery-1[A `SELECT` clause inside a `FROM` clause] in FROM Subquery.
 
 .Query
 [source,sqlpp]
@@ -141,12 +138,12 @@ include::example$n1ql-language-reference/udf-locations-query.jsonc[]
 
 .External functions
 ====
-For this example, it is assumed that you have created two JavaScript functions in a UDF library:
+For this example, it's assumed that you have created two external functions:
 
 . A function called `geohash`, which depends on the JavaScript `encodeGeoHash` function in the `geohash-js` library;
 . A function called `adjacent`, which depends on the JavaScript `calculateAdjacent` function in the `geohash-js` library.
 
-Refer to xref:n1ql-language-reference/createfunction.adoc#ex-external[Example 7 in CREATE FUNCTION] for details.
+For more information, see the example xref:n1ql-language-reference/createfunction.adoc#ex-external[External functions] in CREATE FUNCTION.
 
 The following query uses the `geohash` and `adjacent` functions to find the 9-figure geohash of the selected hotel, and the geohashes immediately to the north, south, west, and east.
 
@@ -177,17 +174,15 @@ WHERE name = "Sachas Hotel";
 ]
 ----
 
-To view the first geohash on a map, go to http://geohash.org/gcw2m05h1 and follow one of the links provided.
-You can view the other geohashes by editing the URL.
+To view any of these geohashes on a map, go to https://www.movable-type.co.uk/scripts/geohash.html[Geohashes^] and enter the string in the *Geohash* box.
 At the latitude of the selected hotel, each geohash represents an area of approximately 3 𐄂 5 meters.
 ====
 
 == Related Links
 
+* For an introduction to user-defined functions, see xref:guides:javascript-udfs.adoc[].
+* For more information about JavaScript functions, see xref:javascript-udfs:javascript-functions-with-couchbase.adoc[].
 * To create user-defined functions, see xref:n1ql-language-reference/createfunction.adoc[].
-ifdef::flag-devex-rest-api[]
-* To manage UDF libraries and JavaScript functions, see xref:n1ql-rest-functions:index.adoc[].
-endif::flag-devex-rest-api[]
 * To execute a user-defined function, see xref:n1ql-language-reference/execfunction.adoc[].
 * To see the execution plan for a user-defined function, see xref:n1ql-language-reference/explainfunction.adoc[].
 * To monitor user-defined functions, see xref:n1ql:n1ql-intro/sysinfo.adoc#sys-functions[Monitor Functions].
