@@ -426,7 +426,8 @@ SELECT `Flavor` FROM EVALUATE("INFER `travel-sample`")[0] inf;
 === Description
 
 This function extracts Data Definition Language (DDL) statements of buckets and returns them as an array of strings.
-It retrieves definitions for buckets, scopes, collections, indexes, and sequences. 
+It retrieves definitions for buckets, scopes, collections, indexes, sequences, functions, and prepared statements.
+
 You can use these definitions for purposes such as replication, backup, or auditing.
 
 The function supports the following statements:
@@ -436,6 +437,8 @@ The function supports the following statements:
 * CREATE COLLECTION
 * CREATE INDEX
 * CREATE SEQUENCE
+* CREATE OR REPLACE FUNCTION [.status]#Couchbase Server 8.0.1#
+* PREPARE [.status]#Couchbase Server 8.0.1#
 
 NOTE: To execute this function, you must have the `query_system_catalog` role. 
 Also, to extract DDLs from a specific bucket, you need necessary permissions on that bucket.
@@ -461,12 +464,12 @@ If you omit this argument, the output includes all supported DDL statements.
 __optional__
 | Specifies the types of DDL statements to extract. 
 
-Accepts either a numeric value or an array of strings, but not both. 
+Accepts either a number or an array of strings, but not both. 
 
-[options="header", cols="1a,1a,1a"]
+[options="header", cols="3a,2a,1a"]
 !===
 
-! Statement ! String Value ! Numeric Value
+! Statement ! String ! Number
 
 ! CREATE BUCKET
 ! `"bucket"` 
@@ -487,6 +490,17 @@ Accepts either a numeric value or an array of strings, but not both.
 ! CREATE SEQUENCE
 ! `"sequence"`
 ! `16`
+
+! CREATE OR REPLACE FUNCTION +
+[.status]#Couchbase Server 8.0.1#
+
+! `"function"`
+! `32`
+
+! PREPARE +
+[.status]#Couchbase Server 8.0.1#
+! `"prepared"`
+! `64`
 !===
 
 To extract multiple statement types, specify an array of their string values or a single numeric value that represents the sum of their respective numeric values.
@@ -503,7 +517,7 @@ An array of strings, with each string containing a DDL statement.
 === Examples
 
 [[extract-ddl-ex1,EXTRACTDDL() Example 1]]
-.Using a string flag to extract CREATE INDEX statements from the `travel-sample` bucket
+.Extract CREATE INDEX statements from the `travel-sample` bucket using a string flag
 ====
 .Query
 [source,sqlpp]
@@ -529,7 +543,7 @@ SELECT extractddl("travel-sample",{"flags":["index"]});
 ====
 
 [[extract-ddl-ex2,EXTRACTDDL() Example 2]]
-.Using a numeric flag to extract CREATE INDEX statements from the `travel-sample` bucket
+.Extract CREATE INDEX statements from the `travel-sample` bucket using a numeric flag
 ====
 .Query
 [source,sqlpp]
@@ -555,7 +569,7 @@ SELECT extractddl("travel-sample", {"flags":8});
 ====
 
 [[extract-ddl-ex3,EXTRACTDDL() Example 3]]
-.Using a combined numeric flag to extract CREATE BUCKET and CREATE SCOPE statements from the `travel-sample` bucket
+.Extract CREATE BUCKET and CREATE SCOPE statements from the `travel-sample` bucket using a numeric flag
 ====
 .Query
 [source,sqlpp]
@@ -588,6 +602,108 @@ In this query, the value `3` represents the sum of the flags for bucket (`1`) an
 ]
 ----
 ====
+
+[[extract-ddl-ex4,EXTRACTDDL() Example 4]]
+.Extract CREATE FUNCTION and PREPARE statements from the `travel-sample` bucket
+====
+.Query
+[source,sqlpp]
+----
+SELECT extractddl("travel-sample",{"flags":["function","prepared"]});
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "CREATE OR REPLACE FUNCTION `celsius`(...) 
+          LANGUAGE INLINE AS (args[0] - 32) * 5/9;",
+      "PREPARE SELECT * FROM route\n
+              WHERE airline = \"FL\";",
+      "PREPARE NameParam AS\nSELECT * FROM hotel\n
+          WHERE city=$city AND country=$country;"
+    ]
+  }
+]
+----
+====
+
+[[extract-ddl-ex5,EXTRACTDDL() Example 5]]
+.Extract all supported DDL statements from the `travel-sample` bucket
+====
+.Query
+[source,sqlpp]
+----
+SELECT extractddl("travel-sample");
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "CREATE OR REPLACE FUNCTION `celsius`(...) 
+          LANGUAGE INLINE AS (args[0] - 32) * 5/9;",
+      "CREATE BUCKET `travel-sample`
+           WITH {'evictionPolicy':'fullEviction',
+                  'numVBuckets':128,
+                  'ramQuota':200,
+                  'replicaNumber':0,
+                  'storageBackend':'magma'
+                };",
+      "CREATE SCOPE `travel-sample`.`inventory`;",
+      "CREATE COLLECTION `travel-sample`.`inventory`.`airline;",
+      "CREATE COLLECTION `travel-sample`.`inventory`.`airport;",
+      "CREATE COLLECTION `travel-sample`.`inventory`.`hotel;",
+      "CREATE COLLECTION `travel-sample`.`inventory`.`landmark;",
+      "CREATE COLLECTION `travel-sample`.`inventory`.`route;",
+      "CREATE SCOPE `travel-sample`.`tenant_agent_00`;",
+      ...
+      "CREATE INDEX `def_airportname` 
+          ON `travel-sample`(`airportname`) ;",
+      "CREATE INDEX `def_city`
+          ON `travel-sample`(`city`) ;",
+      ...
+    ]
+  }
+]
+----
+====
+
+[[extract-ddl-ex6,EXTRACTDDL() Example 6]]
+.Extract DDL statements from all buckets
+====
+.Query
+[source,sqlpp]
+----
+SELECT extractddl("",{"flags":["bucket","scope"]});
+----
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "CREATE BUCKET `travel-sample`
+           WITH {'evictionPolicy':'fullEviction',
+                'numVBuckets':128,
+                'ramQuota':200,
+                'replicaNumber':0,
+                'storageBackend':'magma'
+              };",
+      "CREATE SCOPE `travel-sample`.`inventory`;",
+      "CREATE SCOPE `travel-sample`.`tenant_agent_00`;",
+      "CREATE SCOPE `travel-sample`.`tenant_agent_01`;",
+      "CREATE SCOPE `travel-sample`.`tenant_agent_02`;",
+      "CREATE SCOPE `travel-sample`.`tenant_agent_03`;",
+      "CREATE SCOPE `travel-sample`.`tenant_agent_04`;"
+    ]
+  }
+]
+----
+====
+
 
 
 [[finderr,FINDERR()]]
