@@ -1,0 +1,129 @@
+= Step 1: Set Up
+:navtitle: 1: Set Up
+:description: Install and set up Couchbase Server to continue following the Student Record System tutorial.
+:page-topic-type: tutorial
+:step-number: 2
+:step-total: 4
+:duration: 10 minutes
+:prev-page: index.adoc
+:next-page: step-02.adoc
+
+[abstract]
+{description}
+
+== Introduction
+
+Couchbase is a schema-less JSON document database designed for high performance, scalability, and fast development.
+This tutorial teaches you about to the key concepts behind Couchbase and how they differ from traditional SQL database systems like MySQL and Oracle.
+
+IMPORTANT: This tutorial uses standalone or Docker installations of Couchbase Server.
+To get started with the Couchbase Capella Cloud service, see xref:cloud:get-started:create-account.adoc[Create a Free Account and Deploy Your Database].
+
+
+[#database-design]
+== Data Model
+
+Your data model consists of three record types:
+[horizontal]
+student:: Information about individual students, like name and date of birth.
+course:: Courses the students can take. Includes course name, faculty, and the number of credit points associated with the course.
+Students can take more than one course at a time.
+enrollment:: Information related to courses the students are taking.
+In a relational database, this is usually a link record that creates a relationship between a student and a course.
+
+=== Relational Model
+
+In a relational model, the database contains a list of students and a list of courses.
+Each student can enroll in multiple courses.
+
+A student's enrollment record is stored in a separate table called `enrollment`, which links that record to the courses they're enrolling in.
+
+[plantuml,student-record-erd,svg]
+....
+include::partial$diagrams/student-record-erd.puml[]
+....
+
+The `enrollment` table highlights a challenge with the relational model: each table is based on a fixed schema that only supports a single data object type, which means you cannot store a student in the same table as their enrollment record.
+
+=== Document Model
+
+Couchbase uses a document model that stores each record as a JSON document.
+The document model:
+
+* Contains simple scalar types and complex types, like nested records and arrays
+* Lets you store complex types without decomposing them to a second table
+
+In this tutorial, the document model stores the list of enrollment records with the student records.
+Each enrollment record contains a reference to the course that it relates to.
+
+[plantuml,student-document-database-design,svg]
+....
+include::partial$diagrams/student-document-database-design.puml[]
+....
+
+With JSON, you can change the structure of the document without having to rebuild schemas.
+For example, you can add a new field to store students' email addresses without migrating existing data to a new schema.
+
+In a document database, a student's record and their course records can look similar to this:
+
+.Student record
+[source, json]
+----
+{
+  "student-id": "000001",
+  "name": "Hilary Smith",
+  "date-of-birth": "21-12-1980",
+  "enrollments": [
+    {
+      "course-id": "ART-HISTORY-00003",
+      "date-enrolled": "07-9-2021"
+    },
+    {
+      "course-id": "GRAPHIC-DESIGN-00001",
+      "date-enrolled": "15-9-2021"
+    }
+  ]
+}
+----
+.Art History course record
+[source, json]
+----
+{
+  "course-id": "ART-HISTORY-00003",
+  "course-name": "art history",
+  "faculty": "fine art",
+  "credit-points" : 100
+}
+----
+
+.Graphic Design course record
+[source, json]
+----
+{
+  "course-id": "GRAPHIC-DESIGN-00001",
+  "course-name": "graphic design",
+  "faculty": "media and communication",
+  "credit-points" : 200
+}
+----
+
+Hilary's enrollment is stored in the same document as her student details, which means child information is stored with its parent.
+This structure lets you access and retrieve all of Hilary's details with one search and without the need for complex table joins.
+
+NOTE: You should not store a student with their course record as it can lead to data duplication and make it difficult to maintain your data.
+For example, you would need to access every single student record in your cluster to change the `credit-points`.
+
+
+== Next Steps
+
+To complete this tutorial, follow these steps:
+
+[horizontal]
+Step 1:: xref:install-couchbase-server.adoc[Install Couchbase Server]
+Step 2:: xref:buckets-scopes-and-collections.adoc[Implement a Data Model]
+Step 3:: xref:java-tutorial/install-couchbase-java-sdk.adoc[Set Up and Connect the Couchbase Java SDK]
+Step 4:: xref:java-tutorial/create-records.adoc[Create Student and Course Records]
+Step 5:: xref:java-tutorial/retrieving-documents.adoc[Retrieve Records]
+Step 6:: xref:java-tutorial/adding-course-enrollments.adoc[Add Course Enrollments]
+
+For troubleshooting information, see the xref:java-tutorial/tutorial-troubleshooting.adoc[troubleshooting page].
