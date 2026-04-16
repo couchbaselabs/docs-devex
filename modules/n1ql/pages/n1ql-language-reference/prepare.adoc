@@ -209,38 +209,44 @@ For more details, refer to xref:n1ql:n1ql-manage/query-settings.adoc#auto-prepar
 
 Auto-prepare is disabled for {sqlpp} requests which contain parameters, if they do not use the PREPARE statement.
 
-[[reprepare-on-index-changes]]
+[[auto-reprepare-index]]
 == Automatic Reprepare on Index Changes
 
-The Query Service provides an opt-in feature that automatically updates a prepared statement's execution plan whenever the GSI metadata version changes. 
-For example, when you create or drop indexes.
+The Query Service validates a statement's prepared plan before executing it.
+If the plan is invalid—for example, if any indexes or keyspaces become unavailable—the service automatically reprepares the statement.
+This is the xref:n1ql-language-reference/execute.adoc#auto-reprepare[default behavior].
 
-Unlike the xref:n1ql-language-reference/execute.adoc#auto-reprepare[default automatic reprepare behavior], which only reprepares a statement when an index in its current plan becomes unavailable, this feature reprepares statements even when the current plan is still valid.
-This allows statements to adopt newer, more efficient indexes as they become available.
+The Query Service also provides an opt-in feature that extends this behavior.
+When enabled, the service monitors GSI metadata version changes (such as when you create or drop indexes) and flags affected statements for repreparation.
+The next time a flagged statement runs, the service generates a new plan to match the updated index set.
+This ensures statements automatically use newer, more efficient indexes as they become available. 
 
-To enable this feature, set bit 23 (0×800000 or 8388608) of the `n1ql-feat-ctrl` setting. 
-For information about how to set this value, see the table in the xref:learn:services-and-indexes/indexes/query-without-index.adoc#manage-sequential-scans[Manage Sequential Scans] section. 
+The following example shows how the feature works when it's active: 
 
-When the feature is active, the Query Service monitors index changes and flags statements for repreparation.
-The next time a flagged statement runs, the service generates a new plan for it.
+* You prepare a statement and no suitable indexes exist to support it;
+the Query Service creates a plan that uses a sequential scan.
 
-The following example shows how a plan improves as you add new indexes for a statement:
+* You then create a primary index that better supports the statement;
+the service flags the statement, and on the next run generates a new plan that uses the primary index.
 
-* If you prepare a statement and no suitable indexes exist to support it, the Query Service creates a plan that uses a sequential scan.
-* If you then create a primary index that better supports the statement, the service flags the statement.
-On the next execution, the service generates a new plan that uses the primary index.
-* If you later create a secondary index that is an even better choice for the statement, the service flags the statement again.
-On the next execution, the service generates a new plan that uses the secondary index.
+* You later create a secondary index that is an even better choice for the statement;
+the service flags the statement again, and on the next run generates a new plan that uses the secondary index.
 
 If the feature is inactive, the statement continues to use the original plan (such as a sequential scan) even after you create new indexes.
 
-While this feature generates optimized query plans, it can increase the load on the Query Service. 
-Any index modification, even if it's unrelated to a statement, can trigger a repreparation.
-For example, creating or dropping an index that a statement does not use can still flag it for repreparation.
-In such cases, the statement reprepares only to select the same plan again, resulting in redundant work for the service.
+To enable the feature, set bit 23 (0×800000 or 8388608) of the `n1ql-feat-ctrl` setting. 
+For information about how to set this value, see the table in the xref:learn:services-and-indexes/indexes/query-without-index.adoc#manage-sequential-scans[Manage Sequential Scans] section. 
 
-To manage this, you can enable the feature temporarily when you create or drop indexes and disable it after repreparing all statements.
+[IMPORTANT]
+====
+This feature can increase the load on the Query Service. 
+Any index change, even one unrelated to a given statement, can trigger a repreparation.
+For example, creating or dropping an index that a statement does not use can still flag it for repreparation.
+In such cases, the statement reprepares only to select the same plan again, resulting in redundant work.
+
+To reduce this overhead, enable the feature temporarily when you create or drop indexes, and disable it after all statements are reprepared.
 If index changes are infrequent, the effect is minimal.
+====
 
 == Manual Reprepare
 
