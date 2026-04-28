@@ -6,30 +6,51 @@
 {description}
 
 [[decode,DECODE()]]
-== DECODE(`expression`, `search1`, `result1` [, `search2`, `result2`, \...] [, `default`])
+== DECODE
 
 Compares an expression to one or more search values, and returns the corresponding result of the first match.
 
-=== Arguments
+=== Syntax
 
-expression:: [Required] Any valid expression.
-search1, search2, \...:: [At least 1 is required] Any values.
-result1, result2, \...:: [At least 1 is required] Any values.
-default:: [Optional] Any value.
+....
+DECODE(expression, search1, result1 [, search2, result2, ...] [, default])
+....
 
-The function requires a minimum of three arguments.
-The first argument is the _expression_.
-This is followed by one or more pairs of _search_ and _result_ arguments.
-If there is an even number of arguments, the last argument is the _default_ argument.
-If there is an odd number of arguments, the _default_ is not specified.
+The function evaluates the expression against a sequence of search-result pairs in linear order.
+
+* The function works by comparing the expression to the first search value.
+* If they are equal, the function returns the corresponding result.
+* If they are not equal, the function ignores that result and moves to the next search argument. 
+* This process repeats until a match is found or all pairs are exhausted.
+* If no match is found, the function returns the value of the default argument if it is specified.
+* If no default argument is specified and no matches occur, the function returns NULL.
+
+[NOTE]
+====
+The function determines whether a default value is present based on the total number of arguments.
+
+* Even number of arguments: The last argument is the default.
+* Odd number of arguments: Every argument after the expression is part of a search-result pair, and there is no default.
+====
+
+==== Arguments
+
+expression:: [Required] Any valid expression to compare.
+search1, search2, ...:: [At least 1 required] The value to compare against the expression.
+result1, result2, ...:: [At least 1 required] The value to return if the corresponding search value matches the expression.
+default:: [Optional] The value to return if no search matches the expression. 
+
 
 === Return Value
-Returns the _result_ corresponding to the first _search_ that matches the _expression_.
-If none of the _search_ values match the _expression_, the function returns the value of _default_, or returns NULL if _default_ is not specified.
+
+Returns the result for the first search value that matches the expression.
+
+If there are no matches:
+
+* Returns default if it is provided.
+* Returns NULL if no default is provided.
 
 === Example
-
-include::ROOT:partial$query-context.adoc[tag=section]
 
 ====
 Find the UTC offset of all airports in the United States whose altitude is greater than 1000:
