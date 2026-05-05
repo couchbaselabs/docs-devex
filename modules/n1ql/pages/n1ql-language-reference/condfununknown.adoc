@@ -36,8 +36,10 @@ The function determines whether a default value is present based on the total nu
 ==== Arguments
 
 expression:: [Required] Any valid expression to compare.
-search1, search2, ...:: [At least 1 required] The value to compare against the expression.
-result1, result2, ...:: [At least 1 required] The value to return if the corresponding search value matches the expression.
+search1, search2, ...:: [Required] The value to compare against the expression.
+At least one search value is required, and each search value must have a corresponding result value.
+result1, result2, ...:: [Required] The value to return if the corresponding search value matches the expression.
+At least one result value is required, and each result value must have a corresponding search value.
 default:: [Optional] The value to return if no search matches the expression. 
 
 
@@ -47,8 +49,8 @@ Returns the result for the first search value that matches the expression.
 
 If there are no matches:
 
-* Returns default if it is provided.
-* Returns NULL if no default is provided.
+* Returns `default` if it is specified.
+* Returns `NULL` if `default` is not specified.
 
 === Example
 
@@ -98,23 +100,35 @@ LIMIT 5;
 ====
 
 [[if_missing,IFMISSING()]]
-== IFMISSING(`expression1`, `expression2`, \...)
+== IFMISSING
 
-=== Arguments
+Returns the first value in a list that is not MISSING. 
+If all values are MISSING, the function returns NULL.
 
-expression1, expression2, \...:: [At least 2 are required] Any valid expressions.
+=== Syntax
+
+....
+IFMISSING(expression1, expression2, ...)
+....
+
+==== Arguments
+
+expression1, expression2, ...:: [Required] Two or more valid expressions.
 
 === Return Value
+
 Returns the first non-MISSING value.
+
 Returns NULL if all values are MISSING.
 
 === Example
 ====
 [source,sqlpp]
 ----
-SELECT IFMISSING(null, missing, "abc", 123) AS Mix, -- <1>
-       IFMISSING(null, null, null) AS AllNull, -- <2>
-       IFMISSING(missing, missing, missing) AS AllMissing;
+SELECT IFMISSING(101, 102, "abc"), 
+       IFMISSING(MISSING, 101, 102),
+       IFMISSING(NULL, MISSING, 101, "abc"), 
+       IFMISSING(MISSING, MISSING);
 ----
 
 .Results
@@ -122,37 +136,47 @@ SELECT IFMISSING(null, missing, "abc", 123) AS Mix, -- <1>
 ----
 [
   {
-    "AllMissing": null,
-    "AllNull": null, // <2>
-    "Mix": null // <1>
+    "$1": 101,
+    "$2": 101,
+    "$3": null,
+    "$4": null
   }
 ]
 ----
-
-<1> The first non-MISSING value is NULL, so this function returns NULL.
-<2> The first non-MISSING value is NULL, so this function returns NULL.
 ====
 
 [[if_missing_or_null,IFMISSINGORNULL()]]
-== IFMISSINGORNULL(`expression1`, `expression2`, \...)
+== IFMISSINGORNULL
 
-This function has an alias <<coalesce>>.
+Returns the first value in a list that is neither MISSING nor NULL.
 
-=== Arguments
+This function has an alias `COALESCE`.
 
-expression1, expression2, \...:: [At least 2 are required] Any valid expressions.
+=== Syntax
+
+....
+IFMISSINGORNULL(expression1, expression2, ...)
+....
+
+==== Arguments
+
+expression1, expression2, ...:: [Required] Two or more valid expressions.
 
 === Return Value
+
 Returns first non-NULL, non-MISSING value.
+
 Returns NULL if all values are MISSING or NULL.
 
 === Example
 ====
 [source,sqlpp]
 ----
-SELECT IFMISSINGORNULL(null, missing, "abc", 123) AS Mix,
-       IFMISSINGORNULL(null, null, null) AS AllNull,
-       IFMISSINGORNULL(missing, missing, missing) AS AllMissing;  
+SELECT IFMISSINGORNULL(101, 102, "abc"),
+       IFMISSINGORNULL(MISSING, 101, 102),
+       IFMISSINGORNULL(NULL, MISSING, 101, "abc"),
+       IFMISSINGORNULL(NULL, NULL),
+       IFMISSINGORNULL(MISSING, MISSING);
 ----
 
 .Results
@@ -160,32 +184,45 @@ SELECT IFMISSINGORNULL(null, missing, "abc", 123) AS Mix,
 ----
 [
   {
-    "AllMissing": null,
-    "AllNull": null,
-    "Mix": "abc"
+    "$1": 101,
+    "$2": 101,
+    "$3": 101,
+    "$4": null,
+    "$5": null
   }
 ]
 ----
 ====
 
 [[if_null,IFNULL()]]
-== IFNULL(`expression1`, `expression2`, \...)
+== IFNULL
 
-=== Arguments
+Returns the first value in a list that is not NULL.
+Returns NULL if all values are NULL.
 
-expression1, expression2, \...:: [At least 2 are required] Any valid expressions.
+=== Syntax
+
+....
+IFNULL(expression1, expression2, ...)
+....
+
+==== Arguments
+
+expression1, expression2, ...:: [Required] Two or more valid expressions.
 
 === Return Value
-Returns first non-NULL value.
+
+Returns the first non-NULL value.
+
 Returns NULL if all values are NULL.
 
 === Example
 ====
 [source,sqlpp]
 ----
-SELECT IFNULL(null, missing, "abc", 123) AS Mix, -- <1>
-       IFNULL(null, null, null) AS AllNull,
-       IFNULL(missing, missing, missing) AS AllMissing; -- <2>
+SELECT IFNULL(101, 102, "abc"), 
+       IFNULL(NULL, 101, 102),
+       IFNULL(NULL, NULL);
 ----
 
 .Results
@@ -193,33 +230,46 @@ SELECT IFNULL(null, missing, "abc", 123) AS Mix, -- <1>
 ----
 [
   {
-    "AllNull": null
+    "$1": 101,
+    "$2": 101,
+    "$3": null
   }
 ]
 ----
-
-<1> The first non-NULL value is MISSING, so this function returns MISSING.
-<2> The first non-NULL value is MISSING, so this function returns MISSING.
 ====
 
 [[missing_if,MISSINGIF()]]
-== MISSINGIF(`expression1`, `expression2`)
+== MISSINGIF
 
-=== Arguments
+Compares two expressions and returns MISSING if they are equal.
+If the expressions are not equal, the function returns the first expression.
 
-expression1, expression2, \...:: [Exactly 2 are required] Any valid expressions.
+=== Syntax
+
+....
+MISSINGIF(expression1, expression2)
+....
+
+==== Arguments
+
+expression1, expression2:: [Required] Two valid expressions to compare.
 
 === Return Value
-Returns MISSING if `expression1` = `expression2`, otherwise returns `expression1`.
-Returns MISSING if either input is MISSING or if both inputs are MISSING.
-Returns NULL if either input is NULL or if both inputs are NULL.
+
+Returns one of the following:
+
+* MISSING if `expression1` = `expression2`.
+* `expression1` if `expression1` != `expression2`.
+* MISSING if either input is MISSING or if both inputs are MISSING.
+* NULL if either input is NULL or if both inputs are NULL.
 
 === Example
 ====
 [source,sqlpp]
 ----
-SELECT MISSINGIF("abc", 123) AS Different,
-       MISSINGIF("abc", "abc") AS Same;
+SELECT MISSINGIF("abc", 101),
+       MISSINGIF("abc", "abc"),
+       MISSINGIF(MISSING, "abc");
 ----
 
 .Results
@@ -227,23 +277,36 @@ SELECT MISSINGIF("abc", 123) AS Different,
 ----
 [
   {
-    "Different": "abc"
+    "$1": "abc"
   }
 ]
 ----
 ====
 
 [[null_if,NULLIF()]]
-== NULLIF(`expression1`, `expression2`)
+== NULLIF
+
+Compares two expressions and returns NULL if they are equal.
+If the expressions are not equal, the function returns the first expression.
+
+=== Syntax
+
+....
+NULLIF(expression1, expression2)
+....
 
 === Arguments
 
-expression1, expression2, \...:: [Exactly 2 are required] Any valid expressions.
+expression1, expression2:: [Required] Two valid expressions to compare.
 
 === Return Value
-Returns NULL if `expression1` = `expression2`, otherwise returns `expression1`.
-Returns MISSING if either input is MISSING or if both inputs are MISSING.
-Returns NULL if either input is NULL or if both inputs are NULL.
+
+Returns one of the following:
+
+* NULL if `expression1` = `expression2`.
+* `expression1` if `expression1` != `expression2`.
+* MISSING if either input is MISSING or if both inputs are MISSING.
+* NULL if either input is NULL or if both inputs are NULL.
 
 === Example
 ====
@@ -266,15 +329,28 @@ SELECT NULLIF("abc", 123) AS Different,
 ====
 
 [[nvl,NVL()]]
-== NVL(`expression1`, `expression2`)
+== NVL
 
-=== Arguments
+Returns the first value in a list that is not MISSING or NULL.
+Returns NULL if all values are MISSING or NULL.
 
-expression1, expression2, \...:: [Exactly 2 are required] Any valid expressions.
+=== Syntax
+
+....
+NVL(expression1, expression2)
+....
+
+==== Arguments
+
+expression1, expression2:: [Required] Two valid expressions to compare.
 
 === Return Value
-Returns `expression1` if `expression1` is not MISSING or NULL.
-Returns `expression2` if `expression1` is MISSING or NULL.
+
+Returns one of the following:
+
+* `expression1` if `expression1` is not MISSING or NULL.
+* `expression2` if `expression1` is MISSING or NULL and `expression2` is not MISSING or NULL.
+* NULL if both `expression1` and `expression2` are MISSING or NULL.
 
 === Example
 
@@ -317,14 +393,23 @@ LIMIT 5;
 ====
 
 [[nvl2,NVL2()]]
-== NVL2(`expression`, `value1`, `value2`)
+== NVL2
 
-=== Arguments
+Returns `value1` if `expression` is not MISSING or NULL, and returns `value2` if `expression` is MISSING or NULL.
+
+=== Syntax
+
+....
+NVL2(expression, value1, value2)
+....
+
+==== Arguments
 
 expression:: [Required] Any valid expression.
-value1, value2, \...:: [Exactly 2 are required] Any values.
+value1, value2:: [Required] Values to return based on whether `expression` is MISSING or NULL.
 
 === Return Value
+
 Returns `value1` if `expression` is not MISSING or NULL.
 Returns `value2` if `expression` is MISSING or NULL.
 
@@ -368,8 +453,6 @@ LIMIT 5;
 ----
 ====
 
+== Aliases
 
-[[coalesce,COALESCE()]]
-== COALESCE(`expression1`, `expression2`, \...)
-
-Alias for <<if_missing_or_null>>.
+* `COALESCE` is an alias for `IFMISSINGORNULL`.
