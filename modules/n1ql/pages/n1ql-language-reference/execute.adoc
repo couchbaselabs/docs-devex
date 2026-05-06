@@ -71,7 +71,7 @@ Once retrieved, the query engine creates a local cached copy of the prepared sta
 An error is returned if the name does not identify a prepared statement.
 
 [[auto-reprepare]]
-== Auto-Reprepare
+== Automatic Reprepare for Invalid Plans
 
 Before execution, the query engine checks whether the statement plan is still valid -- i.e. that all the indexes and keyspaces to which the plan refers are unchanged.
 If any indexes or keyspaces have changed, the statement is automatically prepared again, so that the plan matches the new set of resources.
@@ -79,6 +79,10 @@ If any indexes or keyspaces have changed, the statement is automatically prepare
 If this automatic reprepare succeeds, the statement simply executes as expected.
 However, if any required resources are found to be missing, execution of the affected prepared statement fails until those resources are created again.
 Once the resources are available again, execution proceeds without any further intervention.
+
+NOTE: The Query Service also provides an opt-in feature that extends this behavior.
+When enabled, the service monitors GSI metadata version changes (such as when you create or drop indexes) and reprepares affected statements. 
+For more information, see xref:n1ql-language-reference/prepare.adoc#auto-reprepare-index[Automatic Reprepare on Index Changes].
 
 [[parameters]]
 == Parameters

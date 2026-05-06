@@ -1,5 +1,5 @@
-= Creating a User-Defined Function
-:description: How to create a user-defined function to call external JavaScript code.
+= Create a User-Defined Function
+:description: How to create a user-defined function (UDF) to call an inline function or a JavaScript function.
 :page-pagination:
 :page-edition: Enterprise Edition
 :page-topic-type: guide
@@ -15,71 +15,229 @@ include::ROOT:partial$component-signpost.adoc[]
 
 == Introduction
 
-You cannot call external JavaScript code directly from a {sqlpp} query.
-You must create a {sqlpp} user-defined function to reference the external JavaScript code.
+include::partial$before-you-begin.adoc[tag=body]
+include::partial$query-tools.adoc[tags=body;!thumbs]
 
-If you have created a JavaScript function in an external library (see xref:create-javascript-library.adoc[]), you must create a {sqlpp} user-defined function to reference it.
+=== Global and Scoped User-Defined Functions
 
-You can also create a {sqlpp} user-defined function and the external JavaScript code in a single operation.
-In this case, the JavaScript code is not stored in an external library.
+A user-defined function can be *global* or *scoped*.
 
-[#creating-the-n1ql-udf-function]
-== Creating a {sqlpp} User-Defined Function to Reference an External Library
+* A *global* user-defined function is created within the `default:` namespace, at the same level as the buckets in your database.
+A global user-defined function is available to all users.
 
-To create a {sqlpp} user-defined function to reference an external library, do one of the following:
+* A *scoped* user-defined function is created within a scope, at the same level as the collections within the scope.
+A scoped user-defined function is only available to users who have access to that bucket and scope.
 
-* Use the xref:tools:udfs-ui.adoc[UDF UI] in the Query Workbench.
-* Use the {sqlpp} xref:n1ql:n1ql-language-reference/createfunction.adoc[CREATE FUNCTION] statement, and reference the external library and JavaScript function.
+The name of a user-defined function must be unique within the specified namespace or scope.
+
+=== User-Defined Function Parameters
+
+When you create a user-defined function, you can specify a list of parameters for any values you need to process or use in your function.
+If you want to create a user-defined function that can take a variable length list of parameters, you can create a *variadic* function.
+
+[#create-inline]
+== Creating an Inline User-Defined Function
+
+To create a user-defined function that uses inline {sqlpp}, use the Couchbase Web Console or a {sqlpp} statement.
 
 [tabs]
 ====
-Query Workbench::
+Couchbase Web Console::
 +
 --
-. Access the *UDF* screen from the administration console.
-+
-image::javascript-udfs/navigate-to-udf-query.png[]
+To create an inline user-defined function:
 
-. Click on the *{plus}{nbsp}add function* link.
-+
-image::javascript-udfs/my-library-list-add-function-button.png[alt="library list"]
-+
+. In the Couchbase Web Console, go to menu:Query[UDF].
+
+. Under *User-Defined Functions*, click the *{plus}{nbsp}add function* link.
 The *Add Function* dialog is displayed.
-+
-image::javascript-udfs/add-function-dialog.png[ ,400]
 
-. Use the *Namespace* drop-down lists to select the bucket and scope where your JavaScript function resides.
+. In the *Namespace* drop-down list, select *(global)* for a global function, or select a bucket and scope for a scoped function.
 
-. Fill in the *Function Name* of your {sqlpp} user-defined function.
+. In the *Function Name* box, enter a name for the user-defined function.
 
-. Specify *Parameters* for the function.
-+
-NOTE: The `...` in the parameters box denotes a variable length list of parameters.
+. In the *Parameters* box, enter a list of parameters separated by commas (`,`) or specify `\...` for a variadic function.
 
-. Select *JavaScript* for the function type.
-A field appears in the dialog with a list of available libraries in the namespace you selected.
-+
-image::javascript-udfs/add-function-dialog-switch-to-javascript.png[]
-+
-From this list select the library containing your function.
+. In the *Function Type* drop-down list, select *Inline*.
 
-. Enter the name of the JavaScript function in the `Library Function Name` field.
+. In the *Expression* box, enter a {sqlpp} expression as the body of the function.
+
+* If you specified named parameters for the user-defined function, use the same named parameters as identifiers in the {sqlpp} expression.
+
+* If the user-defined function is variadic, any arguments are passed to the {sqlpp} expression in an array called `args`.
+
+. Click btn:[Save Function].
+
 --
 
 {sqlpp}::
 +
 --
-Execute the `CREATE FUNCTION` in the CBQ Shell to create the {sqlpp} user-defined function:
+To create an inline user-defined function:
 
-[source, sqlpp]
+. If required, xref:select.adoc#query-context[set the query context] for a scoped function, or unset the context for a global function.
+
+. Use the `CREATE FUNCTION` statement and specify a name for the function.
+
+. Specify a list of parameter names separated by commas (`,`) or specify `\...` for a variadic function.
+
+. Use the braces syntax `{}` or the `LANGUAGE INLINE AS` clause to specify a {sqlpp} expression as the body of the function.
+
+* If you specified named parameters for the user-defined function, use the same named parameters as identifiers in the {sqlpp} expression.
+
+* If the user-defined function is variadic, any arguments are passed to the {sqlpp} expression in an array called `args`.
+
+'''
+
+.Queries
+The following query creates an inline {sqlpp} function in the current query context, using the braces syntax.
+
+[source,sqlpp]
 ----
-include::example$javascript-udfs/create-scoped-n1ql-udf.n1ql[]
+include::n1ql:example$udf/create-inline-params-braces.n1ql[]
 ----
+
+The following query creates an inline {sqlpp} function in the current query context, using the `LANGUAGE INLINE` syntax.
+
+[source,sqlpp]
+----
+include::n1ql:example$udf/create-inline-params-language.n1ql[]
+----
+
+For more information, see xref:n1ql:n1ql-language-reference/createfunction.adoc[].
 --
 ====
 
-NOTE: The {sqlpp} user-defined function will take the same scope as the JavaScript UDF it is referencing.
+[#create-sqlpp-managed-external-udf]
+== Creating a User-Defined Function with {sqlpp} Managed JavaScript
+
+To create a user-defined function that uses {sqlpp} managed JavaScript, you must use a {sqlpp} statement.
+
+[tabs]
+====
+{sqlpp}::
++
+--
+To create a user-defined function with {sqlpp} managed JavaScript:
+
+. If required, xref:select.adoc#query-context[set the query context] for a scoped function, or unset the context for a global function.
+
+. Use the `CREATE FUNCTION` statement and specify a name for the function.
+
+. Specify a list of parameter names separated by commas (`,`) or specify `\...` for a variadic function.
+
+. Use the `LANGUAGE JAVASCRIPT AS` clause to define a JavaScript function.
+The JavaScript function must have the same name as the {sqlpp} user-defined function.
+
+* If the user-defined function has named parameters, specify the same number of parameters for the JavaScript function.
+
+* If the user-defined function is variadic, specify a rest parameter for the JavaScript function, such as `\... args`.
+
+'''
+
+.Queries
+The following query creates a {sqlpp} managed JavaScript function in the current query context.
+
+[source,sqlpp]
+----
+include::n1ql:example$udf/create-javascript-managed.n1ql[]
+----
+
+For more information, see xref:n1ql:n1ql-language-reference/createfunction.adoc[].
+--
+====
+
+[#creating-the-n1ql-udf-function]
+== Creating a User-Defined Function with a JavaScript Library
+
+If you have created a JavaScript function in a JavaScript library (see xref:create-javascript-library.adoc[]), you must create a {sqlpp} user-defined function to reference it.
+
+If the JavaScript library is scoped, create a scoped user-defined function in the same scope as the library.
+
+To create a user-defined function that references a JavaScript library, use the Couchbase Web Console or a {sqlpp} statement.
+
+[tabs]
+====
+Couchbase Web Console::
++
+--
+To create a user-defined function that references a JavaScript library:
+
+. In the Couchbase Web Console, go to menu:Query[UDF].
+
+. Under *User-Defined Functions*, click the *{plus}{nbsp}add function* link.
+The *Add Function* dialog is displayed.
+
+. In the *Namespace* drop-down list, select *(global)* for a global function, or select a bucket and scope for a scoped function.
+
+. In the *Function Name* box, enter a name for the user-defined function.
+
+. In the *Parameters* box, enter a list of parameters separated by commas (`,`) or specify `\...` for a variadic function.
+
+. In the *Function Type* drop-down list, select *JavaScript*.
+
+. In the *JavaScript Library* field, select the library which contains the JavaScript function.
+
+. In the *Library Function Name* field, enter the name of the JavaScript function.
+
+* If the user-defined function has named parameters, the JavaScript function should accept the same number of parameters.
+
+* If the user-defined function is variadic, the JavaScript function should accept a rest parameter, such as `\... args`.
+
+. Click btn:[Save Function].
+--
+
+{sqlpp}::
++
+--
+To create a user-defined function that references a JavaScript library:
+
+. If required, xref:select.adoc#query-context[set the query context] for a scoped function, or unset the context for a global function.
+
+. Use the `CREATE FUNCTION` statement and specify a name for the function.
+
+. Specify a list of parameter names separated by commas (`,`) or specify `\...` for a variadic function.
+
+. Use the `LANGUAGE JAVASCRIPT AS` clause to specify the name of the JavaScript function.
+
+* If the user-defined function has named parameters, the JavaScript function should accept the same number of parameters.
+
+* If the user-defined function is variadic, the JavaScript function should accept a rest parameter, such as `\... args`.
+
+. Use the `AT` keyword to specify the library which contains the JavaScript function.
+
+'''
+
+.Queries
+The following query creates a user-defined function within the current query context that references a global JavaScript library.
+
+[source.no-callouts, sqlpp]
+----
+include::javascript-udfs:example$create-globally-scoped-n1ql-udf.n1ql[]
+----
+
+The following query creates a user-defined function within the current query context that references a scoped JavaScript library in the same query context.
+
+[source.no-callouts, sqlpp]
+----
+include::javascript-udfs:example$create-relatively-scoped-n1ql-udf.n1ql[]
+----
+
+For more information, see xref:n1ql:n1ql-language-reference/createfunction.adoc[].
+--
+====
 
 == Related Links
 
-* To create a {sqlpp} user-defined function and the external JavaScript code in a single operation, see xref:n1ql:n1ql-language-reference/createfunction.adoc[CREATE FUNCTION].
+Reference:
+
+* xref:javascript-udfs:javascript-functions-with-couchbase.adoc[]
+* xref:n1ql:n1ql-language-reference/createfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/execfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/explainfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/dropfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/userfun.adoc[] -- using user-defined functions (UDFs) in {sqlpp} statements
+
+Administrator guides:
+
+* xref:n1ql:n1ql-intro/sysinfo.adoc#sys-functions[Monitor Functions]
