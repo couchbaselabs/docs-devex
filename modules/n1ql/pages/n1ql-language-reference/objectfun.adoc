@@ -6,13 +6,17 @@
 {description}
 
 [[fn-obj-add,OBJECT_ADD()]]
-== OBJECT_ADD(`object`, `new_attr_key`, `new_attr_value`)
-
-=== Description
+== OBJECT_ADD
 
 This function adds new attributes and values to a given object.
 
-=== Arguments
+=== Syntax
+
+....
+OBJECT_ADD(object, new_attr_key, new_attr_value)
+....
+
+==== Arguments
 
 object:: An expression representing the object that you want to add to.
 new_attr_key:: The name of the attribute to add.
@@ -24,25 +28,28 @@ The updated object.
 
 * This function does not perform key substitution.
 * If you add a duplicate attribute (that is, if the key is found), it returns an error or NULL object.
-* If [.var]`new_attr_key` or [.var]`new_attr_value` is MISSING, or if [.var]`new_attr_key` is NULL, it returns the [.var]`object` unmodified.
-* If [.var]`object` is not an object or NULL, it returns a NULL value object.
+* If `new_attr_key` or `new_attr_value` is MISSING, or if `new_attr_key` is NULL, it returns the `object` unmodified.
+* If object` is not an object or NULL, it returns a NULL value object.
 
-=== Examples
-
-include::ROOT:partial$query-context.adoc[tag=section]
+=== Example
 
 [[obj-add-ex,OBJECT_ADD() Example]]
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT schedule[0] AS original,
-       OBJECT_ADD(schedule[0], "day_new", 1) AS output
-FROM route
-LIMIT 1;
+WITH route AS ([{
+  "id": "R1",
+  "schedule": [
+    {"day": 0, "flight": "AF198", "utc": "10:13:00"},
+    {"day": 2, "flight": "AF200", "utc": "15:30:00"}
+  ]
+}])
+SELECT route[0].schedule[0] AS original,
+       OBJECT_ADD(route[0].schedule[0], "day_new", 1) AS output;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -64,16 +71,24 @@ LIMIT 1;
 ====
 
 [[fn-obj-concat,OBJECT_CONCAT()]]
-== OBJECT_CONCAT(`expr`, `expr` ...)
-
-=== Description
+== OBJECT_CONCAT
 
 This function concatenates the input objects and returns a new object.
 It requires a minimum of two input objects.
 
-=== Arguments
+NOTE: All input objects must be plain objects; arrays of objects are not supported.
+If you need to concatenate arrays of objects, use <<fn-obj-concat2,OBJECT_CONCAT2()>> instead.
 
-expr:: An expression representing an object.
+=== Syntax
+
+....
+OBJECT_CONCAT(expr, expr, ...)
+....
+
+==== Arguments
+
+expr:: An expression representing an object. 
+There must be at least two expressions, and all must be plain objects (not arrays).
 
 === Return Value
 
@@ -95,7 +110,7 @@ SELECT OBJECT_CONCAT({"flight": "AF198"},
 );       
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -115,17 +130,21 @@ SELECT OBJECT_CONCAT({"flight": "AF198"},
 ====
 
 [[fn-obj-concat2,OBJECT_CONCAT2()]]
-== OBJECT_CONCAT2(`expr`, `expr` ...)
-
-=== Description
+== OBJECT_CONCAT2
 
 This function concatenates multiple input objects into a single new object, and requires at least two input objects to work. 
 Unlike <<fn-obj-concat>>, this function supports both plain objects and arrays of objects as arguments. 
 
+=== Syntax
 
-=== Arguments
+....
+OBJECT_CONCAT2(expr, expr, ...)
+....
+
+==== Arguments
 
 expr:: An expression representing an object or an array of objects. 
+There must be at least two expressions.
 The first argument must be a plain object and cannot be an array. 
 
 === Return Value
@@ -133,7 +152,7 @@ The first argument must be a plain object and cannot be an array.
 An object constructed by concatenating all the input objects.
 If any of the input objects contain the same attribute name, the attribute from the last relevant object in the input list is copied to the output; similarly-named attributes from earlier objects in the input list are ignored.
 
-=== Examples
+=== Example
 
 [[obj-concat2-ex,OBJECT_CONCAT2() Example]]
 ====
@@ -150,7 +169,7 @@ SELECT OBJECT_CONCAT2(
 );
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -167,14 +186,18 @@ SELECT OBJECT_CONCAT2(
 ====
 
 [[fn-obj-field,OBJECT_FIELD()]]
-== OBJECT_FIELD(`object`, `field`)
-
-=== Description
+== OBJECT_FIELD
 
 This function returns the value of the specified field within the given object.
 A field in this context may be any attribute or element, nested at any level within the object.
 
-=== Arguments
+=== Syntax
+
+....
+OBJECT_FIELD(expr, field)
+....
+
+==== Arguments
 
 expr:: An expression representing an object.
 
@@ -188,7 +211,7 @@ If any attribute names within the field path contain special characters, they mu
 The value of the specified field.
 If the object does not exist, or the field cannot be found within the object at the specified location, the function returns NULL.
 
-=== Examples
+=== Example
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
@@ -209,7 +232,7 @@ FROM hotel
 LIMIT 1;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -255,7 +278,7 @@ FROM hotel
 LIMIT 1;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -283,18 +306,23 @@ LIMIT 1;
 
 
 [[fn-obj-filter,OBJECT_FILTER()]]
-== OBJECT_FILTER(`expression` [, `options`])
+== OBJECT_FILTER
 
-=== Description
 This function extracts and returns nested fields from an input object that match a specified pattern, while retaining their original hierarchical path structure in the output. 
 This is particularly useful when working with complex objects, as it allows you to filter fields based on patterns using either regular expressions or exact matches.
 
-=== Arguments
+=== Syntax
+
+....
+OBJECT_FILTER(expression [, options])
+....
+
+==== Arguments
 expression:: An expression representing an object.
 
 options:: [Optional] A JSON object specifying options for the function.
 
-=== Options
+==== Options
 
 [options="header", cols="1a,3a,1a"]
 |===
@@ -390,7 +418,7 @@ FROM `travel-sample`.`inventory`.`hotel` t
 WHERE type = 'hotel' 
 LIMIT 2;
 ----
-.Results
+.Result
 [source,json]
 ----
 [
@@ -424,7 +452,7 @@ FROM `travel-sample`.`inventory`.`hotel` t
 WHERE type = 'hotel' 
 LIMIT 1;
 ----
-.Results
+.Result
 [source,json]
 ----
 [
@@ -445,9 +473,7 @@ LIMIT 1;
 
 
 [[fn-obj-inner-pairs,OBJECT_INNER_PAIRS()]]
-== OBJECT_INNER_PAIRS(`expression`)
-
-=== Description
+== OBJECT_INNER_PAIRS
 
 This function returns an array of objects, containing the names and values of each attribute in the input object.
 It is particularly useful when iterating over multiple objects in an array, as it collates the values from similarly-named attributes into a single nested array.
@@ -455,7 +481,13 @@ It is particularly useful when iterating over multiple objects in an array, as i
 In this case, the function does not return a value from any object which does not contain the shared attribute name, rather like an INNER JOIN.
 For an illustration, refer to the examples below.
 
-=== Arguments
+=== Syntax
+
+...
+OBJECT_INNER_PAIRS(expression)
+...
+
+==== Arguments
 
 expression:: An expression representing an object.
 
@@ -481,7 +513,7 @@ SELECT OBJECT_INNER_PAIRS({"flight": "AI444", "utc": "4:44:44", "codename": "gre
     AS inner_pairs;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -519,7 +551,7 @@ WITH special_flights AS ([{"flight": "AI444", "utc": "4:44:44", "codename": "gre
 SELECT OBJECT_INNER_PAIRS(special_flights[*]) AS inner_pairs;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -559,9 +591,7 @@ SELECT OBJECT_INNER_PAIRS(special_flights[*]) AS inner_pairs;
 ====
 
 [[fn-obj-inner-values,OBJECT_INNER_VALUES()]]
-== OBJECT_INNER_VALUES(`expression`)
-
-=== Description
+== OBJECT_INNER_VALUES
 
 This function returns an array, containing the values of each attribute in the input object.
 It is particularly useful when iterating over multiple objects in an array, as it collates the values from similarly-named attributes into a single nested array.
@@ -569,7 +599,13 @@ It is particularly useful when iterating over multiple objects in an array, as i
 In this case, the function does not return a value from any object which does not contain the shared attribute name, rather like an INNER JOIN.
 For an illustration, refer to the examples below.
 
-=== Arguments
+=== Syntax
+
+....
+OBJECT_INNER_VALUES(expression)
+....
+
+==== Arguments
 
 expression:: An expression representing an object.
 
@@ -590,7 +626,7 @@ SELECT OBJECT_INNER_VALUES({"flight": "AI444", "utc": "4:44:44", "codename": "gr
     AS inner_values;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -619,7 +655,7 @@ WITH special_flights AS ([{"flight": "AI444", "utc": "4:44:44", "codename": "gre
 SELECT OBJECT_INNER_VALUES(special_flights[*]) AS inner_values;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -647,16 +683,20 @@ SELECT OBJECT_INNER_VALUES(special_flights[*]) AS inner_values;
 ====
 
 [[fn-obj-length,OBJECT_LENGTH()]]
-== OBJECT_LENGTH(`expression`)
-
-_Equivalent_: xref:n1ql-language-reference/metafun.adoc#len[LEN()]
-
-=== Description
+== OBJECT_LENGTH
 
 This function returns the number of name-value pairs in the object.
 It only counts the top-level attributes and does not recurse into nested objects.
 
-=== Arguments
+Equivalent to xref:n1ql-language-reference/arrayfun.adoc#len[LEN()]. 
+
+=== Syntax
+
+....
+OBJECT_LENGTH(expression)
+....
+
+==== Arguments
 
 expression:: An object or an expression that evaluates to an object.
 
@@ -666,7 +706,7 @@ An integer.
 
 If the input expression is not an object, the function returns `null`; if the input expression is `missing`, the function returns `missing`.
 
-=== Examples
+=== Example
 
 [[obj-length-ex,OBJECT_LENGTH() Example]]
 ====
@@ -676,7 +716,7 @@ If the input expression is not an object, the function returns `null`; if the in
 SELECT OBJECT_LENGTH({"abc": 1, "def": 2, "ghi": {"uvw": 3, "xyz": 4}});
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -688,14 +728,20 @@ SELECT OBJECT_LENGTH({"abc": 1, "def": 2, "ghi": {"uvw": 3, "xyz": 4}});
 ====
 
 [[fn-obj-names,OBJECT_NAMES()]]
-== OBJECT_NAMES(`expression`)
+== OBJECT_NAMES
 
 === Description
 
 This function returns an array, containing the names of each attribute in the input object.
 It is particularly useful when iterating over multiple objects in an array, as it collates similar attribute names.
 
-=== Arguments
+=== Syntax
+
+....
+OBJECT_NAMES(expression)
+....
+
+==== Arguments
 
 expression:: An expression representing an object.
 
@@ -716,7 +762,7 @@ SELECT OBJECT_NAMES({"flight": "AI444", "utc": "4:44:44", "codename": "green"})
     AS names;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -743,7 +789,7 @@ WITH special_flights AS ([{"flight": "AI444", "utc": "4:44:44", "codename": "gre
 SELECT OBJECT_NAMES(special_flights[*]) AS names;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -836,7 +882,7 @@ SELECT OBJECT_PAIRS({"flight": "AI444", "utc": "4:44:44", "codename": "green"})
     AS outer_pairs;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -870,7 +916,7 @@ SELECT OBJECT_PAIRS({"flight": "AI444", "utc": "4:44:44", "codename": "green"},{
     AS outer_pairs;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -908,7 +954,7 @@ WITH special_flights AS ([{"flight": "AI444", "utc": "4:44:44", "codename": "gre
 SELECT OBJECT_PAIRS(special_flights[*]) AS outer_pairs;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1113,7 +1159,7 @@ SELECT OBJECT_PAIRS_NESTED(input) AS nested_pairs,
                                    AS filtered_fields_regex;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1193,7 +1239,7 @@ WITH special_flights AS ([{"flight": "AI444", "utc": "4:44:44", "codename": "gre
 SELECT OBJECT_PAIRS_NESTED(special_flights[*], {"composites": true}) AS nested_pairs;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1406,7 +1452,7 @@ SELECT OBJECT_PATHS(input, {"composites": true}) AS composite,
        OBJECT_PATHS(input, {"composites": false}) AS non_composite;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1443,7 +1489,7 @@ SELECT
     AS no_subscripts_unique;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1489,7 +1535,7 @@ SELECT
     AS exact_field_name; 
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1523,7 +1569,7 @@ FROM hotel
 LIMIT 1;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1593,10 +1639,10 @@ attr_value:: The value of the attribute.
 
 The updated object.
 
-* If [.var]`attr_key` is found in the object, it replaces the corresponding attribute value by [.var]`attr_value`.
-* If [.var]`attr_value` is MISSING, it deletes the corresponding existing key (if any), like <<fn-obj-remove>>.
-* If [.var]`attr_key` is MISSING, it returns a MISSING value.
-* If [.var]`attr_key` is not an object, it returns a NULL value.
+* If `attr_key` is found in the object, it replaces the corresponding attribute value by `attr_value`.
+* If `attr_value` is MISSING, it deletes the corresponding existing key (if any), like <<fn-obj-remove>>.
+* If `attr_key` is MISSING, it returns a MISSING value.
+* If `attr_key` is not an object, it returns a NULL value.
 
 === Examples
 
@@ -1613,7 +1659,7 @@ FROM route
 LIMIT 1;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1669,7 +1715,7 @@ FROM airline AS t
 LIMIT 1;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1714,8 +1760,8 @@ attr_key:: The name of the attribute to remove.
 
 The input object without the removed attribute.
 
-* If the [.var]`attr_key` is MISSING, it returns a MISSING value.
-* If the [.var]`attr_key` is not an object, it returns a NULL value.
+* If the `attr_key` is MISSING, it returns a MISSING value.
+* If the `attr_key` is not an object, it returns a NULL value.
 
 === Examples
 
@@ -1732,7 +1778,7 @@ FROM route
 LIMIT 1;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1759,7 +1805,7 @@ LIMIT 1;
 SELECT OBJECT_REMOVE({"abc": 1, "def": 2, "ghi": 3}, "def");
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1808,7 +1854,7 @@ FROM airline AS t
 LIMIT 1;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1865,7 +1911,7 @@ SELECT OBJECT_TYPES({"flight": "AI444",
     AS object_types;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1914,7 +1960,7 @@ SELECT OBJECT_TYPES_NESTED({"flight":"AI444",
     AS object_types_nested;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1968,7 +2014,7 @@ SELECT OBJECT_UNWRAP({"name": "value"}) AS single,
        OBJECT_UNWRAP("some-string") AS `string`;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -2016,7 +2062,7 @@ SELECT OBJECT_VALUES({"flight": "AI444", "utc": "4:44:44", "codename": "green"})
     AS outer_values;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -2045,7 +2091,7 @@ WITH special_flights AS ([{"flight": "AI444", "utc": "4:44:44", "codename": "gre
 SELECT OBJECT_VALUES(special_flights[*]) AS outer_values;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
