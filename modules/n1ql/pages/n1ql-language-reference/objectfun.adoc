@@ -730,8 +730,6 @@ SELECT OBJECT_LENGTH({"abc": 1, "def": 2, "ghi": {"uvw": 3, "xyz": 4}});
 [[fn-obj-names,OBJECT_NAMES()]]
 == OBJECT_NAMES
 
-=== Description
-
 This function returns an array, containing the names of each attribute in the input object.
 It is particularly useful when iterating over multiple objects in an array, as it collates similar attribute names.
 
@@ -806,11 +804,7 @@ SELECT OBJECT_NAMES(special_flights[*]) AS names;
 ====
 
 [[fn-obj-pairs,OBJECT_PAIRS()]]
-== OBJECT_PAIRS(`expression` [, `options` ])
-
-_Alias_: *OBJECT_OUTER_PAIRS(`expression` [, `options` ])*
-
-=== Description
+== OBJECT_PAIRS
 
 This function returns an array of objects, containing the names and values of each attribute in the input object. 
 It also provides an option to return attribute types instead of values. 
@@ -820,7 +814,15 @@ However, if an object does not contain a shared attribute name, it returns a nul
 
 For an illustration, refer to the examples below.
 
-=== Arguments
+This function has an alias `OBJECT_OUTER_PAIRS`. 
+
+=== Syntax
+
+....
+OBJECT_PAIRS(expression [, options])
+....
+
+==== Arguments
 
 expression:: An expression representing an object.
 
@@ -828,7 +830,7 @@ options:: [Optional]
 A JSON object specifying options for the function.
 
 
-=== Options
+==== Options
 
 [options="header", cols="1a,3a,1a"]
 |===
@@ -1000,9 +1002,7 @@ SELECT OBJECT_PAIRS(special_flights[*]) AS outer_pairs;
 
 
 [[fn-obj-pairs-nested,OBJECT_PAIRS_NESTED()]]
-== OBJECT_PAIRS_NESTED(`object` [, `options`])
-
-=== Description
+== OBJECT_PAIRS_NESTED
 
 Similar to <<fn-obj-pairs>>, this function returns an array of objects, containing the names and values of each field in the input object. 
 It also provides an option to return field types instead of values. 
@@ -1013,13 +1013,19 @@ However, if an object does not contain a shared field name, it returns a null en
 
 For an illustration, refer to the examples below.
 
-=== Arguments
+=== Syntax
+
+....
+OBJECT_PAIRS_NESTED(object [, options])
+....
+
+==== Arguments
 
 object:: An expression representing an object.
 
 options:: [Optional] A JSON object specifying options for the function. 
 
-=== Options
+==== Options
 
 [options="header", cols="1a,3a,1a"]
 |===
@@ -1334,20 +1340,24 @@ Compare this example with <<obj-pairs-ex3>>.
 ====
 
 [[fn-obj-paths,OBJECT_PATHS()]]
-== OBJECT_PATHS(`object` [, `options`] )
-
-=== Description
+== OBJECT_PATHS
 
 This function returns the paths to all the fields within an object.
 A field in this context may be any attribute or element, nested at any level within the object.
 
-=== Arguments
+=== Syntax
+
+....
+OBJECT_PATHS(object [, options])
+....
+
+==== Arguments
 
 object:: An expression representing an object.
 
 options:: [Optional] An object containing the following possible parameters. 
 
-=== Options
+==== Options
 
 [options="header", cols="1a,3a,1a"]
 |===
@@ -1621,13 +1631,17 @@ LIMIT 1;
 ====
 
 [[fn-obj-put,OBJECT_PUT()]]
-== OBJECT_PUT(`object`, `attr_key`, `attr_value`)
-
-=== Description
+== OBJECT_PUT
 
 This function adds new or updates existing attributes and values to a given object.
 
-=== Arguments
+=== Syntax
+
+....
+OBJECT_PUT(object, attr_key, attr_value)
+....
+
+==== Arguments
 
 object:: An expression representing an object.
 
@@ -1644,7 +1658,7 @@ The updated object.
 * If `attr_key` is MISSING, it returns a MISSING value.
 * If `attr_key` is not an object, it returns a NULL value.
 
-=== Examples
+=== Example
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
@@ -1680,13 +1694,17 @@ LIMIT 1;
 ====
 
 [[fn-obj-rename,OBJECT_RENAME()]]
-== OBJECT_RENAME(`input_obj`, `old_field`, `new_field`)
-
-=== Description
+== OBJECT_RENAME
 
 Renames the attribute `old_field` to `new_field` in the JSON input object `input_obj`.
 
-=== Arguments
+=== Syntax
+
+....
+OBJECT_RENAME(input_obj, old_field, new_field)
+....
+
+==== Arguments
 
 input_obj:: Any JSON object, or {sqlpp} expression that can evaluate to a JSON object, representing the search object.
 
@@ -1699,7 +1717,7 @@ new_field:: A string, or any valid xref:n1ql-language-reference/index.adoc[expre
 The input object with the new attribute name.
 Note that if the new attribute name already exists in the input object, the original attribute with that name is replaced.
 
-=== Examples
+=== Example
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
@@ -1744,13 +1762,17 @@ LIMIT 1;
 ====
 
 [[fn-obj-remove,OBJECT_REMOVE()]]
-== OBJECT_REMOVE(`object`, `attr_key`)
-
-=== Description
+== OBJECT_REMOVE
 
 This function removes the specified attribute and corresponding values from the given object.
 
-=== Attributes
+=== Syntax
+
+....
+OBJECT_REMOVE(object, attr_key)
+....
+
+==== Arguments
 
 object:: An expression representing an object.
 
@@ -1820,13 +1842,17 @@ SELECT OBJECT_REMOVE({"abc": 1, "def": 2, "ghi": 3}, "def");
 ====
 
 [[fn-obj-replace,OBJECT_REPLACE()]]
-== OBJECT_REPLACE(`input_obj`, `old_value`, `new_value`)
-
-=== Description
+== OBJECT_REPLACE
 
 Replaces all occurrences of the value `value_old` to `value_new` in the JSON input object `input_obj`.
 
-=== Arguments
+=== Syntax
+
+...
+OBJECT_REPLACE(input_obj, old_value, new_value)
+...
+
+==== Arguments
 
 input_obj:: Any JSON object, or {sqlpp} expression that can evaluate to a JSON object, representing the search object.
 
@@ -1838,7 +1864,7 @@ new_value:: A string, or any valid xref:n1ql-language-reference/index.adoc[expre
 
 The JSON object `input_obj` with replaced values.
 
-=== Examples
+=== Example
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
@@ -1883,11 +1909,15 @@ LIMIT 1;
 ====
 
 [[fn-obj-type,OBJECT_TYPES()]]
-== OBJECT_TYPES(`expression`)
-
-=== Description
+== OBJECT_TYPES
 
 This function returns the data type of every field in the supplied object, as reported by the xref:n1ql-language-reference/typefun.adoc#fn-type-type[TYPE()] function.
+
+=== Syntax
+
+...
+OBJECT_TYPES(expression)
+...
 
 === Arguments
 
@@ -1928,14 +1958,18 @@ SELECT OBJECT_TYPES({"flight": "AI444",
 ====
 
 [[fn-obj-types-nested,OBJECT_TYPES_NESTED()]]
-== OBJECT_TYPES_NESTED(`expression`)
-
-=== Description
+== OBJECT_TYPES_NESTED
 
 This function returns the data type of every non-composite field in the supplied object, as reported by the xref:n1ql-language-reference/typefun.adoc#fn-type-type[TYPE()] function.
 Additionally, all composite type fields (ARRAYs and OBJECTs) are recursively processed in the same way, returning the data types of all nested values. 
 
-=== Arguments
+=== Syntax
+
+...
+OBJECT_TYPES_NESTED(expression)
+...
+
+==== Arguments
 
 expression:: An expression representing an object.
 
@@ -1985,13 +2019,17 @@ SELECT OBJECT_TYPES_NESTED({"flight":"AI444",
 
 
 [[fn-obj-unwrap,OBJECT_UNWRAP()]]
-== OBJECT_UNWRAP(`expression`)
-
-=== Description
+== OBJECT_UNWRAP
 
 This function enables you to unwrap an object without knowing the name of the attribute.
 
-=== Arguments
+=== Syntax
+
+...
+OBJECT_UNWRAP(expression)
+...
+
+==== Arguments
 
 expression:: An expression representing an object.
 
@@ -2001,7 +2039,7 @@ If the argument is an object with exactly one attribute, this function returns t
 If the argument is MISSING, it returns MISSING.
 For all other cases, it returns NULL.
 
-=== Examples
+=== Example
 
 [[obj-unwrap-ex,OBJECT_UNWRAP() Example]]
 ====
@@ -2029,11 +2067,7 @@ SELECT OBJECT_UNWRAP({"name": "value"}) AS single,
 ====
 
 [[fn-obj-values,OBJECT_VALUES()]]
-== OBJECT_VALUES(`expression`)
-
-_Alias_: *OBJECT_OUTER_VALUES(`expression`)*
-
-=== Description
+== OBJECT_VALUES
 
 This function returns an array, containing the values of each attribute in the input object.
 It is particularly useful when iterating over multiple objects in an array, as it collates the values from similarly-named attributes into a single nested array.
@@ -2041,7 +2075,15 @@ It is particularly useful when iterating over multiple objects in an array, as i
 In this case, the function returns a null entry from any object which does not contain the shared attribute name, rather like an OUTER JOIN.
 For an illustration, refer to the examples below.
 
-=== Arguments
+This function has an alias `OBJECT_OUTER_VALUES`.
+
+=== Syntax
+
+...
+OBJECT_VALUES(expression)
+...
+
+==== Arguments
 
 expression:: An expression representing an object.
 
@@ -2122,3 +2164,8 @@ SELECT OBJECT_VALUES(special_flights[*]) AS outer_values;
 ]
 ----
 ====
+
+== Aliases
+
+* `OBJECT_OUTER_PAIRS` is an alias for <<fn-obj-pairs,OBJECT_PAIRS>>.
+* `OBJECT_OUTER_VALUES` is an alias for <<fn-obj-values,OBJECT_VALUES>>.
