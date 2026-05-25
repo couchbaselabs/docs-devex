@@ -1,351 +1,439 @@
 = Conditional Functions for Unknowns
 :page-topic-type: reference
 :example-caption!:
-:description: Conditional functions evaluate expressions to determine if the values and formulas meet the specified condition.
+:description: Conditional functions evaluate expressions and return a value based on conditional logic.
 
+[abstract]
 {description}
 
-[[coalesce,COALESCE()]]
-== COALESCE(`expression1`, `expression2`, \...)
-
-Alias for <<if_missing_or_null>>.
-
 [[decode,DECODE()]]
-== DECODE(`expression`, `search1`, `result1` [, `search2`, `result2`, \...] [, `default`])
+== DECODE
 
-=== Arguments
+Compares an expression to one or more search values and returns the corresponding result of the first match.
 
-expression:: [Required] Any valid expression.
-search1, search2, \...:: [At least 1 is required] Any values.
-result1, result2, \...:: [At least 1 is required] Any values.
-default:: [Optional] Any value.
+The function evaluates the expression against a sequence of search-result pairs in linear order.
 
-The function requires a minimum of three arguments.
-The first argument is the _expression_.
-This is followed by one or more pairs of _search_ and _result_ arguments.
-If there is an even number of arguments, the last argument is the _default_ argument.
-If there is an odd number of arguments, the _default_ is not specified.
+* The function works by comparing the expression to the first search value.
+* If they are equal, the function returns the corresponding result.
+* If they are not equal, the function ignores that result and moves to the next search argument. 
+* This process repeats until a match is found or all pairs are exhausted.
+* If no match is found, the function returns the value of the default argument if it is specified.
+* If no default argument is specified and no matches occur, the function returns NULL.
+
+
+=== Syntax
+
+....
+DECODE(expression, search1, result1 [, search2, result2, ...] [, default])
+....
+
+[NOTE]
+====
+The function determines whether a default value is present based on the total number of arguments.
+
+* Even number of arguments: The last argument is the default.
+* Odd number of arguments: Every argument after the expression is part of a search-result pair, and there is no default.
+====
+
+==== Arguments
+
+expression:: [Required] Any valid expression to compare.
+search1, search2, ...:: [Required] The value to compare against the expression.
+At least one search value is required, and each search value must have a corresponding result value.
+result1, result2, ...:: [Required] The value to return if the corresponding search value matches the expression.
+At least one result value is required, and each result value must have a corresponding search value.
+default:: [Optional] The value to return if no search matches the expression. 
+
 
 === Return Value
-Returns the _result_ corresponding to the first _search_ that matches the _expression_.
-If none of the _search_ values match the _expression_, the function returns the value of _default_, or returns NULL if _default_ is not specified.
+
+Returns one of the following:
+
+* The result for the first search value that matches the expression.
+* `default` if no match is found and `default` is specified.
+* `NULL` if no match is found and `default` is not specified.
 
 === Example
 
-include::ROOT:partial$query-context.adoc[tag=section]
-
 ====
-Find the UTC offset of all airports in the United States whose altitude is greater than 1000:
-
+.Query
 [source,sqlpp]
 ----
-SELECT a.airportname AS Airport,
-DECODE(a.tz, "Pacific/Honolulu", "-10:00",
-             "America/Anchorage", "-09:00",
-             "America/Los_Angeles", "-08:00",
-             "America/Denver", "-07:00",
-             "America/Chicago", "-06:00",
-             "America/New_York", "-05:00", a.tz) AS UTCOffset
-FROM airport a
-WHERE a.country = "United States" AND a.geo.alt > 1000
-LIMIT 5;
+SELECT flight, 
+DECODE(flight, 101, "London", 
+         202, "Paris", 
+         303, "Tokyo", 
+         404, "New York", 
+         "Unknown Destination")
+AS Destination
+FROM [
+  {"flight": 101},
+  {"flight": 303},
+  {"flight": 999},
+  {"flight": null}] 
+AS flights;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
   {
-    "Airport": "Indian Mountain Lrrs",
-    "UTCOffset": "-09:00"
+    "flight": 101,
+    "Destination": "London"
   },
   {
-    "Airport": "Sparrevohn Lrrs",
-    "UTCOffset": "-09:00"
+    "flight": 303,
+    "Destination": "Tokyo"
   },
   {
-    "Airport": "Bicycle Lake Aaf",
-    "UTCOffset": "-08:00"
+    "flight": 999,
+    "Destination": "Unknown Destination"
   },
   {
-    "Airport": "Twentynine Palms Eaf",
-    "UTCOffset": "-0:800"
-  },
-  {
-    "Airport": "Grants Milan Muni",
-    "UTCOffset": "-07:00"
+    "flight": null,
+    "Destination": "Unknown Destination"
   }
 ]
 ----
 ====
 
 [[if_missing,IFMISSING()]]
-== IFMISSING(`expression1`, `expression2`, \...)
+== IFMISSING
 
-=== Arguments
+Returns the first value in a list that is not `MISSING`.
 
-expression1, expression2, \...:: [At least 2 are required] Any valid expressions.
+=== Syntax
+
+....
+IFMISSING(expression1, expression2, ...)
+....
+
+==== Arguments
+
+expression1, expression2, ...:: [Required] Two or more valid expressions.
 
 === Return Value
-Returns the first non-MISSING value.
-Returns NULL if all values are MISSING.
+
+Returns one of the following:
+
+* The first non-MISSING value.
+* `NULL` if all values are MISSING.
 
 === Example
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT IFMISSING(null, missing, "abc", 123) AS Mix, -- <1>
-       IFMISSING(null, null, null) AS AllNull, -- <2>
-       IFMISSING(missing, missing, missing) AS AllMissing;
+SELECT IFMISSING(101, 102, "abc"), 
+       IFMISSING(MISSING, 101, 102),
+       IFMISSING(NULL, MISSING, 101, "abc"), 
+       IFMISSING(MISSING, MISSING);
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
   {
-    "AllMissing": null,
-    "AllNull": null, // <2>
-    "Mix": null // <1>
+    "$1": 101,
+    "$2": 101,
+    "$3": null,
+    "$4": null
   }
 ]
 ----
-
-<1> The first non-MISSING value is NULL, so this function returns NULL.
-<2> The first non-MISSING value is NULL, so this function returns NULL.
 ====
 
 [[if_missing_or_null,IFMISSINGORNULL()]]
-== IFMISSINGORNULL(`expression1`, `expression2`, \...)
+== IFMISSINGORNULL
 
-This function has an alias <<coalesce>>.
+Returns the first value in a list that is neither `MISSING` nor `NULL`.
 
-=== Arguments
+This function has an alias `COALESCE`.
 
-expression1, expression2, \...:: [At least 2 are required] Any valid expressions.
+=== Syntax
+
+....
+IFMISSINGORNULL(expression1, expression2, ...)
+....
+
+==== Arguments
+
+expression1, expression2, ...:: [Required] Two or more valid expressions.
 
 === Return Value
-Returns first non-NULL, non-MISSING value.
-Returns NULL if all values are MISSING or NULL.
+
+Returns one of the following:
+
+* The first non-NULL, non-MISSING value.
+* `NULL` if all values are `MISSING` or `NULL`.
 
 === Example
+
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT IFMISSINGORNULL(null, missing, "abc", 123) AS Mix,
-       IFMISSINGORNULL(null, null, null) AS AllNull,
-       IFMISSINGORNULL(missing, missing, missing) AS AllMissing;  
+SELECT IFMISSINGORNULL(101, 102, "abc"),
+       IFMISSINGORNULL(MISSING, 101, 102),
+       IFMISSINGORNULL(NULL, MISSING, 101, "abc"),
+       IFMISSINGORNULL(NULL, NULL),
+       IFMISSINGORNULL(MISSING, MISSING);
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
   {
-    "AllMissing": null,
-    "AllNull": null,
-    "Mix": "abc"
+    "$1": 101,
+    "$2": 101,
+    "$3": 101,
+    "$4": null,
+    "$5": null
   }
 ]
 ----
 ====
 
 [[if_null,IFNULL()]]
-== IFNULL(`expression1`, `expression2`, \...)
+== IFNULL
 
-=== Arguments
+Returns the first value in a list that is not `NULL`.
 
-expression1, expression2, \...:: [At least 2 are required] Any valid expressions.
+=== Syntax
+
+....
+IFNULL(expression1, expression2, ...)
+....
+
+==== Arguments
+
+expression1, expression2, ...:: [Required] Two or more valid expressions.
 
 === Return Value
-Returns first non-NULL value.
-Returns NULL if all values are NULL.
+
+Returns one of the following:
+
+* The first non-NULL value.
+* `NULL` if all values are `NULL`.
 
 === Example
+
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT IFNULL(null, missing, "abc", 123) AS Mix, -- <1>
-       IFNULL(null, null, null) AS AllNull,
-       IFNULL(missing, missing, missing) AS AllMissing; -- <2>
+SELECT IFNULL(101, 102, "abc"), 
+       IFNULL(NULL, 101, 102),
+       IFNULL(NULL, NULL);
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
   {
-    "AllNull": null
+    "$1": 101,
+    "$2": 101,
+    "$3": null
   }
 ]
 ----
-
-<1> The first non-NULL value is MISSING, so this function returns MISSING.
-<2> The first non-NULL value is MISSING, so this function returns MISSING.
 ====
 
 [[missing_if,MISSINGIF()]]
-== MISSINGIF(`expression1`, `expression2`)
+== MISSINGIF
 
-=== Arguments
+Compares two expressions and returns `MISSING` if they are equal.
+If the expressions are not equal, the function returns the first expression.
 
-expression1, expression2, \...:: [Exactly 2 are required] Any valid expressions.
+=== Syntax
+
+....
+MISSINGIF(expression1, expression2)
+....
+
+==== Arguments
+
+expression1, expression2:: [Required] Two valid expressions to compare.
 
 === Return Value
-Returns MISSING if `expression1` = `expression2`, otherwise returns `expression1`.
-Returns MISSING if either input is MISSING or if both inputs are MISSING.
-Returns NULL if either input is NULL or if both inputs are NULL.
+
+Returns one of the following:
+
+* `MISSING` if `expression1` = `expression2`.
+* `expression1` if `expression1` != `expression2`.
+* `MISSING` if either input is `MISSING` or both inputs are `MISSING`.
+* `NULL` if either input is `NULL` or both inputs are `NULL`.
 
 === Example
+
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT MISSINGIF("abc", 123) AS Different,
-       MISSINGIF("abc", "abc") AS Same;
+SELECT MISSINGIF("abc", 101),
+       MISSINGIF("abc", "abc"),
+       MISSINGIF(MISSING, "abc");
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
   {
-    "Different": "abc"
+    "$1": "abc"
   }
 ]
 ----
 ====
 
 [[null_if,NULLIF()]]
-== NULLIF(`expression1`, `expression2`)
+== NULLIF
+
+Compares two expressions and returns `NULL` if they are equal.
+If the expressions are not equal, the function returns the first expression.
+
+=== Syntax
+
+....
+NULLIF(expression1, expression2)
+....
 
 === Arguments
 
-expression1, expression2, \...:: [Exactly 2 are required] Any valid expressions.
+expression1, expression2:: [Required] Two valid expressions to compare.
 
 === Return Value
-Returns NULL if `expression1` = `expression2`, otherwise returns `expression1`.
-Returns MISSING if either input is MISSING or if both inputs are MISSING.
-Returns NULL if either input is NULL or if both inputs are NULL.
+
+Returns one of the following:
+
+* `NULL` if `expression1` = `expression2`.
+* `expression1` if `expression1` != `expression2`.
+* `MISSING` if either input is `MISSING` or both inputs are `MISSING`.
+* `NULL` if either input is `NULL` or both inputs are `NULL`.
 
 === Example
+
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT NULLIF("abc", 123) AS Different,
-       NULLIF("abc", "abc") AS Same;
+SELECT NULLIF("abc", 123),
+       NULLIF("abc", "abc");
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
   {
-    "Different": "abc",
-    "Same": null
+    "$1": "abc",
+    "$2": null
   }
 ]
 ----
 ====
 
 [[nvl,NVL()]]
-== NVL(`expression1`, `expression2`)
+== NVL
 
-=== Arguments
+Evaluates two expressions and returns the first expression if it is not `MISSING` or `NULL`. 
 
-expression1, expression2, \...:: [Exactly 2 are required] Any valid expressions.
+If the first expression is `MISSING` or `NULL`, the function returns the second expression.
+
+=== Syntax
+
+....
+NVL(expression1, expression2)
+....
+
+==== Arguments
+
+expression1, expression2:: [Required] Two valid expressions to compare.
 
 === Return Value
-Returns `expression1` if `expression1` is not MISSING or NULL.
-Returns `expression2` if `expression1` is MISSING or NULL.
+
+Returns one of the following:
+
+* `expression1` if `expression1` is not `MISSING` or `NULL`.
+* `expression2` if `expression1` is `MISSING` or `NULL` and `expression2` is not `MISSING` or `NULL`.
+* `NULL` if both `expression1` and `expression2` are `MISSING` or `NULL`.
 
 === Example
 
-include::ROOT:partial$query-context.adoc[tag=section]
-
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT name as Name, NVL(iata, "n/a") as IATA
-FROM airline 
-LIMIT 5;
+SELECT NVL(15, 0),
+       NVL(NULL, 100),
+       NVL(MISSING, -1);
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
   {
-    "IATA": "Q5",
-    "Name": "40-Mile Air"
-  },
-  {
-    "IATA": "TQ",
-    "Name": "Texas Wings"
-  },
-  {
-    "IATA": "A1",
-    "Name": "Atifly"
-  },
-  {
-    "IATA": "n/a",
-    "Name": "Jc royal.britannica"
-  },
-  {
-    "IATA": "ZQ",
-    "Name": "Locair"
+    "$1": 15,
+    "$2": 100,
+    "$3": -1
   }
 ]
 ----
 ====
 
 [[nvl2,NVL2()]]
-== NVL2(`expression`, `value1`, `value2`)
+== NVL2
 
-=== Arguments
+Evaluates an expression to determine if it is `MISSING` or `NULL`, and returns a value based on the result.
+
+=== Syntax
+
+....
+NVL2(expression, value1, value2)
+....
+
+==== Arguments
 
 expression:: [Required] Any valid expression.
-value1, value2, \...:: [Exactly 2 are required] Any values.
+value1:: [Required] The value to return if `expression` is not `MISSING` or `NULL`.
+value2:: [Required] The value to return if `expression` is `MISSING` or `NULL`.
 
 === Return Value
-Returns `value1` if `expression` is not MISSING or NULL.
-Returns `value2` if `expression` is MISSING or NULL.
+
+Returns one of the following:
+
+* `value1` if `expression` is not `MISSING` or `NULL`.
+* `value2` if `expression` is `MISSING` or `NULL`.
 
 === Example
 
-include::ROOT:partial$query-context.adoc[tag=section]
-
 ====
+.Query
 [source,sqlpp]
 ----
-SELECT name as Name, NVL2(directions, "Yes", "No") as DirectionsAvailable
-FROM hotel
-LIMIT 5;
+SELECT NVL2(15, "Not missing or null", "Missing or null"),
+       NVL2(NULL, "Not missing or null", "Missing or null"),
+       NVL2(MISSING, "Not missing or null", "Missing or null");
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
   {
-    "DirectionsAvailable": "No",
-    "Name": "Medway Youth Hostel"
-  },
-  {
-    "DirectionsAvailable": "No",
-    "Name": "The Balmoral Guesthouse"
-  },
-  {
-    "DirectionsAvailable": "Yes",
-    "Name": "The Robins"
-  },
-  {
-    "DirectionsAvailable": "Yes",
-    "Name": "Le Clos Fleuri"
-  },
-  {
-    "DirectionsAvailable": "Yes",
-    "Name": "Glasgow Grand Central"
+    "$1": "Not missing or null",
+    "$2": "Missing or null",
+    "$3": "Missing or null"
   }
 ]
 ----
 ====
+
+== Aliases
+
+* `COALESCE` is an alias for <<if_missing_or_null,IFMISSINGORNULL>>.
