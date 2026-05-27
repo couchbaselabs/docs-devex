@@ -835,6 +835,10 @@ curl $BASE_URL/admin/settings -u $USER:$PASSWORD \
   -d '{"completed-limit":1000}'
 ----
 
+NOTE: To optimize performance, the completed requests catalog uses a generic cache that does not guarantee a strict eviction order.
+When the catalog reaches the specified limit, it evicts requests based on when they complete, and not when they start. 
+As a result, it may remove a request with a later start time (`requestTime`) that completes quickly before it removes a long-running request with an earlier start time that completes later.
+
 [[sys-history]]
 == Stream Completed Requests
 
@@ -1301,7 +1305,7 @@ If you're using the cbq shell or the Query REST API, the following statistics ar
 ----
 ====
 
-For field names and meanings, see xref:n1ql-rest-query:index.adoc#Profile[Profile].
+For field names and meanings, see xref:n1ql-rest-query:index.adoc#ResponseProfile[Profile].
 
 [[plan]]
 === Profiling Details in System Catalogs
@@ -1449,7 +1453,7 @@ Getting the plan for a statement that you ran when the profile was set to `timin
 ----
 ====
 
-For field names and meanings, see xref:n1ql-rest-query:index.adoc#Execution_Timings[Execution Timings].
+For field names and meanings, see xref:n1ql-rest-query:index.adoc#ResponseProfileTiming[Execution Timings].
 
 == Query Profiling Summary
 
