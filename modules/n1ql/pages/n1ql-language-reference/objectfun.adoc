@@ -19,9 +19,9 @@ OBJECT_ADD(object, new_attr_key, new_attr_value)
 
 ==== Arguments
 
-object:: An expression representing the object to update.
-new_attr_key:: The name of the attribute to add to the object.
-new_attr_value:: The value to assign to the new attribute.
+object:: [Required] An expression representing the object to update.
+new_attr_key:: [Required] The name of the attribute to add to the object.
+new_attr_value:: [Required] The value to assign to the new attribute.
 
 === Return Value
 
@@ -39,15 +39,9 @@ The updated object.
 .Query
 [source,sqlpp]
 ----
-WITH route AS ([{
-  "id": "R1",
-  "schedule": [
-    {"day": 0, "flight": "AF198", "utc": "10:13:00"},
-    {"day": 2, "flight": "AF200", "utc": "15:30:00"}
-  ]
-}])
-SELECT route[0].schedule[0] AS original,
-       OBJECT_ADD(route[0].schedule[0], "day_new", 1) AS output;
+SELECT 
+OBJECT_ADD({"day": 0, "flight": "AF198", "utc": "10:13:00"}, 
+      "day_new", 1) AS output;
 ----
 
 .Result
@@ -55,11 +49,6 @@ SELECT route[0].schedule[0] AS original,
 ----
 [
   {
-    "original": {
-      "day": 0,
-      "flight": "AF198",
-      "utc": "10:13:00"
-    },
     "output": {
       "day": 0,
       "day_new": 1,
@@ -87,7 +76,7 @@ OBJECT_CONCAT(expr1, expr2, ...)
 
 ==== Arguments
 
-expr1, expr2, ...:: Expressions representing the objects to concatenate.
+expr1, expr2, ...:: [Required] Expressions representing the objects to concatenate.
 You must provide at least two expressions. 
 All input objects must be plain objects and cannot be arrays of objects.
 
@@ -98,7 +87,7 @@ An object constructed by concatenating all the input objects.
 If multiple input objects contain the same attribute name, the function copies the attribute from the last relevant object in the argument list to the output object. 
 The same-named attributes from earlier objects in the list are ignored.
 
-=== Examples
+=== Example
 
 [[obj-concat-ex,OBJECT_CONCAT() Example]]
 ====
@@ -146,7 +135,7 @@ OBJECT_CONCAT2(expr1, expr2, ...)
 
 ==== Arguments
 
-expr1, expr2, ...:: Expressions representing the objects to concatenate.
+expr1, expr2, ...:: [Required] Expressions representing the objects to concatenate.
 You must provide at least two expressions.
 These can be plain objects or arrays of objects, but the first argument must be a plain object and cannot be an array. 
 
@@ -204,9 +193,9 @@ OBJECT_FIELD(expr, field)
 
 ==== Arguments
 
-expr:: An expression representing the object to query.
+expr:: [Required] An expression representing the object to query.
 
-field:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the path to a field within the object.
+field:: [Required] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the path to a field within the object.
 +
 You can use xref:n1ql-language-reference/nestedops.adoc[nested operators] to specify the path to a nested attribute or element.
 If any attribute names within the field path contain special characters, they must be escaped using backticks (`{backtick}{backtick}`).
@@ -339,7 +328,7 @@ OBJECT_FILTER(expression [, options])
 ....
 
 ==== Arguments
-expression:: An expression representing an object.
+expression:: [Required] An expression representing an object.
 
 options:: [Optional] A JSON object specifying options for the function.
 
@@ -511,13 +500,13 @@ For an illustration, refer to the examples below.
 
 === Syntax
 
-...
+....
 OBJECT_INNER_PAIRS(expr)
-...
+....
 
 ==== Arguments
 
-expr:: An expression representing an object.
+expr:: [Required] An expression representing an object.
 
 === Return Value
 
@@ -635,7 +624,7 @@ OBJECT_INNER_VALUES(expr)
 
 ==== Arguments
 
-expr:: An expression representing an object.
+expr:: [Required] An expression representing an object.
 
 === Return Value
 
@@ -726,7 +715,7 @@ OBJECT_LENGTH(expr)
 
 ==== Arguments
 
-expr:: An expression representing an object.
+expr:: [Required] An expression representing an object.
 
 === Return Value
 
@@ -742,16 +731,21 @@ If the input expression is `MISSING`, the function returns `MISSING`.
 .Query
 [source,sqlpp]
 ----
-SELECT OBJECT_LENGTH({"abc": 1, "def": 2, "ghi": {"uvw": 3, "xyz": 4}});
+SELECT OBJECT_LENGTH(
+    {"flight": "AI444", 
+    "airline": "Air France", 
+    "departure": {"airport": "CDG", "time": "10:13:00"}
+  }) 
+AS length;
 ----
 
 .Result
 [source,json]
 ----
 [
-    {
-        "$1": 3
-    }
+  {
+    "length": 3
+  }
 ]
 ----
 ====
@@ -770,7 +764,7 @@ OBJECT_NAMES(expr)
 
 ==== Arguments
 
-expr:: An expression representing an object.
+expr:: [Required] An expression representing an object.
 
 === Return Value
 
@@ -841,8 +835,6 @@ It also provides an option to return attribute types instead of values.
 The function is particularly useful when iterating over multiple objects in an array, as it collates the values from similarly-named attributes into a single nested array. 
 However, if an object does not contain a shared attribute name, it returns a null entry, similar to an OUTER JOIN.
 
-For an illustration, refer to the examples below.
-
 This function has an alias `OBJECT_OUTER_PAIRS`. 
 
 === Syntax
@@ -853,7 +845,7 @@ OBJECT_PAIRS(expression [, options])
 
 ==== Arguments
 
-expression:: An expression representing an object.
+expression:: [Required] An expression representing an object.
 
 options:: [Optional]
 A JSON object specifying options for the function.
@@ -898,7 +890,7 @@ An array of objects, each containing the following attributes:
 | String
 |===
 
-NOTE: Each returned object will have either **val** or **type** (depending on the specified options), and not both. 
+NOTE: Each returned object will have either `val` or `type` (depending on the specified options), and not both. 
 Also, the objects in the array are sorted by attribute name, in {sqlpp} collation order.
 
 === Examples
@@ -1040,8 +1032,6 @@ A field in this context may be any attribute or element, nested at any level wit
 This function may be useful when iterating over multiple objects in an array, as it collates and unnests the values from similarly-named fields across all objects in the input array.
 However, if an object does not contain a shared field name, it returns a null entry, similar to an OUTER JOIN.
 
-For an illustration, refer to the examples below.
-
 === Syntax
 
 ....
@@ -1050,7 +1040,7 @@ OBJECT_PAIRS_NESTED(object [, options])
 
 ==== Arguments
 
-object:: An expression representing an object.
+object:: [Required] An expression representing an object.
 
 options:: [Optional] A JSON object specifying options for the function. 
 
@@ -1171,7 +1161,7 @@ If any attribute names within a field path contain special characters, they are 
 | String
 |===
 
-NOTE: Each returned object will have either **val** or **type** (depending on the specified options), and not both. 
+NOTE: Each returned object will have either `val` or `type` (depending on the specified options), and not both. 
 Also, the objects in the array are sorted by field name, in {sqlpp} collation order.
 
 === Examples
@@ -1191,7 +1181,7 @@ SELECT OBJECT_PAIRS_NESTED(input) AS nested_pairs,
        OBJECT_PAIRS_NESTED(input, {"types": true}) AS nested_pairs_types,
        OBJECT_PAIRS_NESTED(input, {"pattern": "number", "patternspace":"field"}) AS filtered_fields,
        OBJECT_PAIRS_NESTED(input, {"pattern": "-name$", "patternspace":"field", "regex":true}) 
-                                   AS filtered_fields_regex;
+       AS filtered_fields_regex;
 ----
 
 .Result
@@ -1365,7 +1355,7 @@ SELECT OBJECT_PAIRS_NESTED(special_flights[*], {"composites": true}) AS nested_p
 ]
 ----
 
-Compare this example with <<obj-pairs-ex3>>.
+Compare this example with the <<obj-pairs-ex3, OBJECT_PAIRS() example>>.
 ====
 
 [[fn-obj-paths,OBJECT_PATHS()]]
@@ -1382,7 +1372,7 @@ OBJECT_PATHS(object [, options])
 
 ==== Arguments
 
-object:: An expression representing an object.
+object:: [Required] An expression representing an object.
 
 options:: [Optional] An object containing the following possible parameters. 
 
@@ -1648,11 +1638,11 @@ OBJECT_PUT(object, attr_key, attr_value)
 
 ==== Arguments
 
-object:: An expression representing an object.
+object:: [Required] An expression representing an object.
 
-attr_key:: The name of the attribute to insert or update.
+attr_key:: [Required] The name of the attribute to insert or update.
 
-attr_value:: The value of the attribute.
+attr_value:: [Required] The value of the attribute.
 
 === Return Value
 
@@ -1665,17 +1655,16 @@ The updated object.
 
 === Example
 
-include::ROOT:partial$query-context.adoc[tag=section]
-
 [[obj-put-ex,OBJECT_PUT() Example]]
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT schedule[0] AS original,
-       OBJECT_PUT(schedule[0], "day", 1) AS output
-FROM route
-LIMIT 1;
+SELECT OBJECT_PUT(
+          {"day": 0,
+           "flight": "AF198",
+           "utc": "10:13:00"}, "day", 3) 
+AS updated;
 ----
 
 .Result
@@ -1683,13 +1672,8 @@ LIMIT 1;
 ----
 [
   {
-    "original": {
-      "day": 0,
-      "flight": "AF198",
-      "utc": "10:13:00"
-    },
-    "output": {
-      "day": 1,
+    "updated": {
+      "day": 3,
       "flight": "AF198",
       "utc": "10:13:00"
     }
@@ -1711,11 +1695,11 @@ OBJECT_RENAME(input_obj, old_field, new_field)
 
 ==== Arguments
 
-input_obj:: Any JSON object, or {sqlpp} expression that can evaluate to a JSON object, representing the search object.
+input_obj:: [Required] Any JSON object, or {sqlpp} expression that can evaluate to a JSON object, representing the search object.
 
-old_field:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the old (original) attribute name inside the JSON object `input_obj`.
+old_field:: [Required] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the old (original) attribute name inside the JSON object `input_obj`.
 
-new_field:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the new attribute name to replace `old_field` inside the JSON object `input_obj`.
+new_field:: [Required] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the new attribute name to replace `old_field` inside the JSON object `input_obj`.
 
 === Return Value
 
@@ -1724,18 +1708,15 @@ Note that if the new attribute name already exists in the input object, the orig
 
 === Example
 
-include::ROOT:partial$query-context.adoc[tag=section]
-
 [[obj-rename-ex,OBJECT_RENAME() Example]]
 .Changing a field name
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT t AS original,
-       OBJECT_RENAME(t, "name", "new_name") AS output
-FROM airline AS t
-LIMIT 1;
+WITH input AS ({"flight-name": "AI444", "flight-number": 737})
+SELECT input AS original,
+        OBJECT_RENAME(input, "flight-name", "flight") AS renamed;
 ----
 
 .Result
@@ -1744,22 +1725,12 @@ LIMIT 1;
 [
   {
     "original": {
-      "callsign": "MILE-AIR",
-      "country": "United States",
-      "iata": "Q5",
-      "icao": "MLA",
-      "id": 10,
-      "name": "40-Mile Air",
-      "type": "airline"
+      "flight-name": "AI444",
+      "flight-number": 737
     },
-    "output": {
-      "callsign": "MILE-AIR",
-      "country": "United States",
-      "iata": "Q5",
-      "icao": "MLA",
-      "id": 10,
-      "new_name": "40-Mile Air",
-      "type": "airline"
+    "renamed": {
+      "flight": "AI444",
+      "flight-number": 737
     }
   }
 ]
@@ -1779,9 +1750,9 @@ OBJECT_REMOVE(object, attr_key)
 
 ==== Arguments
 
-object:: An expression representing an object.
+object:: [Required] An expression representing an object.
 
-attr_key:: The name of the attribute to remove.
+attr_key:: [Required] The name of the attribute to remove.
 
 === Return Value
 
@@ -1794,15 +1765,13 @@ The input object without the removed attribute.
 
 [[obj-remove-ex1,OBJECT_REMOVE() Example 1]]
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
 
 .Query
 [source,sqlpp]
 ----
-SELECT schedule[0] AS original,
-       OBJECT_REMOVE(schedule[0], "day") AS output
-FROM route
-LIMIT 1;
+WITH input AS ({"flight-name": "AI444", "flight-number": 737})
+SELECT input AS original,
+       OBJECT_REMOVE(input, "flight-number") AS output;
 ----
 
 .Result
@@ -1811,35 +1780,11 @@ LIMIT 1;
 [
   {
     "original": {
-      "day": 0,
-      "flight": "AF198",
-      "utc": "10:13:00"
+      "flight-name": "AI444",
+      "flight-number": 737
     },
     "output": {
-      "flight": "AF198",
-      "utc": "10:13:00"
-    }
-  }
-]
-----
-====
-
-[[obj-remove-ex2,OBJECT_REMOVE() Example 2]]
-====
-.Query
-[source,sqlpp]
-----
-SELECT OBJECT_REMOVE({"abc": 1, "def": 2, "ghi": 3}, "def");
-----
-
-.Result
-[source,json]
-----
-[
-  {
-    "$1": {
-      "abc": 1,
-      "ghi": 3
+      "flight-name": "AI444"
     }
   }
 ]
@@ -1849,21 +1794,21 @@ SELECT OBJECT_REMOVE({"abc": 1, "def": 2, "ghi": 3}, "def");
 [[fn-obj-replace,OBJECT_REPLACE()]]
 == OBJECT_REPLACE
 
-Replaces all occurrences of the value `value_old` to `value_new` in the JSON input object `input_obj`.
+Replaces all occurrences of a specified value with another value in the given JSON object.
 
 === Syntax
 
-...
+....
 OBJECT_REPLACE(input_obj, old_value, new_value)
-...
+....
 
 ==== Arguments
 
-input_obj:: Any JSON object, or {sqlpp} expression that can evaluate to a JSON object, representing the search object.
+input_obj:: [Required] Any JSON object, or {sqlpp} expression that can evaluate to a JSON object, representing the search object.
 
-old_value:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the old (original) value name inside the JSON object `input_obj`.
+old_value:: [Required] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the old (original) value name inside the JSON object `input_obj`.
 
-new_value:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the new value name to replace `old_value` inside the JSON object `input_obj`.
+new_value:: [Required] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the new value name to replace `old_value` inside the JSON object `input_obj`.
 
 === Return Value
 
@@ -1871,18 +1816,15 @@ The JSON object `input_obj` with replaced values.
 
 === Example
 
-include::ROOT:partial$query-context.adoc[tag=section]
-
 [[obj-replace-ex,OBJECT_REPLACE() Example]]
 .Replace any occurrences of "airline" with "airplane"
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT t AS original,
-       OBJECT_REPLACE(t, "airline", "airplane") AS output
-FROM airline AS t
-LIMIT 1;
+WITH input AS ({"flight-name": "AI444", "flight-number": 737})
+SELECT input AS original,
+       OBJECT_REPLACE(input, "AI444", "FO123") AS output;
 ----
 
 .Result
@@ -1891,22 +1833,12 @@ LIMIT 1;
 [
   {
     "original": {
-      "callsign": "MILE-AIR",
-      "country": "United States",
-      "iata": "Q5",
-      "icao": "MLA",
-      "id": 10,
-      "name": "40-Mile Air",
-      "type": "airline"
+      "flight-name": "AI444",
+      "flight-number": 737
     },
     "output": {
-      "callsign": "MILE-AIR",
-      "country": "United States",
-      "iata": "Q5",
-      "icao": "MLA",
-      "id": 10,
-      "name": "40-Mile Air",
-      "type": "airplane"
+      "flight-name": "FO123",
+      "flight-number": 737
     }
   }
 ]
@@ -1920,13 +1852,13 @@ Returns the data type of every field in the supplied object, as reported by the 
 
 === Syntax
 
-...
+....
 OBJECT_TYPES(expression)
-...
+....
 
-=== Arguments
+==== Arguments
 
-expression:: An expression representing an object.
+expression:: [Required] An expression representing an object.
 
 === Return Value
 
@@ -1943,7 +1875,7 @@ SELECT OBJECT_TYPES({"flight": "AI444",
                      "duration": 180,
                      "gate": NULL,
                      "aircraft": {"model": "Boeing 737"}}) 
-    AS object_types;
+AS object_types;
 ----
 
 .Result
@@ -1970,13 +1902,13 @@ Additionally, all composite type fields (ARRAYs and OBJECTs) are recursively pro
 
 === Syntax
 
-...
+....
 OBJECT_TYPES_NESTED(expression)
-...
+....
 
 ==== Arguments
 
-expression:: An expression representing an object.
+expression:: [Required] An expression representing an object.
 
 === Return Value
 
@@ -1989,14 +1921,17 @@ An object with the same fields as the input object, but with all values replaced
 .Query
 [source,sqlpp]
 ----
-SELECT OBJECT_TYPES_NESTED({"flight":"AI444",
-                            "crewMembers": ["Alice Bobson",
-                                            "John Flo",
-                                            true],
-                            "gate": NULL,
-                            "aircraft": {"model": "Boeing 737",
-                                         "capacity":200}}) 
-    AS object_types_nested;
+SELECT 
+OBJECT_TYPES_NESTED(
+    {"flight":"AI444",
+     "crewMembers": ["Alice Bobson",
+                     "John Flo",
+                      true],
+      "gate": NULL,
+      "aircraft": {"model": "Boeing 737", "capacity":200}
+      }
+    ) 
+AS object_types_nested;
 ----
 
 .Result
@@ -2030,19 +1965,19 @@ Enables you to unwrap an object without knowing the name of the attribute.
 
 === Syntax
 
-...
+....
 OBJECT_UNWRAP(expression)
-...
+....
 
 ==== Arguments
 
-expression:: An expression representing an object.
+expression:: [Required] An expression representing an object.
 
 === Return Value
 
 If the argument is an object with exactly one attribute, this function returns the value in the attribute.
-If the argument is MISSING, it returns MISSING.
-For all other cases, it returns NULL.
+If the argument is `MISSING`, it returns `MISSING`.
+For all other cases, it returns `NULL`.
 
 === Example
 
@@ -2084,13 +2019,13 @@ This function has an alias `OBJECT_OUTER_VALUES`.
 
 === Syntax
 
-...
+....
 OBJECT_VALUES(expression)
-...
+....
 
 ==== Arguments
 
-expression:: An expression representing an object.
+expression:: [Required] An expression representing an object.
 
 === Return Value
 
