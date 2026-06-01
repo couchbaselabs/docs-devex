@@ -6,33 +6,108 @@
 {description}
 
 [#description]
-////
-== What is RBAC
 
 Couchbase provides _Role-Based Access Control_ (RBAC), in which access privileges are assigned to fixed roles, which are in turn assigned to users, (each of which may be an administrator or an application) either _directly_ or _indirectly_, through _user-groups_.
 
 A Couchbase _role_ permits one or more _resources_ to be accessed according to defined _privileges_.
-Roles can be assigned to individual users, and to groups, by means of either the UI or the REST API.
+Roles can be assigned to individual users, and to groups, by means of either the UI or the REST API. 
 
-Couchbase Server Enterprise Edition provides RBAC with multiple roles for finer access control.
-Community Edition provides multiple users that can be assigned to a limited set of roles.
+Couchbase Server Enterprise Edition provides RBAC with multiple roles for finer access control. 
 
-////
+In Capella, RBAC is implemented at the organization, project, and cluster levels.
 
-To be able to use the Eventing service through the Capella UI, you need to have one of the following organization or project roles: 
+== Access Credentials and Credential Types
+Cluster access credentials provide programmatic and application-level access to data on a cluster.
+These credentials are separate from xref:organizations:organization-user-roles.adoc[organization roles] and xref:projects:project-roles.adoc[project roles].
+Your Capella user account's organization and project roles control your access to the Capella UI, while cluster access credentials control programmatic and application-level access to data.
 
-* The Organization Owner, Project Creator, or Organization Member role, as described in xref:organizations:organization-user-roles.adoc[].
+Cluster access credentials are specific to a cluster and consist of a cluster access name, password, and a set of access levels or roles, depending on the chosen credential type.
 
-* The Project Owner or Data Writer role, as described in xref:projects:project-roles.adoc[Project Roles]. 
+For more information on cluster access credentials and cluster access credential types, see xref:clusters:cluster-rbac.adoc[].
 
-To be able to use the Eventing service, via an SDK or a REST API, your client application must have cluster access credentials with Read or Read/write access to the buckets, scopes, and collections that your Eventing functions listen to. 
+NOTE: To be able to use the Eventing service, via an SDK or a REST API, the client application must have basic cluster access credentials with Read, Write, or Read/write access to the buckets, scopes, and collections that your Eventing functions listen to. 
 Also, you need Write or Read/Write access to the buckets, scopes, and collections that the Eventing functions write to, as described in xref:clusters:manage-database-users.adoc[Manage Cluster Access Credentials].
 
-////
- Commenting for Future consideration. 
- 
-== Function Scope
+For detailed instructions on implementing cluster RBAC, see xref:clusters:cluster-rbac.adoc[]. 
+For instructions on managing cluster access credentials, see xref:clusters:manage-database-users.adoc[Manage Cluster Access Credentials]. 
 
+== Access Credential Types
+
+The available access credential types are basic access credentials and advanced access credentials.
+
+=== Basic Access Credentials
+Allows you to assign read, write, or read/write access at the bucket, scope, and collection level.
+For example, you can grant access to all buckets and scopes in a cluster, assign different access levels to individual buckets, or grant access to just a single collection. 
+This allows you to mix and match access levels to different buckets, scopes, and collections in a cluster to match your application and security requirements. 
+For more information, see the xref:clusters:manage-database-users.adoc[Cluster Access].
+
+=== Advanced Access Credentials
+Provides customized combinations of fine-grained privileges and access roles with precise control over individual operations. 
+For example, allows you to assign access to the Owner, Project Creator, or Organization Member role, as described in xref:organizations:organization-user-roles.adoc[], or to the Project Owner or Data Writer role as described in xref:projects:project-roles.adoc[Project Roles]. 
+
+To be able to use the Eventing service with advanced access credentials, the client application must have the following roles.
+
+* Data Reader
+** Eventing Storage keyspace or Scratchpad
+* Data Writer
+** Eventing Storage keyspace or Scratchpad
+* Data DCP reader
+** Mutation Source
+* Eventing / Manage Functions
+** bucket or scope.
+
+=== Matrix for Eventing UI Access 
+If the client is using Basic access credentials, then the user must have the "Eventing Full Admin" role, that provides full access to all Eventing functions and resources.
+
+The following table summarizes the advanced access credentials and the mapping to be set for Couchbase Eventing UI users for managing the Eventing Functions. 
+[#table-eventing-uiaccess-privileges,cols="1,1,1,1",options="header"]
+|===
+| Action | Data Reader | Data Writer | Project Owner |
+| Create / Import / Edit | No | Yes | Yes |
+| Deploy / Undeploy | No | Yes | Yes |
+| View Logs / JS / Settings | Yes | Yes | Yes |
+| Delete Function | No | * Check * | Yes |
+| Export Function | Yes | Yes | Yes |
+|===
+
+** NOTE: The Cluster Viewer and Cluster Manager roles do not grant Eventing privileges. 
+The "Eventing / Manage Scope Function" role can be assigned to a user multiple times, each time with a different bucket.scope or bucket.
+
+=== Programmatic Access via SDK / API
+To prevent unauthorized access to your Eventing functions, you must use appropriate cluster access credentials with the necessary access levels or roles for your client applications. 
+Data DCP Reader and Eventing / Manage Functions access are required to read from or write to the resources.
+
+The following table summarizes the keyspace access permissions to be set for Couchbase Eventing users for managing the Eventing functions via SDK or API. 
+[#table-eventing-sdk-access-privileges,cols="1,2",options="header"]
+|===
+| `*Source / Mutation*` | Read or Read / Write | 
+| `*Metadata / Storage*` | Read or Write | 
+| `*Bindings*` | Read or Read / Write | 
+|===
+
+
+== See Also
+
+* xref:organizations:organizations.adoc[]
+* xref:organizations:organization-user-roles.adoc[]
+* xref:projects:projects.adoc[]
+* xref:projects:project-roles.adoc[]
+* xref:clusters:manage-database-users.adoc[]
+* xref:clusters:allow-ip-address.adoc[]
+
+
+////
+Writer: Not sure if the following is still valid/applicable. Kindly review and let me know if we need to have the following sections or not!
+
+Also, May be we should provide links/references to some of the existing docs in Capella! Like,
+
+For more information about
+* Cluster Access, see https://docs.couchbase.com/cloud/clusters/cluster-rbac.html
+* Buckets, Scopes, and Collections, see https://docs.couchbase.com/cloud/clusters/data-service/data-service.html.
+
+Writer: Learn how to provide these links (as these are HTML files and not adoc files!)
+
+== Function Scope
 A bucket.scope combination is used for identifying functions belonging to the same group.
 
 Only the "Eventing Full Admin" role and also the "Full Admin" role can set the bucket.scope to  *+*+.+*+*; all other Eventing non-privileged users need to define a *Function Scope* for their Eventing functions that references an existing resource of bucket.scope. 
@@ -42,6 +117,7 @@ include::partial$rbac-warning.adoc[]
 
 Typically, you should set Function Scope to the `bucket.scope`
 that holds the collection that is the source of your mutations to your Eventing Function.
+
 This best practice ensures that you _do not_  inadvertently cause an Eventing Function to undeploy
 by removing a *Function Scope* pointing to a resource that is not required for the function to run.
 
