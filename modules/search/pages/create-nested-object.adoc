@@ -1,0 +1,40 @@
+= Create a Mapping for an Array of Objects
+:page-topic-type: concept
+:page-status: Couchbase Server 8.1
+:description: As of Couchbase Server version 8.1, the Search Service can now maintain relationships between arrays of objects in your documents.
+:keywords: nested, arrays of objects, flatten
+
+[abstract]
+{description}
+
+For example, the following document contains an array of objects, where a `product` is a nested object inside an array of `items`:
+
+[source,json]
+---
+include::example$nested-document-fields.jsonc[]
+---
+
+In Couchbase Server version 8.0 and earlier, `order.items.product.name` and `order.items.product.specs.brand` are flattened to contain data from both of the products in the document.
+Specifically, if you ran the following query, hoping to find orders for Logitech laptops, the Search Service would return the document `ORD_1234`: 
+
+[source,json]
+---
+include::example$nested-document-fields-query.jsonc[]
+---
+
+In Couchbase Server version 8.1 and later, you can now set a JSON object as `nested` to preserve the nested relationships in your documents.
+The Search Service uses the `nested` property to maintain `brand: Logitech` and `name: Laptop` as belonging to separate products in `ORD_1234`.
+
+If you ran the query again, with the `items` array set to be an array of objects (`nested`), the Search Service does not return `ORD_1234` in your search results.
+
+== Map an Array of Objects Without Flattening
+
+To create a mapping for an array of objects in your Search index that does not flatten the fields in those objects, you can either:
+
+* xref:create-child-mapping.adoc[] and set the *nested* setting.
+* xref:create-quick-index.adoc[] and xref:quick-index-field-options.adoc#nested[configure a nested field].
+* xref:search-index-params.adoc#nested[Use the `nested` property in your Search index definition payload].
+
+
+== Next Steps
+
