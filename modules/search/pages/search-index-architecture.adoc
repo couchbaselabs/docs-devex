@@ -68,6 +68,38 @@ The persister and merger interact to continuously flush and merge new in-memory 
 Segments are marked as stale when they're replaced by a new merged segment created by the merger. 
 Stale segments are deleted when they're no longer used by any new queries. 
 
+[#encryption]
+== Search Index Encryption
+
+[.status]#Couchbase Server 8.1#
+
+From Couchbase Server version 8.1 and later, if you xref:[enable encryption at rest] on your cluster, the Search Service encrypts any files related to your Search indexes that contain indirect or direct references to user data. 
+// Fill in link!
+These references to user data include: 
+
+* Any document field names.
+* Any stored data from document fields.
+* Any terms derived from field data. 
+* Term frequencies and locations.
+
+Any files that contain these references are encrypted.
+These files can include: 
+
+* Log files
+* Recovery plan files
+* Index definition files
+* Index metadata files
+* Index segment files
+
+NOTE: For a Search query, data is always held in-memory and not written to disk.
+The Search Service does not encrypt the contents of a query, and only decrypts data as needed to return search results.
+
+During a rebalance, encrypted data remains encrypted.
+The key files necessary to decrypt Search data are copied into a temporary directory until the rebalance completes.
+
+For more information about encryption at rest in Couchbase Server, see xref:[].
+// Fill in link!
+
 == Search Request Processing 
 
 The Search Service uses a scatter-gather process for running all Search queries, when there are multiple nodes in the cluster running the Search Service.
