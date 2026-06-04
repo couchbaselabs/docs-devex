@@ -145,6 +145,34 @@ include::example$query-sample-results-validate.jsonc[]
 
 The Search Service validates the query and identifies that the `geo` field used in the query is not included in the Search index. 
 
+[#nested]
+=== Example: Query an Array of Objects
+
+[.status]#Couchbase Server 8.1#
+
+As of Couchbase Server version 8.1, you can now configure a Search index to avoid flattening xref:create-nested-object.adoc[arrays of objects] in your documents. 
+
+If your Search index definition contains a `nested` object and you choose to return that field in your search results, the response returned by the REST API to your query changes. 
+
+For example, if you wanted to query the Search index definition from xref:create-search-index-rest-api.adoc#nested[Example: Search Index with a Nested Array of Objects Mapping], you could run the following query to find hotels where the reviews contain the words `location` and `nice view` and the `Overall` rating is `4` or `5`: 
+
+[source,console]
+----
+include::example$nested/run-search-payload-nested.sh[]
+----
+
+Since the query requested the contents of all available fields in the Search index, the Search Service returns the original field content in the `fields` object. 
+Any object mappings defined as `nested` appear inside a `_$nested` object. 
+
+For example, the following is how the `fields` object appears for `hotel_28955` in search results, from the example Search index definition and query:
+
+[source,json]
+----
+include::example$nested/run-search-response-nested.jsonc[tag=fields_object]
+----
+
+TIP: Click btn:[View on Github] to view the entire response.
+
 == Next Steps 
 
 If you do not get the search results you were expecting, you can change the JSON payload xref:search-index-params.adoc[for your Search index] or xref:search-request-params.adoc[for your Search query].
