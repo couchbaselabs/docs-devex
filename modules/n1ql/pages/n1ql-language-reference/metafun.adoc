@@ -8,29 +8,33 @@
 For example, there are functions to retrieve information about a document or item, perform base64 encoding and decoding, generate UUIDs, and control the flow of a query.
 
 [[abort,ABORT()]]
-== ABORT(`expression`)
-
-=== Description
+== ABORT
 
 Generates an error.
-The error message contains the text specified by the given [.var]`expression`.
+The error message contains the text specified by the given `expression`.
 
 This function is useful for flow control when xref:n1ql:n1ql-language-reference/createfunction.adoc[creating inline user-defined functions].
 You can use xref:n1ql:n1ql-language-reference/conditionalops.adoc[conditional operators] to check the parameters, and use this function to generate an error if something is wrong.
 
-=== Arguments
+=== Syntax
 
-expression:: An expression resolving to a string.
+....
+ABORT(expression)
+....
+
+==== Arguments
+
+expression:: [Required] An expression resolving to a string.
 
 === Return Value
 
 The function does not return a return value.
 
 If this function is executed in a query, it causes the query to halt with an error code 5011.
-The error message contains the text specified by the given [.var]`expression`.
+The error message contains the text specified by the given `expression`.
 
 When this function is executed by a user-defined function, it causes the query to halt with an error code 10109.
-The error message shows the name of the user-defined function and contains the text specified by the given [.var]`expression`.
+The error message shows the name of the user-defined function and contains the text specified by the given `expression`.
 
 === Examples
 
@@ -87,7 +91,8 @@ EXECUTE FUNCTION rstr(100, 4);
 [
   {
     "code": 10109,
-    "msg": "Error executing function rstr : \"Search string is not a string\" - cause: \"Search string is not a string\""
+    "msg": "Error executing function rstr : \"Search string is not a string\" 
+            - cause: \"Search string is not a string\""
   }
 ]
 ----
@@ -104,7 +109,8 @@ EXECUTE FUNCTION rstr("Couchbase", "foo");
 [
   {
     "code": 10109,
-    "msg": "Error executing function rstr : \"Substring length is not a number\" - cause: \"Substring length is not a number\""
+    "msg": "Error executing function rstr : \"Substring length is not a number\" 
+            - cause: \"Substring length is not a number\""
   }
 ]
 ----
@@ -121,7 +127,8 @@ EXECUTE FUNCTION rstr("Couchbase", 10);
 [
   {
     "code": 10109,
-    "msg": "Error executing function rstr : \"Substring longer than search string\" - cause: \"Substring longer than search string\""
+    "msg": "Error executing function rstr : \"Substring longer than search string\" 
+          - cause: \"Substring longer than search string\""
   }
 ]
 ----
@@ -142,17 +149,21 @@ EXECUTE FUNCTION rstr("Couchbase", 4);
 ====
 
 [[base64,BASE64()]]
-== BASE64(`expression`)
+== BASE64
 
-_Alias_: <<base64-encode>>
+Returns the https://en.wikipedia.org/wiki/Base64[base64^] encoding of the given `expression`.
 
-=== Description
+This function has an alias `BASE64_ENCODE`.
 
-Returns the https://en.wikipedia.org/wiki/Base64[base64^] encoding of the given [.var]`expression`.
+=== Syntax
 
-=== Arguments
+....
+BASE64(expression)
+....
 
-expression:: An expression representing any supported {sqlpp} datatype.
+==== Arguments
+
+expression:: [Required] An expression representing any supported {sqlpp} datatype.
 
 === Return Value
 
@@ -191,21 +202,20 @@ SELECT BASE64([1, 2, 3, 4]) AS `array`,
 ----
 ====
 
-[[base64-encode,BASE64_ENCODE()]]
-== BASE64_ENCODE(`expression`)
-
-Alias of <<base64>>.
-
 [[base64-decode,BASE64_DECODE()]]
-== BASE64_DECODE(`expression`)
-
-=== Description
+== BASE64_DECODE
 
 Reverses the encoding done by the <<base64>> or <<base64-encode>> functions.
 
-=== Arguments
+=== Syntax
 
-expression:: An expression representing a valid base64-encoded string.
+....
+BASE64_DECODE(expression)
+....
+
+==== Arguments
+
+expression:: [Required] An expression representing a valid base64-encoded string.
 
 === Return Value
 
@@ -258,15 +268,19 @@ SELECT BASE64_DECODE("WzEsMiwzLDRd") AS `array`,
 ====
 
 [[current-users]]
-== CURRENT_USERS()
-
-=== Description
+== CURRENT_USERS
 
 Returns the authenticated users for the current statement.
 
-=== Arguments
+=== Syntax
 
-None.
+....
+CURRENT_USERS()
+....
+
+==== Arguments
+
+This function does not take any arguments.
 
 === Return Value
 
@@ -296,15 +310,19 @@ SELECT CURRENT_USERS() as current_users;
 ====
 
 [[ds-version]]
-== DS_VERSION()
-
-=== Description
+== DS_VERSION
 
 Returns the Couchbase Server version.
 
-=== Arguments
+=== Syntax
 
-None.
+....
+DS_VERSION()
+....
+
+==== Arguments
+
+This function does not take any arguments.
 
 === Return Value
 
@@ -332,9 +350,7 @@ SELECT DS_VERSION() as server_version;
 ====
 
 [[evaluate,EVALUATE()]]
-== EVALUATE(`statement` [ ,`params` ])
-
-=== Description
+== EVALUATE
 
 This function enables you to execute a SQL++ statement provided as a string and returns the result as an array. 
 It can be used as a part of larger query or request, or wherever arrays are permitted within a statement.
@@ -345,11 +361,17 @@ The statement must be read-only. If it tries to modify data (like with UPDATE or
 NOTE: The results are materialized in memory, so large result sets may require a lot of memory. 
 To limit memory usage, you can use quotas (the evaluated statement operates within the invoking statement's quota). 
 
-=== Arguments
+=== Syntax
 
-statement:: A string containing the statement to evaluate.
+....
+EVALUATE(statement [, params])
+....
 
-params:: Can be one of the following:
+==== Arguments
+
+statement:: [Required] A string containing the statement to evaluate.
+
+params:: [Optional] Can be one of the following:
 +
 --
 * An object containing named parameters. 
@@ -421,11 +443,9 @@ SELECT `Flavor` FROM EVALUATE("INFER `travel-sample`")[0] inf;
 ====
 
 [[extract-ddl,EXTRACTDDL()]]
-== EXTRACTDDL(`filter` [ ,`options` ])
+== EXTRACTDDL
 
 [.status]#Couchbase Server 8.0#
-
-=== Description
 
 This function extracts Data Definition Language (DDL) statements of buckets and returns them as an array of strings.
 It retrieves definitions for buckets, scopes, collections, indexes, sequences, functions, and prepared statements.
@@ -446,7 +466,13 @@ NOTE: To execute this function, you must have the `query_system_catalog` role.
 Also, to extract DDLs from a specific bucket, you need necessary permissions on that bucket.
 For more information about roles and permissions, see xref:learn:security/authorization-overview.adoc[Authorization].
 
-=== Arguments
+=== Syntax
+
+....
+EXTRACTDDL(filter [, options])
+....
+
+==== Arguments
 
 filter:: [Required] 
 A string pattern to match against bucket names using the LIKE operator. 
@@ -456,7 +482,7 @@ options:: [Optional]
 A JSON object specifying options for the function.
 If you omit this argument, the output includes all supported DDL statements.
 
-=== Options
+==== Options
 
 [options="header", cols="1a,3a,1a"]
 |===
@@ -518,8 +544,11 @@ An array of strings, with each string containing a DDL statement.
 
 === Examples
 
+To use the examples in this section, set the query context to the `travel-sample` dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
 [[extract-ddl-ex1,EXTRACTDDL() Example 1]]
-.Extract CREATE INDEX statements from the `travel-sample` bucket using a string flag
+.Extract CREATE INDEX statements using a string flag
 ====
 .Query
 [source,sqlpp]
@@ -545,7 +574,7 @@ SELECT extractddl("travel-sample",{"flags":["index"]});
 ====
 
 [[extract-ddl-ex2,EXTRACTDDL() Example 2]]
-.Extract CREATE INDEX statements from the `travel-sample` bucket using a numeric flag
+.Extract CREATE INDEX statements using a numeric flag
 ====
 .Query
 [source,sqlpp]
@@ -571,7 +600,7 @@ SELECT extractddl("travel-sample", {"flags":8});
 ====
 
 [[extract-ddl-ex3,EXTRACTDDL() Example 3]]
-.Extract CREATE BUCKET and CREATE SCOPE statements from the `travel-sample` bucket using a numeric flag
+.Extract CREATE BUCKET and CREATE SCOPE statements using a numeric flag
 ====
 .Query
 [source,sqlpp]
@@ -606,7 +635,7 @@ In this query, the value `3` represents the sum of the flags for bucket (`1`) an
 ====
 
 [[extract-ddl-ex4,EXTRACTDDL() Example 4]]
-.Extract CREATE FUNCTION and PREPARE statements from the `travel-sample` bucket
+.Extract CREATE FUNCTION and PREPARE statements
 ====
 .Query
 [source,sqlpp]
@@ -632,7 +661,7 @@ SELECT extractddl("travel-sample",{"flags":["function","prepared"]});
 ====
 
 [[extract-ddl-ex5,EXTRACTDDL() Example 5]]
-.Extract all supported DDL statements from the `travel-sample` bucket
+.Extract all supported DDL statements
 ====
 .Query
 [source,sqlpp]
@@ -707,21 +736,24 @@ SELECT extractddl("",{"flags":["bucket","scope"]});
 ====
 
 
-
 [[finderr,FINDERR()]]
-== FINDERR(`expression`)
+== FINDERR
 
 ifeval::['{page-component-version}' == '7.6'] 
 [.status]#Couchbase Server 7.6.4#
 endif::[]
 
-=== Description
+Returns the full details of any Query Service or cbq shell error.
 
-Returns the full details of any Query service or cbq shell error.
+=== Syntax
 
-=== Arguments
+....
+FINDERR(expression)
+....
 
-expression:: One of the following:
+==== Arguments
+
+expression:: [Required] One of the following:
 +
 --
 * A number representing an error code.
@@ -968,9 +1000,7 @@ SELECT FINDERR("[IU][NP]SERT");
 * xref:n1ql:n1ql-language-reference/n1ql-error-codes.adoc[]
 
 [[flatten_keys,FLATTEN_KEYS()]]
-== FLATTEN_KEYS(`expr1` [ `modifiers` ], `expr2` [ `modifiers` ], ...)
-
-=== Description
+== FLATTEN_KEYS
 
 This function can only be used when defining an index key for an xref:n1ql:n1ql-language-reference/indexing-arrays.adoc[array index].
 
@@ -978,7 +1008,13 @@ If you need to index multiple fields within an array, this function enables you 
 All subsequent index keys are accordingly moved to the right.
 Queries will be xref:n1ql-language-reference/selectintro.adoc#index-selection[sargable] and will generate spans.
 
-=== Arguments
+=== Syntax
+
+....
+FLATTEN_KEYS(expr1 [ modifiers ], expr2 [ modifiers ], ...)
+....
+
+==== Arguments
 
 expr1, expr2, ...:: [At least 1 and at most 32 argument-values are required]
 Each argument is an expression over a field within an array, which constitutes an array index key.
@@ -1005,17 +1041,21 @@ The return value is a flattened list of array elements for use in an array index
 For examples, refer to xref:n1ql:n1ql-language-reference/indexing-arrays.adoc#examples[Array Indexing Examples].
 
 [[formalize,FORMALIZE()]]
-== FORMALIZE(`statement` [ `,query_context` ])
-
-=== Description
+== FORMALIZE
 
 Fully expands all references within a query, using the specified query context.
 
-This function has a synonym FORMALISE().
+This function has an alias `FORMALISE`.
 
-=== Arguments
+=== Syntax
 
-statement:: A string containing the statement to formalize.
+....
+FORMALIZE(statement [, query_context])
+....
+
+==== Arguments
+
+statement:: [Required] A string containing the statement to formalize.
 
 query_context:: [ Optional ]
 A string query context value for the function to use when formalizing.
@@ -1078,23 +1118,27 @@ FROM system:completed_requests;
 
 [[hashbytes,HASHBYTES()]]
 
-== HASHBYTES(`input`, [ `options` ])
-
-=== Description
+== HASHBYTES
 
 This function returns a binary hash value for a given input using a specified hashing algorithm. 
 By using this function, you can verify or compare data quickly, or protect your data by masking its original form while still allowing verification or comparison. 
 
-=== Arguments
+=== Syntax
 
-input:: A binary object or any {sqlpp} data type.
+....
+HASHBYTES(input [, options])
+....
+
+==== Arguments
+
+input:: [Required] A binary object or any {sqlpp} data type.
 The JSON marshalled value of the data is used as the input.
 
 options::  [Optional]
 An object that specifies the hashing algorithm and other options for the function.
 If omitted, the default hashing algorithm is `sha256`.
 
-=== Options
+==== Options
 
 [options="header", cols="1a,3a,1a"]
 |===
@@ -1170,15 +1214,19 @@ SELECT HASHBYTES("hello world", {"algorithm":"crc32", "polynomial":"koopman"});
 ====
 
 [[len,LEN()]]
-== LEN(`expression`)
-
-=== Description
+== LEN
 
 A general function to return the length of an item.
 
-=== Arguments
+=== Syntax
 
-expression:: An expression representing any supported {sqlpp} datatype.
+....
+LEN(expression)
+....
+
+==== Arguments
+
+expression:: [Required] An expression representing any supported {sqlpp} datatype.
 
 === Return Value
 
@@ -1248,11 +1296,9 @@ SELECT LEN([1, 2, 3, 4]) AS `array`,
 ====
 
 [[meta,META()]]
-== META( {startsb} `keyspace_expr` {endsb} ) {startsb} .`property` {endsb}
+== META
 
-=== Description
-
-This function returns the xref:learn:data/data.adoc#metadata[metadata] for the document or keyspace specified by [.var]`keyspace_expr`.
+This function returns the xref:learn:data/data.adoc#metadata[metadata] for the document or keyspace specified by `keyspace_expr`.
 The metadata is returned as a JSON object.
 
 To return a single property from the metadata, you must use a xref:n1ql-language-reference/nestedops.adoc#field-selection[nested expression] containing the `META()` function and the required property, for example `META().id`.
@@ -1265,7 +1311,13 @@ You can also use the `META()` function with a property in the predicate of an xr
 
 If your database is running Couchbase Server version 7.6.2 and later, use the `META()` function with the xref:searchfun.adoc[SEARCH() function] when you want to return XATTRs data through the Search Service and do not have a suitable Search index for your query. 
 
-=== Arguments
+=== Syntax
+
+....
+META( {startsb} keyspace_expr {endsb} ) {startsb} .property {endsb}
+....
+
+==== Arguments
 
 keyspace_expr::
 [Optional.
@@ -1568,15 +1620,19 @@ For examples showing how to index metadata information, refer to xref:n1ql-langu
 For examples showing how to use metadata information in the predicate of an ANSI JOIN clause, refer to xref:n1ql:n1ql-language-reference/join.adoc[JOIN Clause].
 
 [[node-name]]
-== NODE_NAME()
-
-=== Description
+== NODE_NAME
 
 Returns the name of the node on which the query is running.
 
-=== Arguments
+=== Syntax
 
-None.
+....
+NODE_NAME()
+....
+
+==== Arguments
+
+This function does not take any arguments.
 
 === Return Value
 
@@ -1604,15 +1660,19 @@ SELECT NODE_NAME() AS node_name;
 ====
 
 [[node-uuid,NODE_UUID()]]
-== NODE_UUID(`expression`)
-
-=== Description
+== NODE_UUID
 
 Returns the UUID of a node.
 
-=== Arguments
+=== Syntax
 
-expression::
+....
+NODE_UUID(expression)
+....
+
+==== Arguments
+
+expression:: [Required]
 A string, or an expression resolving to a string, representing a node name.
 To get the UUID of the node on which the query is running, use the empty string `""`.
 
@@ -1650,27 +1710,31 @@ SELECT NODE_UUID("") AS from_empty_string,
 ====
 
 [[pairs,PAIRS()]]
-== PAIRS(`obj`)
+== PAIRS
 
-=== Description
-
-This function generates an array of arrays of {startsb}[.var]``field_name``, ``value``{endsb} pairs of all possible fields in the given JSON object [.var]`obj`.
+This function generates an array of arrays of {startsb}``field_name``, ``value``{endsb} pairs of all possible fields in the given JSON object `obj`.
 
 NOTE: Nested sub-object fields are explored recursively.
 
-=== Arguments
+=== Syntax
 
-obj:: An expression resolving to an object.
+....
+PAIRS(obj)
+....
+
+==== Arguments
+
+obj:: [Required] An expression resolving to an object.
 
 === Return Value
 
-Array of {startsb}[.var]``field_name``, ``value``{endsb} arrays for each field in the input object [.var]`obj`.
+Array of {startsb}``field_name``, ``value``{endsb} arrays for each field in the input object `obj`.
 
-* If [.var]`obj` has nested objects, then fields of such nested sub-objects are also explored and corresponding inner-array elements are produced.
-* If [.var]`obj` is an array, then each element of the array is explored and corresponding inner-array elements are produced.
-* If [.var]`obj` is a primitive data type of integer or string, then it returns NULL, as they don't have a name.
-* If [.var]`obj` is an array of primitive data types, then it returns an empty array `[]`.
-* If [.var]`obj` is an array of objects, then it returns an array of objects.
+* If `obj` has nested objects, then fields of such nested sub-objects are also explored and corresponding inner-array elements are produced.
+* If `obj` is an array, then each element of the array is explored and corresponding inner-array elements are produced.
+* If `obj` is a primitive data type of integer or string, then it returns NULL, as they don't have a name.
+* If `obj` is an array of primitive data types, then it returns an empty array `[]`.
+* If `obj` is an array of objects, then it returns an array of objects.
 
 [TIP]
 ====
@@ -2083,9 +2147,7 @@ LIMIT  1;
 ====
 
 [[redact,REDACT()]]
-== REDACT (`expression` [ , `filter-obj1`, `filter-obj2`, ... ] )
-
-=== Description
+== REDACT
 
 Redacts field names or values in a JSON object based on specific filtering criteria.
 
@@ -2096,7 +2158,13 @@ NOTE: Masking applies to only string values.
 The function cannot mask non-string data types such as numbers, booleans, or dates. 
 To redact non-string values, you must omit the fields entirely from the output instead.
 
-=== Arguments
+=== Syntax
+
+....
+REDACT(expression [ , filter-obj1, filter-obj2, ... ] )
+....
+
+==== Arguments
 
 expression:: [Required] An expression resolving to a JSON object that you want to redact.
 
@@ -2458,21 +2526,25 @@ SELECT REDACT(sample,
 ====
 
 [[unnest-pos,UNNEST_POS()]]
-== UNNEST_POS(`expr`)
+== UNNEST_POS
 
-You can use the `UNNEST_POS()` function with the xref:n1ql-language-reference/unnest.adoc[UNNEST Clause] to return the position of each element in an unnested array. 
+This function takes an unnested array and returns the position value of each element in the array.
 
-This function has a synonym <<unnest-position>>.
+You can use this function with the xref:n1ql-language-reference/unnest.adoc[UNNEST Clause] to return the position of each element in an unnested array. 
 
-=== Description
+This function has an alias `UNNEST_POSITION`.
 
-The `UNNEST_POS` function takes an unnested array and returns the position value of each element in the array.
+=== Syntax
 
-=== Arguments
+....
+UNNEST_POS(expr)
+....
+
+==== Arguments
 
 expr:: [Required] The alias of the unnested array from an xref:n1ql-language-reference/unnest.adoc[UNNEST Clause]. 
 
-=== Return Values
+=== Return Value
 
 The `UNNEST_POS` function returns the position of each element in the unnested array, `expr`, as an integer. It returns each position value as a separate row in JSON format. The first element in the array is at position `0`. 
 
@@ -2483,7 +2555,7 @@ In all other cases, the `UNNEST_POS` function returns `NULL` or `MISSING`.
 ====
 In the following example, the `UNNEST_POS` function takes the result of an `UNNEST` Clause on a given array, `a1`. The `UNNEST` function returns the position of each element in the unnested `a1` array , `u`, as the `upos` value. 
 
-[source,N1QL]
+[source,sqlpp]
 ----
 include::example$functions/unnest-pos.n1ql[]
 ----
@@ -2500,21 +2572,20 @@ include::example$functions/unnest-pos.jsonc[]
 - xref:n1ql-language-reference/unnest.adoc[UNNEST Clause]
 - xref:n1ql-language-reference/from.adoc[FROM Clause]
 
-[[unnest-position,UNNEST_POSITION()]]
-== UNNEST_POSITION(`expr`)
-
-Synonym of <<unnest-pos>>.
-
 [[uuid]]
-== UUID()
-
-=== Description
+== UUID
 
 Generates a universally unique identifier (UUID) according to https://www.ietf.org/rfc/rfc4122.txt[RFC 4122^].
 
+=== Syntax
+
+....
+UUID()
+....
+
 === Arguments
 
-None.
+This function does not take any arguments.
 
 === Return Value
 
@@ -2546,15 +2617,19 @@ SELECT UUID() AS uuid;
 For further examples using `UUID()`, refer to the xref:n1ql-language-reference/insert.adoc[INSERT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements.
 
 [[version]]
-== VERSION()
+== VERSION
 
-=== Description
+Returns the {sqlpp} version.
 
-Returns {sqlpp} version.
+=== Syntax
 
-=== Arguments
+....
+VERSION()
+....
 
-None.
+==== Arguments
+
+This function does not take any arguments.
 
 === Return Value
 
@@ -2580,3 +2655,10 @@ SELECT VERSION() as language_version;
 ]
 ----
 ====
+
+== Aliases
+
+* [[base64-encode,BASE64_ENCODE()]] 
+`BASE64_ENCODE` is an alias for <<base64, BASE64>>.
+* `FORMALISE` is an alias for <<formalize, FORMALIZE>>.
+* `UNNEST_POSITION` is an alias for <<unnest-pos, UNNEST_POS>>.
