@@ -28,12 +28,12 @@ expression:: [Required] An expression resolving to a string.
 
 === Return Value
 
-The function does not return a return value.
+The function does not return a value.
 
-If this function is executed in a query, it causes the query to halt with an error code 5011.
+If you execute this function in a query, it causes the query to halt with an error code `5011`.
 The error message contains the text specified by the given `expression`.
 
-When this function is executed by a user-defined function, it causes the query to halt with an error code 10109.
+When this function is executed by a user-defined function, it causes the query to halt with an error code `10109`.
 The error message shows the name of the user-defined function and contains the text specified by the given `expression`.
 
 === Examples
@@ -296,7 +296,7 @@ An array of strings, each representing a user name.
 SELECT CURRENT_USERS() as current_users;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -338,7 +338,7 @@ Returns string containing the Couchbase Server version.
 SELECT DS_VERSION() as server_version;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -356,7 +356,7 @@ This function enables you to execute a SQL++ statement provided as a string and 
 It can be used as a part of larger query or request, or wherever arrays are permitted within a statement.
 
 The function evaluates the statement dynamically using the same permissions as the invoking statement. 
-The statement must be read-only. If it tries to modify data (like with UPDATE or INSERT), the function fails with `error 5010, "not a readonly request”`. 
+The statement must be read-only. If it tries to modify data (like with UPDATE or INSERT), the function fails with `error 5010, "not a readonly request"`. 
 
 NOTE: The results are materialized in memory, so large result sets may require a lot of memory. 
 To limit memory usage, you can use quotas (the evaluated statement operates within the invoking statement's quota). 
@@ -395,7 +395,7 @@ SELECT EVALUATE("SELECT $named_param AS example",
         eval_result;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -419,7 +419,7 @@ SELECT EVALUATE("SELECT $named_param AS example",
 SELECT `Flavor` FROM EVALUATE("INFER `travel-sample`")[0] inf;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -556,7 +556,7 @@ For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-cont
 SELECT extractddl("travel-sample",{"flags":["index"]});
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -582,7 +582,7 @@ SELECT extractddl("travel-sample",{"flags":["index"]});
 SELECT extractddl("travel-sample", {"flags":8});
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -609,7 +609,7 @@ SELECT extractddl("travel-sample",{"flags":3});
 ----
 In this query, the value `3` represents the sum of the flags for bucket (`1`) and scope (`2`).
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -642,7 +642,7 @@ In this query, the value `3` represents the sum of the flags for bucket (`1`) an
 ----
 SELECT extractddl("travel-sample",{"flags":["function","prepared"]});
 ----
-.Results
+.Result
 [source,json]
 ----
 [
@@ -668,7 +668,7 @@ SELECT extractddl("travel-sample",{"flags":["function","prepared"]});
 ----
 SELECT extractddl("travel-sample");
 ----
-.Results
+.Result
 [source,json]
 ----
 [
@@ -710,7 +710,7 @@ SELECT extractddl("travel-sample");
 ----
 SELECT extractddl("",{"flags":["bucket","scope"]});
 ----
-.Results
+.Result
 [source,json]
 ----
 [
@@ -829,7 +829,7 @@ However, the FINDERR function does search this field when the find expression is
 SELECT FINDERR(5011);
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -862,7 +862,7 @@ SELECT FINDERR(5011);
 SELECT FINDERR("A semantic error is present in the statement.");
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -895,7 +895,7 @@ SELECT FINDERR("A semantic error is present in the statement.");
 SELECT FINDERR("semantic");
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -952,7 +952,7 @@ SELECT FINDERR("semantic");
 SELECT FINDERR("[IU][NP]SERT");
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1030,7 +1030,7 @@ If this modifier is omitted, documents which do not contain the specified field 
 +
 When the `IGNORE MISSING` modifier and the `ASC` or `DESC` modifier are used together, the order of the modifiers does not matter.
 
-Note that `FLATTEN_KEYS()` cannot be used recursively.
+NOTE: You cannot use `FLATTEN_KEYS()` recursively.
 
 === Return Value
 
@@ -1038,7 +1038,7 @@ The return value is a flattened list of array elements for use in an array index
 
 === Examples
 
-For examples, refer to xref:n1ql:n1ql-language-reference/indexing-arrays.adoc#examples[Array Indexing Examples].
+For examples, see xref:n1ql:n1ql-language-reference/indexing-arrays.adoc#examples[Array Indexing Examples].
 
 [[formalize,FORMALIZE()]]
 == FORMALIZE
@@ -1074,7 +1074,7 @@ Returns a query with all references fully specified.
 ----
 SELECT formalize("SELECT * FROM landmark WHERE country = 'United Kingdom'","default:`travel-sample`.inventory")
 ----
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1097,7 +1097,7 @@ SELECT statement,
 FROM system:completed_requests;
 
 ----
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1182,7 +1182,7 @@ The size or length of the value depends on the algorithm you choose.
 ----
 SELECT HASHBYTES('Hello World', {"algorithm":"sha256"});
 ----
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1202,7 +1202,7 @@ SELECT HASHBYTES('Hello World', {"algorithm":"sha256"});
 ----
 SELECT HASHBYTES("hello world", {"algorithm":"crc32", "polynomial":"koopman"});
 ----
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1333,7 +1333,7 @@ The property name must be separated from the `META()` function by a dot (`.`) an
 cas:::
 // tag::metadata-cas[]
 Value representing the current state of an item which changes every time the item is modified.
-For details, refer to xref:java-sdk:howtos:concurrent-document-mutations.adoc[Concurrent Document Mutations].
+For more information, see xref:java-sdk:howtos:concurrent-document-mutations.adoc[Concurrent Document Mutations].
 // end::metadata-cas[]
 +
 This property is indexable.
@@ -1342,14 +1342,14 @@ expiration:::
 // tag::metadata-expiration[]
 Value representing a document's expiration date.
 A value of 0 (zero) means no expiration date.
-For details, refer to xref:java-sdk:howtos:kv-operations.adoc#document-expiration[KV Operations].
+For more information, see xref:java-sdk:howtos:kv-operations.adoc#document-expiration[KV Operations].
 // end::metadata-expiration[]
 +
 This property is indexable.
 
 flags:::
 Value set by the SDKs for non-JSON documents.
-For details, refer to xref:java-sdk:howtos:transcoders-nonjson.adoc[Non-JSON Documents].
+For more information, see xref:java-sdk:howtos:transcoders-nonjson.adoc[Non-JSON Documents].
 +
 This property is not indexable.
 If you attempt to build an index on this property, an error is returned.
@@ -1380,7 +1380,7 @@ To access XATTRs, use the syntax `META().xattrs.<attribute>[.<path>]`, where:
 While you can create an index on a specific extended attribute like `META().xattrs.attr1`, you cannot create an index on the entire `META().xattrs` object itself. 
 // end::metadata-xattr[]
 +
-Attempting to select the entire `META().xattrs` object will return an empty result. 
+Attempting to select the entire `META().xattrs` object can return an empty result. 
 +
 [NOTE]
 ====
@@ -1410,7 +1410,7 @@ FROM airline
 LIMIT 3;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1456,7 +1456,7 @@ FROM airline
 LIMIT 3;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1489,7 +1489,7 @@ LIMIT 3;
 
 <1> You must specify a keyspace for the `META()` function because there is more than one FROM term.
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1569,7 +1569,7 @@ FROM `travel-sample`.`inventory`.`landmark`
 USE KEYS ["landmark_1001"];
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [{
@@ -1591,7 +1591,7 @@ SELECT META().xattrs.`$document`
 FROM airline
 USE KEYS ["airline_10123"];
 ----
-.Results
+.Result
 [source,json]
 ----
 [{
@@ -1615,9 +1615,9 @@ USE KEYS ["airline_10123"];
 ----
 ====
 
-For examples showing how to index metadata information, refer to xref:n1ql-language-reference/indexing-meta-info.adoc[Indexing Meta Info].
+For examples showing how to index metadata information, see xref:n1ql-language-reference/indexing-meta-info.adoc[Indexing Meta Info].
 
-For examples showing how to use metadata information in the predicate of an ANSI JOIN clause, refer to xref:n1ql:n1ql-language-reference/join.adoc[JOIN Clause].
+For examples showing how to use metadata information in the predicate of an ANSI JOIN clause, see xref:n1ql:n1ql-language-reference/join.adoc[JOIN Clause].
 
 [[node-name]]
 == NODE_NAME
@@ -1648,7 +1648,7 @@ A string representing a node name.
 SELECT NODE_NAME() AS node_name;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -1712,7 +1712,7 @@ SELECT NODE_UUID("") AS from_empty_string,
 [[pairs,PAIRS()]]
 == PAIRS
 
-This function generates an array of arrays of {startsb}``field_name``, ``value``{endsb} pairs of all possible fields in the given JSON object `obj`.
+This function generates an array of arrays of {startsb}``field_name``, ``value``{endsb} pairs of all possible fields in the given JSON object.
 
 NOTE: Nested sub-object fields are explored recursively.
 
@@ -1732,7 +1732,7 @@ Array of {startsb}``field_name``, ``value``{endsb} arrays for each field in the 
 
 * If `obj` has nested objects, then fields of such nested sub-objects are also explored and corresponding inner-array elements are produced.
 * If `obj` is an array, then each element of the array is explored and corresponding inner-array elements are produced.
-* If `obj` is a primitive data type of integer or string, then it returns NULL, as they don't have a name.
+* If `obj` is a primitive data type of integer or string, then it returns NULL, as they do not have a name.
 * If `obj` is an array of primitive data types, then it returns an empty array `[]`.
 * If `obj` is an array of objects, then it returns an array of objects.
 
@@ -1747,18 +1747,29 @@ For example, in <<pairs-example2>>:
 
 === Examples
 
-include::ROOT:partial$query-context.adoc[tag=section]
-
 [[pairs-example1,PAIRS() Example 1]]
 .Input value of a nested object
 ====
 .Query
 [source,sqlpp]
 ----
-SELECT t        AS orig_t,
+WITH airport AS ([
+  {
+    "airportname": "Calais Dunkerque",
+    "city": "Calais",
+    "country": "France",
+    "faa": "CQF",
+    "geo": { "alt": 12, "lat": 50.962097, "lon": 1.954764 },
+    "icao": "LFAC",
+    "id": 1254,
+    "type": "airport",
+    "tz": "Europe/Paris"
+  }
+])
+SELECT t AS orig_t,
        PAIRS(t) AS pairs_t
-FROM   airport t
-LIMIT  1;
+FROM airport AS t
+LIMIT 1;
 ----
 
 .Result
@@ -1783,40 +1794,12 @@ LIMIT  1;
     },
     "pairs_t": [
       [
-        "id",
-        1254
-      ],
-      [
-        "city",
-        "Calais"
-      ],
-      [
         "faa",
         "CQF"
       ],
       [
-        "geo",
-        {
-          "alt": 12,
-          "lat": 50.962097,
-          "lon": 1.954764
-        }
-      ],
-      [
-        "lon",
-        1.954764
-      ],
-      [
-        "alt",
-        12
-      ],
-      [
-        "lat",
-        50.962097
-      ],
-      [
-        "type",
-        "airport"
+        "icao",
+        "LFAC"
       ],
       [
         "tz",
@@ -1831,8 +1814,36 @@ LIMIT  1;
         "France"
       ],
       [
-        "icao",
-        "LFAC"
+        "id",
+        1254
+      ],
+      [
+        "type",
+        "airport"
+      ],
+      [
+        "city",
+        "Calais"
+      ],
+      [
+        "geo",
+        {
+          "alt": 12,
+          "lat": 50.962097,
+          "lon": 1.954764
+        }
+      ],
+      [
+        "alt",
+        12
+      ],
+      [
+        "lat",
+        50.962097
+      ],
+      [
+        "lon",
+        1.954764
       ]
     ]
   }
@@ -1846,11 +1857,23 @@ LIMIT  1;
 .Query
 [source,sqlpp]
 ----
-SELECT public_likes          AS orig_t,
-       PAIRS(public_likes)   AS pairs_array_t,
-       PAIRS({public_likes}) AS pairs_obj_t
-FROM   hotel
-LIMIT  1;
+WITH hotel AS ([
+  {
+    "name": "Hotel One",
+    "city": "Paris",
+    "public_likes": [
+      "Julius Tromp I",
+      "Corrine Hilll",
+      "Jaeden McKenzie"
+    ]
+  }
+])
+SELECT
+  public_likes AS orig_t,
+  PAIRS(public_likes) AS pairs_array_t,
+  PAIRS({public_likes}) AS pairs_obj_t
+FROM hotel
+LIMIT 1;
 ----
 
 .Result
@@ -1861,12 +1884,7 @@ LIMIT  1;
     "orig_t": [
       "Julius Tromp I",
       "Corrine Hilll",
-      "Jaeden McKenzie",
-      "Vallie Ryan",
-      "Brian Kilback",
-      "Lilian McLaughlin",
-      "Ms. Moses Feeney",
-      "Elnora Trantow"
+      "Jaeden McKenzie"
     ],
     "pairs_array_t": [],
     "pairs_obj_t": [
@@ -1875,12 +1893,7 @@ LIMIT  1;
         [
           "Julius Tromp I",
           "Corrine Hilll",
-          "Jaeden McKenzie",
-          "Vallie Ryan",
-          "Brian Kilback",
-          "Lilian McLaughlin",
-          "Ms. Moses Feeney",
-          "Elnora Trantow"
+          "Jaeden McKenzie"
         ]
       ],
       [
@@ -1894,26 +1907,6 @@ LIMIT  1;
       [
         "public_likes",
         "Jaeden McKenzie"
-      ],
-      [
-        "public_likes",
-        "Vallie Ryan"
-      ],
-      [
-        "public_likes",
-        "Brian Kilback"
-      ],
-      [
-        "public_likes",
-        "Lilian McLaughlin"
-      ],
-      [
-        "public_likes",
-        "Ms. Moses Feeney"
-      ],
-      [
-        "public_likes",
-        "Elnora Trantow"
       ]
     ]
   }
@@ -1927,10 +1920,23 @@ LIMIT  1;
 .Query
 [source,sqlpp]
 ----
-SELECT country        AS orig_t,
+WITH airport AS ([
+  {
+    "airportname": "Calais Dunkerque",
+    "city": "Calais",
+    "country": "France",
+    "faa": "CQF",
+    "geo": { "alt": 12, "lat": 50.962097, "lon": 1.954764 },
+    "icao": "LFAC",
+    "id": 1254,
+    "type": "airport",
+    "tz": "Europe/Paris"
+  }
+])
+SELECT country AS orig_t,
        PAIRS(country) AS pairs_t
-FROM   airport
-LIMIT  1;
+FROM airport
+LIMIT 1;
 ----
 
 .Result
@@ -1951,10 +1957,10 @@ LIMIT  1;
 .Query
 [source,sqlpp]
 ----
-SELECT PAIRS("N1QL")             AS constant_string,
-       PAIRS(4)                  AS constant_int,
-       PAIRS([1,2,3])            AS constant_int_array,
-       PAIRS({"name" : 3})       AS object_constant_int,
+SELECT PAIRS("N1QL") AS constant_string,
+       PAIRS(4) AS constant_int,
+       PAIRS([1,2,3]) AS constant_int_array,
+       PAIRS({"name" : 3}) AS object_constant_int,
        PAIRS({"name" : [1,2,3]}) AS object_constant_int_array;
 ----
 
@@ -1963,9 +1969,9 @@ SELECT PAIRS("N1QL")             AS constant_string,
 ----
 [
   {
+    "constant_string": null,
     "constant_int": null,
     "constant_int_array": [],
-    "constant_string": null,
     "object_constant_int": [
       [
         "name",
@@ -2005,10 +2011,21 @@ SELECT PAIRS("N1QL")             AS constant_string,
 .Query
 [source,sqlpp]
 ----
-SELECT reviews[*].ratings,
-       PAIRS({reviews[*].ratings}) AS pairs_t
-FROM   hotel
-LIMIT  1;
+WITH hotel AS ([
+  {
+    "name": "Hotel One",
+    "city": "Paris",
+    "reviews": [
+      { "ratings": { "Cleanliness": 5, "Location": 4, "Overall": 4 } },
+      { "ratings": { "Cleanliness": 4, "Location": 4, "Overall": 4, "Service": 3 } }
+    ]
+  }
+])
+SELECT
+  reviews[*].ratings AS ratings,
+  PAIRS({reviews[*].ratings}) AS pairs_t
+FROM hotel
+LIMIT 1;
 ----
 
 .Result
@@ -2016,6 +2033,19 @@ LIMIT  1;
 ----
 [
   {
+    "ratings": [
+      {
+        "Cleanliness": 5,
+        "Location": 4,
+        "Overall": 4
+      },
+      {
+        "Cleanliness": 4,
+        "Location": 4,
+        "Overall": 4,
+        "Service": 3
+      }
+    ],
     "pairs_t": [
       [
         "ratings",
@@ -2023,20 +2053,13 @@ LIMIT  1;
           {
             "Cleanliness": 5,
             "Location": 4,
-            "Overall": 4,
-            "Rooms": 3,
-            "Service": 5,
-            "Value": 4
+            "Overall": 4
           },
           {
-            "Business service (e.g., internet access)": 4,
-            "Check in / front desk": 4,
             "Cleanliness": 4,
             "Location": 4,
             "Overall": 4,
-            "Rooms": 3,
-            "Service": 3,
-            "Value": 5
+            "Service": 3
           }
         ]
       ],
@@ -2045,47 +2068,28 @@ LIMIT  1;
         {
           "Cleanliness": 5,
           "Location": 4,
-          "Overall": 4,
-          "Rooms": 3,
-          "Service": 5,
-          "Value": 4
+          "Overall": 4
         }
       ],
       [
         "ratings",
         {
-          "Business service (e.g., internet access)": 4,
-          "Check in / front desk": 4,
           "Cleanliness": 4,
           "Location": 4,
           "Overall": 4,
-          "Rooms": 3,
-          "Service": 3,
-          "Value": 5
+          "Service": 3
         }
-      ],
-      [
-        "Cleanliness",
-        5
-      ],
-      [
-        "Location",
-        4
       ],
       [
         "Overall",
         4
       ],
       [
-        "Rooms",
-        3
-      ],
-      [
-        "Service",
+        "Cleanliness",
         5
       ],
       [
-        "Value",
+        "Location",
         4
       ],
       [
@@ -2094,22 +2098,6 @@ LIMIT  1;
       ],
       [
         "Location",
-        4
-      ],
-      [
-        "Rooms",
-        3
-      ],
-      [
-        "Value",
-        5
-      ],
-      [
-        "Business service (e.g., internet access)",
-        4
-      ],
-      [
-        "Check in / front desk",
         4
       ],
       [
@@ -2120,26 +2108,6 @@ LIMIT  1;
         "Service",
         3
       ]
-    ],
-    "ratings": [
-      {
-        "Cleanliness": 5,
-        "Location": 4,
-        "Overall": 4,
-        "Rooms": 3,
-        "Service": 5,
-        "Value": 4
-      },
-      {
-        "Business service (e.g., internet access)": 4,
-        "Check in / front desk": 4,
-        "Cleanliness": 4,
-        "Location": 4,
-        "Overall": 4,
-        "Rooms": 3,
-        "Service": 3,
-        "Value": 5
-      }
     ]
   }
 ]
@@ -2281,7 +2249,7 @@ __optional__
 If `true`, the function redacts fields that do not match the pattern and excludes fields that do match.
 
 When you use `exclude`, the function ignores any remaining filters. 
-Place this filter last in the list or use it as the only filter to ensure the function applies all other rules.
+Place this filter last in the list or use it as the only filter to make sure the function applies all other rules.
 
 If `false`, the function redacts fields that match the pattern. 
 
@@ -2336,7 +2304,7 @@ WITH sample AS ([
 SELECT REDACT(sample) AS redacted_data;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [{
@@ -2372,7 +2340,7 @@ SELECT REDACT(sample,
 ) AS redacted_data;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [{
@@ -2408,7 +2376,7 @@ SELECT REDACT(sample,
 ) AS redacted_data;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [{
@@ -2443,7 +2411,7 @@ SELECT REDACT(sample,
 ) AS redacted_data;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [{
@@ -2479,7 +2447,7 @@ SELECT REDACT(sample,
 ) AS redacted_data;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [{
@@ -2512,7 +2480,7 @@ SELECT REDACT(sample,
     {"pattern": ".*", "regex": true, "strict": true}
 ) AS redacted_data;
 ----
-.Results
+.Result
 [source,json]
 ----
 [{
@@ -2546,21 +2514,23 @@ expr:: [Required] The alias of the unnested array from an xref:n1ql-language-ref
 
 === Return Value
 
-The `UNNEST_POS` function returns the position of each element in the unnested array, `expr`, as an integer. It returns each position value as a separate row in JSON format. The first element in the array is at position `0`. 
+The `UNNEST_POS` function returns the position of each element in the unnested array, `expr`, as an integer. 
+It returns each position value as a separate row in JSON format. The first element in the array is at position `0`. 
 
 In all other cases, the `UNNEST_POS` function returns `NULL` or `MISSING`.
 
 === Example
 
 ====
-In the following example, the `UNNEST_POS` function takes the result of an `UNNEST` Clause on a given array, `a1`. The `UNNEST` function returns the position of each element in the unnested `a1` array , `u`, as the `upos` value. 
+In the following example, the `UNNEST_POS` function takes the result of an `UNNEST` clause on a given array, `a1`.
+The `UNNEST` function returns the position of each element in the unnested `a1` array , `u`, as the `upos` value. 
 
 [source,sqlpp]
 ----
 include::example$functions/unnest-pos.n1ql[]
 ----
 
-.Results
+.Result
 [source,json]
 ----
 include::example$functions/unnest-pos.jsonc[]
@@ -2583,7 +2553,7 @@ Generates a universally unique identifier (UUID) according to https://www.ietf.o
 UUID()
 ....
 
-=== Arguments
+==== Arguments
 
 This function does not take any arguments.
 
@@ -2595,7 +2565,7 @@ A string representing a version 4 UUID.
 
 [[uuid-ex,UUID() Example]]
 ====
-This query will return a different UUID each time you run it.
+This query returns a different UUID each time you run it.
 
 .Query
 [source,sqlpp]
@@ -2603,7 +2573,7 @@ This query will return a different UUID each time you run it.
 SELECT UUID() AS uuid;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -2614,7 +2584,7 @@ SELECT UUID() AS uuid;
 ----
 ====
 
-For further examples using `UUID()`, refer to the xref:n1ql-language-reference/insert.adoc[INSERT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements.
+For more examples using `UUID()`, see the xref:n1ql-language-reference/insert.adoc[INSERT] and xref:n1ql-language-reference/merge.adoc[MERGE] statements.
 
 [[version]]
 == VERSION
@@ -2633,7 +2603,7 @@ This function does not take any arguments.
 
 === Return Value
 
-Returns string containing the {sqlpp} version.
+A string containing the {sqlpp} version.
 
 === Example
 
@@ -2645,7 +2615,7 @@ Returns string containing the {sqlpp} version.
 SELECT VERSION() as language_version;
 ----
 
-.Results
+.Result
 [source,json]
 ----
 [
@@ -2658,7 +2628,8 @@ SELECT VERSION() as language_version;
 
 == Aliases
 
-* [[base64-encode,BASE64_ENCODE()]] 
+* [[base64-encode,BASE64_ENCODE()]]
 `BASE64_ENCODE` is an alias for <<base64, BASE64>>.
 * `FORMALISE` is an alias for <<formalize, FORMALIZE>>.
-* `UNNEST_POSITION` is an alias for <<unnest-pos, UNNEST_POS>>.
+* [[unnest-position,UNNEST_POSITION()]]
+`UNNEST_POSITION` is an alias for <<unnest-pos, UNNEST_POS>>.
