@@ -1368,7 +1368,7 @@ To index all available fields in a document with the default type mapping, set `
 
 To only index the fields you specify in the type mapping, set `dynamic` to `false`.
 
-|enabled |Boolean |Yes a|
+|[[default-mapping-enabled]]enabled |Boolean |Yes a|
 To enable the Search Service's default type mapping, set `enabled` to `true`. 
 
 The default type mapping includes all documents in the bucket in the Search index, even if they do not match another configured type mapping.
@@ -1461,13 +1461,13 @@ This creates a xref:about-mappings.adoc#dynamic[dynamic type mapping].
 To only index the fields you specify and enable the `properties` block, set `dynamic` to `false`.
 This creates a xref:about-mappings.adoc#static[static type mapping].
 
-|enabled |Boolean |Yes a| 
+|[[objects-enabled]]enabled |Boolean |Yes a| 
 
 To enable the mapping and include any documents that match it in the Search index, set `enabled` to `true`. 
 
 To remove any documents that match this mapping from the Search index, set `enabled` to `false`.
 
-|default_analyzer |String |No a|
+|[[default-analyzer]]default_analyzer |String |No a|
 
 The name of the default analyzer to use for any text field defined under this type mapping. 
 
@@ -1523,7 +1523,7 @@ A `\{field_name\}` object contains the following properties:
 |====
 |Property |Type |Required? |Description
 
-|enabled |Boolean |Yes a|
+|[[field-enabled]]enabled |Boolean |Yes a|
 
 To add this child field to the Search index, set `enabled` to `true`.
 
@@ -1558,11 +1558,19 @@ It contains the following properties:
 |====
 |Property |Type |Required? |Description
 
-|analyzer |String |Text Only a|
+|[[field-analyzer]]analyzer |String |Text Only a|
 
 If the child field's `type` is `text`, set the analyzer to use for the child field. 
 
-NOTE: If you want to use the default analyzer for the content of this child field, you don't need to include an `analyzer` property.  
+NOTE: If you want to use the default analyzer for the content of this child field, you do not need to include an `analyzer` property. 
+
+|[[field-datetime]]date_format |String |Datetime Only a|
+
+If the child field's `type` is `datetime`, set the date/time parser to use for the child field.
+
+For more information about date/time parsers, see xref:customize-index.adoc#date-time[Date/Time Parser].
+
+NOTE: If you want to use the default date/time parser for the content of this child field, you do not need to include a `date_format` property.
 
 |[[dims]]dims |Integer |Vector Only a|
 
@@ -1598,7 +1606,15 @@ To include the child field in the Search index, set `index` to `true`.
 
 To exclude the child field from the index, set `index` to `false`.
 
-|name |String |Yes |The child field's name.
+|[[field-name]]name |String |Yes a|
+
+The child field's name.
+
+Set this value to a different value from the field's name in your document schema to add a field alias.
+
+You can then run Search queries using the field alias and still return results from this field.
+
+This behavior is the same as using xref:child-field-options-reference.adoc#searchable-as[Searchable As] in the {page-ui-name}.
 
 |[[similarity]]similarity |String |Vector Only a|
 
@@ -1621,7 +1637,7 @@ The `analyzer` set on this field must match the `analyzer` set on the \{synonym_
 
 For more information about synonym searches, see xref:synonyms/synonyms-search.adoc[].
 
-|type |String |Yes a|
+|[[field-type]]type |String |Yes a|
 
 The child field's type. Can be one of:
 

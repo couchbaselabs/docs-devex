@@ -85,6 +85,129 @@ For more information about how to use the REST API to create a Search index, see
 
 For more information about the available properties for a Search index, see xref:search-index-params.adoc[Search Index JSON Properties].
 
+== Updating Search Indexes
+
+If you want to make changes to a Search index later, some of those changes might trigger a full index rebuild. 
+Rebuilding an index uses the compute resources available to your Search Service nodes and can cause downtime. 
+
+The following Search index updates require a full index rebuild: 
+
+[cols="2,1,1"]
+|====
+| |How to Change Through the UI |How to Change through the REST API
+
+|Adding additional fields or mappings to your Search index
+a| xref:create-child-field.adoc[]
+
+xref:create-child-mapping.adoc[]
+
+xref:create-type-mapping.adoc[]
+
+xref:create-xattrs-mapping.adoc[]
+
+a| xref:search-index-params.adoc#scope-collection[scope.collection Objects, JSON Object Field Objects, and XATTRs Objects]
+
+xref:search-index-params.adoc#child-fields[field_name Object]
+
+|Changing whether a field is included in the *_all* field
+| xref:child-field-options-reference.adoc#all[Include in _all field]
+| xref:search-index-params.adoc#include-in-all[`include_in_all`]
+
+|Changing a field's data type
+| xref:create-child-field.adoc[]
+| xref:search-index-params.adoc#field-type[`type`]
+
+|Changing term vector storage settings for a field
+| xref:child-field-options-reference.adoc#term-vectors[Include Term Vectors]
+| xref:search-index-params.adoc#term-vectors[`include_term_vectors`]
+
+|Enabling or disabling a field or mapping 
+a| xref:create-child-field.adoc[]
+
+xref:create-child-mapping.adoc[]
+
+xref:create-type-mapping.adoc[]
+
+xref:create-xattrs-mapping.adoc[]
+
+a| xref:search-index-params.adoc#objects-enabled[`enabled`] (Collection, JSON Object, or XATTRs Object level)
+
+xref:search-index-params.adoc#default-mapping-enabled[`enabled`] (Default Mapping)
+
+xref:search-index-params.adoc#field-enabled[`enabled`] (Field level)
+
+|Changing a text field's analyzer
+| xref:child-field-options-reference.adoc#analyzer[Analyzer]
+| xref:search-index-params.adoc#field-analyzer[`analyzer`]
+
+|Changing the default analyzer for the Search index
+| xref:set-advanced-settings.adoc#default-analyzer[Default Analyzer]
+| xref:search-index-params.adoc#default-analyzer[`default_analyzer`]
+
+|Changing a date/time field's date/time parser
+| xref:child-field-options-reference.adoc#datetime-parser[Datetime Parser]
+| xref:search-index-params.adoc#field-datetime[`date_format`]
+
+|Changing the default date/time parser for the Search index
+| xref:set-advanced-settings.adoc#date-time[Default Date/Time Parser]
+| xref:search-index-params.adoc#default-date-time-parser[`default_datetime_parser`]
+
+|Changing the dimensions, similarity metric, or optimization settings on a vector or vector_base64 field
+a| xref:child-field-options-reference.adoc#dimension[Dimension]
+
+xref:child-field-options-reference.adoc#similarity-metric[Similarity Metric]
+
+xref:child-field-options-reference.adoc#optimized[Optimized For]
+
+a| xref:search-index-params.adoc#dims[`dims`]
+
+xref:search-index-params.adoc#similarity[`similarity`]
+
+xref:search-index-params.adoc#vector-index-optimized-param[`vector_index_optimized_for`]
+
+|Making any changes to any field that has been included in the *_all* field
+| xref:create-child-field.adoc[]
+| xref:search-index-params.adoc#child-fields[field_name Object]
+
+|Changing any mapping that has been set as dynamic
+a| xref:create-child-mapping.adoc[]
+
+xref:create-type-mapping.adoc[]
+
+xref:create-xattrs-mapping.adoc[]
+
+| xref:search-index-params.adoc#scope-collection[scope.collection Objects, JSON Object Field Objects, and XATTRs Objects]
+
+|Removing a defined child mapping when a parent mapping has dynamic enabled
+a| xref:create-child-field.adoc#delete[Delete a Child Field Mapping]
+
+xref:create-child-mapping.adoc#delete[Delete a Child Mapping]
+
+xref:create-xattrs-mapping.adoc#delete[Delete an XATTRs Mapping]
+| xref:search-index-params.adoc#child-fields[field_name Object]
+
+|Making any changes to fields that share the same name ^[<<footnote-1,1>>]^
+| xref:create-child-field.adoc[]
+| xref:search-index-params.adoc#child-fields[field_name Object]
+
+|Changing the Search index's document filter
+| xref:set-type-identifier.adoc[]
+| xref:search-index-params.adoc#doc-config[Doc_config Object]
+
+|Changing the name of the *_all* field
+| xref:set-advanced-settings.adoc#all-field[Default Field]
+| xref:search-index-params.adoc#all-field[`default_field`]
+
+////
+|Changing the Search index's default type
+| xref:set-advanced-settings.adoc#default-type[Default Type]
+| xref:search-index-params.adoc[]
+////
+|====
+
+[#footnote-1]
+^[<<same-field-name,1>>]^ Fields can share the same name when you use the xref:child-field-options-reference.adoc#searchable-as[Searchable As] setting from the {page-ui-name}, change the xref:search-index-params.adoc#field-name[`name` property] in your JSON definition, or index 2 fields with the same name under 2 different xref:about-mappings.adoc#collections[collection type mappings].
+
 == See Also 
 
 * xref:customize-index.adoc[]
