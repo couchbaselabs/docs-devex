@@ -6,45 +6,91 @@
 {description}
 
 [#description]
-////
-== What is RBAC
+== Access Eventing with the Capella UI 
+To be able to use the Eventing service through the Capella UI, you must have one of the following project roles: 
 
-Couchbase provides _Role-Based Access Control_ (RBAC), in which access privileges are assigned to fixed roles, which are in turn assigned to users, (each of which may be an administrator or an application) either _directly_ or _indirectly_, through _user-groups_.
+* Data Reader
+* Data Writer
+* Project Owner
 
-A Couchbase _role_ permits one or more _resources_ to be accessed according to defined _privileges_.
-Roles can be assigned to individual users, and to groups, by means of either the UI or the REST API.
+For more information about the project roles and their privileges, see xref:projects:project-roles.adoc[].
 
-Couchbase Server Enterprise Edition provides RBAC with multiple roles for finer access control.
-Community Edition provides multiple users that can be assigned to a limited set of roles.
+The following table summarizes the actions that you can perform with the Eventing Service using each of these project roles.
 
-////
+[#table-eventing-uiaccess-privileges, cols="2s,1,1,1",options="header"]
+|===
+| Action 
+| Data Reader 
+| Data Writer 
+| Project Owner 
 
-To be able to use the Eventing service through the Capella UI, you need to have one of the following organization or project roles: 
+a|[#create-import-edit]
+Create / Import / Edit Function 
+a| No 
+a| Yes 
+a| Yes 
 
-* The Organization Owner, Project Creator, or Organization Member role, as described in xref:organizations:organization-user-roles.adoc[].
+a|[#deploy-undeploy]
+Deploy / Undeploy
+a| No 
+a| Yes 
+a| Yes 
 
-* The Project Owner or Data Writer role, as described in xref:projects:project-roles.adoc[Project Roles]. 
+a|[#view-logs-js-settings]
+View Logs / JavaScript/ Settings
+a| Yes 
+a| Yes 
+a| Yes 
 
-To be able to use the Eventing service, via an SDK or a REST API, your client application must have cluster access credentials with Read or Read/write access to the buckets, scopes, and collections that your Eventing functions listen to. 
-Also, you need Write or Read/Write access to the buckets, scopes, and collections that the Eventing functions write to, as described in xref:clusters:manage-database-users.adoc[Manage Cluster Access Credentials].
+a|[#delete-function]
+Delete Function 
+a| No 
+a| Yes
+a| Yes 
 
-////
- Commenting for Future consideration. 
- 
-== Function Scope
+a|[#export-function]
+Export Function
+a| Yes
+a| Yes
+a| Yes 
 
-A bucket.scope combination is used for identifying functions belonging to the same group.
+|=== 
 
-Only the "Eventing Full Admin" role and also the "Full Admin" role can set the bucket.scope to  *+*+.+*+*; all other Eventing non-privileged users need to define a *Function Scope* for their Eventing functions that references an existing resource of bucket.scope. 
-This provides role-based isolation of Eventing functions between non-privileged users
+NOTE: The Cluster Viewer and Cluster Manager roles do not grant Eventing privileges. 
 
-include::partial$rbac-warning.adoc[]
 
-Typically, you should set Function Scope to the `bucket.scope`
-that holds the collection that is the source of your mutations to your Eventing Function.
-This best practice ensures that you _do not_  inadvertently cause an Eventing Function to undeploy
-by removing a *Function Scope* pointing to a resource that is not required for the function to run.
+== Access Eventing with Cluster Access Credentials
+To access the Eventing Service programmatically via an SDK or API, your client must have the appropriate cluster access credentials, with access to the buckets, scopes, and collections that your Eventing functions use. 
+For more information, see xref:clusters:cluster-rbac.adoc[].
 
-NOTE: A user can be assigned multiple "Eventing / Manage Scope Function" RBAC roles. If any of these roles match an existing Eventing Function's *Function Scope*, then that user can manage, modify, or delete the Eventing Function, even if it was created or imported by someone else.
+The following table summarizes the basic access levels or advanced access privileges that your cluster access credentials must have, for each of the target keyspaces that your Eventing functions read from or write to. 
 
-////
+[#table-eventing-keyspace-required-privileges, cols="1,1,1",options="header"]
+|===
+| Target Keyspace 
+| Basic Access Level
+| Advanced Access Privilege
+
+a|[#source-mutation]
+Source / Mutation
+a| `Read` or `Read / Write`
+a| `Data Read` and `Eventing Manage`
+
+a|[#metadata-storage]
+Metadata / Storage 
+a| `Read / Write`
+a| `Data Read` and `Eventing Manage`
+
+a|[#bindings]
+Bindings
+a| `Read` or `Read / Write`
+a| `Data Read` and `Eventing Manage` 
+
+|===
+
+== See Also
+
+* xref:organizations:organizations.adoc[]
+* xref:projects:projects.adoc[]
+* xref:clusters:cluster-rbac.adoc[]
+
