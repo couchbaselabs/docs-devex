@@ -1,0 +1,155 @@
+= Get Search Index Insights for Targeted Queries
+:page-topic-type: guide
+:description: The Search REST API lets you analyze the highest frequency terms in a text field in a Search index, or get the centroid clusters with the highest density of vectors in a Search Vector index.
+:page-status: Couchbase Server 8.1
+:page-toclevels: 3
+
+[abstract]
+{description}
+
+As of Couchbase Server version 8.1 and later, you can use your centroid cardinality data to reduce latency, CPU usage, and other resource costs for large vector queries.
+The endpoint returns the specific partition, or pindex, where your centroid cardinalities are stored.
+You can then specifically query this partition when running a Search query.
+For more information, see <<efficient,>>.
+
+== Prerequisites
+
+* Your cluster is running Couchbase Server version 8.1 or later.
+
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+
+* You have a bucket with scopes and collections in your cluster.
+For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[].
+
+* If you want to examine centroid cardinalities, you need a xref:vector-search:create-vector-search-index-rest-api.adoc[Search Vector index] with at least 3000 documents.
+Centroid cardinalities need an xref:vector-search:vector-search-index-architecture.adoc#ivf[Inverted File Index (IVF) index] and cannot be created with xref:vector-search:vector-search-index-architecture.adoc#flat[FLAT indexes].
+
+* Your user account has the xref:learn:security/roles.adoc#search-admin[`Search Admin`] role for the bucket where you want to create the index. 
+
+* You have installed the Couchbase command-line tool (CLI).
+
+* You have the hostname or IP address for the node in your cluster where you're running the Search Service.
+For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
+
+[#term-frequencies]
+== Get Term Frequencies for a Search Index
+
+To get term frequencies for a Search index using the Search REST API: 
+
+. In your command-line tool, enter a `curl` command with the `XPOST` verb. 
+. Set your header content to include `"Content-Type: application/json"`.
+. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the index you want to query: 
++
+[source,console]
+----
+include::example$search-insights-header.sh[]
+----
++
+To use SSL, use the `https` protocol in the Search Service endpoint URL and port `18094`.
+
+. Using the following JSON payload as a base for your request body, request term frequencies for your Search index.
+For example, this request gets term frequencies for the `description` field and returns the top 15 most frequent terms in descending order of frequency:
++
+[source,jsonc]
+----
+include::example$term-frequencies-body.jsonc[]
+----
+
++
+The Search REST API should return a result similar to the following: 
++
+[source,json]
+----
+include::example$term-frequencies-response.jsonc[]
+----
++
+NOTE: The term frequencies insights endpoint uses the xref:default-analyzers-reference.adoc#standard[standard analyzer] to find terms in your text fields.
+Tokens might not match whole words.
+
+[#centroids]
+== Get Centroid Cardinalities for a Search Vector Index
+
+To get centroid cardinalities for a Search Vector index using the Search REST API: 
+
+. In your command-line tool, enter a `curl` command with the `XPOST` verb. 
+. Set your header content to include `"Content-Type: application/json"`.
+. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the index you want to query: 
++
+[source,console]
+----
+include::example$search-insights-header.sh[]
+----
++
+To use SSL, use the `https` protocol in the Search Service endpoint URL and port `18094`.
+
+. Using the following JSON payload as a base for your request body, request centroid cardinalities for your Search Vector index.
+For example, this request gets the 5 centroids with the highest density of vectors in your Search index:
++
+[source,jsonc]
+----
+include::example$centroid-cardinalities-body.jsonc[]
+----
+
++
+The Search REST API should return a result similar to the following: 
++
+[source,json]
+----
+include::example$centroid-cardinalities-response.jsonc[tag=short]
+----
++
+NOTE: The full response from the Search REST API has been truncated due to the length of the vectors.
+To view the full response, click btn:[View on GitHub].
+
+[#efficient]
+=== Use Results for More Efficient Queries
+
+The results for <<centroids,getting the centroid cardinalities>> for your Search Vector index include the specific partition to query for a centroid. 
+
+Use the value in `index` when running a query with the xref:server:fts-rest-advanced:index.adoc#queryPartition[POST Query Index Partition] endpoint. 
+
+In the following situations, the Search Service falls back to searching your full Search Vector index, and not just the requested partition for the xref:server:fts-rest-advanced:index.adoc#queryPartition[POST Query Index Partition] endpoint:
+
+* The Search Service did not find enough results to meet the xref:search-request-params.adoc#k[`k`] value in your Search query.
+* The top scoring document is less than the required relevance threshold.
+* The results have low diversity or high duplication, or low routing confidence.
+* The partition you requested in your Search query has changed, such as through a rebalance or failover on your cluster.
+
+For example, if you wanted to query the specific partition for the first centroid in the results from <<centroids,>>, you could run the following query: 
+
+[source,console]
+----
+include::example$targeted-query-example.sh[]
+----
+
+For more information about how to format a Search query, see xref:search-request-params.adoc[].
+
+== Next Steps
+
+// Provide some context about the next steps that a user can take once they've completed your procedure.
+
+// Is there another procedure in a set of procedures that they should follow?
+
+// Is there somewhere they can go to read more information?
+
+// Use an unordered list, a plain paragraph, or an ordered list, as appropriate.
+
+//For example:
+
+// The structure of this xref is:
+// * Component name (server:)
+// * Module name (learn:)
+// * Family name (services-and-indexes/)
+// * Subfolder name (indexes/)
+// * File name (indexes.adoc)
+
+* xref:server:learn:services-and-indexes/indexes/indexes.adoc[]
+
+// The structure of this xref is:
+// * Component name (cloud:)
+// * Module name (organizations:)
+// * Family name (ui-auth/)
+// * File name (add-sso-auth.adoc)
+
+* xref:cloud:organizations:ui-auth/add-sso-auth.adoc[]
