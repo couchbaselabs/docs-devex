@@ -1,26 +1,25 @@
 = Encryption at Rest for Query Service
 :description: Learn how the Query Service protects data using encryption at rest and the types of data it can encrypt.
 :page-topic-type: concept
+:page-edition: Enterprise Edition
+// :page-status: Couchbase Server <version>
 
 [abstract]
 {description}
 
 == Overview
 
-In Couchbase Server 8.1 and later, the Query Service provides xref:link[Encryption at Rest] to protect data written to disk.
+In the next major release of Couchbase Server and later, the Query Service provides xref:learn:security/native-encryption-at-rest-overview.adoc[Encryption at Rest] to protect data written to disk.
 This includes temporary spill files, First Failure Data Capture (FFDC) files, and archived request files.
 
-To use encryption, you must explicitly enable it in your cluster configuration and select the encryption types you want to apply.
-By default, this feature is turned off. 
-You can enable it through the Couchbase Server Web Console or REST API.
-For more information about how to enable encryption, see the xref:link[Enabling Encryption].
+By default, encryption at rest is turned off. 
+To use this feature, you must explicitly enable it in your cluster settings and select the encryption types you want to apply.
+You can enable encryption through the Couchbase Server Web Console or REST API.
+For more information, see xref:manage:manage-security/encrypt-data-at-rest.adoc[Enable Encryption].
 
-// TODO: Add a link to the relevant doc. 
-
-When enabled, the Query Service generates a unique Data Encryption Key (DEK) for each data type and uses it to encrypt that data before writing it to disk.
-For more information about DEKs, see xref:link[Data Encryption Key].
-
-// TODO: Add a link to the relevant doc.
+NOTE: The Query Service uses data encryption keys (DEKs) to encrypt data.
+Therefore, before enabling encryption, you must configure a Key Encryption Key (KEK) or Key Management System (KMS) to manage the DEKs.
+For more information, see xref:learn:security/encryption-at-rest-keys.adoc[Encryption at Rest Keys].
 
 == Supported Encryption Types
 
@@ -45,18 +44,21 @@ For more information, see xref:n1ql-manage:monitoring-n1ql-query.adoc#sys-histor
 
 .2+| Bucket Encryption
 | Index scan backfill files
-| Encrypts temporary files created during index scans associated with a bucket. 
-These files are created when scan results exceed the capacity of the buffered channel between the Index Service client and the Query Service.
+| Encrypts temporary files created during index scans on a bucket. 
+The Query Service creates these files when scan results exceed the capacity of the buffered channel between the Index Service client and the Query Service.
 For more information, see xref:link[Encryption at Rest for GSI].
 
+// TODO: Add link
+
 | Sequential Scan Files
-| Encrypts temporary files created during sequential scans over a bucket.
+| Encrypts temporary files that the Query Service creates during sequential scans on a bucket.
 
 | Other Encryption
 | Transient query files
-| Encrypts temporary spill files used to store transient data during query processing.
-For example, files created for spilled sorting operation. 
+| Encrypts temporary spill files used to store transient data during query processing, such as files created for spilled sorting operation. 
 |===
+
+For more information about the various encryption types, see xref:learn:security/native-encryption-at-rest-overview.adoc[Encryption at Rest Overview].
 
 == View Encryption Status
 
@@ -74,8 +76,11 @@ The DEK list indicates the encryption state:
 
 == Decrypt Encrypted Files
 
-You can decrypt encrypted FFDC and archived request files using the `cbcat` CLI tool.
+You can decrypt encrypted FFDC and archived request files using the xref:link[cbcat CLI tool].
 
-For more information, see the xref:cli:cbcat.adoc[cbcat CLI reference page].
+[source,sh]
+----
+cbcat <add an example>
+----
 
-//TODO: Add a link to the cbcat tool. Also include a few lines about the possible options. 
+//TODO: Add a link to the cbcat tool and a few lines about the tool usage. 
