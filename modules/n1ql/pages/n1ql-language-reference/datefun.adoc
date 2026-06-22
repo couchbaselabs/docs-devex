@@ -788,18 +788,21 @@ no result is returned).
 Similarly, if any of the arguments are `NULL` then `NULL` is returned.
 
 [#fn-date-clock-local]
-== CLOCK_LOCAL([fmt])
-
-=== Description
+== CLOCK_LOCAL
 
 The current time (at function evaluation time) of the machine that the query service is running on, in the specified string format.
 
-=== Arguments
+=== Syntax
 
-fmt::
+....
+CLOCK_LOCAL([fmt])
+....
+
+==== Arguments
+
+fmt:: [Optional]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
 +
-*Optional argument*.
 If no format or an incorrect format is specified, then this defaults to the combined full date and time.
 
 === Return Value
@@ -837,14 +840,18 @@ SELECT CLOCK_LOCAL() as full_date,
 ====
 
 [#fn-date-clock-millis]
-== CLOCK_MILLIS()
-
-=== Description
+== CLOCK_MILLIS
 
 The current time as an Epoch/UNIX timestamp.
 Its fractional part represents nanoseconds, but the additional precision beyond milliseconds may not be consistent or guaranteed on all platforms.
 
-=== Arguments
+=== Syntax
+
+....
+CLOCK_MILLIS()
+....
+
+==== Arguments
 
 This function accepts no arguments.
 
@@ -879,19 +886,21 @@ SELECT CLOCK_MILLIS() AS CurrentTime;
 ====
 
 [#fn-date-clock-str]
-== CLOCK_STR([fmt])
-
-=== Description
+== CLOCK_STR
 
 The current time (at function evaluation time) of the machine that the query service is running on, in the specified string format.
 
-=== Arguments
+=== Syntax
 
-fmt::
+....
+CLOCK_STR([fmt])
+....
+
+==== Arguments
+
+fmt:: [Optional]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
-.
 +
-*Optional argument*.
 If no format or an incorrect format is specified, then this defaults to the combined full date and time.
 
 === Return Value
@@ -929,24 +938,27 @@ SELECT CLOCK_STR() as full_date,
 ====
 
 [#fn-date-clock-tz]
-== CLOCK_TZ(tz [, fmt])
-
-=== Description
+== CLOCK_TZ
 
 The current time (at function evaluation time) in the timezone given by the timezone argument passed to the function.
 This time is the local system time converted to the specified timezone.
 
-=== Arguments
+=== Syntax
 
-tz::
+....
+CLOCK_TZ(tz [, fmt])
+....
+
+==== Arguments
+
+tz:: [Required]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the <<date-timezone,timezone>> to convert the local time to.
 +
 If this argument is not a valid timezone then `null` is returned as the result.
 
-fmt::
+fmt:: [Optional]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
 +
-*Optional argument*.
 If no format or an incorrect format is specified, then this defaults to the combined full date and time.
 
 === Return Value
@@ -990,20 +1002,23 @@ SELECT CLOCK_TZ('UTC') as UTC_full_date,
 ====
 
 [#fn-date-clock-utc]
-== CLOCK_UTC([fmt])
-
-=== Description
+== CLOCK_UTC
 
 The current time in UTC.
 This time is the local system time converted to UTC.
 This function is provided for convenience and is the same as `CLOCK_TZ('UTC')`.
 
-=== Arguments
+=== Syntax
 
-fmt::
+....
+CLOCK_UTC([fmt])
+....
+
+==== Arguments
+
+fmt:: [Optional]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
 +
-*Optional argument*.
 If no format or an incorrect format is specified, then this defaults to the combined full date and time.
 
 === Return Value
@@ -1040,29 +1055,33 @@ SELECT CLOCK_UTC() as full_date, CLOCK_UTC('1111-11-11') as short_date;
 ====
 
 [#fn-date-add-millis]
-== DATE_ADD_MILLIS(date1, n, part)
-
-=== Description
+== DATE_ADD_MILLIS
 
 Performs date arithmetic on a particular component of an Epoch/UNIX timestamp value.
 This calculation is specified by the arguments `n` and `part`.
 +
 For example, a value of 3 for `n` and a value of `day` for `part` would add 3 days to the date specified by `date1`.
 
-=== Arguments
+=== Syntax
 
-date1::
+....
+DATE_ADD_MILLIS(date1, n, part)
+....
+
+==== Arguments
+
+date1:: [Required]
 An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing an Epoch/UNIX timestamp in milliseconds.
 +
 If this argument is not an integer then `null` is returned.
 
-n::
+n:: [Required]
 The value to increment the date component by.
 This value must be an integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, and may be negative to perform date subtraction.
 +
 If a non-integer is passed to the function then `null` is returned.
 
-part::
+part:: [Required]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the <<manipulating-components,component>> of the date to increment.
 +
 If an invalid part is passed to the function then `null` is returned.
@@ -1097,25 +1116,29 @@ SELECT DATE_ADD_MILLIS(1463284740000, 3, 'day') as add_3_days,
 ====
 
 [#fn-date-add-str]
-== DATE_ADD_STR(date1, n, part)
-
-=== Description
+== DATE_ADD_STR
 
 Performs date arithmetic on a date string.
 This calculation is specified by the arguments `n` and `part`.
 For example a value of 3 for `n` and a value of `day` for `part` would add 3 days to the date specified by `date1`.
 
-=== Arguments
+=== Syntax
 
-date1:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the date in a <<date-string,supported date format>>.
+....
+DATE_ADD_STR(date1, n, part)
+....
 
-n::
+==== Arguments
+
+date1:: [Required] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the date in a <<date-string,supported date format>>.
+
+n:: [Required]
 The value to increment the date component by.
 This value must be an integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, and may be negative to perform date subtraction.
 +
 If a non-integer is passed to the function then `null` is returned.
 
-part::
+part:: [Required]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the <<manipulating-components,component>> of the date to increment.
 +
 If an invalid part is passed to the function then `null` is returned.
