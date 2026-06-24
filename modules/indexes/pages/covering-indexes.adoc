@@ -9,13 +9,12 @@
 An index, in this case, is called a covering index and the query is called a covered query.
 As a result, covered queries are faster and deliver better performance.
 
-.Examples on this Page
-****
+== Examples on this Page
+
 The examples on this page use the `travel-sample` bucket, which needs to be installed before use.
-See xref:manage:manage-settings/install-sample-buckets.adoc[Sample Buckets] for details.
+For more information, see xref:manage:manage-settings/install-sample-buckets.adoc[Sample Buckets].
 
 include::ROOT:partial$query-context.adoc[tag=statement]
-****
 
 == Overview
 
@@ -41,8 +40,8 @@ This results in a considerable performance improvement.
 == Details
 
 To see details of covering indexes at work, you can view the query execution plan using the EXPLAIN statement.
-When a query uses a covering index, the EXPLAIN statement shows that a covering index is used for data access, thus avoiding the overhead associated with key-value document fetches.
-Consider a simple index, [.in]`idx_state`, on the attribute [.param]`state` in the `hotel` keyspace:
+When a query uses a covering index, the EXPLAIN statement shows that a covering index is used for data access, avoiding the overhead associated with key-value document fetches.
+Consider a secondary index, `idx_state`, on the attribute `state` in the `hotel` keyspace:
 
 ====
 .Index
@@ -52,8 +51,8 @@ CREATE INDEX idx_state on hotel (state) USING GSI;
 ----
 ====
 
-If we select [.param]`state` from the `hotel` keyspace, the actual values of the field [.param]`state` that are to be returned are present in the index [.param]`idx_state`, and avoids an additional step to fetch the data.
-In this case, the index [.param]`idx_state` is called a covering index and the query is a covered query.
+If you select `state` from the `hotel` keyspace, the actual values of the field `state` that are to be returned are present in the index `idx_state`, and avoids an additional step to fetch the data.
+In this case, the index `idx_state` is called a covering index and the query is a covered query.
 
 ====
 .Query
@@ -97,11 +96,11 @@ EXPLAIN SELECT state FROM hotel WHERE state = "CA";
 ----
 
 <.> The `covers` object shows details of the data covered by the index.
-<.> The index scan step uses the index we created ...
+<.> The index scan step uses the index you created ...
 <.> And the projection step uses the data covered by the index.
 ====
 
-If you modify the query to select the [.param]`state` and [.param]`city` from the `hotel` keyspace using the same index [.param]`idx_state`, the index does not contain the values of the [.param]`city` field to satisfy the query, and hence a key-value fetch is performed to retrieve this data.
+If you modify the query to select the `state` and `city` from the `hotel` keyspace using the same index `idx_state`, the index does not contain the values of the `city` field to satisfy the query, and hence a key-value fetch is performed to retrieve this data.
 
 ====
 .Query
@@ -148,12 +147,12 @@ EXPLAIN SELECT state, city FROM hotel
 ]}}]}}]
 ----
 
-<.> There is no `covers` object, showing that the data is not covered by the index.
-<.> The index scan step uses the index we created ...
+<.> The `covers` object does not exist, showing that the data is not covered by the index.
+<.> The index scan step uses the index you created ...
 <.> But the projection step does not use the data covered by the index.
 ====
 
-To use a covering index for the modified query, you must define an index with the [.param]`state` and [.param]`city` attributes before executing the query.
+To use a covering index for the modified query, you must define an index with the `state` and `city` attributes before executing the query.
 
 ====
 .Index
@@ -168,20 +167,20 @@ USING GSI;
 ====
 `MISSING` items are not indexed by indexers.
 To take advantage of covering indexes and for the index to qualify, a query needs to exclude documents where the index key expression evaluates to `MISSING`.
-For example, the index `index1` defined below covers the following query.
+For example, the index `<index1>` defined below covers the following query.
 
-[subs="quotes"]
+[source,sqlpp]
 ----
-CREATE INDEX __index1__ ON __keyspace__(__attribute1__) WHERE __attribute2__ = "__value__";
+CREATE INDEX <index1> ON <keyspace>(<attribute1>) WHERE <attribute2> = "<value>";
 ----
 
-[subs="quotes"]
+[source,sqlpp]
 ----
-SELECT __attribute1__ FROM __keyspace__ WHERE __attribute2__ = "__value__" AND __attribute1__ IS NOT MISSING;
+SELECT <attribute1> FROM <keyspace> WHERE <attribute2> = "<value>" AND <attribute1> IS NOT MISSING;
 ----
 ====
 
-Covering indexes are applicable to secondary index scans and can be used with global secondary indexes (GSI).
+Covering indexes are applicable to secondary index scans and can be used with Global Secondary Indexes (GSI).
 Queries with expressions and aggregates benefit from covering indexes.
 
 NOTE: You cannot use multiple GSI indexes to cover a query.
@@ -348,7 +347,7 @@ INSERT INTO hotel (KEY UUID(), VALUE city)
 
 .Arrays in WHERE clauses
 ====
-First, create a new index, [.in]`idx_array`.
+First, create a new index, `idx_array`.
 
 [source,sqlpp]
 ----
