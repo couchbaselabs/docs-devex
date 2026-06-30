@@ -1,0 +1,55 @@
+= Hybrid Searches with Score Fusion
+:page-topic-type: concept
+:description: As of Couchbase Server version 8.1 and later, you can use new algorithms to combine your traditional Search query document scores with Vector Search scores to get better hybrid search results.
+:page-status: Couchbase Server 8.1
+:stem: latexmath
+
+[abstract]
+{description}
+
+The Search Service supports the following score fusion algorithms for hybrid searches: 
+
+* <<rrf,>>
+* <<rsf,>>
+
+[#rrf]
+== Reciprocal Rank Fusion (RRF)
+
+Reciprocal Rank Fusion (RRF) is a rank-based algorithm for merging results from multiple lists.
+The algorithm does not rely on score values, but the way each document ranks in its respective list.
+
+For example, if you had 2 ranked lists of documents: 
+
+* Any documents that appear in both lists benefit from reciprocal rank contributions and rank higher in your final document scoring.
+* The weights assigned to your document lists, or the list of documents from your standard search and vector search queries, configure the relative importance of the reciprocal rank score.
+
+Any document that's ranked higher on one list is assigned a higher score using RRF. 
+
+Specifically, a document's score can be calculated as: 
+
+[latexmath]
+++++
+\begin{equation}
+score(d) = \sum_{i\in \text{\{fts, knn\}}}  W_i \cdot \frac{1} {k + \text{rank}_i(d)} = w_{fts} \cdot \frac{1} {k + \text{rank}_{fts}(d)} + w_{knn} \cdot \frac{1} {k + \text{rank}_{knn}(d)}
+\end{equation}
+++++
+
+== See Also
+
+// Use the See Also section to add links to related procedures, concepts, or reference information.
+
+// Use an unordered list to organize the xrefs.
+
+// The structure of this xref is:
+// * Component name (server:)
+// * Module name (learn:)
+// * Family name (services-and-indexes/)
+// * Subfolder name (indexes/)
+// * File name (indexes.adoc)
+* xref:server:learn:services-and-indexes/indexes/indexes.adoc[]
+// The structure of this xref is:
+// * Component name (cloud:)
+// * Module name (organizations:)
+// * Family name (ui-auth/)
+// * File name (add-sso-auth.adoc)
+* xref:cloud:organizations:ui-auth/add-sso-auth.adoc[]
