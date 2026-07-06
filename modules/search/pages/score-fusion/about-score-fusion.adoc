@@ -1,6 +1,6 @@
 = Hybrid Searches with Score Fusion
 :page-topic-type: concept
-:description: As of Couchbase Server version 8.1 and later, you can use new algorithms to combine your traditional Search query document scores with Vector Search scores to get better hybrid search results.
+:description: As of Couchbase Server version 8.1 and later, you can use new algorithms to combine your standard Search query document scores with Vector Search scores to get better hybrid search results.
 :page-status: Couchbase Server 8.1
 :stem: latexmath
 
@@ -15,13 +15,13 @@ The Search Service supports the following score fusion algorithms for hybrid sea
 [#rrf]
 == Reciprocal Rank Fusion (RRF)
 
-Reciprocal Rank Fusion (RRF) is a rank-based algorithm for merging results from multiple lists.
-The algorithm does not rely on score values, but the way each document ranks in its respective list.
+Reciprocal Rank Fusion (RRF) is a rank-based algorithm for merging results from standard Search queries and Vector Search results.
+The algorithm does not rely on score values, but the way each document ranks in its respective results list.
 
-For example, if you had 2 ranked lists of documents: 
+For example, if you had a result set for a hybrid search: 
 
-* Any documents that appear in both lists benefit from reciprocal rank contributions and rank higher in your final document scoring.
-* The weights assigned to your document lists, or the list of documents from your standard search and vector search queries, configure the relative importance of the reciprocal rank score.
+* Any documents that appear in both results benefit from reciprocal rank contributions and rank higher in your final document scoring.
+* The weights assigned to the list of documents from your standard search and Vector Search queries, configure the relative importance of the reciprocal rank score.
 
 Any document that's ranked higher on one list is assigned a higher score using RRF. 
 
@@ -31,6 +31,26 @@ Specifically, a document's score can be calculated as:
 ++++
 \begin{equation}
 score(d) = \sum_{i\in \text{\{fts, knn\}}}  W_i \cdot \frac{1} {k + \text{rank}_i(d)} = w_{fts} \cdot \frac{1} {k + \text{rank}_{fts}(d)} + w_{knn} \cdot \frac{1} {k + \text{rank}_{knn}(d)}
+\end{equation}
+++++
+
+== Ranked Score Fusion (RSF)
+
+First, the Search Service normalizes the scores of the standard search and Vector Search results using the following formula, where stem:[s] is the score of the document stem:[(d)]: 
+
+[latexmath]
+++++
+\begin{equation}
+s^{norm}_{i} \hspace{1mm} (d) = \frac{s_i(d) - s_{min}} {s_{max} - s_{min}}
+\end{equation}
+++++
+
+Then, the RSF score for a document stem:[(d)] can be calculated as: 
+
+[latexmath]
+++++
+\begin{equation}
+score(d) = w_{fts} \cdot s_{fts} \hspace{1mm} ^{norm}(d) + w_{knn} \cdot s_{knn} \hspace{1mm} ^{norm}(d)
 \end{equation}
 ++++
 
