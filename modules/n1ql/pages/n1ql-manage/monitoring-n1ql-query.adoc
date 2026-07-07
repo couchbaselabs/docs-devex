@@ -882,38 +882,53 @@ Couchbase Server tries to manage and retain archive files such that the total di
 When the specified limit is reached, older files are removed as necessary to make space for newly finalized files.
 When a file is removed, it's not guaranteed that only the oldest requests are evicted, given that Couchbase Server writes to multiple archive files in parallel.
 
+NOTE: In the next major release of Couchbase Server and later, you can encrypt archived request files saved on disk.
+For more information, see xref:n1ql-manage/query-encryption-at-rest.adoc[]. 
+
 [#sys-history-view]
 === View Archived Requests
 
-To view archived completed requests, use https://www.gnu.org/software/gzip[gzip] and https://jqlang.github.io/jq[jq] on the command line, or a {sqlpp} query.
+You can view archived completed requests by using either the command line or a {sqlpp} query.
 
-[tabs,sync-group-id="REST API|{sqlpp}"]
-====
-Command Line::
+==== Using the Command Line
+
+To view archived requests files using the command line, use a tool that matches the encryption state of the files.
+
+* *Unencrypted files*: Use https://www.gnu.org/software/gzip/[gzip^] and https://jqlang.org/[jq^] on the command line. 
 +
---
-To view all archived completed requests in `$FILE`:
-
+For example, to view archived requests in `$FILE`, use:
++
 [source,sh]
 ----
 gzip -qdc $FILE | jq .
 ----
---
 
-{sqlpp}::
+* *Encrypted files*: Use the xref:cli:cbcat.adoc[cbcat] command line tool.
 +
---
-To get a list of archived completed requests using {sqlpp}:
+For example, to decrypt and view archived requests in `$FILE` encrypted with the master password `$MASTER`, use:
++
+[source,sh]
+----
+cbcat --password $MASTER $FILE
+----
++
+NOTE: Encryption of archived request files is only available in the next major release of Couchbase Server and later. 
+For more information, see xref:n1ql-manage/query-encryption-at-rest.adoc[].
+
+==== Using a {sqlpp} Query
+
+To view archived requests using a {sqlpp} query, use the `system:completed_requests_history` keyspace.
+This keyspace provides access to both encrypted and unencrypted files.
+
+For example, to get all archived requests, use: 
 
 [source,sqlpp]
 ----
 SELECT * FROM system:completed_requests_history;
 ----
---
-====
 
-The `system:completed_requests_history` keyspace is provided for {sqlpp} access to the archived files, but as they're external GZIP archives performance is restricted, particularly with large histories on clusters with multiple Query Service nodes.
-Directly reading the files may be more useful in some cases.
+NOTE: Because these files are external GZIP archives, query performance is limited, particularly when querying large histories on multi-node clusters.
+In such cases, reading the files directly using the command line is more efficient.
 
 [#query-monitoring-settings]
 == Query Profiling
