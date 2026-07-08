@@ -1,0 +1,128 @@
+= Run a Hybrid Search with Score Fusion
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: As of Couchbase Server version 8.1 and later, you can use score fusion algorithms in your hybrid Search queries to get better, more consistent results when using Vector Search with a standard Search query.
+:tabs:
+:tabs-sync-option:
+
+[abstract]
+{description}
+
+For more information about the available score fusion algorithms, see xref:score-fusion/about-score-fusion.adoc[].
+
+== Prerequisites
+
+[{tabs}]
+====
+{page-ui-name}::
++
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
++
+* Your user account has the xref:learn:security/roles.adoc#search-admin[`Search Admin`] or xref:learn:security/roles.adoc#search-reader[`Search Reader`] role for the bucket or buckets that contain the Search indexes you want to search.
++
+* You have created a Search index that contains vectors and other standard field data types. 
++
+For more information about how to create a Vector Search index, see xref:vector-search:create-vector-search-index-ui.adoc[] or xref:vector-search:create-vector-search-index-rest-api.adoc[].
++
+* You have logged in to the {page-ui-name}.
+
+REST API::
++
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
++
+* You have the credentials for a user account that has the xref:learn:security/roles.adoc#search-admin[`Search Admin`] or xref:learn:security/roles.adoc#search-reader[`Search Reader`] role for the bucket or buckets that contain the Search indexes you want to search.
++
+* You have created a Search index that contains vectors and other standard field data types. 
++
+For more information about how to create a Vector Search index, see xref:vector-search:create-vector-search-index-ui.adoc[] or xref:vector-search:create-vector-search-index-rest-api.adoc[].
++
+* You installed the Couchbase command-line tool (CLI).
++
+* You have the hostname or IP address for the node in your cluster where you're running the Search Service.
+For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
+
+Python SDK::
++
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
++
+* You have the credentials for a user account with the xref:learn:security/roles.adoc#search-admin[`Search Admin`] or xref:learn:security/roles.adoc#search-reader[`Search Reader`] role for the bucket or buckets that contain the Search indexes you want to search.
++
+* You have created a Search index that contains vectors and other standard field data types. 
++
+For more information about how to create a Vector Search index, see xref:vector-search:create-vector-search-index-ui.adoc[] or xref:vector-search:create-vector-search-index-rest-api.adoc[].
++
+* You have the hostname or IP address for the node in your cluster where you're running the Search Service.
+For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
++
+* You have xref:python-sdk:project-docs:sdk-full-installation.adoc[installed the Couchbase Python SDK].
+====
+
+== Procedure
+
+To run a hybrid search with a specific score fusion algorithm: 
+
+[{tabs}]
+====
+{page-ui-name}::
++
+--
+. Go to *Search*.
+. Click the index where you want to run a search.
+. In the *Search this index* field, enter a search query. 
++
+For example, the following query runs a semantic search for content about an Indian buffet restaurant in the `embedding` field, while searching for the word `value` in the `content` field.
+The query uses the default `score_rank_constant` value for the `rrf` scoring algorithm: 
++
+[source,json]
+----
+include::example$score-fusion/query-rrf.jsonc[]
+----
+. Press kbd:[Enter] or click btn:[Search].
+--
+
+REST API::
++
+--
+. In your command-line tool, enter a `curl` command with the `XPOST` verb. 
+. Set your header content to include `"Content-Type: application/json"`.
+. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the index you want to query: 
++
+[source,console]
+----
+include::example$run-search-header.sh[]
+----
++
+To use SSL, use the `https` protocol in the Search Service endpoint URL and port `18094`. 
+. Enter the JSON payload for your query.
++
+For example, the following query runs a semantic search for content about an Indian buffet restaurant in the `embedding` field, while searching for the word `value` in the `content` field.
+The query uses the default `score_rank_constant` value for the `rrf` scoring algorithm: 
++
+[source,json]
+----
+include::example$score-fusion/query-rrf.jsonc[]
+----
+--
+
+Python SDK::
++
+--
+The following example connects to a cluster running on `localhost`.
+
+The script runs a `MatchQuery` against the `description` field for the phrase `wireless headphones`. 
+It also runs a `VectorQuery` against an `emb` field for `user_vec` and uses the `rrf` algorithm to combine results from the `products_idx` index:
+
+[source,python]
+----
+include::example$score-fusion/python-rrf.py[]
+----
+--
+====
+
+
+== Next Steps
+
