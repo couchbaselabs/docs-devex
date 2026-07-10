@@ -534,6 +534,217 @@ SELECT NORMALIZE_VECTOR([1, 2, 3, 4]) AS normalized;
 ----
 ====
 
+== RECIPROCAL_FUSION(`options`, `input1` [, `input2`, ..., `input16`])
+
+=== Description
+
+Combines and re-ranks results from multiple search methods into a single ranked list. 
+
+You can use this function to perform hybrid search and ranking fusion directly in {sqlpp} by combining results from vector searches and full-text searches. 
+The function evaluates all input arguments in parallel and automatically removes duplicate results before merging.
+
+//TODO: Add links to hybrid search and rank fusion docs when available.
+
+The function supports fusion algorithms like Reciprocal Rank Fusion (RRF) and Relative Score Fusion (RSF), as well as other scoring methods such as SUM, AVG, MIN, MAX, and MEDIAN.
+
+//TODO: Add links to RPF and RSF docs when available. 
+
+You can customize how scores are normalized, weighted, and aggregated to produce the final ranked list. 
+
+=== Arguments
+
+options:: [Required] A JSON object specifying options for the function. 
++
+To use default settings for all fields, pass an empty JSON object `{}`.
+For a list of available options, see <<options>>.
+
+input1, ... , input 16:: [Required] Search results to be fused.
++
+Each is an array of documents, typically from a subquery or CTE/LET variable.
+You must provide at least one input, and you can provide up to 16 input arguments.
+
+=== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **fusion** +
+__optional__
+| The method used to combine the result sets. 
+The only supported value is `"unionall"`. 
+
+*Default*: `"unionall"`.
+
+| String
+
+| **scorer** +
+__optional__
+
+| The ranking or fusion algorithm to use. 
+
+Specify one of the following values: 
+
+* `"RRF"`: Reciprocal Rank Fusion
+* `"RSF"`: Relative Score Fusion
+* `"SUM"`: Sum of scores
+* `"AVG"`: Average of scores
+* `"MIN"`: Minimum score
+* `"MAX"`: Maximum score
+* `"MEDIAN"`: Median score
+
+*Default*: `"RRF"`
+| String
+
+| **score** +
+__optional__
+
+| Determies whether to return the individual input scores alongside the final fused score.
+
+If `true`, returns both the final fused score and the individual scores. 
+If `false`, returns only the final fused score.
+
+*Default*: `false`
+| Boolean
+
+| **limit** +
+__optional__
+
+| A positive integer that limits the number of documents returned in the final result set.
+| Number
+
+
+| **args** +
+__optional__
+
+| A JSON object that specifies additional options for individual inputs.
+
+| <<args>> Object
+|===
+
+=== Args 
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **aggregator** +
+__optional__
+| The method to de-duplicate documents within the same input.
+
+Specify one of the following values:
+
+* `"SUM"`
+* `"MIN"`
+* `"MAX"`
+* `"AVG"`
+* `"MEDIAN"`
+
+*Default*: `"SUM"`
+| String
+
+| **normalization** +
+__optional__
+
+| The technique to scale or normalize search scores.
+
+Specify one of the following values:
+
+* `"none"`: Applies no normalization.
+* `"sigmoid"`: Applies a sigmoid function to scale scores.
+* `"minMaxScaler"`: Scales scores to a specified range (for example, 0 to 1).  
+
+*Default*: `"none"`
+| String
+
+| **id**/**pathId** +
+__optional__
+
+| The JSON path to the field that contains the document identifier.
+The function uses this value to identify matching documents within the same input and across different inputs.
+
+You can specify nested fields using dot notation (for example `"meta.id"`).
+
+*Default*: `"id"` (the top-level field)
+| String
+
+| **pathScore** +
+__optional__
+
+| The JSON path to the document's original search score field. 
+The function reads this value to calculate the final fused rank.
+
+*Default*: `"score"`
+| String
+
+| **weight** +
+__optional__
+
+| The multiplier to apply to the document's original search score.
+Use this value to increase or decrease the relative importance of specific results in the final ranking.
+
+*Default*: `1`
+| Number
+
+| **penalty** +
+__optional__
+
+| The constant `k` used in Reciprocal Rank Fusion (RRF) calculation.
+
+*Default*: `60`
+| Number
+
+| **isScore** +
+__optional__
+
+| Indicates whether to treat the value at `pathScore` as a score or a distance metric.
+
+If `true`, treats the value as a score.
+
+If `false`, treats the value as a distance and converts it into a score using formula:
+`1 - (distance / max_distance)`.
+
+*Default*: `true`
+| Boolean
+|===
+
+NOTE: Each input array can have its own `args` settings and can override these global/default values.
+
+=== How it Works
+
+The function performs various steps to combine and rank the input result sets:
+
+. De-Duplication
++
+If a same document appears multiple times within a single input, the function resolves it into a single entry. 
+It identifies duplicate documents using the `id` (or `pathId`) field.
+The function then combines their scores using the specified `aggregator` method.
+
+. Normalization (Optional)
++
+Different search methods use different scoring scales. 
+To make them comparable, the function applies the specified `normalization` method to scale all scores to a standard range (for example, 0 to 1).
++
+If the input uses distance metrics and you want to convert them to scores, set `isScore` to `false`.
+
+. Weighting (Optional)
++
+To prioritize certain search methods over others, the function applies a multiplier (`weight`) to the scores of specific inputs.
+For example, if you want to give more importance to vector search results, you can assign a higher weight to the vector search input.
+
+. Reranking / Fusion
++
+Finally, the function combines all processed inputs into a single ranked list using the algorithm specified in `scorer`.
+
+=== Return Value
+
+Returns an array of objects. 
+
+The function returns the documents sorted by the calculated rank. 
+If the score is set to true in the options, each object will contain a score field and its individual input score. 
+
+=== Examples
+
 [[vector_distance,VECTOR_DISTANCE()]]
 == VECTOR_DISTANCE(`vec`, `queryvec`, `metric`)
 
