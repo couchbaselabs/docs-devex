@@ -155,3 +155,40 @@ Because of the privileges defined, we are only allowed access to Eventing Functi
 
 image::rbac_user_view.png[,%100]
 
+
+== RBAC with JWT authentication
+
+NOTE: JWT authentication support for Eventing as an Early Release feature in Couchbase Server 8.1.0.
+
+In addition to Basic Authentication and mutual TLS(mTLS), Eventing supports *JSON Web Token (JWT) authentication*. 
+This provides secure, short-lived sessions (defaulting to 5 minutes) for crucial operations, consistent with the JWT support available for Indexing, Query, Backup, and XDCR.
+
+JWT authentication is performed over the REST API by passing a bearer token in the `Authorization` header. It operates in two distinct provisioning modes: 
+* `jitProvisioning=true`: The user is just-in-time (JIT) provisioned from an external Identity Provider (IdP).
+* `jitProvisioning=false`: The user already exists in Couchbase RBAC.
+
+[NOTE]
+====
+When JWT authentication is active with `jitProvisioning=true`, guardrails in the Eventing codebase restrict certain operations. Specifically, *creating, importing, or deleting* Eventing Functions via the REST API is not supported.
+All other Eventing REST API operations remain fully functional under this mode.
+
+To create, import, or delete Eventing Functions, you must use one of the following authentication methods instead:
+
+* Basic Authentication
+* mTLS
+* JWT authentication with `jitProvisioning=false`
+
+In all the cases, the user must be present in Couchbase RBAC with at least the <<minimal-eventing-rbac-role, Minimal Eventing RBAC role>> privileges.
+====
+
+////
+Note for the writer:
+* Get the above section checked/reviewed by the SME.
+* Once the core JWT authentication documentation is merged, uncomment and update the xrefs/links below to point to the relevant documentation for more information.
+
+== See Also
+* xref:[insert-jwt-file].adoc[JWT Authentication]
+* xref:manage:manage-security/manage-authentication.adoc[Manage Authentication]
+* xref:manage:manage-security/manage-users-and-roles.adoc[Manage Users, Groups, and Roles]
+* xref:learn:security/roles.adoc[Role-Based Access Control (RBAC)]
+* xref:learn:security/security-overview.adoc[Security Management Overview]
