@@ -142,18 +142,22 @@ You must provide the values in the same order that they appear in the <<sort_arr
 Your `sort` array must force a total order on your search results.
 
 Values in the `search_after` array must be strings.
-You cannot use `search_after` with numbers or other field data types - if your `sort` array includes fields with a `date` or `number` type, you cannot use `search_after`. 
-Only result relevancy score values can be entered as strings in the array. 
+
+As of Couchbase Server version 8.1, you can paginate on numeric, date, and geo fields, in addition to text fields, document IDs, and result scores.
+To paginate on numeric, date, and geo fields, you must sort with <<sort,objects>> that set the field type.
+For more information, see xref:manage-search-pagination.adoc#non-textual[Paginate on Numeric, Date, and Geo Fields].
 
 The Search Service starts search result pagination after the document with the values you provide in the array.
 
 For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_after` set to `8`, documents 9-10 appear on the same page.
 
-To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array. 
+To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array.
 Set the `search_after` property to include the values from the last result on your previous page of search results to effectively paginate.
 
-Use `search_after` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`. 
+Use `search_after` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`.
 `search_after` lets you start your search results from a specific result, rather than needing to process a number of search results to skip.
+
+For more information about how to paginate search results, see xref:manage-search-pagination.adoc[].
 
 |[[search_before]]search_before |Array |No a|
 
@@ -161,23 +165,27 @@ NOTE: If you use `search_before` in a search request, you cannot use `search_aft
 
 Use `search_before` with `from/offset` and `sort` to control pagination in search results.
 
-Give a value for each string or JSON object in the <<sort_arr,sort array>> to the `search_before` array. 
+Give a value for each string or JSON object in the <<sort_arr,sort array>> to the `search_before` array.
 You must provide the values in the same order that they appear in the `sort` array.
 Your `sort` array must force a total order on your search results.
 
 Values in the `search_before` array must be strings.
-You cannot use `search_before` with numbers or other field data types - if your `sort` array includes fields with a `date` or `number` type, you cannot use `search_before`. 
-Only result relevancy score values can be entered as strings in the array.
 
-The Search Service starts search result pagination before the document with the values you provide in the array.   
+As of Couchbase Server version 8.1, you can paginate on numeric, date, and geo fields, in addition to text fields, document IDs, and result scores.
+To paginate on numeric, date, and geo fields, you must sort with <<sort,objects>> that set the field type.
+For more information, see xref:manage-search-pagination.adoc#non-textual[Paginate on Numeric, Date, and Geo Fields].
+
+The Search Service starts search result pagination before the document with the values you provide in the array.
 
 For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_before` set to `8`, documents 2-6 appear on the same page.
 
-To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array. 
-Set the `search_before` property to include the values from the last result on your previous page of search results to effectively paginate. 
+To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array.
+Set the `search_before` property to include the values from the last result on your previous page of search results to effectively paginate.
 
 Use `search_before` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`.
 `search_before` lets you start your search results back from a specific result, rather than needing to process a number of search results to skip.
+
+For more information about how to paginate search results, see xref:manage-search-pagination.adoc[].
 
 |[[collections]]collections |Array |No |Contains an array of strings that specify the collections where you want to run the query. 
 

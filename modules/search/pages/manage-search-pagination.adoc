@@ -1,0 +1,194 @@
+= Manage Search Result Pagination
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: Use offset-based or cursor-based pagination with the Search Service to manage large result sets from a Search query.
+
+[abstract]
+{description}
+
+The Search Service supports 2 approaches to pagination:
+
+* <<offset,Offset-based pagination>> with the `size` and `from` properties.
+* <<cursor,Cursor-based pagination>>, also called deep pagination, with the `search_after` and `search_before` properties.
+
+Offset-based pagination is best for paginating the first few pages of results.
+Switch to cursor-based pagination for deeper pagination to reduce memory usage.
+
+== Prerequisites
+
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+
+* You have created a Search index.
++
+For more information, see xref:create-search-indexes.adoc[].
+
+* Your user account has the xref:learn:security/roles.adoc#search-admin[`Search Admin`] or xref:learn:security/roles.adoc#search-reader[`Search Reader`] role for the bucket that contains the Search index you want to query.
+
+* You installed the Couchbase command-line tool (CLI).
+
+* You have the hostname or IP address for the node in your cluster where you're running the Search Service.
+For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
+
+////
+* Your query's xref:search-request-params.adoc#sort_arr[`sort`] array forces a total order on your results.
+Include the document ID (`_id` or `-_id`) as the final entry in the `sort` array to guarantee this.
+
+* To paginate on numeric, date, or geo fields, every node in your cluster runs Couchbase Server version 8.1 or later.
+////
+
+== Procedure
+
+To paginate results from a Search query:
+
+. In your command-line tool, enter a `curl` command with the `XPOST` verb. 
+. Set your header content to include `"Content-Type: application/json"`.
+. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the index you want to query: 
++
+[source,console]
+----
+include::example$run-search-header.sh[]
+----
++
+To use SSL, use the `https` protocol in the Search Service endpoint URL and port `18094`. 
+. Enter the JSON payload for your query. 
++
+You can use the following pagination strategies: 
+
+* <<offset,Paginate with size and from>>
+* <<paginate-forward,Return Search Results After a Specific Document>>
+* <<paginate-backward,Return Results Before a Specific Document>>
+* <<non-textual,Paginate on Numeric, Date, or Geo Fields>>
+
+NOTE: You cannot <<paginate-forward,paginate forward>> and <<paginate-backward,paginate backward>> in the same Search query.
+
+[#offset]
+=== Paginate with size and from
+
+To return a page of results from a Search query based on a numeric offset:
+
+. Set the xref:search-request-params.adoc#size-limit[`size`] property to the number of results you want to return on a page.
+. Set the xref:search-request-params.adoc#size-limit[`from`] property to the number of results to skip before the page starts.
++
+For example, set your `size` to `5` and `from` to `10` to return results 11 through 15:
++
+----
+include::example$pagination-from-size-example.jsonc[]
+----
+
+TIP: To return a page using offset-based pagination, the Search Service processes and skips over every result that comes before it.
+Offset-based pagination uses more heap memory.
+For deeper pages, use <<paginate-forward,cursor-based pagination>>, instead.
+
+[#paginate-forward]
+=== Return Search Results After a Specific Document
+
+To use the results from a previous Search query to paginate and return the next page of results, or the results after a specific document:
+
+. Run your Search query with a `sort` array and the `size` property set to your desired page size.
++
+For example, the following query returns the first 3 results for a conjunct query with the terms `food` and `view`, sorted by `score`, and then by the documents' `id` values:
++
+[source,json]
+----
+include::example$pagination-queries-example.jsonc[tag=first-page]
+----
+. From your results, copy the values from the `sort` array of the last document on the page.
++
+NOTE: If your `sort` array contains numeric, date, or geo fields, you must copy the values from the document's `decoded_sort` array instead of its `sort` array.
+For more information, see <<non-textual,Paginate on Numeric, Date, or Geo Fields>>.
+
+For example, from the previous query, the object in your search results for the last result on the page could be similar to the following: 
++
+[source,json]
+----
+include::example$pagination-decoded-sort.jsonc[]
+----
+. Add the values from the copied `sort` array to the xref:search-request-params.adoc#search_after[`search_after`] array, in the same order as the `sort` array for your query.
++
+For example, the following query uses `search_after` to return only the next 3 results after the document with the `id` value `hotel_29610`:
++
+[source,json]
+----
+include::example$pagination-queries-example.jsonc[tag=next-page]
+----
+. Run the query to return the results for the next page in your search.
+
+[#paginate-backward]
+=== Return Results Before a Specific Document
+
+To use the results from a previous Search query to paginate and return the previous page of results, or the results before a specific document:
+
+. Run your Search query with a `sort` array and the `size` property set to your desired page size.
++
+For example, the following query returns the first 3 results for a conjunct query with the terms `food` and `view`, sorted by `score`, and then by the documents' `id` values:
++
+[source,json]
+----
+include::example$pagination-queries-example.jsonc[tag=first-page]
+----
+. From your results, copy the values from the `sort` array of the first document on the page.
++
+NOTE: If your `sort` array contains numeric, date, or geo fields, copy the values from the document's `decoded_sort` array instead of its `sort` array.
+For more information, see <<non-textual,Paginate on Numeric, Date, or Geo Fields>>.
+
+. Add the copied values to the xref:search-request-params.adoc#search_before[`search_before`] array, in the same order as your `sort` array.
++
+For example, the following query uses `search_before` to return only the preceding 3 results from before the document with the `id` value `hotel_21850`:
++
+[source,json]
+----
+include::example$pagination-geo.jsonc[tag=previous-page]
+----
+. Run the query to return the results from the previous page in your search.
+
+[#non-textual]
+=== Paginate on Numeric, Date, or Geo Fields
+
+[.status]#Couchbase Server 8.1#
+
+As of Couchbase Server version 8.1 and later, you can add numeric, date, or geospatial data fields to your `sort` array for cursor-based pagination.
+
+To use cursor-based based pagination with numeric, date, or geospatial data fields:
+
+. Run your Search query with a `sort` array and the `size` property set to your desired page size.
++
+For example, the following query returns the first 3 results for a conjunct query with the terms `food` and `view`, sorted by `score`, and then by the documents' `id` values:
++
+[source,json]
+----
+include::example$pagination-sort-objects.jsonc[]
+----
+. Continue with <<paginate-forward,Return the Next Page of Results>> or <<paginate-backward,Return the Previous Page of Results>>, using the `decoded_sort` values for these fields in your `search_after` or `search_before` array.
+
+If you provide only a field name for a numeric, date, or geo field, the Search Service cannot paginate on that field.
+
+For example, a document sorted by geo distance and then document ID returns the following `sort` and `decoded_sort` arrays:
+
+[source,json]
+----
+include::example$pagination-decoded-sort.jsonc[]
+----
+
+The `sort` array contains the encoded geo distance and the document ID.
+The `decoded_sort` array contains the readable geo distance (`0.11356660412012813`) and the same document ID.
+
+[IMPORTANT]
+====
+Cursor-based pagination on numeric, date, and geo fields requires every node in your cluster to run Couchbase Server version 8.1 or later.
+
+In a cluster that runs a mix of versions, cursor-based pagination on these fields can return inconsistent results:
+
+* Nodes running a version earlier than 8.1 do not encode the `search_after` and `search_before` values correctly.
+* Nodes running a version earlier than 8.0 do not return the `decoded_sort` array, which you need to paginate on date and geo fields.
+
+Complete your cluster upgrade before you paginate on numeric, date, or geo fields.
+====
+
+== Next Steps
+
+* xref:run-searches.adoc[]
+* xref:search-request-params.adoc[]
+* xref:simple-search-rest-api.adoc[]
+* xref:geo-search-rest-api.adoc[]
