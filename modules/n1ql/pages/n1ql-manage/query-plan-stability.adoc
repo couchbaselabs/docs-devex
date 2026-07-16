@@ -1,0 +1,28 @@
+= Query Plan Stability
+:page-topic-type: concept
+:page-status: Couchbase Server 8.1
+:page-edition: Enterprise Edition
+:description: The Query Plan Stability feature enables you to save and reuse query plans across upgrades.
+
+
+[abstract]
+{description}
+
+You can save query plans to persistent storage so that they are available for use even after upgrades. 
+
+Query Plan Stability lets you keep a query's execution plan unchanged across a Couchbase Server upgrade.
+Without this feature, the query optimizer generates a new plan for a query each time the plan isn't already cached. After an upgrade, the optimizer in the new version can generate a different plan for the same query than it did in the previous version. Query Plan Stability prevents this by letting you save a plan before the upgrade and reuse that exact plan afterward.
+
+Before the upgrade: You save the query plans for a set of queries to persistent storage. Persistent storage is required because the plans must survive both a node restart and a version change.
+After the upgrade: The query service loads the saved plan for a matching query and uses it directly, instead of asking the optimizer to generate a new one.
+
+You define the set of queries whose plans get saved. You control this behavior with a cluster-level setting, using one of the following approaches:
+
+Prepared statements only: You explicitly create a prepared statement for each query whose plan you want to save. Only plans for these statements are saved.
+Ad-hoc statements: The system automatically prepares all ad-hoc queries (auto-prepare) and saves their plans. Use this approach if you don't want to modify application code to use prepared statements explicitly.
+
+
+== Storage
+
+
+== 
