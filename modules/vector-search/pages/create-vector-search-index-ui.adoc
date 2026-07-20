@@ -44,7 +44,7 @@ To create a Search Vector Index with the Couchbase {page-ui-name}:
 * <<vector-indexes-ui,>>.
 
 [#search-ui]
-=== Use the {page-ui-name} Search Service UI
+=== Use the Search Service UI
 
 To use the Search Service UI in the {page-ui-name} to create a new Search Vector Index:
 
@@ -103,12 +103,13 @@ For more information about how to create child fields, see xref:search:create-ch
 . Click btn:[Create Index].
 
 [#vector-indexes-ui]
-=== Use the {page-ui-name} Vector Indexes UI
+=== Use the Vector Indexes UI
 
 To use the Vector Indexes UI in the {page-ui-name} to create a new Search Vector Index:
 
 . In the {page-ui-name}, go to *Vectors*. 
 . Click btn:[Add Vector Index].
+. Under *Select Type of Index*, click *Search Vector Index*. 
 . In the *Index Name* field, enter a name for the Search Vector Index.
 +
 [NOTE]
@@ -118,78 +119,44 @@ Your index name must start with an alphabetic character (a-z or A-Z). It can onl
 For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope.
 You cannot have 2 indexes with the same name inside the same bucket and scope.
 ====
-. In *Where's your data?*, choose the bucket, scope, and collection where you want to create your Search Vector Index.
-. In *Vector Field*, configure the vector field you want to include from the documents in your chosen collection or select *Index Without Data*.
-.. In the *Field* list, select a vector field from your documents.
-.. In the *Type* list, select whether the vectors in that field are *Sparse* or *Dense*.
-For more information, see xref:[].
-// Fill in link!
-. (Optional) To add a field to use as a filter on the data included in your Search Vector index, click btn:[+ Add Filter Field].
-.. Under *Filter Fields*, select the field you want to use to filter your documents.
-.. Under *Include in Index*, choose whether the previously selected field should be included in your index.
-You can still choose to partition using this field and not include it in your index.
-.. Under *Partition*, choose whether the previously selected field should be used to partition your index, based on the values in your documents.
+. In the first *Keyspace* list, select the bucket where you want to create the index. 
+. In the second *Keyspace* list, select the scope where you want to create the index. 
+. In the third *Keyspace* list, select the collection where you want to create the index. 
+. Under *Index Replicas* and *Index Partitions*, choose the number of replicas or partitions you want to create for your Search Vector Index.
 +
-For example, you could partition your Search Vector index based on the value of a `supplier` field in your documents.
-If you choose *No*, you can still filter using a `WHERE` clause, but your index will not be partitioned based on field values.
-.. (Optional) Under *Add WHERE clause*, enter a clause for the specific values that a document must contain in your filter field to be included in your index.
+For more information about replicas and partitions, see xref:search:set-advanced-settings.adoc[].
+. In the *Select Fields* box, click a vector field from your document that you want to add to your Search Vector index. 
 +
-For example, you could filter your index so that only documents with `supplier = "HP"` or `brightness > 0.5` are included.
-.. (Optional) To add additional filter fields to your Search Vector Index, click btn:[+ Add Filter Field] and repeat the previous steps to configure another field.
-. Under *Index Configuration*, choose options to configure additional settings for your Search Vector index:
-.. In the *Similarity Metric* list, select the similarity metric that you want to use for comparing vectors in your index.
-For the best accuracy, use the same similarity that you plan to use to query your data.
-+
-For more information about vector similarity measures, see xref:vector-index:vectors-and-indexes-overview.adoc#vector_similarity[Vector Similarity Metrics].
-.. In the *Quantization* list, select the type of quantization to use for simplifying the vectors stored in your index.
-+
-For more information about quantization, see xref:vector-index:vectors-and-indexes-overview.adoc#quantization[Quantization].
-.. In the *Dimensions* field, enter the exact dimension of the vectors in your data.
-+
-Your embedding model determines this value, and the {page-ui-name} automatically configures it based on your chosen *Vector Field*.
-.. In the *Replicas* list, select the number of replicas you want to create for your index.
-+
-Replicas affect the query throughput, memory footprint, and fault tolerance for your Search Vector index.
-More replicas increase the required memory for your index, but can increase query throughput.
-.. (Optional) In the *Training List* field, enter or select the number of vectors to consider when searching for centroids in your data.
-+
-[TIP]
-====
-If you have less than 10,000 vectors in your index, Couchbase sets the *Training List* value to your number of vectors.
-If you have more than 10,000 vectors up to a maximum of 1,000,000, Couchbase sets the *Training List* value to either 10% of your total number of vectors or 10 times your number of centroids - whichever value is higher, up to a maximum of 1,000,000.
-
-You can change your *Training List* value from these recommended defaults.
-Increasing the value can improve recall, but increase build times.
-Decreasing the value can improve build times, but reduces recall.
-====
-
-.. (Optional) In the *Probes to scan* field, enter or select the number of centroids to check for similar vectors for each query.
-+
-The default value is `1`.
-A higher value increases search times, but also increases accuracy.
-You can also choose to override this value in your queries.
-
-.. (Optional) In the *Number of centroids* field, enter or select the number of centroids to create in your index.
-+
-A larger value creates smaller centroids.
-By default, Couchbase sets the *Number of centroids* to the number of vectors in your data divided by 1000.
-
-.. To store full vectors in the index, select *Persist Full Vector*.
-+
-This increases the storage required for your index but increases accuracy.
+TIP: You can randomly select a new document from your chosen keyspace by clicking btn:[Refresh] above the *Select Fields* display.
+. Configure the settings for your vector field.
+For more information about any of the available settings for a vector field, see xref:search:quick-index-field-options.adoc[].
+.. In the *Type* field, select *vector* or *vector_base64*, based on the format of your vector field.
+.. In the *Dimension* field, enter the dimension of your vector field.
+.. In the *Similarity Metric* field, choose the similarity metric you want to use to compare vectors in your Search queries to vectors in your Search Vector Index.
+.. In the *Optimized For* list, choose whether your Search Vector Index should prioritize recall, latency, or memory efficiency.
+.. (Optional) To boost performance through your server's GPU, click *Use GPU for indexing and searching*.
+.. (Optional) In the *Searchable As* field, set a different name that you can use to search the vector field's contents in a query.
+.. Click btn:[Add].
+. (Optional) To add additional fields from your documents to your Search Vector Index, click the *Vector Fields* filter to show all available document fields.
+.. Click a new field to add it to the index.
+For more information about the configuration options for different field types, see xref:search:quick-index-field-options.adoc[].
 . Click btn:[Create Index].
+
+TIP: By default, the *Vectors* tab uses the xref:search:create-quick-index.adoc[Quick Editor] for a Search Vector Index, which hides more advanced settings.
+If you want to view all available settings for a Search Vector Index from the *Vectors* tab, you can click *Enable Advanced Options* to use the standard <<search-ui,Search UI>> to create your index.
 
 [#example]
 == Example: Creating a Search Vector Index for Vector Search Query Examples 
 
-If you want to use the sample dataset for the examples in xref:run-vector-search-ui.adoc[] and xref:run-vector-search-sdk.adoc[], then you can xref:search:import-search-index.adoc[import] the following Search index definition into {page-ui-name}:
+If you want to use the sample dataset for the examples in xref:run-vector-search-ui.adoc[] and xref:run-vector-search-sdk.adoc[], then you can xref:search:import-search-index.adoc[import] the following Search index definition into the {page-ui-name}:
 
 [source,json]
 ----
 include::example$sample-vector-search-index-payload.json[]
 ----
 
-NOTE: Make sure you imported the sample dataset with the recommended settings. 
+NOTE: Make sure you imported the sample dataset with the recommended settings.
+Importing an index definition is only supported from the *Search* tab. 
 
 This Search Vector Index has a type mapping for a `color.rgb` collection and includes the following fields: 
 
@@ -200,7 +167,7 @@ This Search Vector Index has a type mapping for a `color.rgb` collection and inc
 
 == Next Steps 
 
-A basic Search Vector Index includes the vector embeddings from the child field you specified in your type mapping.
+If you used the <<search-ui,Search UI>>, a basic Search Vector Index includes the vector embeddings from the child field you specified in your type mapping.
 If you choose to add additional child fields and enable *Include in search results*, the Search Service can also return data from those child fields when you run a Vector Search query.
 
 For more information about how to add additional child fields to your index, see xref:search:create-quick-index.adoc[] or xref:search:create-child-field.adoc[].
