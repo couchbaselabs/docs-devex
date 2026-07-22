@@ -534,6 +534,505 @@ SELECT NORMALIZE_VECTOR([1, 2, 3, 4]) AS normalized;
 ----
 ====
 
+[[reciprocal_fusion,RECIPROCAL_FUSION()]]
+== RECIPROCAL_FUSION(`options`, `input1` [, `input2`, ..., `input16`])
+//[.status]#Couchbase Server 8.1#
+
+=== Description
+
+Combines and re-ranks results from multiple search methods into a single ranked list. 
+
+You can use this function to perform hybrid search and ranking fusion directly in {sqlpp} by combining results from vector searches and full-text searches. 
+The function processes all input arguments in parallel and automatically removes duplicate documents before merging.
+
+//TODO: Add links to hybrid search and rank fusion docs when available.
+
+The function supports the following ranking fusion methods:
+
+* Reciprocal Rank Fusion (RRF)
+* Relative Score Fusion (RSF)
+* Score-based methods such as SUM, AVG, MIN, MAX, and MEDIAN
+
+//TODO: Add links to RPF and RSF docs when available. 
+
+You can also configure how the function normalizes, weighs, and aggregates scores to produce the final ranked list. 
+
+=== Arguments
+
+options:: [Required] A JSON object specifying options for the function. 
++
+To use default settings for all fields, pass an empty JSON object `{}`.
+For a list of available options, see <<options>>.
+
+input1, ... , input16:: [Required] Search results to be fused.
++
+Typically, each is an array of documents from a subquery or CTE/LET variable.
+You must provide at least 1 input, and you can provide up to 16 inputs.
+
+==== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **fusion** +
+__optional__
+| The method used to combine the result sets. 
+The only supported value is `"unionall"`. 
+
+*Default*: `"unionall"`.
+
+| String
+
+| **scorer** +
+__optional__
+
+| The ranking or fusion algorithm to use. 
+
+Specify one of the following values: 
+
+* `"RRF"`: Reciprocal Rank Fusion
+* `"RSF"`: Relative Score Fusion
+* `"SUM"`: Sum of scores
+* `"AVG"`: Average of scores
+* `"MIN"`: Minimum score
+* `"MAX"`: Maximum score
+* `"MEDIAN"`: Median score
+
+*Default*: `"RRF"`
+| String
+
+| **score** +
+__optional__
+
+| Determies whether to return the individual input scores alongside the final fused score.
+
+If `true`, returns both the final fused score and the individual scores. 
+
+If `false`, returns only the final fused score.
+
+*Default*: `false`
+| Boolean
+
+| **limit** +
+__optional__
+
+| A positive integer that limits the number of documents returned in the final result set.
+| Number
+
+
+| **args** +
+__optional__
+
+| A JSON object that specifies additional options for individual inputs.
+
+| <<args>> Object
+|===
+
+==== Args 
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **aggregator** +
+__optional__
+| The method to remove duplicate documents within the same input.
+
+Specify one of the following values:
+
+* `"SUM"`
+* `"MIN"`
+* `"MAX"`
+* `"AVG"`
+* `"MEDIAN"`
+
+For example, if you use `"SUM"`, the function adds the scores of duplicate documents, and then uses this score to calculate the final rank.
+
+*Default*: `"SUM"`
+| String
+
+| **normalization** +
+__optional__
+
+| The technique to scale or normalize search scores.
+
+Specify one of the following values:
+
+* `"none"`: Applies no normalization.
+* `"sigmoid"`: Applies a sigmoid function to scale scores.
+* `"minMaxScaler"`: Scales scores to a specified range (for example, 0 to 1).  
+
+*Default*: `"none"`
+| String
+
+| **pathId** +
+__optional__
+
+| The JSON path to the field that contains the document identifier.
+The function uses this value to identify matching documents within the same input and across different inputs.
+
+You can specify nested fields using dot notation (for example, `"meta.id"`).
+
+*Default*: `"id"` (the top-level field)
+| String
+
+| **pathScore** +
+__optional__
+
+| The JSON path to the document's original search score field. 
+The function reads this value to calculate the final fused rank.
+
+*Default*: `"score"`
+| String
+
+| **weight** +
+__optional__
+
+| The multiplier to apply to the document's original search score.
+Use this value to increase or decrease the relative importance of specific inputs in the final ranking.
+
+*Default*: `1`
+| Number
+
+| **penalty** +
+__optional__
+
+| The constant `k` used in Reciprocal Rank Fusion (RRF) calculation.
+
+*Default*: `60`
+| Number
+
+| **isScore** +
+__optional__
+
+| Indicates whether to treat the value at `pathScore` as a score or a distance metric.
+
+If `true`, treats the value as a score.
+
+If `false`, treats the value as a distance. 
+The function then converts it into a score using the formula
+`1 - (distance / max_distance)`.
+
+*Default*: `true`
+| Boolean
+|===
+
+=== How it Works
+
+The function performs various steps to combine and rank the search results:
+
+Deduplication::
+If a same document appears multiple times within a single input, the function resolves it into a single entry. 
+It identifies duplicate documents using the `pathId` field, and then combines their scores using the specified `aggregator` method.
+
+Normalization (Optional):: 
+Different search methods use different scoring scales. 
+To make them comparable, the function applies the specified `normalization` method to scale all scores to a standard range (for example, `0` to `1`).
++
+If the input uses distance metrics and you want to convert them to scores, set `isScore` to `false`.
+
+Weighting (Optional)::
+To prioritize certain search methods over others, the function applies a multiplier (`weight`) to the scores of specific inputs.
+For example, if you want to give more importance to vector search results, you can assign a higher weight to the corresponding vector search input.
+
+Reranking / Fusion::
+Finally, the function combines all processed inputs into a single ranked list using the algorithm specified in `scorer`.
+
+=== Return Value
+
+Returns an array of objects, where documents are sorted by their calculated rank. 
+
+If `score` is set to `true`, each returned object contains the final fused score and the individual scores from each input.
+
+=== Examples
+
+.Using default settings
+====
+
+.Query
+[source,sqlpp]
+----
+WITH vector_results AS (
+  [
+    { "id": "doc1", "score": 0.95 },
+    { "id": "doc2", "score": 0.87 },
+    { "id": "doc3", "score": 0.81 }
+  ]
+),
+text_results AS (
+  [
+    { "id": "doc1", "score": 0.80 },
+    { "id": "doc2", "score": 0.72 },
+    { "id": "doc4", "score": 0.65 }
+  ]
+)
+SELECT RECIPROCAL_FUSION({}, vector_results, text_results) AS fused_results;
+----
+
+.Results
+[source,json]
+----
+[{
+    "fused_results": [{
+            "id": "doc1"
+        },
+        {
+            "id": "doc2"
+        },
+        {
+            "id": "doc6"
+        },
+        {
+            "id": "doc3"
+        },
+        {
+            "id": "doc7"
+        },
+        {
+            "id": "doc4"
+        },
+        {
+            "id": "doc8"
+        },
+        {
+            "id": "doc5"
+        }
+    ]
+}]
+----
+====
+
+.Using RSF without normalization
+====  
+
+.Query
+[source,sqlpp]
+----
+WITH vector_results AS (
+  [
+    { "id": "doc1", "score": 0.95 },
+    { "id": "doc2", "score": 0.87 },
+    { "id": "doc3", "score": 0.81 }
+  ]
+),
+text_results AS (
+  [
+    { "id": "doc1", "score": 0.80 },
+    { "id": "doc2", "score": 0.72 },
+    { "id": "doc4", "score": 0.65 }
+  ]
+)
+SELECT RECIPROCAL_FUSION(
+    {
+    "fusion": "unionall",
+    "scorer": "RSF",
+    "score": true,
+    "limit": 4,
+    "args": [
+        { "aggregator":"sum", 
+          "normalization":"none", 
+          "weight":1.0, "penalty":60, 
+          "pathId":"id", 
+          "pathScore":"score", 
+          "isScore":true 
+        },
+        { "aggregator":"sum", 
+          "normalization":"none", 
+          "weight":1.0, 
+          "penalty":60, 
+          "pathId":"id", 
+          "pathScore":"score", 
+          "isScore":true 
+        }
+    ]
+  }, vector_results, text_results) AS fused_results;
+----  
+
+.Results
+[source,json]
+----
+[{
+    "fused_results": [{
+            "id": "doc1",
+            "score": 1.75,
+            "score_0": 0.95,
+            "score_1": 0.8
+        },
+        {
+            "id": "doc2",
+            "score": 1.5899999999999999,
+            "score_0": 0.87,
+            "score_1": 0.72
+        },
+        {
+            "id": "doc3",
+            "score": 0.81,
+            "score_0": 0.81
+        },
+        {
+            "id": "doc4",
+            "score": 0.65,
+            "score_1": 0.65
+        }
+    ]
+}]
+----
+====
+
+.Using RRF with normalization and weights
+====
+.Query
+[source,sqlpp]
+----
+WITH vector_results AS ([
+  { "id": "doc1", "score": 0.95 },
+  { "id": "doc2", "score": 0.87 },
+  { "id": "doc3", "score": 0.81 }
+]),
+text_results AS ([
+  { "id": "doc1", "score": 0.80 },
+  { "id": "doc2", "score": 0.72 },
+  { "id": "doc4", "score": 0.65 }
+])
+SELECT RECIPROCAL_FUSION(
+  {
+    "fusion": "unionall",
+    "scorer": "RRF",
+    "score": true,
+    "limit": 4,
+    "args": [
+        { "aggregator":"sum", 
+          "normalization":"minMaxScaler", 
+          "weight": 2.0, 
+          "penalty": 60, 
+          "pathId":"id", 
+          "pathScore":"score", 
+          "isScore": true 
+        },
+        { "aggregator":"sum", 
+          "normalization":"minMaxScaler", 
+          "weight": 1.0, 
+          "penalty": 60, 
+          "pathId":"id", 
+          "pathScore":"score", 
+          "isScore": true 
+        }
+    ]
+  },
+  vector_results,
+  text_results
+) AS fused_results;
+----
+
+.Results
+[source,json] 
+----
+[{
+    "fused_results": [{
+            "id": "doc1",
+            "score": 0.05,
+            "score_0": 0.03333333333333333,
+            "score_1": 0.016666666666666666
+        },
+        {
+            "id": "doc2",
+            "score": 0.04918032786885246,
+            "score_0": 0.03278688524590164,
+            "score_1": 0.01639344262295082
+        },
+        {
+            "id": "doc3",
+            "score": 0.03225806451612903,
+            "score_0": 0.03225806451612903
+        },
+        {
+            "id": "doc4",
+            "score": 0.016129032258064516,
+            "score_1": 0.016129032258064516
+        }
+    ]
+}]
+----
+====
+
+.Using distance metrics instead of scores
+====
+
+.Query
+[source,sqlpp]
+----
+WITH vector_results AS ([
+  { "id": "doc1", "distance": 0.10 },
+  { "id": "doc2", "distance": 0.15 },
+  { "id": "doc3", "distance": 0.30 }
+]),
+text_results AS ([
+  { "id": "doc1", "distance": 0.05 },
+  { "id": "doc4", "distance": 0.20 },
+  { "id": "doc2", "distance": 0.12 }
+])
+SELECT RECIPROCAL_FUSION(
+  {
+    "fusion": "unionall",
+    "scorer": "RSF",
+    "score": true,
+    "limit": 5,
+    "args": [
+        { "aggregator":"sum", 
+          "normalization":"minMaxScaler", 
+          "weight":1.0, 
+          "penalty":60, 
+          "pathId":"id", 
+          "pathScore":"distance", 
+          "isScore": false 
+        },
+        { "aggregator":"sum", 
+          "normalization":"minMaxScaler", 
+          "weight":1.0, 
+          "penalty":60, 
+          "pathId":"id", 
+          "pathScore":"distance", 
+          "isScore": false 
+        }
+    ]
+  },
+  vector_results,
+  text_results
+) AS fused_results;
+----
+
+.Results
+[source,json]
+----
+[{
+    "fused_results": [{
+            "id": "doc1",
+            "score": 2,
+            "score_0": 1,
+            "score_1": 1
+        },
+        {
+            "id": "doc2",
+            "score": 1.2833333333333332,
+            "score_0": 0.75,
+            "score_1": 0.5333333333333333
+        },
+        {
+            "id": "doc3",
+            "score": 0,
+            "score_0": 0
+        },
+        {
+            "id": "doc4",
+            "score": 0,
+            "score_1": 0
+        }
+    ]
+}]
+----
+====
+
 [[vector_distance,VECTOR_DISTANCE()]]
 == VECTOR_DISTANCE(`vec`, `queryvec`, `metric`)
 
