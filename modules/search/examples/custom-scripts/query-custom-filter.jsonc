@@ -1,0 +1,35 @@
+// tag::full[]
+{
+    "size": 10,
+    "query": {
+        "custom_filter": {
+            "query": {
+                "match_phrase": "nice view",
+                "field": "reviews.content"
+            },
+            "fields": ["reviews.ratings.Cleanliness"],
+            "params": {
+                "min": 3.0
+            },
+            "source": "function clean_hotels(doc, params) { var v = doc.fields[\"reviews.ratings.Cleanliness\"]; if (v === undefined) return false; var vals = Array.isArray(v) ? v : [v]; var sum = 0; for (var i = 0; i < vals.length; i++) { sum += vals[i]; } return (sum / vals.length) >= params.min; }"
+        }
+    }
+}
+// end::full[]
+// tag::short[]
+{
+    "query": {
+        "custom_filter": {
+            "query": {
+                "match_phrase": "nice view",
+                "field": "reviews.content"
+            },
+            "fields": ["reviews.ratings.Cleanliness"],
+            "params": {
+                "min": 3.0
+            },
+            "source": "function clean_hotels(doc, params) { var v = doc.fields[\"reviews.ratings.Cleanliness\"]; if (v === undefined) return false; var vals = Array.isArray(v) ? v : [v]; var sum = 0; for (var i = 0; i < vals.length; i++) { sum += vals[i]; } return (sum / vals.length) >= params.min; }"
+        }
+    }
+}
+// end::short[]
