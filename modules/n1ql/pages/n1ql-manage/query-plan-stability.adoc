@@ -1,6 +1,6 @@
 = Query Plan Stability
 :page-topic-type: concept
-:page-status: Couchbase Server 8.1
+// :page-status: Couchbase Server 8.1
 :page-edition: Enterprise Edition
 :description: The Query Plan Stability feature enables you to save and reuse query plans across upgrades.
 
@@ -8,21 +8,62 @@
 [abstract]
 {description}
 
-You can save query plans to persistent storage so that they are available for use even after upgrades. 
+Query Plan Stability is a feature that preserves execution plans for your queries across Couchbase Server upgrades.
 
-Query Plan Stability lets you keep a query's execution plan unchanged across a Couchbase Server upgrade.
-Without this feature, the query optimizer generates a new plan for a query each time the plan isn't already cached. After an upgrade, the optimizer in the new version can generate a different plan for the same query than it did in the previous version. Query Plan Stability prevents this by letting you save a plan before the upgrade and reuse that exact plan afterward.
+By default, the query optimizer generates a new plan for a query each time the plan isn't already cached. 
+When you upgrade, the optimizer in the new version can generate a different plan for the same query than it did in the previous version.
+Query Plan Stability prevents this by saving execution plans to persistent storage before an upgrade and reapplying those exact plans after the upgrade. 
 
-Before the upgrade: You save the query plans for a set of queries to persistent storage. Persistent storage is required because the plans must survive both a node restart and a version change.
-After the upgrade: The query service loads the saved plan for a matching query and uses it directly, instead of asking the optimizer to generate a new one.
+== Key Benefits
 
-You define the set of queries whose plans get saved. You control this behavior with a cluster-level setting, using one of the following approaches:
+* Predictable performance: Ensures consistent query execution behavior across upgrades.
+* Regression Prevention: Minimizes the risk of performance degradation caused by changes in new versions.
+* Application Stability: Protects applications tuned around specific query plans from unexpected changes.
 
-Prepared statements only: You explicitly create a prepared statement for each query whose plan you want to save. Only plans for these statements are saved.
-Ad-hoc statements: The system automatically prepares all ad-hoc queries (auto-prepare) and saves their plans. Use this approach if you don't want to modify application code to use prepared statements explicitly.
+== How Plan Stability Works
 
+You can enable and configure Plan Stability 
+
+. Before an upgrade: 
+    * You enable Plan Stability by selecting which queries to target. 
+    * The Query Service saves the generated plans for those queries to persistent storage.
+. After an upgrade: 
+    * When the Query Service receives a query, it checks the persistent storage for a matching saved plan.
+    ** If a saved plan is found, the Query Service executes the query using that plan.
+    ** If no saved plan is found, the Query optimizer generates a new plan for the query. 
+
+== Plan Stability Modes
+
+You can control which query plans to save by using a cluster-level setting. 
+
+The following modes are available:
+
+* *Off*: Plan Stability is turned off. The Query Service generates a new plan for each query, and no plans are saved.
+* *On Prepared Statements*: Only plans for prepared statements are saved. The Query Service generates a new plan for ad-hoc queries.
+* *On All Statements*: All plans including both prepared statements and ad-hoc queries are saved. 
+The Query Service generates a new plan only if no saved plan is found.
+
+You can also set various levels of error policy for plan stability.
+
+For more information about how to change this setting, see xref:n1ql:n1ql-manage/configure-plan-stability.adoc[].
 
 == Storage
 
+When you enable Plan Stability, the query service saves the plans to persistent storage. 
+The plans are stored in a system keyspace called `system:plan_stability`. 
 
-== 
+user-level bucket  called QUERY_METADATA for storage. This bucket will be automatically created when:
+plan stability mode is set to “prepared_only”, “ad_hoc” or “ad_hoc_read_only”
+a PREPARE statement is issued with the SAVE option
+
+A user with admin privileges can drop the bucket. If the bucket is dropped, errors may be returned on various operations. The next time plan stability mode is set to anything other than “off”, or a PREPARE statement with SAVE option is issued, the bucket will be automatically created again.
+
+
+== See Also
+
+* xref:n1ql:n1ql-manage/configure-plan-stability.adoc[]
+* xref:n1ql:n1ql-manage/manage-saved-plans.adoc[]
+
+
+Prepared statements only: You explicitly create a prepared statement for each query whose plan you want to save. Only plans for these statements are saved.
+Ad-hoc statements: The system automatically prepares all ad-hoc queries (auto-prepare) and saves their plans. Use this approach if you don't want to modify application code to use prepared statements explicitly.
