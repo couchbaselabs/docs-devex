@@ -680,8 +680,7 @@ You can specify nested fields using dot notation (for example, `"meta.id"`).
 | **pathScore** +
 __optional__
 
-| The JSON path to the document's original search score field. 
-The function reads this value to calculate the final fused rank.
+| The JSON path to the field used for ranking, such as a score or distance field. 
 
 *Default*: `"score"`
 | String
@@ -706,15 +705,17 @@ __optional__
 | **isScore** +
 __optional__
 
-| Indicates whether to treat the value at `pathScore` as a score or a distance metric.
+| Determines whether to evaluate the `pathScore` value as a score or distance.
 
 If `true`, treats the value as a score.
 
-If `false`, treats the value as a distance. 
-The function then converts it into a score using the formula
-`1 - (distance / max_distance)`.
+If `false`, treats the value as a distance.
+The function then calculates the final score based on the `normalization` setting. 
 
-*Default*: `true`
+* If `normalization` is `"none"`: Calculates the score as `1 - (distance / max_distance)`.
+* If `normalization` is set to any other method (for example, `"minMaxScaler"`): Normalizes the distance using the specified method, and then calculates the score as `1 - normalized_distance`.
+
+*Default*: `false`
 | Boolean
 |===
 
@@ -730,7 +731,8 @@ Normalization (Optional)::
 Different search methods use different scoring scales. 
 To make them comparable, the function applies the specified `normalization` method to scale all scores to a standard range (for example, `0` to `1`).
 +
-If the input uses distance metrics and you want to convert them to scores, set `isScore` to `false`.
+By default, the function treats the value at `pathScore` as a distance metric. 
+If you want to treat the value as a score instead, set `isScore` to `true`.
 
 Weighting (Optional)::
 To prioritize certain search methods over others, the function applies a multiplier (`weight`) to the scores of specific inputs.
@@ -781,22 +783,10 @@ SELECT RECIPROCAL_FUSION({}, vector_results, text_results) AS fused_results;
             "id": "doc2"
         },
         {
-            "id": "doc6"
-        },
-        {
             "id": "doc3"
         },
         {
-            "id": "doc7"
-        },
-        {
             "id": "doc4"
-        },
-        {
-            "id": "doc8"
-        },
-        {
-            "id": "doc5"
         }
     ]
 }]
@@ -984,16 +974,14 @@ SELECT RECIPROCAL_FUSION(
           "weight":1.0, 
           "penalty":60, 
           "pathId":"id", 
-          "pathScore":"distance", 
-          "isScore": false 
+          "pathScore":"distance"
         },
         { "aggregator":"sum", 
           "normalization":"minMaxScaler", 
           "weight":1.0, 
           "penalty":60, 
           "pathId":"id", 
-          "pathScore":"distance", 
-          "isScore": false 
+          "pathScore":"distance"
         }
     ]
   },
@@ -1019,18 +1007,20 @@ SELECT RECIPROCAL_FUSION(
             "score_1": 0.5333333333333333
         },
         {
-            "id": "doc3",
-            "score": 0,
-            "score_0": 0
-        },
-        {
             "id": "doc4",
             "score": 0,
             "score_1": 0
+        },
+        {
+            "id": "doc3",
+            "score": 0,
+            "score_0": 0
         }
     ]
 }]
 ----
+In this example, the query omits the `isScore` parameter.
+By default, `isScore` is set to `false` and the function treats the `pathScore` value as a distance metric.
 ====
 
 [[vector_distance,VECTOR_DISTANCE()]]
