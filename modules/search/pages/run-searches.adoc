@@ -51,18 +51,6 @@ The Search Service uses `tf-idf` to calculate the hit score for a document, mult
 hit_score = (query_1_boost * query_1_hit_score) + (query_2_boost * query_2_hit_score)
 ----
 
-If one of your Search queries is a xref:vector-search:vector-search.adoc[Vector Search query], the calculation changes to: 
-
-----
-hit_score = (query_1_boost * query_1_hit_score) + (knn_boost * knn_distance)
-----
-
-When running a hybrid search with the <<ui,{page-ui-name}>> or <<api,REST API>>, the Search Service displays results as a disjunct (`OR`) between your regular Search and Vector Search queries. 
-
-TIP: When running a hybrid Search query and the `tf-idf` algorithm, you should add a `boost` value to your regular Search query to level the `tf-idf` score with the knn distance.
-Otherwise, you might see unexpected search results.
-This is because of the differences in the scoring algorithms between the 2 query types.
-
 [#bm25]
 === bm25 Search Scoring
 
@@ -88,16 +76,26 @@ The calculation for a basic Search query is still based on the document's score 
 hit_score = (query_1_boost * query_1_hit_score) + (query_2_boost * query_2_hit_score)
 ----
 
-The calculation when running a hybrid Search query, that includes xref:vector-search:vector-search.adoc[a Vector Search query], is still: 
+[#hybrid]
+=== Hybrid Searches with a Search Vector Index
+
+For a hybrid Search query, that includes xref:vector-search:vector-search.adoc[a Vector Search query] alongside a regular xref:search-request-params.adoc#query[query object], the Search Service uses the following calculation for document scores using either <<tf-idf,>> or <<bm25,>>: 
 
 ----
 hit_score = (query_1_boost * query_1_hit_score) + (knn_boost * knn_distance)
 ----
 
-When running a hybrid search with the <<ui,{page-ui-name}>> or <<api,REST API>>, the Search Service displays results as a disjunct (`OR`) between your regular Search and Vector Search queries. 
+TIP: When running a hybrid Search query and the `tf-idf` algorithm, you should add a `boost` value to your regular Search query to level the `tf-idf` score with the knn distance.
+Otherwise, you might see unexpected search results.
+This is because of the differences in the scoring algorithms between the 2 query types.
 
-`bm25` supports better hybrid search results and richer result rankings. 
+When running a hybrid search, the Search Service displays results as a disjunct (`OR`) between your regular Search and Vector Search queries. 
+
+The `bm25` scoring algorithm supports better hybrid search results and richer result rankings. 
 It also gives more stable result ordering across Search index partitions, when xref:search-request-params.adoc#global_scoring[`global_scoring`] is enabled.
+
+From Couchbase Server version 8.1 and later, if you use xref:vector-search:vector-search-index-architecture.adoc#index-formats[binary quantization] for the vectors in your Search Vector Index, the vectors in your Search query's xref:search-request-params.adoc#knn[knn object] do not need to be in binary format.
+The Search Service converts the vectors for comparison automatically.
 
 [#ui]
 == Run a Search with the {page-ui-name}
