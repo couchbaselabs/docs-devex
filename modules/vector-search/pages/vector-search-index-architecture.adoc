@@ -108,7 +108,7 @@ Results for flat indexes are very accurate, but performance does not scale well 
 If a Search Vector Index uses only flat indexes, no training is required - IDs are mapped directly to vectors with exact vector comparisons, with no need for preprocessing or learning on the data.
 
 [#ivf]
-=== Inverted File Index (IVF)
+=== Inverted File Indexes (IVF)
 
 For reduced latency, Vector Search can also use Inverted File Indexes (IVF).
 
@@ -133,6 +133,13 @@ All training occurs during building and merging <<segments,>>.
 
 IVF indexes that also use flat indexing automatically train to determine the centroids of cells, but still use exact vector comparisons within each cell.
 Training still occurs while building and merging <<segments,>>. 
+
+From Couchbase Server version 8.1 and later, you can turn on *Vector Index Fast Merge* to reduce the resource consumption required for merging segments in an IVF index during reindexing and training.
+This setting helps improve the scalability of larger Search Vector Indexes by changing the underlying merging behavior for segments in large Search Vector Indexes.
+Fast merge has no effect on indexes with less than 1000 vectors.
+
+You can turn on *Vector Index Fast Merge* at the index level, and it applies to all `vector` type fields defined in your Search Vector Index.
+For more information about how to enable this setting for your Search Vector Index, see xref:search:set-advanced-settings.adoc[] or xref:search:search-index-params.adoc#store[`store` object].
 
 [#scalar-quant]
 ==== Scalar Quantization 
