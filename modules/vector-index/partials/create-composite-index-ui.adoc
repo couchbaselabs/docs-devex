@@ -1,23 +1,23 @@
-== Create a Composite Vector Index with the Capella UI
+== Create a Composite Vector Index with the Couchbase Web Console
 
-To create a Composite Vector index with the Capella UI: 
+To create a Composite Vector index with the Couchbase Web Console:
 
-. On the *Operational Clusters* page, select the operational cluster where you want to create a Composite Vector index.
-. Go to menu:Data Tools[Vector Indexes].
-. Click btn:[Create Vector Index].
+. Go to menu:Vectors[].
+. Click btn:[Add Vector Index].
 . Choose btn:[Composite Vector Index].
 . In the *Index Name* field, enter a name for your new Vector index.
 +
 [NOTE]
-==== 
+====
 Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
 
 Your index name must be unique inside your selected bucket and scope.
 You cannot have 2 indexes with the same name inside the same bucket and scope.
 ====
+
 . In the *Bucket*, *Scope*, and *Collection* lists, select the bucket, scope, and collection where you have documents that contain a vector field.
 
-. Under *Vector Field*, in the *Select Field* list, select the vector field to use in your Composite Vector index.
+. Under *Vector Field*, in the *Field* list, select the vector field to use in your Composite Vector index.
 
 . [[filter-fields]](Optional) To add a field to use as a filter on the data included in your Composite Vector index, click btn:[+ Add Filter Field].
 
@@ -27,16 +27,16 @@ You cannot have 2 indexes with the same name inside the same bucket and scope.
 +
 You can still choose to partition using this field and not include it in your index.
 
-.. Under *Partition by Hash*, choose whether the previously selected field should be used to partition your index, based on the values in your documents.
+.. Under *Partition*, choose whether the previously selected field should be used to partition your index, based on the values in your documents.
 +
 For example, you could partition your Composite Vector index based on the value of a `supplier` field in your documents.
 If you choose *No*, you can still filter using a `WHERE` clause, but your index will not be partitioned based on field values.
 
-.. (Optional) Under *Add WHERE clause*, enter a clause for the specific values that a document must contain in your filter field to be included in your index.
+.. (Optional) Under *WHERE clause (Optional)*, enter a clause for the specific values that a document must contain in your filter field to be included in your index.
 +
 For example, you could filter your index so that only documents with `supplier = "HP"` or `brightness > 0.5` are included.
 
-. Under *Index Configuration*, choose options to configure additional settings for your Composite Vector index: 
+. Under *Index Configuration*, choose options to configure additional settings for your Composite Vector index:
 
 .. In the *Similarity Metric* list, select the similarity metric that you want to use for comparing vectors in your index.
 For the best accuracy, use the same similarity that you plan to use to query your data.
@@ -48,9 +48,9 @@ For more information about vector similarity measures, see xref:vector-index:vec
 For more information about quantization, see xref:vector-index:vectors-and-indexes-overview.adoc#quantization[Quantization].
 For more information about how to choose quantization on your index, see xref:vector-index:vectors-and-indexes-overview.adoc#choosing-a-quantization-method[Choosing a Quantization Method] and xref:vector-index:vector-index-best-practices.adoc#quantization[Tuning Index Creation - Quantization].
 
-.. [[dimensions]] In the *Dimensions* field, enter the exact dimension of the vectors in your data.
+.. [[dimensions]]In the *Dimensions* field, enter the exact dimension of the vectors in your data.
 +
-Your embedding model determines this value, and Capella automatically configures it based on your chosen *Vector Field*.
+Your embedding model determines this value, and Couchbase Server automatically configures it based on your chosen *Vector Field*.
 
 .. In the *Replicas* list, select the number of replicas you want to create for your index.
 +
@@ -69,7 +69,6 @@ Increasing the value can improve recall, but increase build times.
 Decreasing the value can improve build times, but reduces recall.
 ====
 
-
 .. [[probes]](Optional) In the *Probes to scan* field, enter or select the number of centroids to check for similar vectors for each query.
 +
 The default value is *1*.
@@ -81,24 +80,25 @@ You can also choose to override this value in your queries.
 A larger value creates smaller centroids.
 By default, Couchbase sets the *Number of centroids* to the number of vectors in your data divided by 1000.
 For more information about how to set this value, see xref:vector-index:composite-vector-index.adoc#number-of-centroids[Number of Centroids].
+
 +
-////
-.. To store full vectors in the index, select *Persist Full Vector*.
+. (Optional) To confirm your Composite Vector Index configuration:
+
+.. Click btn:[View Index Definition].
+.. To copy the {sqlpp} syntax to create your index in the Query Workbench, click btn:[Copy to Clipboard].
+.. Click close icon:times[] to close the Index Definition tab.
+
 +
-This increases the storage required for your index but increases accuracy.
-////
-. Click btn:[Review Index].
-. Confirm your Composite Vector Index configuration. 
-. Click btn:[Create Index] or copy the {sqlpp} syntax to create your index with the Query Workbench.
+. Click btn:[Create Index] to create your index.
 
-=== Resolve Index Creation Errors 
+=== Resolve Index Creation Errors
 
-If an error occurs while Capella tries to create your Composite Vector index, on the *Vector Indexes* page, the *Status* of your index changes to *Error*. 
+If an error occurs while Couchbase Server tries to create your Composite Vector index, on the *Vector Indexes* page, the *Status* of your index changes to *Error*.
 
-To view the details of the error: 
+To view the details of the error:
 
 . Click the *Error* status to open the Query Workbench.
-. Click btn:[Run] to rebuild the index.
-. In the query results, find the error details. 
+. Click btn:[Execute] to drop and rebuild the index.
+. In the query results, find the error details.
 
-Depending on the error, you might need to try recreating your index with a new configuration. 
+Depending on the error, you might need to try recreating your index with a new configuration.
