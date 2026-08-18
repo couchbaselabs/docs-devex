@@ -132,7 +132,12 @@ The training data helps to encode and compress the vectors in your index with <<
 All training occurs during building and merging <<segments,>>.
 
 IVF indexes that also use flat indexing automatically train to determine the centroids of cells, but still use exact vector comparisons within each cell.
-Training still occurs while building and merging <<segments,>>. 
+Training still occurs while building and merging <<segments,>>.
+
+[#fast-merge-gpus-ivf]
+==== Fast Merge and GPU Processing for IVF Indexes
+
+[.status]#Couchbase Server 8.1#
 
 From Couchbase Server version 8.1 and later, you can turn on *Vector Index Fast Merge* to reduce the resource consumption required for merging segments in an IVF index during reindexing and training.
 This setting helps improve the scalability of larger Search Vector Indexes by changing the underlying merging behavior for segments in large Search Vector Indexes.
@@ -140,6 +145,51 @@ Fast merge has no effect on indexes with less than 1000 vectors.
 
 You can turn on *Vector Index Fast Merge* at the index level, and it applies to all `vector` type fields defined in your Search Vector Index.
 For more information about how to enable this setting for your Search Vector Index, see xref:search:set-advanced-settings.adoc[] or xref:search:search-index-params.adoc#store[`store` object].
+
+From Couchbase Server version 8.1 and later, the Search Service can support using the available GPUs on your cluster to improve IVF index creation, training, and <<query-gpu,searching>>.
+If you choose to use *Vector Index Fast Merge*, you cannot turn on GPU processing for any `vector` child field in your index.
+
+To use GPU processing for a `vector` field, your cluster must meet the following software and hardware requirements: 
+
+[cols="1,1"]
+|====
+|Component |Requirements
+
+|OS
+a|Linux (x86_64)
+
+Not available on Windows or MacOS platforms
+
+|NVIDIA GPU
+|Your GPU must support https://developer.nvidia.com/cuda/gpus[Compute Capability 3.5 or later^]
+
+|https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64[CUDA Toolkit^]
+a|You need 1 of the following CUDA Toolkit versions:
+
+* 11.4
+* 11.8
+* 12.1
+* 12.4
+
+Choose a CUDA Toolkit version that matches your NVIDIA driver.
+
+|NVIDIA Driver 
+a| Make sure that your NVIDIA driver and CUDA Toolkit are compatible: 
+
+* R520+ for CUDA 11.8 
+* R530+ for CUDA 12.x
+
+|Compiler 
+|Use an C++17 compatible compiler - such as https://gcc.gnu.org/[GCC 9.3.1 or later^]
+
+|BLAS Library
+|Use https://github.com/OpenMathLib/OpenBLAS[OpenBLAS^]
+|====
+
+For more information about how to turn on the GPU processing setting for a specific `vector` field, see xref:search:child-field-options-reference.adoc#gpu[Child Field Options], xref:search:quick-index-field-options.adoc#gpu[Quick Index Field Options], or xref:search:search-index-params.adoc#gpu[Fields Array].
+
+Both *Vector Index Fast Merge* and GPU processing are only supported on IVF indexes.
+<<flat,FLAT indexes>> do not contain enough vectors to use these features.
 
 [#scalar-quant]
 ==== Scalar Quantization 
@@ -156,7 +206,7 @@ Vector Search uses both 8bit and 4bit scalar quantization for indexes, based on 
 [#encryption]
 == Search Vector Index Encryption
 
-//[.status]#Couchbase Server 8.1#
+[.status]#Couchbase Server 8.1#
 
 From the next major release of Couchbase Server, if you xref:manage:manage-security/encrypt-data-at-rest.adoc[enable encryption at rest] on your cluster, the Search Service encrypts any files related to your Search Vector indexes that contain indirect or direct references to user data. 
 
@@ -177,6 +227,17 @@ Results are scored, and based on the xref:search:search-request-params.adoc#sort
 
 For a Vector Search query, search results include the top `k` nearest neighbor vectors to the vector in the Search query. 
 For more information about how results are scored and returned for Search requests, see xref:search:run-searches.adoc#scoring[Scoring for Search Queries].
+
+[#query-gpu]
+=== Processing Queries with GPUs
+
+[.status]#Couchbase Server 8.1#
+
+From Couchbase Server version 8.1 and later, if you have turned on xref:[using GPUs for a vector field], the Search Service can use the available GPU resources on your cluster for query processing.
+//Fill in link!
+The Search Service batches queries before sending them for GPU processing, which might cause a slight increase in latency for individual queries, while increasing overall performance.
+
+If for any reason the Search Service cannot use your cluster's GPUs at processing time, the Search Service automatically falls back to the standard Search query processing behavior.
 
 == See Also
 
