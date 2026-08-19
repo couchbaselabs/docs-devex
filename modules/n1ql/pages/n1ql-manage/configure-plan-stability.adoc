@@ -2,11 +2,55 @@
 :page-topic-type: concept
 // :page-status: Couchbase Server 8.1
 :page-edition: Enterprise Edition
-:description: The Query Plan Stability feature enables you to save and reuse query plans across upgrades.
-
+:description: Steps to configure Query Plan Stability using automatic settings or manual PREPARE syntax.
 
 [abstract]
 {description}
 
+You can configure Plan Stability using either automatic mode or manual mode. 
 
+== Automatic Mode
 
+In the automatic mode, you select a cluster setting in the Couchbase Server UI, and the Query Service automatically handles saving execution plans according to that selection. 
+
+To configure Plan Stability, follow these steps: 
+
+. Log in to the Couchbase Server Web Console. 
+. Go to menu:Settings[Query].
+. Select an option from the *Plan Stability* list:
++
+--
+* *Off*: No execution plans are saved to disk. 
+Prepared statements remain in memory only and are cleared if the query node restarts. 
+* *On Prepared Statements*: Automatically saves execution plans to disk for all `PREPARE` statements. 
+* *On All Statements*: Automatically saves execution plans to disk for all queries, including `PREPARE` statements and ad-hoc queries. 
+--
+. Select an option from the *Plan Stability Error Policy* list:
++
+--
+* *Strict*: Stops execution and returns the error to the application.
+* *Moderate*: Generates a new plan to execute the statement, but keeps the original saved plan.
+* *Flexible*: Generates a new plan to execute the statement and overwrites the saved plan with the new one.
+--
+. Click btn:[Save].
+
+NOTE: These settings apply globally to every node in the cluster. 
+You cannot override them at the node or request level.
+
+== Manual Mode
+
+You can also manually control which execution plans to persist. 
+When you use the `PREPARE` statement, you can explicitly specify whether to save a plan to disk by using the `SAVE` keyword. 
+For more information about the syntax, see the xref:n1ql:n1ql-language-reference/prepare.adoc[PREPARE] statement.
+
+* With `SAVE`: The Query Service automatically saves the execution plan to the disk. 
+* Without `SAVE`: The execution plan stays in memory and is cleared if the query node restarts. 
+
+Following is an example to prepare a query and saves its plan to persistent storage.
+
+[source,sqlpp]
+----
+PREPARE SAVE get_route_by_airline FROM
+SELECT * FROM route
+WHERE airline = "FL";
+----
