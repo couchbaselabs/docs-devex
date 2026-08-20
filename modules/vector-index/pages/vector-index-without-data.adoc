@@ -5,13 +5,16 @@
 :page-status: Couchbase Server 8.5
 :description: You can create Hyperscale and Composite Vector indexes even if the keyspace does not yet contain any data.
 
+// Cross-references
+:prerequisites: xref:vector-index:hyperscale-vector-index.adoc#prerequisites
+
 [abstract]
 {description}
 
 Hyperscale Vector Indexes and Composite Vector Indexes need a minimum number of documents in the keyspace to compute IVF centroids and perform quantization during the training phase.
 By default, if the keyspace does not contain enough documents at build time, the index build fails, and you must retry after loading more data.
 
-The next major release of Couchbase Server introduces an option to create vector indexes without data.
+Couchbase Server 8.5 introduces an option to create vector indexes without data.
 In this case, if the keyspace does not contain enough documents, the indexer automatically retries the build in the background at regular intervals.
 When the required number of documents is available, the training phase begins and the vector index is built.
 
@@ -108,7 +111,6 @@ If training succeeds for some partitions but fails for others, the indexer recor
 On retry, already-trained partitions can reuse their serialized codebook -- only untrained partitions need fresh training.
 The builder keeps retrying until all partitions are trained and built.
 
-
 For more information, see xref:n1ql:n1ql-language-reference/index-partitioning.adoc[].
 
 == Rebalance Vector Indexes
@@ -153,3 +155,150 @@ To monitor vector indexes without data, use any of the following methods:
 * The xref:manage:manage-ui/manage-ui.adoc#console-indexes[Indexes] page in the Couchbase Web Console.
 * The xref:manage:manage-ui/manage-ui.adoc#console-vectors[Vector Indexes] page in the Couchbase Web Console.
 * The `system:indexes` catalog -- see xref:n1ql:n1ql-intro/sysinfo.adoc#querying-indexes[Query Indexes].
+
+== Examples
+
+For the examples in this section, it's assumed that no vector sample data is installed.
+
+[[ex-create-keyspace]]
+.Create a keyspace without data
+====
+include::ROOT:partial$query-context.adoc[tag=unset]
+
+Create a bucket, a scope, and an empty collection within that scope.
+
+[source,sqlpp]
+----
+CREATE BUCKET `vector-sample`;
+CREATE SCOPE `vector-sample`.color;
+CREATE COLLECTION `vector-sample`.color.rgb;
+----
+====
+
+[[ex-create-rgb-idx]]
+.Create a Hyperscale Vector index
+====
+For this example, the path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a Hyperscale Vector index for the vector column named `embedding-vector-dot`.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-rgb-idx]
+----
+
+Index creation fails, because there no documents in the keyspace to train the index.
+
+[source,json]
+----
+[
+  {
+    "code": 5000,
+    "msg": "GSI CreateIndex() - cause: Index color_desc_hyperscale fails to build for reason: ErrTraining: InvalidTrainListSize: The number of documents: 0 in keyspace: vector-sample:color:rgb are less than the minimum number of documents: 8 required for training 8 centroids\n",
+    "reason": {
+      "_level": "exception",
+      "caller": "secondary_index:737",
+      "cause": {
+        "error": "Index color_desc_hyperscale fails to build for reason: ErrTraining: InvalidTrainListSize: The number of documents: 0 in keyspace: vector-sample:color:rgb are less than the minimum number of documents: 8 required for training 8 centroids",
+        "source": "CreateIndex()"
+      },
+      "code": 4350,
+      "key": "indexing.error",
+      "message": "GSI error"
+    },
+    "query": "CREATE VECTOR INDEX `color_desc_hyperscale` \n       ON `vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)\n       WITH { \"dimension\":1536, \"similarity\":\"L2\", \"description\":\"IVF8,SQ4\" }"
+  }
+]
+----
+====
+
+[[ex-train-list-wait]]
+.Create a Hyperscale Vector Index without data
+====
+For this example, the path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a Hyperscale Vector index for the vector column named `embedding-vector-dot`.
+This time, specify that the indexer should wait for the keyspace to contain sufficient data before training the index.
+
+[source,sqlpp]
+----
+CREATE VECTOR INDEX `color_desc_hyperscale` 
+       ON `vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)
+       WITH { "dimension": 1536, "similarity": "L2", "description": "IVF8,SQ4", "train_list_wait": true };
+----
+
+Again, index creation fails, because there are not enough documents in the keyspace to train the index.
+However, in contrast to <<ex-create-rgb-idx>>, the error message indicates that the error is transient and that the indexer will retry in the background.
+
+[source,json]
+----
+[
+  {
+    "code": 5000,
+    "msg": "GSI CreateIndex() - cause: Encountered transient error.  Index creation will be retried in background. DefnId: 14211942499465921632, Error: Encountered transient error. Index color_desc_hyperscale will retry building in the background for reason: ErrTraining: RetryableTrainListSizeError: The number of documents: 0 in keyspace: vector-sample:color:rgb are less than the minimum number of documents: 8 required for training 8 centroids.\n",
+    "reason": {
+      "_level": "warning",
+      "caller": "secondary_index:737",
+      "cause": {
+        "error": "Encountered transient error.  Index creation will be retried in background. DefnId: 14211942499465921632, Error: Encountered transient error. Index color_desc_hyperscale will retry building in the background for reason: ErrTraining: RetryableTrainListSizeError: The number of documents: 0 in keyspace: vector-sample:color:rgb are less than the minimum number of documents: 8 required for training 8 centroids.",
+        "source": "CreateIndex()"
+      },
+      "code": 4360,
+      "key": "indexing.transient_error",
+      "message": "GSI error"
+    },
+    "query": "CREATE VECTOR INDEX `color_desc_hyperscale` \n       ON `vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)\n       WITH { \"dimension\": 1536, \"similarity\": \"L2\", \"description\": \"IVF8,SQ4\", \"train_list_wait\": true }"
+  }
+]
+----
+====
+
+.Check the status of a Hyperscale Vector Index without data
+====
+Check the status of the index created in <<ex-train-list-wait>>.
+
+[source,sqlpp]
+----
+SELECT name, state FROM system:indexes WHERE name = "color_desc_hyperscale";
+----
+
+The result shows that the index state is pending.
+
+[source,json]
+----
+[
+  {
+    "name": "color_desc_hyperscale",
+    "state": "pending"
+  }
+]
+----
+
+In the *Indexes* and *Vector Indexes* pages in the Couchbase Web Console, the status of the index is listed as `Retrying`.
+====
+
+.Load data and check the status of the Hyperscale Vector Index
+====
+For this example, first install the vector sample data into the `{backtick}vector-sample{backtick}.color.rgb` collection, as described in {prerequisites}[Prerequisites].
+
+Then check the status of the index created in <<ex-train-list-wait>>.
+
+[source,sqlpp]
+----
+SELECT name, state FROM system:indexes WHERE name = "color_desc_hyperscale";
+----
+
+The results show that the index has now been built and is online.
+
+[source,json]
+----
+[
+  {
+    "name": "color_desc_hyperscale",
+    "state": "online"
+  }
+]
+----
+
+In the *Indexes* and *Vector Indexes* pages in the Couchbase Web Console, the status of the index is listed as `Ready`.
+====
