@@ -1,0 +1,157 @@
+= Hyperscale and Composite Vector Index without Data
+:page-topic-type: reference
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+// TEMP
+:totoro: The next major release of Couchbase Server
+:page-status: {totoro}
+:description: You can create Hyperscale and Composite Vector indexes even if the keyspace does not yet contain any data.
+
+[abstract]
+{description}
+
+Hyperscale Vector Indexes and Composite Vector Indexes need a minimum number of documents in the keyspace to compute IVF centroids and perform quantization during the training phase.
+By default, if the keyspace does not contain enough documents at build time, the index build fails, and you must retry after loading more data.
+
+The next major release of Couchbase Server introduces an option to create vector indexes without data.
+In this case, if the keyspace does not contain enough documents, the indexer automatically retries the build in the background at regular intervals.
+When the required number of documents is available, the training phase begins and the vector index is built.
+
+You can specify this option using the *Index without Data* setting in the Couchbase Web Console, or the `train_list_wait` option in {sqlpp}.
+
+For more information, see xref:vector-index:hyperscale-vector-index.adoc[] or xref:vector-index:composite-vector-index.adoc[].
+
+== Training Lists
+
+When you create a Hyperscale Vector Index or a Composite Vector Index, you can specify the number of vectors to consider when searching for centroids in your data.
+You can specify this setting using the *Training List* setting in the Couchbase Web Console, or the `train_list` option in {sqlpp}.
+
+The following table summarizes how creating a vector index without data interacts with the training list setting.
+
+|===
+| Training List | Index without Data | Behavior
+
+| Not set
+| `false` (default)
+| Generates an error if the number of documents is less than the auto-computed minimum number of centroids.
+
+| Not set
+| `true`
+| Waits until the number of documents is greater than or equal to the auto-computed minimum number of centroids, then builds the index.
+
+| Set
+| `false`
+| Generates an error if the number of documents is less than the value of `train_list`.
+
+| Set
+| `true`
+| Waits until the number of documents is greater than or equal to the value of `train_list`, then builds the index.
+Fails immediately if the value of `train_list` is less than the auto-computed minimum number of centroids.
+|===
+
+For more information, see xref:vector-index:hyperscale-vector-index.adoc[] or xref:vector-index:composite-vector-index.adoc[].
+
+== Deferred Builds
+
+Vector indexes are commonly created in deferred build mode, so that you can control exactly when the build and therefore the training phase begins.
+You can specify deferred build mode using the `defer_build` option in {sqlpp}.
+
+The following table summarizes how creating a vector index without data interacts with the interacts with deferred build mode.
+
+|===
+| Deferred Build | Index without Data | Workflow
+
+| `false`
+| `false`
+| The index is created and build is attempted immediately.
+
+If there are not enough documents for training, building fails.
+The training error is persisted on the instance.
+
+| `false`
+| `true`
+| The index is created and build is attempted immediately.
+
+If there are not enough documents for training, the build retries automatically in the background until the keyspace contains enough documents.
+
+| `true`
+| `false`
+| The index is created in a deferred state.
+You must issue the `BUILD INDEX` to build the index.
+
+If there are not enough documents for training, building fails.
+A non-retryable Invalid Train List Size error is persisted on the instance, but the index remains in ready to build state.
+
+The builder does not retry automatically -- you must re-issue `BUILD INDEX` after loading more data.
+
+| `true`
+| `true`
+| The index is created in a deferred state.
+You must issue the `BUILD INDEX` to build the index.
+
+If there are not enough documents for training, building fails.
+A Retryable Train List Size error is persisted on the instance, and the index remains in ready to build state.
+
+The builder retries automatically in the background -- you do not need to re-issue `BUILD INDEX`.
+|===
+
+For more information, see xref:n1ql:n1ql-language-reference/build-index.adoc[].
+
+== Partitioned Indexes
+
+For partitioned indexes, the training list count is reckoned across the whole collection, not per partition.
+If the collection has 40,000 docs which can be spread across 4 index partitions (~10,000 each), the threshold check sees 40,000.
+
+All partitions share the same centroid count and train list.
+Training uses a single sample across all partitions on the indexer.
+Builder retry applies to the whole index definition.
+
+If training succeeds for some partitions but fails for others, the indexer records per-partition errors.
+On retry, already-trained partitions can reuse their serialized codebook -- only untrained partitions need fresh training.
+The builder keeps retrying until all partitions are trained and built.
+
+
+For more information, see xref:n1ql:n1ql-language-reference/index-partitioning.adoc[].
+
+== Rebalance Vector Indexes
+
+Rebalance has specific handling for vector indexes that carry training errors.
+
+* Build retries are never attempted during rebalance.
+* Rebalance skips indexes with training errors.
+* If an index was created in deferred build mode and has not been built, rebalance moves only the metadata -- no build is attempted.
+* After rebalance completes, the builder resumes retrying on the new topology.
+* The planner does not inspect the `train_list_wait` option when computing index placement.
+
+The following table summarizes how rebalance works with vector indexes without data, and deferred vector indexes.
+
+|===
+| Scenario | Rebalance behavior
+
+| Index with `train_list_wait` true, retryable error, not yet built.
+| Metadata moved to destination.
+Build skipped.
+Builder resumes retry on destination after rebalance.
+
+| Index created in deferred build mode, never built.
+| Metadata moved to destination.
+Build skipped.
+
+| Index with non-retryable training error.
+| Metadata moved to destination.
+Build skipped.
+Rebalance logs the training error and continues.
+
+| Index actively building during rebalance.
+| Rebalance waits for build to complete.
+|===
+
+For more information, see xref:learn:clusters-and-availability/rebalance.adoc[].
+
+== Monitor Vector Indexes without Data
+
+To monitor vector indexes without data, use any of the following methods:
+
+* The xref:manage:manage-ui/manage-ui.adoc#console-indexes[Indexes] page in the Couchbase Web Console.
+* The xref:manage:manage-ui/manage-ui.adoc#console-vectors[Vector Indexes] page in the Couchbase Web Console.
+* The `system:indexes` catalog -- see xref:n1ql:n1ql-intro/sysinfo.adoc#querying-indexes[Query Indexes].
