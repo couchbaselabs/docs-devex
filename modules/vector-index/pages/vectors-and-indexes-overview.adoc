@@ -454,8 +454,10 @@ This chains together dense vector search and sparse vector search:
 [.status]#Couchbase Server 8.5#
 
 Hyperscale Vector Indexes and Composite Vector Indexes need a minimum number of documents in the keyspace to compute IVF centroids and perform quantization during the training phase.
-By default, if the keyspace does not contain enough documents at build time, the index build fails, and you must retry after loading more data.
+By default, it's not possible to create a Hyperscale Vector Index or a Composite Vector Index without sufficient documents.
 
-Couchbase Server 8.5 introduces an option to create vector indexes without data.
-In this case, if the keyspace does not contain enough documents, the indexer automatically retries the build in the background at regular intervals.
-When the required number of documents is available, the training phase begins and the vector index is built.
+In retrieval-augmented generation (RAG) frameworks, you may not have sufficient documents to create the index.
+Most of the time, when starting out from these frameworks, the number of documents in the collection will be zero.
+
+Couchbase Server 8.5 introduces an option to create Hyperscale Vector Indexes and Composite Vector Indexes in a deferred mode, where the index is defined according to your requirements, but built only when the required number of documents are added to the collection.
+For more information, see xref:vector-index:vector-index-without-data.adoc[].
