@@ -279,7 +279,7 @@ See <<index-order>>.
 include-missing:: (Optional) If the leading index key is a non-vector field, it may also include the `INCLUDE MISSING` clause.
 See <<include-missing>>.
 
-include-vector:: (Optional) In a Composite Vector index, one index key must include the `VECTOR` keyword.
+include-vector:: (Optional) In a Composite Vector index, one index key must include the `VECTOR` clause.
 See <<include-vector>>.
 
 [[index-order]]
@@ -331,7 +331,7 @@ The `INCLUDE MISSING` clause can only be applied to the leading index key for no
 The `INCLUDE MISSING` clause may be included before or after the `ASC` or `DESC` keyword.
 
 [[include-vector]]
-===== VECTOR Keyword
+===== VECTOR Clause
 
 [source,ebnf]
 ----
@@ -341,6 +341,18 @@ include::partial$grammar/ddl.ebnf[tag=index-vector]
 image::n1ql-language-reference/index-vector.png["Syntax diagram: see source code listing", align=left]
 
 Indicates that the index key is a vector field.
+
+[horizontal]
+`VECTOR`::
+`DENSE VECTOR`::
+The vector field contains dense embeddings.
+
+`SPARSE VECTOR`::
+The vector field contains sparse term-weight pairs.
+
+Synonym: `VECTOR` is a synonym for `DENSE VECTOR`.
+
+For more information, see xref:vector-index:vectors-and-indexes-overview.adoc#dense-and-sparse-vector-indexes[Dense and Sparse Vector Indexes].
 
 //tag::index-partition[]
 [[index-partition]]
@@ -543,6 +555,15 @@ Otherwise, the default value is 10% of the index count, or 10{nbsp}&times; the n
 
 **Maximum:** `1000000`
 |Integer
+
+|**train_list_wait** +
+__optional__
+| If the vector field has not yet been populated with data, set this option to `true`.
+
+For more information, see xref:vector-index:vector-index-without-data.adoc[].
+
+**Default:** `false`
+|Boolean
 
 ifeval::["{docname}" == "n1ql-language-reference/createvectorindex"]
 |**persist_full_vector** +
@@ -790,6 +811,23 @@ Create a Composite Vector index that indexes the scalar `color` and `brightness`
 ----
 include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-colors-idx]
 ----
+====
+
+[[ex-training-list-wait]]
+.Create a Composite Vector Index without data
+====
+For this example, it's assumed that the bucket, scope, and collection exist, but no sample data is installed.
+The path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a Composite Vector index that indexes the vector field named `embedding-vector-dot`, like <<ex-create-vectors-idx>>.
+This time, specify that the indexer should wait for the keyspace to contain sufficient data before training the index.
+
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-wait-idx]
+----
+
+For more examples, see xref:vector-index:vector-index-without-data.adoc#examples[Examples].
 ====
 
 == Related Links

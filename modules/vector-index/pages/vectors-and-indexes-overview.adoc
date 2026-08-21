@@ -5,6 +5,7 @@
 :page-product-name: {product-name}
 :description: This page is a high-level overview of vectors and how they work in indexes.
 :page-toclevels: 3
+:imagesdir: ../assets/images
 
 [abstract]
 {description}
@@ -152,7 +153,7 @@ However, it does not take the square root of the sum distances between the vecto
 
 
 Euclidean Distance Formula::
- latexmath:[L2(x, y) = \sqrt{\sum_{i=1}^n (x_i - y_i)^2}]
+latexmath:[L2(x, y) = \sqrt{\sum_{i=1}^n (x_i - y_i)^2}]
 
 
 Euclidean Squared Distance Formula::
@@ -193,7 +194,7 @@ The magnitude of the vectors is important when determining the strength of the r
 For example:
 
 * Recommending related products based on a shopper's previous purchases.
-* Personalizing a music service's user home page  based on the user's likes and dislikes of artists and songs.
+* Personalizing a music service's user home page based on the user's likes and dislikes of artists and songs.
 * Targeting ads based on a user's interests and previous interactions with the service.
 
 [#cosine]
@@ -417,3 +418,46 @@ After Couchbase {product-name} builds and trains the new index, you can drop the
 You should consider the need to retrain your indexes when choosing which quantization to use.
 For example, the PQ quantization requires more resources to train than SQ.
 If your dataset evolves rapidly, you may choose to not use PQ because you'll need to perform more frequent retraining.
+
+[#dense-and-sparse-vector-indexes]
+== Dense and Sparse Vector Indexes
+
+[.status]#Couchbase Server 8.5#
+
+By default, Hyperscale Vector Indexes and Composite Vector Indexes are ((dense vector indexes)).
+Dense vector indexes are built on a vector field which contains dense embeddings.
+Dense vector fields have hundreds or thousands of dimensions, and most dimensions contain a value.
+This means that dense vector indexes capture semantic similarity and generalize across concepts, but that they may miss exact matches for keywords or product-specific terms.
+
+Couchbase Server 8.5 introduces ((sparse vector indexes)).
+Sparse vector indexes are built on a vector field which contains sparse term-weight pairs.
+In a sparse vector field, most of the dimensions have zero values.
+Only a few of the dimensions are non-zero, and each non-zero dimensions maps a specific token to a weight.
+A token is equivalent to a word, part of a word, or a contiguous sequence of words or characters.
+This means that a sparse vector enables you to search for rare keywords or specialized terms.
+
+=== Combine Dense Vector Search and Sparse Vector Search
+
+By itself, a dense vector search or a sparse vector search may not provide the results you need.
+A dense vector search is good for broad semantic queries, but may not match rare, specialized tokens; whereas a sparse vector search can match specific search terms and brand names but may miss general semantic similarities.
+
+For most AI applications, including retrieval-augmented generation (RAG) pipelines and agentic AI systems, a multi-stage approach is required.
+This chains together dense vector search and sparse vector search:
+
+. Find the dense scores: cosine similarity of dense embeddings.
+. Find the sparse scores: dot product of term weights.
+. Use Reciprocal Rank Fusion (RRF) to combine the dense scores and sparse scores in a single ranking.
+
+[#vector-indexes-without-data]
+== Vector Indexes without Data
+
+[.status]#Couchbase Server 8.5#
+
+Hyperscale Vector Indexes and Composite Vector Indexes need a minimum number of documents in the keyspace to compute IVF centroids and perform quantization during the training phase.
+By default, it's not possible to create a Hyperscale Vector Index or a Composite Vector Index without sufficient documents.
+
+In retrieval-augmented generation (RAG) frameworks, you may not have sufficient documents to create the index.
+Most of the time, when starting out from these frameworks, the number of documents in the collection will be zero.
+
+Couchbase Server 8.5 introduces an option to create Hyperscale Vector Indexes and Composite Vector Indexes in a deferred mode, where the index is defined according to your requirements, but built only when the required number of documents are added to the collection.
+For more information, see xref:vector-index:vector-index-without-data.adoc[].

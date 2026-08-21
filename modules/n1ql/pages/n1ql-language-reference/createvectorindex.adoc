@@ -127,7 +127,7 @@ The {flatten-keys}[FLATTEN_KEYS()] function is supported, but more than one key 
 For details, see {indexing-arrays}[].
 
 [[include-vector]]
-==== VECTOR Keyword
+==== VECTOR Clause
 
 [source,ebnf]
 ----
@@ -137,6 +137,16 @@ include::partial$grammar/ddl.ebnf[tag=index-vector]
 image::n1ql-language-reference/index-vector.png["Syntax diagram: see source code listing", align=left]
 
 Indicates that the index key is a vector field.
+
+[horizontal]
+`VECTOR`::
+`DENSE VECTOR`::
+The vector field contains dense embeddings.
+
+`SPARSE VECTOR`::
+The vector field contains sparse term-weight pairs.
+
+Synonym: `VECTOR` is a synonym for `DENSE VECTOR`.
 
 [[index-include]]
 === INCLUDE Clause
@@ -213,6 +223,23 @@ Create a Hyperscale Vector index from the example RGB dataset that does not pers
 ----
 include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-rgb-no-persist]
 ----
+====
+
+[[ex-training-list-wait]]
+.Create a Hyperscale Vector Index without data
+====
+For this example, it's assumed that the bucket, scope, and collection exist, but no sample data is installed.
+The path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a Hyperscale Vector index for the vector column named `embedding-vector-dot`, like <<ex-create-rgb-idx>>.
+This time, specify that the indexer should wait for the keyspace to contain sufficient data before training the index.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-wait-idx]
+----
+
+For more examples, see xref:vector-index:vector-index-without-data.adoc#examples[Examples].
 ====
 
 == Related Links
