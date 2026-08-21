@@ -30,6 +30,7 @@ You can specify this setting using the *Training List* setting in the Couchbase 
 
 The following table summarizes how creating a vector index without data interacts with the training list setting.
 
+[cols="1,1,2"]
 |===
 | Training List | Index without Data | Behavior
 
@@ -61,6 +62,7 @@ You can specify deferred build mode using the `defer_build` option in {sqlpp}.
 
 The following table summarizes how creating a vector index without data interacts with the interacts with deferred build mode.
 
+[cols="1,1,2"]
 |===
 | Deferred Build | Index without Data | Workflow
 
@@ -227,9 +229,7 @@ This time, specify that the indexer should wait for the keyspace to contain suff
 
 [source,sqlpp]
 ----
-CREATE VECTOR INDEX `color_desc_hyperscale` 
-       ON `vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)
-       WITH { "dimension": 1536, "similarity": "L2", "description": "IVF8,SQ4", "train_list_wait": true };
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-wait-idx]
 ----
 
 Again, index creation fails, because there are not enough documents in the keyspace to train the index.
@@ -240,19 +240,19 @@ However, in contrast to <<ex-create-rgb-idx>>, the error message indicates that 
 [
   {
     "code": 5000,
-    "msg": "GSI CreateIndex() - cause: Encountered transient error.  Index creation will be retried in background. DefnId: 14211942499465921632, Error: Encountered transient error. Index color_desc_hyperscale will retry building in the background for reason: ErrTraining: RetryableTrainListSizeError: The number of documents: 0 in keyspace: vector-sample:color:rgb are less than the minimum number of documents: 8 required for training 8 centroids.\n",
+    "msg": "GSI CreateIndex() - cause: Encountered transient error.  Index creation will be retried in background. DefnId: 14211942499465921632, Error: Encountered transient error. Index color_wait_hyperscale will retry building in the background for reason: ErrTraining: RetryableTrainListSizeError: The number of documents: 0 in keyspace: vector-sample:color:rgb are less than the minimum number of documents: 8 required for training 8 centroids.\n",
     "reason": {
       "_level": "warning",
       "caller": "secondary_index:737",
       "cause": {
-        "error": "Encountered transient error.  Index creation will be retried in background. DefnId: 14211942499465921632, Error: Encountered transient error. Index color_desc_hyperscale will retry building in the background for reason: ErrTraining: RetryableTrainListSizeError: The number of documents: 0 in keyspace: vector-sample:color:rgb are less than the minimum number of documents: 8 required for training 8 centroids.",
+        "error": "Encountered transient error.  Index creation will be retried in background. DefnId: 14211942499465921632, Error: Encountered transient error. Index color_wait_hyperscale will retry building in the background for reason: ErrTraining: RetryableTrainListSizeError: The number of documents: 0 in keyspace: vector-sample:color:rgb are less than the minimum number of documents: 8 required for training 8 centroids.",
         "source": "CreateIndex()"
       },
       "code": 4360,
       "key": "indexing.transient_error",
       "message": "GSI error"
     },
-    "query": "CREATE VECTOR INDEX `color_desc_hyperscale` \n       ON `vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)\n       WITH { \"dimension\": 1536, \"similarity\": \"L2\", \"description\": \"IVF8,SQ4\", \"train_list_wait\": true }"
+    "query": "CREATE VECTOR INDEX `color_wait_hyperscale` \n       ON `vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)\n       WITH { \"dimension\": 1536, \"similarity\": \"L2\", \"description\": \"IVF8,SQ4\", \"train_list_wait\": true }"
   }
 ]
 ----
@@ -264,7 +264,7 @@ Check the status of the index created in <<ex-train-list-wait>>.
 
 [source,sqlpp]
 ----
-SELECT name, state FROM system:indexes WHERE name = "color_desc_hyperscale";
+SELECT name, state FROM system:indexes WHERE name = "color_wait_hyperscale";
 ----
 
 The result shows that the index state is pending.
@@ -273,7 +273,7 @@ The result shows that the index state is pending.
 ----
 [
   {
-    "name": "color_desc_hyperscale",
+    "name": "color_wait_hyperscale",
     "state": "pending"
   }
 ]
@@ -290,7 +290,7 @@ Then check the status of the index created in <<ex-train-list-wait>>.
 
 [source,sqlpp]
 ----
-SELECT name, state FROM system:indexes WHERE name = "color_desc_hyperscale";
+SELECT name, state FROM system:indexes WHERE name = "color_wait_hyperscale";
 ----
 
 The results show that the index has now been built and is online.
@@ -299,7 +299,7 @@ The results show that the index has now been built and is online.
 ----
 [
   {
-    "name": "color_desc_hyperscale",
+    "name": "color_wait_hyperscale",
     "state": "online"
   }
 ]
