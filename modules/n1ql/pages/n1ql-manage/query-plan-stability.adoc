@@ -70,6 +70,36 @@ a PREPARE statement is issued with the SAVE option
 
 A user with admin privileges can drop the bucket. If the bucket is dropped, errors may be returned on various operations. The next time plan stability mode is set to anything other than “off”, or a PREPARE statement with SAVE option is issued, the bucket will be automatically created again.
 
+== Error Policies
+
+Before executing a saved query plan, the Query Service verifies if the plan is still valid.
+
+A saved plan can become invalid over time. 
+For example, if a index used in the plan is dropped, the plan becomes invalid and cannot run. 
+When plan verification fails, the Query Plan Stability error policy determines how the service responds.
+
+It supports the following error policies:
+
+[cols ="1,3", options="header"]
+|===
+| Error Policy | Description
+
+| Strict 
+| Stops statement execution and returns an error to the application. 
+
+| Moderate
+| Reprepares the statement to generate and execute a new plan. 
+The original saved plan remains unchanged. 
+
+This policy is useful when an index becomes temporarily unavailable. 
+Statement executions may use a sub-optimal plan while the index is down, but the saved plan stays intact and can be used again once the index is available. 
+
+| Flexible
+| Reprepares the statement to generate a new plan and replaces the saved plan with the new one.  
+
+This behavior is similar to the standard prepared statement handling.
+|===
+
 == See Also
 
 * xref:n1ql:n1ql-manage/configure-plan-stability.adoc[]
