@@ -413,6 +413,58 @@ function OnUpdate(doc, meta) {
 
 For more information about {sqlpp} Analytics, see xref:server:analytics:1_intro.adoc[].
 
+
+[#search_call]
+=== `couchbase.{zwsp}searchQuery({wj})`
+
+ifeval::['{page-component-version}' == '8.1'] 
+_(Introduced in Couchbase Server 8.1)_
+endif::[]
+
+The `couchbase.searchQuery()` function allows you to execute the Full Text Search (FTS) queries directly from your Eventing Function. 
+
+A sample JavaScript function looks like the following.
+
+[source,javascript]
+----
+JavaScript 
+couchbase.searchQuery(indexname, query, options)
+----
+To define the search request, you must use the `couchbase.SearchQuery` helper class. 
+This class is used to create the specific search type (such as match, term, and phrase) and configure all underlying options for the request. 
+Once constructed, you pass this object into the `couchbase.searchQuery()` function's `query` parameter to execute the search and fetch the results.
+
+The function returns a query iterator—working exactly like the N1QL query iterator—which allows you to iterate over the result set using standard JavaScript mechanisms like `for...of` loops.
+
+The following example assumes that an FTS index called `travel-sample._default.travel_sample_test` already exists. 
+
+[source,javascript]
+----
+
+function OnUpdate(doc, meta) {
+    var count = 0;
+    
+    // 1. Create the search type using the couchbase.SearchQuery helper
+    let myQuery = couchbase.SearchQuery.match('hotel');
+    
+    // 2. Execute the search query
+    var it = couchbase.searchQuery("travel-sample._default.travel_sample_test", myQuery, {"limit": 10});
+
+    // 3. Iterate through the search results
+    for (let row of it) {
+        count++;
+        log("Match found: ", row);
+    }
+    
+    if (count > 0) {
+        log("Found " + count + " search results for document: " + meta.id);
+    }
+}
+----
+
+// For more information about constructing search queries, see the Node.js SDK API reference for `couchbase.SearchQuery`.
+// For more information about {sqlpp} FTS, see xref:server:fts:1_intro.adoc[].
+
 [#crc64_call]
 === `crc64()`
 
