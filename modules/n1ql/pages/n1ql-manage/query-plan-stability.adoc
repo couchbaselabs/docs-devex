@@ -9,7 +9,8 @@
 
 == Overview
 
-Query Plan Stability, or Plan Stability, preserves query execution plans across Couchbase Server upgrades and node restarts. By saving and reusing plans, this feature helps you avoid performance regressions caused by changes to the query optimizer.
+Query Plan Stability, or Plan Stability, preserves query execution plans across Couchbase Server upgrades and node restarts. 
+By saving and reusing plans, this feature helps you avoid performance regressions caused by changes to query plans.
 
 By default, the query optimizer generates a new plan for a query whenever no plan is in memory:
 
@@ -26,27 +27,60 @@ After an upgrade or restart, Couchbase Server reloads and reuses these saved pla
 
 Plan Stability provides the following benefits: 
 
-* Consistent Execution: Queries can run with the same plan across upgrades.
-* Performance Stability: Reduces the risk of performance degradation from optimizer changes. 
-* Application Protection: Protects applications tuned for specific query plans.
+* Queries can run with the same plan before and after upgrades.
+* Reduces the risk of performance degradation from plan changes.
+* Protects applications tuned for specific query plans.
 
-== Enable Plan Stability
+== Configuration Options
 
-You can enable Plan Stability at the cluster level using the Couchbase Server Web Console. 
+You can set Plan Stability at the cluster level using the Couchbase Server Web Console or at the statement level.
+
+=== Cluster-Level Settings
 
 The cluster-level setting has three options:
 
-* *Off*: Plan Stability is turned off. The Query Service does not save any plans. 
+* *Off*: Plan Stability is turned off. 
+The Query Service does not save any execution plans. 
 
-* *On Prepared Statements*: The Query Service saves only plans for prepared statements and generates a new plan for each ad-hoc query.
+* *On Prepared Statements*: Saves plans only for prepared statements, and generates a new plan for every ad-hoc query.
 
-* *On All Statements*: The Query Service saves all plans, including prepared statements and ad-hoc queries.
-It generates a new plan only if no saved plan exists.
+* *On All Statements*: Saves plans for all queries, including prepared statements and ad-hoc queries.
+The Query Service generates a new plan only when no saved plan exists.
++
+For more information on how the service saves ad-hoc query plans, see How Plan Stability works.
 
-You can also enable Plan Stability for individual queries. 
-When you prepare a statement using `PREPARE`, you can save the plan using the `SAVE` keyword.
+=== Statement-Level Settings
 
-For more information about enabling and managing Plan Stability, see xref:n1ql:n1ql-manage/configure-plan-stability.adoc[].
+You can also configure Plan Stability for individual queries. 
+When you create a prepared statement using `PREPARE`, include the `SAVE` keyword to save its plan to persistent storage.
+
+For instructions on how to configure these settings, see xref:n1ql:n1ql-manage/manage-plan-stability.adoc[].
+
+== How Plan Stability Works
+
+The following steps describe how Plan Stability works:
+
+. *Plan Generation*: 
+When a query runs, the Query Service checks if Plan Stability is active.
++
+* Prepared statements: Saves the plan if you include the `SAVE` keyword during `PREPARE`, or if cluster-level Plan Stability set to  *On Prepared Statements* or *On All Statements*.
+
+* Ad-hoc queries: Saves the plan only when Plan Stability mode is set to *On All Statements*. 
+The Query Service first 
+xref:n1ql:n1ql-language-reference/prepare.adoc#auto-prepare[Auto-prepares] the query and then saves the plan.
+
+. *Persistence*:
+The Query Service then saves the generated plan to a dedicated storage bucket, `QUERY_METADATA`. 
+For more information, see <<storage>>.
+
+. *Reload*: 
+Upon a restart or upgrade, the Query Service reloads plans from `QUERY_METADATA` directly into memory.
+You can view saved plans using the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[system:prepareds] catalog.
+
+. *Plan Validation and Error Handling*:
+Before executing a saved plan, the Query Service verifies if all dependencies (such as indexes and keyspaces) still exist.
+If the verification fails, the configured error policy determines how the Query Service responds. 
+For more information, see <<error-policies>>.
 
 == Storage 
 
@@ -95,9 +129,19 @@ Statement executions might use a suboptimal plan while the index is down, but th
 This behavior is similar to the standard prepared statement handling.
 |===
 
-For instructions on how to set the error policy, see xref:n1ql:n1ql-manage/configure-plan-stability.adoc[].
+For instructions on how to set the error policy, see xref:n1ql:n1ql-manage/manage-plan-stability.adoc[].
+
+== Limitations
+
+Consider the following when using Plan Stability: 
+
+* Plan Stability does not support XDCR.
+Bucket, scope, collection, and index IDs differ between clusters, so a saved plan from the source cluster is not valid on the target cluster.
+* If you drop an object that a saved plan depends on, such as an index, you must also clean up the saved plan.
+* Plan Stability does not support transactions that use delta tables.
+* Saving and loading plans can significantly increase memory usage and affect query performance.
 
 == See Also
 
-* xref:n1ql:n1ql-manage/configure-plan-stability.adoc[]
-* xref:n1ql:n1ql-manage/manage-saved-plans.adoc[]
+* xref:n1ql:n1ql-manage/manage-plan-stability.adoc[]
+* xref:n1ql:n1ql-language-reference/prepare.adoc[]
