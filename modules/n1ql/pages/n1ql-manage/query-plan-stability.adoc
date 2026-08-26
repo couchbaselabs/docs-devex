@@ -34,10 +34,10 @@ You can set Plan Stability at the cluster level using the Couchbase Server Web C
 
 The cluster-level setting has 3 options:
 
-* *Off*: Plan Stability is turned off. 
+* `Off`: Plan Stability is turned off. 
 The Query Service does not save any execution plans. 
-* *On Prepared Statements*: Saves plans only for prepared statements, and generates a new plan for every ad-hoc query.
-* *On All Statements*: Saves plans for all queries, including prepared statements and ad-hoc queries.
+* `On Prepared Statements`: Saves plans only for prepared statements, and generates a new plan for every ad-hoc query.
+* `On All Statements`: Saves plans for all queries, including prepared statements and ad-hoc queries.
 
 === Statement-Level Settings
 
@@ -53,11 +53,11 @@ The following steps describe how Plan Stability works:
 . *Plan Generation*: 
 When a query runs, the Query Service checks if Plan Stability is active.
 +
-* Prepared statements: Saves the plan if you include the `SAVE` keyword during `PREPARE`, or if cluster-level Plan Stability set to  *On Prepared Statements* or *On All Statements*.
+* For prepared statements, the service saves the plan if you include the `SAVE` keyword during `PREPARE`, or if cluster-level Plan Stability set to  `On Prepared Statements` or `On All Statements`.
 
-* Ad-hoc queries: Saves the plan only when Plan Stability mode is set to *On All Statements*. 
+* For ad-hoc queries, the service saves the plan only when Plan Stability mode is set to `On All Statements`. 
 The Query Service first 
-xref:n1ql:n1ql-language-reference/prepare.adoc#auto-prepare[Auto-prepares] the query and then saves the plan.
+xref:n1ql:n1ql-language-reference/prepare.adoc#auto-prepare[auto-prepares] the query and then saves the plan.
 
 . *Persistence*:
 The Query Service then saves the generated plan to a dedicated storage bucket, `QUERY_METADATA`. 
@@ -78,7 +78,7 @@ Couchbase Server stores saved execution plans in a dedicated, user-level bucket 
 It automatically creates this bucket when you do one of the following:
 
 * Issue a `PREPARE` statement with the `SAVE` keyword.
-* Set the Plan Stability mode to *On Prepared Statements* or *On All Statements*.
+* Set the Plan Stability mode to `On Prepared Statements` or `On All Statements`.
 
 The `QUERY_METADATA` bucket uses a default memory quota of 100 MB.
 
@@ -86,8 +86,8 @@ The `QUERY_METADATA` bucket uses a default memory quota of 100 MB.
 ====
 * Users with admin privileges can drop the `QUERY_METADATA` bucket.
 * Dropping the bucket manually can trigger runtime errors during query execution.
-* Setting the Plan Stability mode to *Off* does not automatically drop this bucket.
-* If you drop the bucket, Couchbase Server automatically recreates it the next time you issue a `PREPARE` statement with `SAVE`, or set the Plan Stability mode to a setting other than *Off*.
+* Setting the Plan Stability mode to `Off` does not automatically drop this bucket.
+* If you drop the bucket, Couchbase Server automatically recreates it the next time you issue a `PREPARE` statement with `SAVE`, or set the Plan Stability mode to a setting other than `Off`.
 ====
 
 == Error Policies
@@ -103,17 +103,17 @@ Plan Stability supports the following error policies:
 |===
 | Error Policy | Description
 
-| Strict 
+| `Strict` 
 | Stops statement execution and returns an error to the application. 
 
-| Moderate
+| `Moderate`
 | Reprepares the statement to generate and run a new plan. 
 The original saved plan remains unchanged. 
 
 This policy is useful when an index becomes temporarily unavailable. 
 Statement executions might use a suboptimal plan while the index is down, but the saved plan stays intact, and you can reuse it once the index becomes available. 
 
-| Flexible
+| `Flexible`
 | Reprepares the statement to generate a new plan and replaces the saved plan with the new one.  
 
 This behavior is similar to the standard prepared statement handling.
