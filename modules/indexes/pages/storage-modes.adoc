@@ -4,6 +4,9 @@
 :page-topic-type: concept
 :page-aliases: learn:services-and-indexes/indexes/storage-modes,understanding-couchbase:services-and-indexes/indexes/storage-modes,architecture:index-storage
 
+// TEMP
+:totoro: the next major release of Couchbase Server
+
 [abstract]
 {description}
 
@@ -176,3 +179,31 @@ Items less likely to be accessed are retained in memory in compressed form, unti
 After ejection, they must be accessed through disk reads.
 
 This new model of memory usage leads to higher residence ratios and greater access efficiency, at the cost of some additional CPU utilization, due to the more frequent performance of compression and decompression routines.
+
+[#encryption-at-rest]
+== Encryption at Rest
+
+[.labels]
+[.status]#{totoro}#
+
+The Index Service supports encryption at rest in {totoro} and later.
+For more information, see xref:learn:security/native-encryption-at-rest-overview.adoc[].
+
+Encryption at rest is supported by memory-optimized index storage, standard index storage in Couchbase Server Enterprise Edition, and Vector Indexes.
+When encryption at rest is active, the following Index Service items are encrypted:
+
+* Index definitions and metadata
+* Indexer stats logs and projector stats logs
+* Scan backfill files
+* Spill files created during sequential scans for query without index
+* Codebooks for Vector Indexes
+* Backup index data files
+* Request handle cache
+* Persisted stats
+
+Shard cleanup is enforced on rebalance.
+Encryption keys are preserved in file-based rebalance.
+
+// FIXME: A REST endpoint will show the encryption status of every Bucket, vBucket, Index. Need info
+
+For security, bucket and index names are no longer present in index storage file paths.
