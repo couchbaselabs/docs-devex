@@ -4,11 +4,12 @@
 :page-product-name: {product-name}
 :page-aliases: fts:fts-creating-index-from-REST-geopoint.adoc, fts:fts-creating-index-from-REST-geojson.adoc
 :description: Search for geospatial data in your Couchbase {page-product-name} cluster with a compatible Search index, the REST API and curl/HTTP.
+:page-toclevels: 3
 
 [abstract]
 {description}
 
-For more information about how the Search Service scores documents in search results, see xref:run-searches.adoc#scoring[Scoring for Search Queries].
+For more information about geospatial searches with the Search Service, see xref:search-for-geo.adoc[].
 
 == Prerequisites
 
@@ -20,7 +21,11 @@ For more information about how to create a bucket, see xref:server:manage:manage
 
 * You have documents in your cluster that contain geospatial data.
 +
-For more information about the supported data types, see xref:field-data-types-reference.adoc#geopoint[geopoint] or xref:field-data-types-reference.adoc#geoshape[geoshape].
+For more information about the supported data types, see: 
+
+** xref:field-data-types-reference.adoc#geopoint[geopoint]
+** xref:field-data-types-reference.adoc#geoshape[geoshape]
+** xref:field-data-types-reference.adoc#geoshape-v2[geoshape_v2]
 
 * Your user account has the xref:learn:security/roles.adoc#search-admin[`Search Admin`] role for the bucket where you want to create the Search index.
 +
@@ -46,7 +51,7 @@ To create the Search index with a geospatial type mapping:
 
 [source,json]
 ----
-include::example$geospatial-search-index.jsonc[]
+include::example$geo_search/geospatial-search-index.jsonc[]
 ----
 
 [#geospatial-query]
@@ -72,7 +77,7 @@ For example, the following query searches a geospatial field, `geo`, for any loc
 
 [source,console]
 ----
-include::example$geospatial-search-query.sh[]
+include::example$geo_search/geospatial-search-query.sh[]
 ---- 
 
 If the REST API call is successful, the Search Service returns a `200 OK`. 
@@ -80,7 +85,7 @@ Using the `landmark` collection, the query can return the following JSON respons
 
 [source,json]
 ----
-include::example$geospatial-search-response.json[]
+include::example$geo_search/geospatial-search-response.json[]
 ----
 
 === Example: GeoJSON Query 
@@ -91,7 +96,7 @@ To run the following example against the `landmark` collection in the `travel-sa
 
 [source,sqlpp]
 ----
-include::example$geospatial-sqlpp-query.sqlpp[]
+include::example$geo_search/geospatial-sqlpp-query.sqlpp[]
 ----
 ====
 
@@ -99,15 +104,48 @@ For example, the following query searches a geospatial field, `geojson`, for any
 
 [source,console]
 ----
-include::example$geospatial-search-query-geojson.sh[]
+include::example$geo_search/geospatial-search-query-geojson.sh[]
 ---- 
 
 If the REST API call is successful, the Search Service returns a `200 OK`. 
-Using the `landmark` collection, the query can return the following JSON response: 
+Using the `landmark` collection from the `travel-sample` dataset, the query can return the following JSON response: 
 
 [source,json]
 ----
-include::example$geojson-search-response.json[]
+include::example$geo_search/geojson-search-response.json[]
+----
+
+[#geoshape-v2]
+=== Example: geoshape_v2 Query
+
+[.status]#Couchbase Server 8.5#
+
+[TIP]
+====
+To run the following example against the `landmark` collection in the `travel-sample` dataset, run the following {sqlpp} query from the xref:tools:query-workbench.adoc[Query Workbench]: 
+
+[source,sqlpp]
+----
+include::example$geo_search/geospatial-sqlpp-query.sqlpp[]
+----
+====
+
+From Couchbase Server version 8.5 and later, if you have a `geoshape_v2` field in your Search index, you can use the xref:search-request-params.adoc#geometry-v2[`geometry_v2`] object in your query to run a geospatial query.
+You should upgrade your `geopoint` and `geoshape` field data types to the new `geoshape_v2` field data type for the best results with your geospatial searches.
+
+For example, the following query searches a `geoshape_v2` field, `geojson_v2`, for any locations within the defined xref:search-request-params.adoc#geojson-queries-polygon[Polygon GeoJSON Query]:
+
+[source,console]
+----
+include::example$geo_search/geoshape-v2-search-query-api.sh[]
+----
+
+If the REST API call is successful, the Search Service returns a `200 OK`. 
+Using the `landmark` collection from the `travel-sample` dataset, the query can return the following JSON response: 
+
+[source,json]
+----
+include::example$geo_search/geoshape-v2-search-response.json[]
 ----
 
 == Next Steps

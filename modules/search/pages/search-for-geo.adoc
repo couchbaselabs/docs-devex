@@ -1,0 +1,108 @@
+= Search for Geospatial Data
+:page-topic-type: concept
+:description: The Search Service supports geospatial data searches, letting you search for coordinates at the same time as vectors or text.
+:page-toclevels: 3
+
+[abstract]
+{description}
+
+The Search Service supports 2 types of geospatial data:
+
+* *Geopoint*: Any geolocation data represented as an object with a `lat` and `lon` coordinate.
+Geopoint data can be searched with a xref:search-request-params.adoc#geopoint-queries-distance[distance or radius-based query], xref:search-request-params.adoc#geopoint-queries-rectangle[rectangle query], or xref:search-request-params.adoc#geopoint-queries-polygon[polygon query].
+To work with this kind of geospatial data, in your Search index definition, use the xref:field-data-types-reference.adoc#geopoint[`geopoint` field data type].
+
+* *Geoshape*: More complex geolocation data that uses GeoJSON shapes that can represent points, polylines, and polygons.
+Both your document geolocation data and Search queries can use more complex GeoJSON shapes to represent geolocations.
+To work with this kind of geospatial data, in your Search index definition, use the xref:field-data-types-reference.adoc#geoshape[`geoshape`] or xref:field-data-types-reference.adoc#geoshape-v2[`geoshape_v2`] field data types. 
+
+You can run a geospatial data query in the same Search request as any other xref:search-request-params.adoc#query-object[supported query].
+
+For more information about how to run a query against a `geopoint` or `geoshape` field, see xref:geo-search-ui.adoc[] or xref:geo-search-rest-api.adoc[].
+
+[#geoshape-v2]
+== Cell-Based Geospatial Search Indexes
+
+[.status]#Couchbase Server 8.5#
+
+IMPORTANT: To use a cell-based geospatial index, you need to use a new field data type and query object.
+You cannot use a cell-based geospatial index with the old `geopoint` or `geoshape` field data types.
+You must change your xref:field-data-types-reference.adoc[field data type in your Search index] and update your query syntax to use the xref:search-request-params.adoc#geometry-v2[`geometry_v2` object].
+
+From Couchbase Server version 8.5 and later, you can use a xref:field-data-types-reference.adoc#geoshape-v2[`geoshape_v2`] field data type to create a cell-based geospatial Search index.
+
+A cell-based geospatial Search index divides the geospatial data in your Search index and Search queries into cross cells and inner cells: 
+
+* *Inner cell*: A cell that lies entirely inside a shape's boundary.
+* *Cross cell*: A cell that straddles a shape's boundary, partly inside the shape and partly outside.
+
+image::polygon-cell-coverage.svg["2 polygons, demonstrating the difference between the inner green cells and outer orange cross cells that are used by the Search Service matching algorithm"]
+
+During indexing, if you have a `geoshape_v2` field in your documents, the Search Service computes a score for the number of smallest-size cells contained in the shape or shapes described by the `geoshape_v2` field.
+This score represents the footprint of the shape.
+
+When you run a geospatial query, the Search Service adds up how much of an indexed shape's footprint the query shape's cells cover, and compares the total to that shape's score.
+The cells in the indexed shape or the query shape can be scaled up or down. 
+A smaller cell is inside a larger cell, so a match to the larger cell also matches the smaller cell.
+
+For all xref:search-request-params.adoc#geoshape-v2-relation[relation query types], the matching algorithm for a cell-based geospatial Search index compares your indexed shape data to the data in your query shape, to determine if a document should be returned as a match.
+By using these cell comparisons, the Search Service can prove that a document is or is not a match without running an expensive geometric calculation.
+The Search Service only runs this more expensive calculation on the documents that cannot be resolved by a cell comparison.
+
+You can control the relation type of your query using the xref:search-request-params.adoc#geoshape-v2-relation[`relation` property] and change the comparison method the Search Service uses:
+
+image::geoshape-relations.svg["An explanation of the different query relation property types. Contains requires that your query shape must fully cover the indexed shape from the Search index. Intersects requires that the query shape overlaps the indexed shape. Within requires that the indexed shape fully covers the query shape."]
+
+For an example of a new `geoshape_v2` query, see xref:geo-search-ui.adoc#geoshape-v2[Example: Run a Geospatial Search Query with a New geoshape_v2 Mapping] or xref:geo-search-rest-api.adoc#geoshape-v2[Example: geoshape_v2 Query].
+
+=== Contains Queries
+
+In a `contains` relation query, the Search Service compares the query shape's cells to the indexed shape's cells, starting with the query shape's inner cells.
+For a document to be returned as a match, the indexed shape's cells must be fully contained by the query shape's cells.
+
+During the first comparison, the Search Service only compares the query shape's inner cells to the indexed shape's cells.
+If during this first comparison, the Search Service determines that the indexed shape's inner and cross cells fully match the query shape's inner cells, the document is returned as a match.
+The Search Service does not need to do any further comparisons to prove that the indexed shape is contained by the query shape, because every cell in the indexed shape falls inside a cell that lies entirely inside the query shape.
+
+Then, the Search Service compares the query shape's cross cells, and adds any new matches to the results of the first comparison.
+If the indexed shape's cells only fully match once the query shape's cross cells are included, the document might be a match, depending on whether the indexed shape's inner or cross cells actually protrude past the query shape.
+The Search Service uses a bounding box check to confirm that the query shape's bounding box fully contains the indexed shape's bounding box, before doing a final geometric check to prove whether the indexed shape lies inside or outside of the query shape.
+
+If the indexed shape's cells never fully match the query shape's cells, the Search Service does not return the document.
+
+=== Intersects Queries
+
+In an `intersects` relation query, the Search Service compares the query shape's cells to the indexed shape's cells, starting with the query shape's inner cells.
+For a document to be returned as a match, at least 1 of the indexed shape's cells must overlap 1 of the query shape's cells.
+Unlike a `contains` or `within` query, the Search Service does not need to calculate the shape's footprint, because a single overlapping cell is enough to show that the shapes might intersect.
+
+During the first comparison, the Search Service only compares the query shape's inner cells to the indexed shape's cells.
+If during the first comparison, either an inner cell or a cross cell from the indexed shape matches the query shape's inner cell, the document is returned as a match.
+
+Then, the Search Service compares the query shape's cross cells to the indexed shape's cells.
+If an inner cell from the indexed shape matches, that document is returned as a match.
+If a cross cell from the indexed shape matches, the Search Service uses a bounding box check to confirm that the 2 shapes' bounding boxes overlap, before doing a final geometry check to determine whether the shapes actually intersect.
+
+If none of the indexed shape's cells match the query shape's cells, the Search Service does not return the document.
+
+=== Within Queries
+
+In a `within` relation query, the Search Service compares the query shape's cells to the indexed shape's cells.
+For a document to be returned as a match, the query shape's cells must be fully contained by the indexed shape's cells.
+
+Unlike a `contains` query, the Search Service compares all of the query shape's cells at once, because the query shape's own inner and cross cells do not matter when the query shape is the contained shape.
+Instead, the Search Service checks which of the indexed shape's cells cover the query shape:
+
+* If the indexed shape's inner cells alone fully match the query shape's cells, the document is returned as a match.
+The Search Service does not need to do any further comparisons to prove that the query shape is contained by the indexed shape, because every cell in the query shape falls inside a cell that lies entirely inside the indexed shape.
+
+* If the indexed shape's inner and cross cells together fully match the query shape's cells, the document might be a match, depending on whether the query shape actually protrudes past the indexed shape.
+The Search Service uses a bounding box check to confirm that the indexed shape's bounding box fully contains the query shape's bounding box, before doing a final geometric check to prove whether the query shape lies inside or outside of the indexed shape.
+
+* If the indexed shape's cells do not fully match the query shape's cells, the Search Service does not return the document.
+
+== See Also
+
+* xref:geo-search-ui.adoc[]
+* xref:geo-search-rest-api.adoc[]
+* xref:search-request-params.adoc[]
