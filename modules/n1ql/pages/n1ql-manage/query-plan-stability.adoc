@@ -9,19 +9,14 @@
 
 == Overview
 
-Query Plan Stability, or Plan Stability, preserves query execution plans across Couchbase Server upgrades and node restarts. 
-By saving and reusing plans, this feature helps you avoid performance regressions caused by changes to query plans.
+Query Plan Stability, or Plan Stability, preserves query execution plans across Couchbase Server upgrades and restarts. 
 
-By default, the query optimizer generates a new plan for a query whenever no plan is in memory:
-
-* For prepared statements, the optimizer generates a plan once and caches it in memory.
-* For ad-hoc queries, the optimizer generates a new plan each time you run the query, unless a matching plan is already in memory.
-
-Cached plans clear after an upgrade, so the optimizer in the new version might generate a different plan for the same query.
+By default, the Query Service caches execution plans in memory for prepared statements. 
+But cached plans clear after an upgrade, forcing the query optimizer in the new version to generate a different plan for the same query.
 This can cause unexpected changes in query performance.
 
 Plan Stability solves this problem by saving execution plans to persistent storage. 
-After an upgrade or restart, Couchbase Server reloads and reuses these saved plans.
+After an upgrade or restart, Couchbase Server automatically reloads and reuses these saved plans to maintain consistent query performance.
 
 == Key Benefits
 
