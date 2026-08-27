@@ -788,18 +788,21 @@ no result is returned).
 Similarly, if any of the arguments are `NULL` then `NULL` is returned.
 
 [#fn-date-clock-local]
-== CLOCK_LOCAL([fmt])
-
-=== Description
+== CLOCK_LOCAL
 
 The current time (at function evaluation time) of the machine that the query service is running on, in the specified string format.
 
-=== Arguments
+=== Syntax
 
-fmt::
+....
+CLOCK_LOCAL([fmt])
+....
+
+==== Arguments
+
+fmt:: [Optional]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
 +
-*Optional argument*.
 If no format or an incorrect format is specified, then this defaults to the combined full date and time.
 
 === Return Value
@@ -837,14 +840,18 @@ SELECT CLOCK_LOCAL() as full_date,
 ====
 
 [#fn-date-clock-millis]
-== CLOCK_MILLIS()
-
-=== Description
+== CLOCK_MILLIS
 
 The current time as an Epoch/UNIX timestamp.
 Its fractional part represents nanoseconds, but the additional precision beyond milliseconds may not be consistent or guaranteed on all platforms.
 
-=== Arguments
+=== Syntax
+
+....
+CLOCK_MILLIS()
+....
+
+==== Arguments
 
 This function accepts no arguments.
 
@@ -879,19 +886,21 @@ SELECT CLOCK_MILLIS() AS CurrentTime;
 ====
 
 [#fn-date-clock-str]
-== CLOCK_STR([fmt])
-
-=== Description
+== CLOCK_STR
 
 The current time (at function evaluation time) of the machine that the query service is running on, in the specified string format.
 
-=== Arguments
+=== Syntax
 
-fmt::
+....
+CLOCK_STR([fmt])
+....
+
+==== Arguments
+
+fmt:: [Optional]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
-.
 +
-*Optional argument*.
 If no format or an incorrect format is specified, then this defaults to the combined full date and time.
 
 === Return Value
@@ -929,24 +938,27 @@ SELECT CLOCK_STR() as full_date,
 ====
 
 [#fn-date-clock-tz]
-== CLOCK_TZ(tz [, fmt])
-
-=== Description
+== CLOCK_TZ
 
 The current time (at function evaluation time) in the timezone given by the timezone argument passed to the function.
 This time is the local system time converted to the specified timezone.
 
-=== Arguments
+=== Syntax
 
-tz::
+....
+CLOCK_TZ(tz [, fmt])
+....
+
+==== Arguments
+
+tz:: [Required]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the <<date-timezone,timezone>> to convert the local time to.
 +
 If this argument is not a valid timezone then `null` is returned as the result.
 
-fmt::
+fmt:: [Optional]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
 +
-*Optional argument*.
 If no format or an incorrect format is specified, then this defaults to the combined full date and time.
 
 === Return Value
@@ -990,20 +1002,23 @@ SELECT CLOCK_TZ('UTC') as UTC_full_date,
 ====
 
 [#fn-date-clock-utc]
-== CLOCK_UTC([fmt])
-
-=== Description
+== CLOCK_UTC
 
 The current time in UTC.
 This time is the local system time converted to UTC.
 This function is provided for convenience and is the same as `CLOCK_TZ('UTC')`.
 
-=== Arguments
+=== Syntax
 
-fmt::
+....
+CLOCK_UTC([fmt])
+....
+
+==== Arguments
+
+fmt:: [Optional]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
 +
-*Optional argument*.
 If no format or an incorrect format is specified, then this defaults to the combined full date and time.
 
 === Return Value
@@ -1040,29 +1055,33 @@ SELECT CLOCK_UTC() as full_date, CLOCK_UTC('1111-11-11') as short_date;
 ====
 
 [#fn-date-add-millis]
-== DATE_ADD_MILLIS(date1, n, part)
-
-=== Description
+== DATE_ADD_MILLIS
 
 Performs date arithmetic on a particular component of an Epoch/UNIX timestamp value.
 This calculation is specified by the arguments `n` and `part`.
-+
+
 For example, a value of 3 for `n` and a value of `day` for `part` would add 3 days to the date specified by `date1`.
 
-=== Arguments
+=== Syntax
 
-date1::
+....
+DATE_ADD_MILLIS(date1, n, part)
+....
+
+==== Arguments
+
+date1:: [Required]
 An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing an Epoch/UNIX timestamp in milliseconds.
 +
 If this argument is not an integer then `null` is returned.
 
-n::
+n:: [Required]
 The value to increment the date component by.
 This value must be an integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, and may be negative to perform date subtraction.
 +
 If a non-integer is passed to the function then `null` is returned.
 
-part::
+part:: [Required]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the <<manipulating-components,component>> of the date to increment.
 +
 If an invalid part is passed to the function then `null` is returned.
@@ -1097,25 +1116,29 @@ SELECT DATE_ADD_MILLIS(1463284740000, 3, 'day') as add_3_days,
 ====
 
 [#fn-date-add-str]
-== DATE_ADD_STR(date1, n, part)
-
-=== Description
+== DATE_ADD_STR
 
 Performs date arithmetic on a date string.
 This calculation is specified by the arguments `n` and `part`.
 For example a value of 3 for `n` and a value of `day` for `part` would add 3 days to the date specified by `date1`.
 
-=== Arguments
+=== Syntax
 
-date1:: A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the date in a <<date-string,supported date format>>.
+....
+DATE_ADD_STR(date1, n, part)
+....
 
-n::
+==== Arguments
+
+date1:: [Required] A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the date in a <<date-string,supported date format>>.
+
+n:: [Required]
 The value to increment the date component by.
 This value must be an integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, and may be negative to perform date subtraction.
 +
 If a non-integer is passed to the function then `null` is returned.
 
-part::
+part:: [Required]
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the <<manipulating-components,component>> of the date to increment.
 +
 If an invalid part is passed to the function then `null` is returned.
@@ -1150,15 +1173,19 @@ SELECT DATE_ADD_STR('2016-05-15 03:59:00Z', 3, 'day') as add_3_days,
 ====
 
 [#fn-date-diff-millis]
-== DATE_DIFF_MILLIS(date1, date2, part)
-
-=== Description
+== DATE_DIFF_MILLIS
 
 Finds the elapsed time between two Epoch/UNIX timestamps.
 This elapsed time is measured from the date specified by `date2` to the date specified by `date1`.
 If `date1` is greater than `date2`, then the value returned will be positive, otherwise the value returned will be negative.
 
-=== Arguments
+=== Syntax
+
+....
+DATE_DIFF_MILLIS(date1, date2, part)
+....
+
+==== Arguments
 
 date1::
 An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing a Epoch/UNIX timestamp in milliseconds.
@@ -1210,15 +1237,19 @@ SELECT DATE_DIFF_MILLIS(1463543940000, 1463284740000, 'day') as add_3_days,
 ====
 
 [#fn-date-diff-str]
-== DATE_DIFF_STR(date1, date2, part)
-
-=== Description
+== DATE_DIFF_STR
 
 Finds the elapsed time between two dates specified as formatted strings.
 This elapsed time is measured from the date specified by `date2` to the date specified by `date1`.
 If `date1` is greater than `date2` then the value returned will be positive, otherwise the value returned will be negative.
 
-=== Arguments
+=== Syntax
+
+....
+DATE_DIFF_STR(date1, date2, part)
+....
+
+==== Arguments
 
 date1::
 An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing a Epoch/UNIX timestamp in milliseconds.
@@ -1273,13 +1304,17 @@ SELECT DATE_DIFF_STR('2016-05-18T03:59:00Z', '2016-05-15 03:59:00Z', 'day') as a
 ====
 
 [#fn-date-format-str]
-== DATE_FORMAT_STR(date1, [input-fmt,] fmt)
-
-=== Description
+== DATE_FORMAT_STR
 
 Converts datetime strings from one supported date string format to a different supported date string format.
 
-=== Arguments
+=== Syntax
+
+....
+DATE_FORMAT_STR(date1, [input-fmt,] fmt)
+....
+
+==== Arguments
 
 date1::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a date in a <<date-string,supported date format>>.
@@ -1328,13 +1363,17 @@ SELECT DATE_FORMAT_STR('2016-05-15T00:00:23+00:00', '1111-11-11') as full_to_sho
 ====
 
 [#fn-date-part-millis]
-== DATE_PART_MILLIS(date1, part [, tz])
-
-=== Description
+== DATE_PART_MILLIS
 
 Extracts the value of a given date component from an Epoch/UNIX timestamp value.
 
-=== Arguments
+=== Syntax
+
+....
+DATE_PART_MILLIS(date1, part [, tz])
+....
+
+==== Arguments
 
 date1::
 An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing a Epoch/UNIX timestamp in milliseconds.
@@ -1390,13 +1429,17 @@ SELECT DATE_PART_MILLIS(1463284740000, 'day') as day_local,
 ====
 
 [#fn-date-part-str]
-== DATE_PART_STR(date1, part)
-
-=== Description
+== DATE_PART_STR
 
 Extracts the value of a given date component from a date string.
 
-=== Arguments
+=== Syntax
+
+....
+DATE_PART_STR(date1, part)
+....
+
+==== Arguments
 
 date1::
 An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing a Epoch/UNIX timestamp in milliseconds.
@@ -1443,14 +1486,18 @@ SELECT DATE_PART_STR('2016-05-15T03:59:00Z', 'day') as day,
 ====
 
 [#fn-date-range-millis]
-== DATE_RANGE_MILLIS(date1, date2, part [,n])
-
-=== Description
+== DATE_RANGE_MILLIS
 
 Generates an array of dates from the start date specified by `date1` and the end date specified by `date2`, as Epoch/UNIX timestamps.
 The difference between each subsequent generated date can be adjusted.
 
-=== Arguments
+=== Syntax
+
+....
+DATE_RANGE_MILLIS(date1, date2, part [,n])
+....
+
+==== Arguments
 
 date1::
 An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing a Epoch/UNIX timestamp in milliseconds.
@@ -1549,14 +1596,18 @@ SELECT DATE_RANGE_MILLIS(1480752000000, 1449129600000, 'month', -1) as Months;
 ====
 
 [#fn-date-range-str]
-== DATE_RANGE_STR(start_date, end_date, date_interval [, quantity_int ])
-
-=== Description
+== DATE_RANGE_STR
 
 Generates an array of date strings between the start date and end date, calculated by the interval and quantity values.
 The input dates can be in any of the <<date-string,supported date formats>>.
 
-=== Arguments
+=== Syntax
+
+....
+DATE_RANGE_STR(start_date, end_date, date_interval [, quantity_int ])
+....
+
+==== Arguments
 
 start_date::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a date in a <<date-string,supported date format>>.
@@ -1740,13 +1791,17 @@ AS Months;
 ====
 
 [#fn-date-trunc-millis]
-== DATE_TRUNC_MILLIS(date1, part)
-
-=== Description
+== DATE_TRUNC_MILLIS
 
 Truncates an Epoch/UNIX timestamp up to the specified date component.
 
-=== Arguments
+=== Syntax
+
+....
+DATE_TRUNC_MILLIS(date1, part)
+....
+
+==== Arguments
 
 date1::
 An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing a Epoch/UNIX timestamp in milliseconds.
@@ -1793,13 +1848,17 @@ SELECT DATE_TRUNC_MILLIS(1463284740000, 'day') as day,
 ====
 
 [#fn-date-trunc-str]
-== DATE_TRUNC_STR(date1, part [,fmt])
-
-=== Description
+== DATE_TRUNC_STR
 
 Truncates a date string up to the specified date component.
 
-=== Arguments
+=== Syntax
+
+....
+DATE_TRUNC_STR(date1, part [,fmt])
+....
+
+==== Arguments
 
 date1::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a date in a <<date-string,supported date format>>.
@@ -1850,13 +1909,17 @@ SELECT DATE_TRUNC_STR('2016-05-18T03:59:00Z', 'day') as day,
 ====
 
 [#fn-date-duration-to-str]
-== DURATION_TO_STR(duration)
-
-=== Description
+== DURATION_TO_STR
 
 Converts a number into a human-readable time duration with units.
 
-=== Arguments
+=== Syntax
+
+....
+DURATION_TO_STR(duration)
+....
+
+==== Arguments
 
 duration::
 A number, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a number, which represents the duration to convert to a string.
@@ -1892,13 +1955,17 @@ SELECT DURATION_TO_STR(2000) as microsecs,
 ====
 
 [#fn-date-millis]
-== MILLIS(date1)
-
-=== Description
+== MILLIS
 
 Converts a date string to Epoch/UNIX milliseconds.
 
-=== Arguments
+=== Syntax
+
+....
+MILLIS(date1)
+....
+
+==== Arguments
 
 date1::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a date in a <<date-string,supported date format>>.
@@ -1929,19 +1996,20 @@ SELECT MILLIS("2016-05-15T03:59:00Z") as DateStringInMilliseconds;
 ----
 ====
 
-[#fn-date-millis-to-local]
-== MILLIS_TO_LOCAL(date1 [, fmt])
-
-Alias for <<fn-date-millis-to-str,MILLIS_TO_STR()>>.
-
 [#fn-date-millis-to-str]
-== MILLIS_TO_STR(date1 [, fmt ])
-
-=== Description
+== MILLIS_TO_STR
 
 Converts an Epoch/UNIX timestamp into the specified date string format.
 
-=== Arguments
+This function has an alias `MILLIS_TO_LOCAL`.
+
+=== Syntax
+
+....
+MILLIS_TO_STR(date1 [, fmt ])
+....
+
+==== Arguments
 
 date1::
 An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing a Epoch/UNIX timestamp in milliseconds.
@@ -1988,13 +2056,19 @@ SELECT MILLIS_TO_STR(1463284740000) as full_date,
 ====
 
 [#fn-date-millis-to-tz]
-== MILLIS_TO_TZ(date1, tz [, fmt])
-
-=== Description
+== MILLIS_TO_TZ
 
 Converts an Epoch/UNIX timestamp into the specified time zone in the specified date string format.
 
-=== Arguments
+This function has an alias `MILLIS_TO_ZONE_NAME`.
+
+=== Syntax
+
+....
+MILLIS_TO_TZ(date1, tz [, fmt])
+....
+
+==== Arguments
 
 date1::
 An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing a Epoch/UNIX timestamp in milliseconds.
@@ -2043,13 +2117,17 @@ SELECT MILLIS_TO_TZ(1463284740000, 'America/New_York') as est,
 ====
 
 [#fn-date-millis-to-utc]
-== MILLIS_TO_UTC(date1 [, fmt])
-
-=== Description
+== MILLIS_TO_UTC
 
 Converts an Epoch/UNIX timestamp into local time in the specified date string format.
 
-=== Arguments
+=== Syntax
+
+....
+MILLIS_TO_UTC(date1 [, fmt])
+....
+
+==== Arguments
 
 date1::
 An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing a Epoch/UNIX timestamp in milliseconds.
@@ -2090,20 +2168,19 @@ SELECT MILLIS_TO_UTC(1463284740000) as full_date,
 ----
 ====
 
-[#fn-date-millis-to-zone-name]
-== MILLIS_TO_ZONE_NAME(date1, tz [, fmt])
-
-Alias for <<fn-date-millis-to-tz,MILLIS_TO_TZ()>>
-
 [#fn-date-now-local]
-== NOW_LOCAL([fmt])
-
-=== Description
+== NOW_LOCAL
 
 The timestamp of the query as date string in the system timezone.
 Will not vary during a query.
 
-=== Arguments
+=== Syntax
+
+....
+NOW_LOCAL([fmt])
+....
+
+==== Arguments
 
 fmt::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
@@ -2172,14 +2249,18 @@ SELECT NOW_LOCAL(), NOW_LOCAL(), NOW_LOCAL(), NOW_LOCAL(), NOW_LOCAL(), CLOCK_LO
 ====
 
 [#fn-date-now-millis]
-== NOW_MILLIS()
-
-=== Description
+== NOW_MILLIS
 
 The timestamp of the query as an Epoch/UNIX timestamp.
 Will not vary during a query.
 
-=== Arguments
+=== Syntax
+
+....
+NOW_MILLIS()
+....
+
+==== Arguments
 
 This function accepts no arguments.
 
@@ -2238,14 +2319,18 @@ SELECT NOW_MILLIS(), NOW_MILLIS(), NOW_MILLIS(), NOW_MILLIS(), CLOCK_MILLIS();
 ====
 
 [#fn-date-now-tz]
-== NOW_TZ(tz [, fmt])
-
-=== Description
+== NOW_TZ
 
 The timestamp of the query as date string in the specified timezone.
 Will not vary during a query.
 
-=== Arguments
+=== Syntax
+
+....
+NOW_TZ(tz [, fmt])
+....
+
+==== Arguments
 
 tz::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the <<date-timezone,timezone>> to convert the query timestamp to.
@@ -2319,14 +2404,18 @@ SELECT NOW_TZ('UTC'), NOW_TZ('UTC'), NOW_TZ('UTC'), CLOCK_TZ('UTC');
 ====
 
 [#fn-date-now-str]
-== NOW_STR([fmt])
-
-=== Description
+== NOW_STR
 
 The timestamp of the query as date string in the system timezone.
 Will not vary during a query.
 
-=== Arguments
+=== Syntax
+
+....
+NOW_STR([fmt])
+....
+
+==== Arguments
 
 fmt::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
@@ -2396,14 +2485,18 @@ SELECT NOW_STR(), NOW_STR(), NOW_STR(), NOW_STR(), NOW_STR(), NOW_STR(), CLOCK_S
 ====
 
 [#fn-date-now-utc]
-== NOW_UTC([fmt])
-
-=== Description
+== NOW_UTC
 
 The timestamp of the query as date string in UTC.
 Will not vary during a query.
 
-=== Arguments
+=== Syntax
+
+....
+NOW_UTC([fmt])
+....
+
+==== Arguments
 
 fmt::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a <<date-string,supported date format>> to output the result as.
@@ -2470,9 +2563,7 @@ SELECT NOW_UTC(), NOW_UTC(), NOW_UTC(), NOW_UTC(), NOW_UTC(), NOW_UTC(), NOW_UTC
 ====
 
 [#fn-date-str-to-duration]
-== STR_TO_DURATION(duration)
-
-=== Description
+== STR_TO_DURATION
 
 Converts a string representation of a time duration into nanoseconds.
 This accepts the following units:
@@ -2484,7 +2575,13 @@ This accepts the following units:
 * minutes (`m`)
 * hours (`h`)
 
-=== Arguments
+=== Syntax
+
+....
+STR_TO_DURATION(duration)
+....
+
+==== Arguments
 
 duration::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the duration to convert.
@@ -2525,13 +2622,17 @@ STR_TO_DURATION('1s') as second;
 ====
 
 [#fn-date-str-to-millis]
-== STR_TO_MILLIS(date1 [, format])
-
-=== Description
+== STR_TO_MILLIS
 
 Converts a date string to Epoch/UNIX milliseconds.
 
-=== Arguments
+=== Syntax
+
+....
+STR_TO_MILLIS(date1 [, format])
+....
+
+==== Arguments
 
 date1::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing the date to convert to Epoch/UNIX milliseconds.
@@ -2589,15 +2690,19 @@ AS Milliseconds;
 ====
 
 [#fn-date-str-to-utc]
-== STR_TO_UTC(date1 [, [input-fmt,] fmt])
-
-=== Description
+== STR_TO_UTC
 
 Converts a date string into the equivalent date in UTC.
 By default, the output date format follows the date format of the date passed as input.
-However, you can specify a different output format if needed. 
+However, you can specify a different output format if needed.
 
-=== Arguments
+=== Syntax
+
+....
+STR_TO_UTC(date1 [, [input-fmt,] fmt])
+....
+
+==== Arguments
 
 date1::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a date in a <<date-string,supported date format>>.
@@ -2647,15 +2752,21 @@ SELECT STR_TO_UTC('1111-11-11T00:00:00+08:00') as full_date,
 ====
 
 [#fn-date-str-to-tz]
-== STR_TO_TZ(date1, tz [, [input-fmt,] fmt]) 
-
-=== Description
+== STR_TO_TZ
 
 Converts a date string to its equivalent in the specified timezone.
 By default, the output date format follows the date format of the date passed as input.
-However, you can specify a different output format if needed. 
+However, you can specify a different output format if needed.
 
-=== Arguments
+This function has an alias `STR_TO_ZONE_NAME`.
+
+=== Syntax
+
+....
+STR_TO_TZ(date1, tz [, [input-fmt,] fmt])
+....
+
+==== Arguments
 
 date1::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a date in a <<date-string,supported date format>>.
@@ -2715,19 +2826,18 @@ SELECT STR_TO_TZ('1111-11-11T00:00:00+08:00', 'America/New_York') as est,
 ----
 ====
 
-[#fn-date-str-to-zone-name]
-== STR_TO_ZONE_NAME(date1, tz)
-
-Alias for <<fn-date-str-to-tz,STR_TO_TZ()>>.
-
-== WEEKDAY_MILLIS(expr [, tz ])
-
-=== Description
+== WEEKDAY_MILLIS
 
 Converts a date string to its equivalent in the specified timezone.
 The output date format follows the date format of the date passed as input.
 
-=== Arguments
+=== Syntax
+
+....
+WEEKDAY_MILLIS(expr [, tz ])
+....
+
+==== Arguments
 
 expr:: An integer, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to an integer, representing an Epoch/UNIX timestamp in milliseconds.
 
@@ -2760,15 +2870,20 @@ SELECT WEEKDAY_MILLIS(1486237655742, 'America/Tijuana') as Day;
 ]
 ----
 ====
-== WEEKDAY_STR(date)
 
-=== Description
+== WEEKDAY_STR
 
 Returns the day of the week string value from the input date string.
 Returns the weekday name from the input date in Unix timestamp.
 Note that his function returns the string value of the day of the week, where <<fn-date-part-str,DATE_PART_STR()>> with part = "dow" returns an integer value of the weekday (0-6).
 
-=== Arguments
+=== Syntax
+
+....
+WEEKDAY_STR(date)
+....
+
+==== Arguments
 
 date::
 A string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, representing a date in a <<date-string,supported date format>>.
@@ -2798,3 +2913,9 @@ SELECT WEEKDAY_STR('2017-02-05') as Day;
 ]
 ----
 ====
+
+== Aliases
+
+* `MILLIS_TO_LOCAL` is an alias for <<fn-date-millis-to-str>>.
+* `MILLIS_TO_ZONE_NAME` is an alias for <<fn-date-millis-to-tz>>.
+* `STR_TO_ZONE_NAME` is an alias for <<fn-date-str-to-tz>>.
