@@ -7,16 +7,24 @@
 Regular expressions can formally represent various string search patterns using different special characters to indicate wildcards, positional characters, repetition, optional or mandatory sequences of letters, etc.
 {sqlpp} functions are available to find matching patterns, find position of matching pattern, or replace a pattern with a new string.
 
-For more information on all supported REGEX patterns, see https://golang.org/pkg/regexp/syntax[^].
+For more information about all supported REGEX patterns, see https://golang.org/pkg/regexp/syntax[^].
 
 NOTE: From Couchbase Server 5.0, {sqlpp} supports regular expressions supported by The Go Programming Language version 1.8.
 
 [[section_regex_contains,REGEXP_CONTAINS()]]
-== REGEXP_CONTAINS(`expression`, `pattern`)
+== REGEXP_CONTAINS
 
-This function has an alias <<aliases,REGEX_CONTAINS()>>.
+Checks whether a string contains a substring that matches a regular expression pattern.
 
-=== Arguments
+This function has an alias `REGEX_CONTAINS`.
+
+=== Syntax
+
+....
+REGEXP_CONTAINS(expression, pattern)
+....
+
+==== Arguments
 
 expression:: String, or any {sqlpp} expression that evaluates to a string.
 
@@ -28,16 +36,18 @@ Returns TRUE if the string value contains any sequence that matches the regular 
 
 === Example
 
-include::ROOT:partial$query-context.adoc[tag=section]
-
 ====
 .Query
 [source,sqlpp]
 ----
 SELECT name
-FROM landmark
-WHERE REGEXP_CONTAINS(name, "In+.*")
-LIMIT 5;
+FROM [
+  {"name": "Beijing Inn"},
+  {"name": "Sportsman Inn"},
+  {"name": "Downtown Cafe"},
+  {"name": "Central Bakery"}
+] AS landmark
+WHERE REGEXP_CONTAINS(name, "In+.*");
 ----
 
 .Results
@@ -49,26 +59,25 @@ LIMIT 5;
   },
   {
     "name": "Sportsman Inn"
-  },
-  {
-    "name": "In-N-Out Burger"
-  },
-  {
-    "name": "Mel's Drive-In"
-  },
-  {
-    "name": "Inverness Castle"
   }
 ]
 ----
 ====
 
 [[section_regex_like,REGEXP_LIKE()]]
-== REGEXP_LIKE(`expression`, `pattern`)
+== REGEXP_LIKE
 
-This function has an alias <<aliases,REGEX_LIKE()>>.
+Checks whether a string exactly matches a regular expression pattern.
 
-=== Arguments
+This function has an alias `REGEX_LIKE`.
+
+=== Syntax
+
+....
+REGEXP_LIKE(expression, pattern)
+....
+
+==== Arguments
 
 expression:: String, or any {sqlpp} expression that evaluates to a string.
 
@@ -80,16 +89,18 @@ Returns TRUE if the string value exactly matches the regular expression pattern.
 
 === Example
 
-include::ROOT:partial$query-context.adoc[tag=section]
-
 ====
 .Query
 [source,sqlpp]
 ----
 SELECT name
-FROM landmark
-WHERE REGEXP_LIKE(name, "In+.*")
-LIMIT 5;
+FROM [
+  {"name": "Inverness Castle"},
+  {"name": "Beijing Inn"},
+  {"name": "International Petroleum Exchange"},
+  {"name": "Central Bakery"}
+] AS landmark
+WHERE REGEXP_LIKE(name, "In+.*");
 ----
 
 .Results
@@ -97,16 +108,7 @@ LIMIT 5;
 ----
 [
   {
-    "name": "In-N-Out Burger"
-  },
-  {
     "name": "Inverness Castle"
-  },
-  {
-    "name": "Inverness Museum & Art Gallery"
-  },
-  {
-    "name": "Inverness Botanic Gardens"
   },
   {
     "name": "International Petroleum Exchange"
@@ -116,11 +118,19 @@ LIMIT 5;
 ====
 
 [[section_regex_matches,REGEXP_MATCHES()]]
-== REGEXP_MATCHES(`expression`, `pattern`)
+== REGEXP_MATCHES
+
+Returns all substrings in a string that match a regular expression pattern.
 
 // This function has no alias
 
-=== Arguments
+=== Syntax
+
+....
+REGEXP_MATCHES(expression, pattern)
+....
+
+==== Arguments
 
 expression:: String, or any {sqlpp} expression that evaluates to a string.
 
@@ -128,7 +138,7 @@ pattern:: String representing a supported regular expression.
 
 === Return Value
 
-Returns an array of all substrings matching the expression _pattern_ within the input string _expression_.
+Returns an array of all substrings matching the expression `pattern` within the input string `expression`.
 Returns an empty array if no match is found.
 
 === Examples
@@ -191,15 +201,23 @@ SELECT REGEXP_MATCHES("So, 'twas better Betty Botter bought a bit of better butt
 ]
 ----
 
-<1> Note that `Betty Botter` is not found in this example, because `Betty` has already been found by the first match.
+<1> This example does not find `Betty Botter` because the first match already found `Betty`.
 ====
 
 [[section_regex_position,REGEXP_POSITION()]]
-== REGEXP_POSITION(`expression`, `pattern`)
+== REGEXP_POSITION
 
-This function has an alias <<aliases,REGEX_POSITION()>>.
+Returns the position of the first substring in a string that matches a regular expression pattern.
 
-=== Arguments
+This function has an alias `REGEX_POSITION`.
+
+=== Syntax
+
+....
+REGEXP_POSITION(expression, pattern)
+....
+
+==== Arguments
 
 expression:: String, or any {sqlpp} expression that evaluates to a string.
 
@@ -207,23 +225,23 @@ pattern:: String representing a supported regular expression.
 
 === Return Value
 
-Returns first position of the occurrence of the regular expression _pattern_ within the input string _expression_.
-Returns -1 if no match is found.
+Returns first position of the occurrence of the regular expression `pattern` within the input string `expression`.
+Returns `-1` if no match is found.
 Position counting starts from zero.
 
 === Example
 
-include::ROOT:partial$query-context.adoc[tag=section]
-
 ====
-The following query finds positions of first occurrence of vowels in each word of the _name_ attribute.
+The following query finds positions of first occurrence of vowels in each word of the `name` attribute.
 
 .Query
 [source,sqlpp]
 ----
 SELECT name, ARRAY REGEXP_POSITION(x, "[aeiou]") FOR x IN TOKENS(name) END
-FROM hotel
-LIMIT 2;
+FROM [
+  {"name": "Medway Youth Hostel"},
+  {"name": "The Balmoral Guesthouse"}
+] AS hotel;
 ----
 
 .Results
@@ -249,15 +267,23 @@ LIMIT 2;
 ]
 ----
 
-Note that the order of tokens in the second result may be different.
+The order of tokens in the second result may be different.
 ====
 
 [[section_regex_replace,REGEXP_REPLACE()]]
-== REGEXP_REPLACE(`expression`, `pattern`, `repl` [, `n`])
+== REGEXP_REPLACE
 
-This function has an alias <<aliases,REGEX_REPLACE()>>.
+Replaces substrings that match a regular expression pattern with a specified string.
 
-=== Arguments
+This function has an alias `REGEX_REPLACE`.
+
+=== Syntax
+
+....
+REGEXP_REPLACE(expression, pattern, repl [, n])
+....
+
+==== Arguments
 
 expression:: String, or any {sqlpp} expression that evaluates to a string.
 
@@ -269,13 +295,12 @@ n:: [Optional] The maximum number of times to find and replace the matching patt
 
 === Return Value
 
-Returns new string with occurrences of pattern replaced with _repl_.
-If _n_ is given, at the most _n_ replacements are performed.
-If _n_ is not provided, all matching occurrences are replaced.
+Returns new string with occurrences of pattern replaced with `repl`.
+
+* If you provide `n`, the function performs at most `n` replacements.
+* If you do not provide `n`, the function replaces all matching occurrences.
 
 === Examples
-
-include::ROOT:partial$query-context.adoc[tag=section]
 
 .REGEXP_REPLACE() Example 1
 ====
@@ -302,14 +327,18 @@ SELECT REGEXP_REPLACE("Sql++ is sql for NoSql", "[sS][qQ][lL]", "SQL"),
 
 .REGEXP_REPLACE() Example 2
 ====
-In this example, the query retrieves first 4 documents and replaces the pattern of repeating n with emphasized NNNN.
+In this example, the query replaces the pattern of repeating `n` with emphasized `NNNN` in each name.
 
 .Query
 [source,sqlpp]
 ----
-SELECT name, REGEXP_REPLACE(name, "n+", "NNNN") as new_name
-FROM airline
-LIMIT 4;
+SELECT name, REGEXP_REPLACE(name, "n+", "NNNN") AS new_name
+FROM [
+  {"name": "40-Mile Air"},
+  {"name": "Texas Wings"},
+  {"name": "Atifly"},
+  {"name": "Jc royal.britannica"}
+] AS airline;
 ----
 
 .Results
@@ -337,11 +366,19 @@ LIMIT 4;
 ====
 
 [[section_regex_split,REGEXP_SPLIT()]]
-== REGEXP_SPLIT(`expression`, `pattern`)
+== REGEXP_SPLIT
+
+Splits a string into an array of substrings using a regular expression pattern as the delimiter.
 
 // This function has no alias
 
-=== Arguments
+=== Syntax
+
+....
+REGEXP_SPLIT(expression, pattern)
+....
+
+==== Arguments
 
 expression:: String, or any {sqlpp} expression that evaluates to a string.
 
@@ -349,7 +386,7 @@ pattern:: String representing a supported regular expression.
 
 === Return Value
 
-Returns an array of all the substrings created by splitting the input string _expression_ at each occurrence of the expression _pattern_.
+Returns an array of all the substrings created by splitting the input string `expression` at each occurrence of the expression `pattern`.
 Returns an empty array if no match is found.
 
 === Example
@@ -386,7 +423,7 @@ REGEXP_SPLIT("/opt/couchbase/bin", "/") AS Unix;
 ]
 ----
 
-<1> The `REGEXP_SPLIT` function returns any zero-length matches that occur at the start of the _expression_ string, except when the split pattern is zero-length.
+<1> The `REGEXP_SPLIT` function returns any zero-length matches that occur at the start of the `expression` string, except when the split pattern is zero-length.
 Otherwise, it returns any zero-length matches immediately after a previous match.
 ====
 
@@ -395,7 +432,7 @@ Otherwise, it returns any zero-length matches immediately after a previous match
 
 Some pattern-matching functions have an alias whose name begins with `REGEX_`.
 
-* `REGEX_CONTAINS()` is an alias for <<section_regex_contains>>.
-* `REGEX_LIKE()` is an alias for <<section_regex_like>>.
-* `REGEX_POSITION()` is an alias for <<section_regex_position>>.
-* `REGEX_REPLACE()` is an alias for <<section_regex_replace>>.
+* `REGEX_CONTAINS` is an alias for <<section_regex_contains>>.
+* `REGEX_LIKE` is an alias for <<section_regex_like>>.
+* `REGEX_POSITION` is an alias for <<section_regex_position>>.
+* `REGEX_REPLACE` is an alias for <<section_regex_replace>>.
