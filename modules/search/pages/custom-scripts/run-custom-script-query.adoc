@@ -1,0 +1,114 @@
+= Run a Custom Script Search Query
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:page-status: Couchbase Server 8.5
+:description: Run a custom script query to add custom filtering or scoring logic to a Search query using a JavaScript user-defined function (UDF).
+:tabs:
+
+[abstract]
+{description}
+
+For more information about custom script queries, see xref:custom-scripts/custom-script-queries.adoc[].
+
+== Prerequisites
+
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+
+* You have enabled custom script query execution for your cluster.
+For more information, see xref:custom-scripts/enable-custom-script.adoc[].
+
+* You have a bucket with scopes and collections in your cluster.
+For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[]. 
+
+* You have created a Search index. 
++
+For more information about how to create a Search index, see xref:create-search-indexes.adoc[].
+
+* Your user account has the xref:learn:security/roles.adoc#search-admin[`Search Admin`] or xref:learn:security/roles.adoc#search-reader[`Search Reader`] role for the bucket or buckets that contain the Search indexes you want to search.
+
+* If you want to run your search with the REST API: 
+** You need the hostname or IP address for the node in your cluster where you're running the Search Service.
+For more information about where to find the IP address for your node, see xref:server:manage:manage-nodes/list-cluster-nodes.adoc[].
+** You need the Couchbase command-line tool (CLI) or another API client.
+
+== Procedure
+
+To run a custom script query with the Search Service: 
+
+[{tabs}]
+====
+{page-ui-name}::
++
+--
+. Go to *Search*.
+. Click the index where you want to run a search.
+. In the *Search this index* field, enter a search query.
++
+For example, the following custom script query, a `custom_filter` query, takes the values from the `reviews.ratings.Cleanliness` array.
+The query calculates an average rating for the `Cleanliness` score, and compares it to the value in `params.min` to decide whether to keep the document in the results list: 
++
+[source,json]
+.Custom Filter Script Query
+----
+include::example$custom-scripts/query-custom-filter.jsonc[tag=full]
+----
++
+You could also run a `custom_score` query that takes the values from the `reviews.ratings.Cleanliness` array and boosts a document's score if the average rating for `Cleanliness` is greater than `3.0`: 
++
+[source,json]
+.Custom Score Script Query
+----
+include::example$custom-scripts/query-custom-score.jsonc[tag=full]
+----
+. Press kbd:[Enter] or click btn:[Search].
++
+If you used the example queries with the `travel-sample` dataset, your search results might include documents like `hotel_16686`.
+
+--
+
+REST API::
++
+--
+. In your command-line tool, enter a `curl` command with the `XPOST` verb. 
+. Set your header content to include `"Content-Type: application/json"`.
+. Enter your username, password, and the Search Service endpoint on port `8094` with the name of the index you want to query: 
++
+[source,console]
+----
+include::example$run-search-header.sh[]
+----
++
+To use SSL, use the `https` protocol in the Search Service endpoint URL and port `18094`. 
+. Enter the JSON payload for your query as the body of your request.
++
+For example, the following custom script query, a `custom_filter` query, takes the values from the `reviews.ratings.Cleanliness` array.
+The query calculates an average rating for the `Cleanliness` score, and compares it to the value in `params.min` to decide whether to keep the document in the results list: 
++
+[source,json]
+.Custom Filter Script Query
+----
+include::example$custom-scripts/query-custom-filter.jsonc[tag=full]
+----
++
+You could also run a `custom_score` query that takes the values from the `reviews.ratings.Cleanliness` array and boosts a document's score if the average rating for `Cleanliness` is greater than `3.0`: 
++
+[source,json]
+.Custom Score Script Query
+----
+include::example$custom-scripts/query-custom-score.jsonc[tag=full]
+----
++
+If you used the example queries with the `travel-sample` dataset, your search results might include documents like `hotel_16686`.
+
+--
+====
+
+== Next Steps
+
+For more information about how to format a Search query, see xref:search-request-params.adoc[].
+
+For more information about the different features you can add to your Search index, see xref:customize-index.adoc[].
+
+To collect additional information from your Search index while running a query, see xref:search-facets.adoc[].

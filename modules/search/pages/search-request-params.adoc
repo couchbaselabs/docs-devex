@@ -388,6 +388,7 @@ You can create objects in a `conjuncts` array to describe any of the available q
 * <<numeric-range-queries,Numeric Range Queries>>
 * <<date-range-queries,Date Range Queries>>
 * <<term-range-queries,Term Range Queries>>
+* <<ip-address-range-queries,IP Address Range Queries>>
 * <<geopoint-queries-distance,Distance/Radius-Based Geopoint Queries>>
 * <<geopoint-queries-rectangle,Rectangle-Based Geopoint Queries>>
 * <<geopoint-queries-polygon,Polygon-Based Geopoint Queries>>
@@ -424,6 +425,7 @@ You can create objects in a `disjuncts` array to describe any of the available q
 * <<numeric-range-queries,Numeric Range Queries>>
 * <<date-range-queries,Date Range Queries>>
 * <<term-range-queries,Term Range Queries>>
+* <<ip-address-range-queries,IP Address Range Queries>>
 * <<geopoint-queries-distance,Distance/Radius-Based Geopoint Queries>>
 * <<geopoint-queries-rectangle,Rectangle-Based Geopoint Queries>>
 * <<geopoint-queries-polygon,Polygon-Based Geopoint Queries>>
@@ -1829,8 +1831,165 @@ include::example$query-special.jsonc[tag=match_none]
 
 |====
 
+[#custom-filter-queries]
+=== Custom Filter Queries
+[.status]#Couchbase Server 8.5#
+
+From Couchbase Server version 8.5 and later, you can use a `custom_filter` query to run a JavaScript user-defined function (UDF) during query execution that adds or removes a document from your search results by returning a `boolean` value.
+
+NOTE: You must xref:enable-custom-script-queries.adoc[turn on Custom Script Query Execution] on your cluster before you can run a `custom_filter` query.
+
+For example, the following `custom_filter` query calculates the average `Cleanliness` rating from a `hotel` document's reviews.
+Documents are only added to search results if this average rating is greater than or equal to `3.0`:
+
+[source,json]
+----
+include::example$custom-scripts/query-custom-filter.jsonc[tag=short]
+----
+
+A `custom_filter` query can contain the following properties: 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|query
+|Object
+|Yes
+a| A `custom_filter` query object must contain a nested <<query-object,`query` object>>, which can be any other valid query - including <<boolean-queries,Boolean Queries>> and <<compound-queries,Compound Queries>>.
+This nested query runs to find matching documents to pass to your user-defined function (UDF).
+
+|source
+|String
+|Yes
+a| The JavaScript source code for your UDF, as a single string.
+
+Your `source` property must include a named function declaration, such as: 
+
+----
+function my_score(doc, params) { ... }
+----
+
+The function must return a Boolean value.
+
+If the function returns `true`, the Search Service keeps the document in your search results.
+If the function returns `false`, the Search Service removes the document from your search results.
+
+|params
+|Object
+|No
+a| A JSON object with any parameters that you want to pass to your UDF.
+
+Access the `params` object from inside your UDF's `source` code as the function's second argument.
+Access values using dot notation - for example, `params.min`.
+
+|fields
+|Array of Strings
+|No
+a| An array of xref:child-field-options-reference.adoc#store[stored] field names from your Search index that you want to pass to your UDF.
+
+Access the field values from inside your UDF's `source` code through the `doc.fields` object.
+Any nested object fields from your documents must use bracket notation and be surrounded by escaped quotes (`\"`), as shown in the preceding example query.
+
+The Search Service converts stored field values to the following JavaScript types before passing them to your UDF:
+
+* Text fields become strings.
+* Numeric fields become numbers.
+* Boolean fields become Booleans.
+* Vector, geopoint, and geoshape fields become arrays.
+
+You can set `fields` to `["*"]` to pass every available stored field from your Search index to your UDF, but this can negatively affect your Search performance. 
+
+If a field is not stored in your Search index, your UDF receives the value of that field as `undefined`.
+
+|====
+
+[#custom-score-queries]
+=== Custom Score Queries
+[.status]#Couchbase Server 8.5#
+
+From Couchbase Server version 8.5 and later, you can use a `custom_score` query to run a JavaScript user-defined function (UDF) that calculates a new score for documents in your search results.
+
+Unlike a <<custom-filter-query,`custom_filter` query>>, a `custom_score` query never removes documents from your search results.
+Every document that matches the inner `query` object keeps its place in your results, with a new score from your UDF.
+
+NOTE: You must xref:enable-custom-script-queries.adoc[turn on Custom Script Query Execution] on your cluster before you can run a `custom_score` query.
+
+For example, the following `custom_score` query takes the values from the `reviews.ratings.Cleanliness` array and boosts a document's score if the average rating for `Cleanliness` is greater than `3.0`: 
+
+[source,json]
+----
+include::example$custom-scripts/query-custom-score.jsonc[tag=short]
+----
+
+A `custom_score` query can contain the following properties: 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|query
+|Object
+|Yes
+a| A `custom_score` query object must contain a nested <<query-object,`query` object>>, which can be any other valid query - including <<boolean-queries,Boolean Queries>> and <<compound-queries,Compound Queries>>.
+This nested query runs to find matching documents to pass to your user-defined function (UDF).
+
+|source
+|String
+|Yes
+a| The JavaScript source code for your UDF, as a single string.
+
+Your `source` property must include a named function declaration, such as: 
+
+----
+function my_score(doc, params) { ... }
+----
+
+The function must return a numeric value, such as:
+
+* `float64`
+* `int`
+* `int64`
+* `uint64`
+
+The Search Service uses the returned value from your UDF as the document's new score in your search results.
+If your UDF returns a runtime error, the Search Service uses the document's original score, instead.
+
+You can access a document's original score value in your `source` object with `doc.score`.
+
+|params
+|Object
+|No
+a| A JSON object with any parameters that you want to pass to your UDF.
+
+Access the `params` object from inside your UDF's `source` code as the function's second argument.
+Access values using dot notation - for example, `params.min`.
+
+|fields
+|Array of Strings
+|No
+a| An array of xref:child-field-options-reference.adoc#store[stored] field names from your Search index that you want to pass to your UDF.
+
+Access the field values from inside your UDF's `source` code through the `doc.fields` object.
+Any nested object fields from your documents must use bracket notation and be surrounded by escaped quotes (`\"`), as shown in the preceding example query.
+
+The Search Service converts stored field values to the following JavaScript types before passing them to your UDF:
+
+* Text fields become strings.
+* Numeric fields become numbers.
+* Boolean fields become Booleans.
+* Vector, geopoint, and geoshape fields become arrays.
+
+You can set `fields` to `["*"]` to pass every available stored field from your Search index to your UDF, but this can negatively affect your Search performance.
+
+If a field is not stored in your Search index, your UDF receives the value of that field as `undefined`.
+
+|====
+
+TIP: To reduce the resource costs for custom script queries, consider using a <<custom-filter-query,`custom_filter` query>> to reduce the number of matching documents before you change your document scores with a `custom_score` query.
+
 [#additional-query-properties]
-=== Additional Query Object Properties 
+=== Additional Query Object Properties
 
 You can use the following properties to modify the results returned by specific query types. 
 

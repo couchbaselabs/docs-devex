@@ -1,0 +1,114 @@
+= Use Custom Script Queries for Custom Result Logic
+:page-topic-type: concept
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:page-status: Couchbase Server 8.5
+:description: Use a custom script query to run a JavaScript user-defined function (UDF) that adds custom filtering or scoring logic to your Search query.
+
+[abstract]
+{description}
+
+With a custom script query, you can add custom JavaScript to a query that can either: 
+
+* Include or exclude a document from your search results.
+* Change a document's score. 
+
+You must xref:enable-custom-script-queries.adoc[turn on Custom Script Query Execution] on your cluster before you can run a custom script query.
+
+== Why Use Custom Script Queries
+
+Some ranking logic is difficult to express with a standard Search query. 
+
+For example, if you wanted to run a search for hotels in a specific area, that: 
+
+* Follows a formula of `price_per_night * number_of_nights \<= budget`
+* Prefers cheaper hotels close to the city center
+
+To express that logic with a standard Search query, you would need to create a lot of fields in your Search index, and the query would need multiple disjuncts and `boost` parameters that would be complex to maintain: 
+
+[source,json]
+----
+include::example$custom-scripts/complex-standard-query.jsonc[]
+----
+
+In its current state, the query: 
+
+* Requires precalculated values for `total_cost` and `distanceFromCenterKm`.
+* Queries the `price` field twice, but uses a different `boost` value based on whether the `price` is less than `100` or between `100-200`.
+* Queries the `distanceFromCenterKm` twice, but also uses a different `boost` value based on the distance. 
+
+Maintaining this logic inside the query and your application can increase complexity and index size if you need to change the logic later.
+The multiple `boost` values also increase query parsing time.
+
+If you use a custom script query, you can set a centralized place to control all of this logic.
+Custom script queries also make sure you only run the logic on documents that match an initial query, instead of every document. 
+
+For example, the complex query for the hotel stay, using a custom script query, could look like the following:
+
+[source,json]
+----
+include::example$custom-scripts/simplified-script-query.jsonc[]
+----
+
+With the custom script query, the logic for the base query is much simpler, and you: 
+
+* Do not need to create and calculate extra fields for filters.
+* Can write complex conditions with normal code, such as `if`/`else` statements and arithmetic, instead of multiple query clauses and boosts.
+* Can change your filter or scoring rules by updating your UDF, instead of reindexing your data.
+
+== Custom Script Query Types
+
+The Search Service supports 2 types of custom script queries:
+
+[cols="1,3"]
+|====
+|Query Type |Description
+
+|xref:search-request-params.adoc#custom-filter-queries[`custom_filter`]
+a|Runs a UDF that returns a Boolean value.
+
+The Search Service adds a document to your search results if the UDF returns `true`, and removes the document from your search results if the UDF returns `false`.
+
+|xref:search-request-params.adoc#custom-score-queries[`custom_score`]
+a|Runs a UDF that returns a numeric value.
+The Search Service uses the returned value as the document's new score in your search results.
+
+Unlike a `custom_filter` query, a `custom_score` query never removes documents from your search results.
+Every document that matches the inner `query` object is kept in your results, with a new score from your UDF.
+If your UDF returns a runtime error, the Search Service uses the document's original score, instead.
+
+|====
+
+TIP: To keep your resource costs lower, use a `custom_filter` query to reduce your total number of matching documents, before you change your document scores with a `custom_score` query.
+
+== Information Access and Recommendations 
+
+Custom script queries can only access a document's:
+
+* ID value.
+* Score.
+* Any fields that you choose to pass that are already xref:child-field-options-reference.adoc#store[stored] in your Search index.
+
+[NOTE]
+====
+You can choose to pass all available fields to a UDF inside a custom script query, but this can negatively affect your Search performance.
+Try to pass only the fields your UDF needs to run your logic.
+
+For more information about how to pass fields to your UDF, see the `fields` property for a xref:search-request-params.adoc#custom-filter-queries[`custom_filter`] or xref:search-request-params.adoc#custom-score-queries[`custom_score`] query.
+====
+
+The Search Service does not implement a global registry or shared mutable state across requests.
+In general, try to keep the UDFs for your custom script queries:
+
+* Small
+* Deterministic
+* Free of side effects
+
+Every UDF runs inside a restricted JavaScript environment, with an execution timeout.
+These limits help prevent a UDF from consuming excessive resources or running indefinitely.
+
+== See Also
+
+* xref:custom-scripts/enable-custom-script.adoc[]
+* xref:custom-scripts/run-custom-script-query.adoc[]
+* xref:search-request-params.adoc[]
