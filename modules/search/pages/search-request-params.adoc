@@ -61,7 +61,7 @@ The `size` property is added by default to all Search requests, if not otherwise
 If you do not provide a `from`, `size`, or other pagination settings in your query, the Search Service defaults to a `size` value of `10` and a `from` value of `0`.
 This means the Search Service does not offset results, and returns the first `10` matches to your query.
 
-|from/offset |Integer |No a|
+|[[from-offset]]from/offset |Integer |No a|
 
 Set an offset value to change where pagination starts for search results, based on the Search query's <<sort,>>. 
 
@@ -116,6 +116,8 @@ The strings can be:
 
 For more information about the properties for a `sort` JSON object, see <<sort,>>.
 
+If you want to use the `score` property to use a xref:score-fusion/about-score-fusion.adoc[score fusion algorithm] with a hybrid search query, your `sort` object must sort by `-_score` (descending order).
+
 |[[includelocations]]includeLocations |Boolean |No a|
 
 To return the position of each occurrence of a search term inside a document, set `includeLocations` to `true`. 
@@ -125,11 +127,27 @@ For more information about how to enable term vectors, see xref:child-field-opti
 
 To turn off term locations, set `includeLocations` to `false`.
 
-|score |String |No a|
+|[[score]]score |String |No a|
 
-To turn off document relevancy scoring in search results, set `score` to `none`.
+Use the `score` property to set the specific xref:score-fusion/about-score-fusion.adoc[score fusion algorithm] you want to use when running a hybrid search, or to omit document scoring from search results.
 
-To turn on document relevancy scoring in search results, remove the `score` property.
+You can set `score` to 1 of the following strings:
+
+* `rrf`: Use the xref:score-fusion/about-score-fusion.adoc#rrf[Reciprocal Rank Fusion (RRF)] algorithm.
+* `rsf`: Use the xref:score-fusion/about-score-fusion.adoc#rsf[Relative Score Fusion (RSF)] algorithm.
+* `none`: Turn off document relevancy scoring in your search results.
+
+If you do not include the `score` property in your query, by default, the Search Service returns document relevancy scoring in search results.
+
+If you set `score` to `rrf` or `rsf`, you must include the `params` object in your query.
+You must also set your <<sort_arr,sort array>> to sort by score, in descending order.
+Score fusion algorithms do not support using <<search_after,search_after>> or <<search_before,search_before>>.
+
+|params |Object |Only if `score` is `rrf` or `rsf` a|
+
+Use the `params` object to set specific settings for your score fusion algorithm, when running a hybrid search. 
+
+For more information about the `params` object, see <<fusion-params,>>.
 
 |[[search_after]]search_after |Array |No a|
 
@@ -155,6 +173,8 @@ Set the `search_after` property to include the values from the last result on yo
 Use `search_after` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`. 
 `search_after` lets you start your search results from a specific result, rather than needing to process a number of search results to skip.
 
+You cannot use `search_after` if you set your <<score,score object>> to use a xref:score-fusion/about-score-fusion.adoc[score fusion algorithm] for a hybrid search.
+
 |[[search_before]]search_before |Array |No a|
 
 NOTE: If you use `search_before` in a search request, you cannot use `search_after`. Both properties are included in the example code to show the correct syntax.
@@ -178,6 +198,8 @@ Set the `search_before` property to include the values from the last result on y
 
 Use `search_before` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`.
 `search_before` lets you start your search results back from a specific result, rather than needing to process a number of search results to skip.
+
+You cannot use `search_before` if you set your <<score,score object>> to use a xref:score-fusion/about-score-fusion.adoc[score fusion algorithm] for a hybrid search.
 
 |[[collections]]collections |Array |No |Contains an array of strings that specify the collections where you want to run the query. 
 
@@ -204,7 +226,7 @@ An object in the `knn` array can contain the following properties:
 |====
 |Property |Type |Required? |Description
 
-|k |Integer |Yes a|
+|[[k]]k |Integer |Yes a|
 
 Enter the total number of results that you want to return from your Vector Search query. 
 
@@ -2282,6 +2304,8 @@ TIP: For the best results with sorting and page navigation in search results, al
 This means that if 2 documents have the same value in `field1`, then the Search Service will sort them again based on their `field2` values.
 If they have the same value in `field2`, then sorting will happen again based on each document's score, and then finally the documents' ID values. 
 
+NOTE: If you want to use a xref:score-fusion/about-score-fusion.adoc[score fusion algorithm] in your <<score,`score` object>> and run a hybrid search query, the `sort` object in your query must sort your results by their scores, in descending order (`-_score`).
+
 The `sort` object can contain the following string values: 
 
 [cols="1,2"]
@@ -2302,7 +2326,7 @@ To sort in descending order based on a document's ID value, add a hyphen (-) bef
 
 |_score a|
 
-The Search Service sorts documents based on their score value, in ascending order. 
+The Search Service sorts documents based on their <<score,score>> value, in ascending order. 
 
 To sort in descending order based on a document's score, add a hyphen (-) before the underscore (_) in the `_score` string. 
 
@@ -2361,4 +2385,57 @@ When running a <<geopoint-queries-distance,Geopoint Distance/Radius query>>, you
 
 The unit of distance does not have to match the unit specified in the <<query-object,query object>>.
 
+|====
+
+[#fusion-params]
+== Score Fusion params Object
+
+Use the `params` object with the <<score,score property>> to configure your xref:score-fusion/about-score-fusion.adoc[score fusion algorithm] when running a hybrid search with the Search Service.
+
+The following `params` object configures the rank constant for the xref:score-fusion/about-score-fusion.adoc#rrf[Reciprocal Rank Fusion (RRF)] algorithm and sets a window size of `10`:
+
+[source,json]
+----
+include::example$run-search-full-request.jsonc[tag=fusion_params]
+----
+
+The `params` object can contain the following properties:
+
+[cols="2,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|[[score-rank-constant]]score_rank_constant |Integer |Only if <<score,score>> is `rrf` a|
+
+If you want to use the xref:score-fusion/about-score-fusion.adoc#rrf[Reciprocal Rank Fusion (RRF)] algorithm for your hybrid search, set `score_rank_constant` to control the rank constant value for your final score calculations.
+
+The rank constant controls how harshly a document is penalized for its rank in your RRF calculation. 
+A lower `score_rank_constant` will be more likely to rank any documents that land in the top scoring positions of your standard search or Vector Search.
+
+For example, if: 
+
+* Document A ranked #1 for your standard search, but did not rank for your Vector Search.
+* Document B ranked #10 for both your standard and Vector Search. 
+
+If you used a low `score_rank_constant`, such as a value between `0` and `20`, for the preceding results, Document A should rank higher than Document B. 
+If you used a higher `score_rank_constant`, such as a value between `60` and `100`, Document B should rank higher than Document A, due to the document having a consensus, or ranking on both searches.
+
+The recommended default value for your `score_rank_constant` to get the best balance is `60`.
+
+|[[score-window-size]]score_window_size |Integer |No a|
+
+Set the `score_window_size` to control the number of results that should be used in your score fusion calculation for your hybrid search query. 
+
+The `score_window_size` sets the final number of results returned for your query.
+A higher `score_window_size` increases the performance cost of your query, but increases the relevant hits you can return in your application.
+
+To set the `score_window_size`: 
+
+* Choose a value greater than or equal to <<size-limit,your query's `size` property>>. 
+* Choose a value greater than or equal to `1`.
+
+If `score_window_size` is greater than the <<k,`k` value>> in your Vector Search query, the query only returns `k` results.
+If `score_window_size` is less than the `k` value, `score_window_size` truncates your results.
+
+When paginating results from a hybrid query, make sure that the value in your query's <<from-offset,`from` property>> is always less than your `score_window_size`, to make sure the Search Service returns results.
 |====
