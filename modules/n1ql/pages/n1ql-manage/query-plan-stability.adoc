@@ -1,0 +1,137 @@
+= Query Plan Stability
+:page-topic-type: concept
+:page-status: Couchbase Server 8.5
+:page-edition: Enterprise Edition
+:description: Query Plan Stability enables you to save and reuse query plans across upgrades.
+
+[abstract]
+{description}
+
+== Overview
+
+Query Plan Stability (or Plan Stability) preserves query execution plans across Couchbase Server upgrades and restarts. 
+
+By default, the Query Service caches execution plans in memory for prepared statements. 
+However, the service clears cached plans after an upgrade, forcing the query optimizer in the new version to generate a different plan for the same query.
+This can cause unexpected changes in query performance.
+
+Plan Stability solves this issue by saving execution plans to persistent storage. 
+After an upgrade or restart, the Query Service automatically reloads and reuses these saved plans to maintain consistent query performance.
+
+== Key Benefits
+
+Plan Stability provides the following benefits: 
+
+* Queries can run with the same plan before and after upgrades.
+* Reduces the risk of performance degradation from plan changes.
+* Protects applications tuned for specific query plans.
+
+== Configuration Options
+
+You can set Plan Stability at the cluster level using the Couchbase Server Web Console or at the statement level.
+
+=== Cluster-Level Settings
+
+The cluster-level setting has 3 options:
+
+* `Off`: Plan Stability is turned off. 
+The Query Service does not save any execution plans. 
+* `On Prepared Statements`: Saves plans only for prepared statements, and generates a new plan for every ad-hoc query.
+* `On All Statements`: Saves plans for all queries, including prepared statements and ad-hoc queries.
+
+=== Statement-Level Settings
+
+You can also configure Plan Stability for individual queries. 
+When you create a prepared statement using `PREPARE`, include the `SAVE` keyword to save its plan to persistent storage.
+
+For instructions on how to configure these settings, see xref:n1ql:n1ql-manage/manage-plan-stability.adoc[].
+
+== How Plan Stability Works
+
+The following steps describe how Plan Stability works:
+
+. *Plan Generation*: 
+When a query runs, the Query Service checks if Plan Stability is active.
++
+* For prepared statements, the service saves the plan if you include the `SAVE` keyword during `PREPARE`, or if cluster-level Plan Stability set to  `On Prepared Statements` or `On All Statements`.
+
+* For ad-hoc queries, the service saves the plan only when Plan Stability mode is set to `On All Statements`. 
+The Query Service first 
+xref:n1ql:n1ql-language-reference/prepare.adoc#auto-prepare[auto-prepares] the query and then saves the plan.
+
+. *Persistence*:
+The Query Service then saves the generated plan to a dedicated storage bucket, `QUERY_METADATA`. 
+For more information, see <<storage>>.
+
+. *Reload*: 
+Upon a restart or upgrade, the Query Service reloads plans from `QUERY_METADATA` directly into memory.
+You can view saved plans using the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[system:prepareds] catalog.
+
+. *Plan Validation and Error Handling*:
+Before executing a saved plan, the Query Service verifies if all dependencies (such as indexes and keyspaces) still exist.
+If the verification fails, the configured error policy determines how the Query Service responds. 
+For more information, see <<error-policies>>.
+
+== Storage 
+
+Couchbase Server stores saved execution plans in a dedicated, user-level bucket called `QUERY_METADATA`.
+It automatically creates this bucket when you do one of the following:
+
+* Issue a `PREPARE` statement with the `SAVE` keyword.
+* Set the Plan Stability mode to `On Prepared Statements` or `On All Statements`.
+
+The `QUERY_METADATA` bucket uses a default memory quota of 100 MB.
+
+[NOTE]
+====
+* Users with admin privileges can drop the `QUERY_METADATA` bucket.
+* Dropping the bucket manually can trigger runtime errors during query execution.
+* Setting the Plan Stability mode to `Off` does not automatically drop this bucket.
+* If you drop the bucket, Couchbase Server automatically recreates it the next time you issue a `PREPARE` statement with `SAVE`, or set the Plan Stability mode to a setting other than `Off`.
+====
+
+== Error Policies
+
+Before running a saved query plan, the Query Service verifies whether the plan is still valid.
+A saved plan can become invalid over time. 
+For example, if an index used in the plan is dropped, the plan becomes invalid and cannot be used. 
+When plan verification fails, the Plan Stability error policy determines how the service responds.
+
+Plan Stability supports the following error policies:
+
+[cols ="1,3", options="header"]
+|===
+| Error Policy | Description
+
+| `Strict` 
+| Stops statement execution and returns an error to the application. 
+
+| `Moderate`
+| Reprepares the statement to generate and run a new plan. 
+The original saved plan remains unchanged. 
+
+This policy is useful when an index becomes temporarily unavailable. 
+Statement executions might use a suboptimal plan while the index is down, but the saved plan stays intact, and you can reuse it once the index becomes available. 
+
+| `Flexible`
+| Reprepares the statement to generate a new plan and replaces the saved plan with the new one.  
+
+This behavior is similar to the standard prepared statement handling.
+|===
+
+For instructions on how to set the error policy, see xref:n1ql:n1ql-manage/manage-plan-stability.adoc[].
+
+== Limitations
+
+Consider the following when using Plan Stability: 
+
+* Plan Stability does not support XDCR.
+Bucket, scope, collection, and index IDs differ between clusters, so a saved plan from the source cluster is not valid on the target cluster.
+* If you drop an object that a saved plan depends on, such as an index, you must also clean up the saved plan.
+* Plan Stability does not support transactions that use delta tables.
+* Saving and loading plans can significantly increase memory usage and affect query performance.
+
+== See Also
+
+* xref:n1ql:n1ql-manage/manage-plan-stability.adoc[]
+* xref:n1ql:n1ql-language-reference/prepare.adoc[]

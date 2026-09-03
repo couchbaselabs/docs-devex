@@ -76,6 +76,7 @@ a| [%hardbreaks]
 <<sys-all-sequences,system:all-sequences>>
 xref:n1ql:n1ql-language-reference/auto-update-statistics.adoc#system_aus[system:aus]
 xref:n1ql:n1ql-language-reference/auto-update-statistics.adoc#system_aus_settings[system:aus_settings]
+<<sys-settings,system:settings>>
 |===
 
 == Authentication and Client Privileges
@@ -1731,6 +1732,103 @@ This will result in a list similar to:
 This catalog gives the same information as the <<sys-sequences,system:sequences>> catalog.
 
 For further details, see xref:n1ql:n1ql-language-reference/createsequence.adoc[].
+
+[#sys-settings]
+== Monitor Settings
+
+The `system:settings` catalog contains cluster-wide settings for the xref:n1ql:n1ql-manage/query-plan-stability.adoc[Query Plan Stability] feature. 
+
+=== View Settings
+
+To view the current Plan Stability settings, run the following query:
+
+====
+.Query
+[source,sqlpp]
+----
+SELECT * FROM system:settings;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "settings": {
+      "plan_stability": {
+        "mode": "ad_hoc",
+        "error_policy": "moderate"
+      }
+    }
+  }
+]
+----
+====
+
+The `system:settings` catalog contains the following fields:
+
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+| **plan_stability** +
+__required__
+| Settings for the xref:n1ql:n1ql-manage/query-plan-stability.adoc[] feature.
+| <<sys-settings-plan-stability,Plan Stability>>
+|===
+
+[[sys-settings-plan-stability]]
+==== Plan Stability
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**mode** +
+__required__
+|The plan stability mode.
+
+Can have one of the following values: 
+
+* `"off"`: Keeps prepared statement plans in-memory without saving them to disk.
+* `"prepared_only"`: Saves execution plans to disk only for prepared statements.
+* `"ad_hoc"`: Saves execution plans to disk for all queries, including both ad-hoc and prepared statements. 
+
+|String
+
+|**error_policy** +
+__required__
+|The error policy applied when saved plans encounter errors. 
+
+Can have one of the following values:
+
+* `"strict"`: Stops execution and returns the error to the application. 
+* `"moderate"`: Generates a new plan to execute the statement, but keeps the original saved plan intact.
+* `"flexible"`: Generates a new plan to execute the statement and overwrites the saved plan with the new one. 
+
+|String
+|===
+
+=== Update Settings
+
+To change a setting, run an UPDATE statement against `system:settings`.
+
+For example, to turn off Plan Stability:
+
+[source,sqlpp]
+----
+UPDATE system:settings SET plan_stability.mode = "off";
+----
+
+To set the Plan Stability error policy to moderate:
+
+[source,sqlpp]
+----
+UPDATE system:settings SET plan_stability.error_policy = "moderate";
+----
+
+For more information about Plan Stability modes and error policies, see xref:n1ql:n1ql-manage/query-plan-stability.adoc[Query Plan Stability].
 
 == Related Links
 

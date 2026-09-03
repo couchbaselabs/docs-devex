@@ -1,0 +1,119 @@
+= Manage Plan Stability
+:page-topic-type: guide
+:page-status: Couchbase Server 8.5
+:page-edition: Enterprise Edition
+:description: Configure and manage Plan Stability at the cluster level or statement level.
+
+[abstract]
+{description}
+
+== Configure Plan Stability
+
+You can configure plan stability in the following ways:
+
+* At the cluster level, <<using-the-web-console, using the Couchbase Server Web Console>>.
+* At statement level, <<using-the-prepare-statement, using the `PREPARE` statement>>.
+
+=== Using the Web Console
+
+Use the Couchbase Server Web Console to configure Plan Stability settings at the cluster level. 
+These settings automatically apply to every query node in your cluster.
+
+To configure Plan Stability: 
+
+. In the Couchbase Server Web Console, go to menu:Settings[Query].
+. From the *Plan Stability* list, select a mode. 
++
+--
+* `Off`: Does not save execution plans to disk. 
+Prepared statements remain in memory only and are cleared if the query node restart or upgrades. 
+* `On Prepared Statements`: Saves execution plans to disk for all prepared statements. 
+* `On All Statements`: Saves execution plans to disk for all queries, including prepared statements and ad-hoc queries. 
+--
+. From the *Plan Stability Error Policy* list, select an error policy. 
++
+--
+* `Strict`: Stops execution and returns the error to the application.
+* `Moderate`: Generates a new plan to execute the statement, but keeps the original saved plan.
+* `Flexible`: Generates a new plan to execute the statement and overwrites the saved plan with the new one.
+--
+For more information, see xref:n1ql:n1ql-manage/query-plan-stability.adoc#error-policies[Error Policies].
+
+. Click btn:[Save].
+
+=== Using the PREPARE Statement
+
+When you use the `PREPARE` statement, you can explicitly specify which plans to persist using `SAVE` keyword. 
+
+* With `SAVE`: Saves the execution plan to disk. 
+* Without `SAVE`: Keeps the execution plan in memory only. 
+
+The following example shows the usage of the `SAVE` keyword: 
+
+[source,sqlpp]
+----
+PREPARE SAVE get_route_by_airline FROM
+SELECT * FROM route
+WHERE airline = "FL";
+----
+
+For more information, see the xref:n1ql:n1ql-language-reference/prepare.adoc[PREPARE] statement.
+
+== View Saved Plans
+
+You can view saved execution plans using the `system:prepareds` keyspace.
+
+For prepared statements, the saved plan appears under the name you specified when you ran `PREPARE`.
+
+For ad-hoc queries (when the Plan Stability mode is `On All Statements`), the Query Service automatically prepares each query using xref:n1ql:n1ql-language-reference/prepare.adoc#auto-prepare[auto-prepare].
+Because these statements have no local name, the service generates a name from the statement text.
+
+To view all saved plans, including both prepared and ad-hoc statements:
+
+[source,sqlpp]
+----
+SELECT *, meta().plan FROM system:prepareds;
+----
+
+To find the saved plan for a specific ad-hoc query, filter by the statement text:
+
+[source,sqlpp]
+----
+SELECT *, meta().plan FROM system:prepareds WHERE statement LIKE "%FROM route WHERE airline%";
+----
+
+For more information, see xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[Monitor and Manage Prepared Statements].
+
+== View Plan Stability Settings
+
+You can view the cluster-wide Plan Stability settings using the `system:settings` catalog.
+
+[source,sqlpp]
+----
+SELECT * FROM system:settings;
+----
+
+This returns the current `mode` and `error_policy` values, for example:
+
+[source,json]
+----
+[
+  {
+    "settings": {
+      "plan_stability": {
+        "mode": "ad_hoc",
+        "error_policy": "moderate"
+      }
+    }
+  }
+]
+----
+
+For more information, see xref:n1ql:n1ql-intro/sysinfo.adoc#sys-settings[Monitor Settings].
+
+== See Also
+
+* xref:n1ql:n1ql-manage/query-plan-stability.adoc[Query Plan Stability]
+* xref:n1ql:n1ql-language-reference/prepare.adoc[PREPARE]
+* xref:n1ql:n1ql-intro/sysinfo.adoc#sys-settings[Monitor Settings]
+* xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[Monitor and Manage Prepared Statements].
