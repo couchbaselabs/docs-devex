@@ -53,10 +53,10 @@ The Query Service generates a new plan for every ad hoc query.
 
 You can configure these modes at the cluster level using the Couchbase Server Web Console or the `system:settings` catalog.
 These settings apply across all query nodes in your cluster.
-For instructions on how to configure these settings, see xref:n1ql:n1ql-manage/manage-plan-stability.adoc[].
+For instructions on how to configure these settings, see xref:n1ql:n1ql-manage/manage-plan-stability.adoc[Manage Plan Stability].
 
 NOTE: The table shows the mode names as they appear in the Couchbase Server Web Console.
-For the corresponding `system:settings` values, see xref:n1ql:n1ql-intro/sysinfo.adoc#sys-settings[].
+For the corresponding `system:settings` values, see xref:n1ql:n1ql-intro/sysinfo.adoc#sys-settings[Monitor Settings].
 
 You can also configure Plan Stability for individual queries.
 When you create a prepared statement using `PREPARE`, include the keyword `SAVE` to save the plan to persistent storage.
@@ -80,7 +80,7 @@ For more information, see <<storage>>.
 
 Upon a Couchbase Server upgrade or restart, the Query Service reloads plans from `QUERY_METADATA` directly into memory.
 
-To view saved plans, query the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[system:prepareds] catalog.
+TIP: To view saved plans, query the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[system:prepareds] catalog.
 
 === Step 3: Plan Validation and Error Handling
 
@@ -93,10 +93,10 @@ For more information, see <<error-policies>>.
 The Query Service stores saved execution plans in a dedicated, user-level bucket called `QUERY_METADATA`. 
 The default memory quota of the bucket is 100 MB.
 
-The service automatically creates this bucket when you do 1 of the following:
+The Query Service automatically creates this bucket when you do 1 of the following:
 
-* Issue a `PREPARE` statement with the `SAVE` keyword.
-* Set Plan Stability to `On Prepared Statements` or `On All Statements`.
+* Run a `PREPARE` statement with the `SAVE` keyword.
+* Set Plan Stability to `On Prepared Statements`, `On All Statements`, or `Frozen`.
 
 If you drop the bucket, the service automatically recreates it the next time either of these actions occurs.
 
@@ -145,11 +145,15 @@ Consider the following when using Plan Stability:
 
 * Plan Stability does not support XDCR.
 Bucket, scope, collection, and index IDs differ between clusters, so a saved plan from the source cluster is not valid on the target cluster.
-* If you drop an object that a saved plan depends on, such as an index, you must also clean up the saved plan.
+* If you drop an object that a saved plan depends on, such as an index, the saved plan becomes invalid.
+You must clean up the invalid plan by deleting its prepared statement entry.
+Until you delete the entry, the Query Service handles the obsolete plan according to the configured error policy.
+For more information about how to delete an entry, see xref:n1ql:n1ql-manage/monitoring-n1ql-query.html#sys-prepared-delete[Delete Prepared Statements].
 * Plan Stability does not support transactions that use delta tables.
-* Saving and loading plans can significantly increase memory usage and affect query performance.
+* Saving and loading plans can increase memory usage and affect query performance.
 
 == See Also
 
 * xref:n1ql:n1ql-manage/manage-plan-stability.adoc[]
 * xref:n1ql:n1ql-language-reference/prepare.adoc[]
+* xref:n1ql:n1ql-intro/sysinfo.adoc#sys-settings[]
