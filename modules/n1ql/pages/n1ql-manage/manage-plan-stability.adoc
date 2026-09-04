@@ -9,26 +9,27 @@
 
 == Configure Plan Stability
 
-You can configure plan stability in the following ways:
+You can configure plan stability using one of the following methods:
 
-* At the cluster level, <<using-the-web-console, using the Couchbase Server Web Console>>.
-* At statement level, <<using-the-prepare-statement, using the `PREPARE` statement>>.
+* At the cluster level: 
+** <<using-the-web-console, Using the Couchbase Server Web Console>>
+** <<using-the-update-statement, Using the `UPDATE` statement>>
+* At the statement level: 
+** <<using-the-prepare-statement, Using the `PREPARE` statement>>
 
 === Using the Web Console
 
-Use the Couchbase Server Web Console to configure Plan Stability settings at the cluster level. 
-These settings automatically apply to every query node in your cluster.
-
-To configure Plan Stability: 
+When you configure Plan Stability in the Couchbase Server Web Console, settings apply automatically to every query node in your cluster. 
 
 . In the Couchbase Server Web Console, go to menu:Settings[Query].
 . From the *Plan Stability* list, select a mode. 
 +
 --
-* `Off`: Does not save execution plans to disk. 
-Prepared statements remain in memory only and are cleared if the query node restart or upgrades. 
-* `On Prepared Statements`: Saves execution plans to disk for all prepared statements. 
-* `On All Statements`: Saves execution plans to disk for all queries, including prepared statements and ad-hoc queries. 
+* `Off`: Does not save execution plans to disk.
+Prepared statements remain in memory only and are cleared if the query node restart or upgrades.
+* `On Prepared Statements`: Saves execution plans to disk for all prepared statements.
+* `On All Statements`: Saves execution plans to disk for all queries, including prepared statements and ad-hoc queries.
+* `Frozen`: Does not save execution plans to disk for new queries, but uses existing saved plans for matching queries.
 --
 . From the *Plan Stability Error Policy* list, select an error policy. 
 +
@@ -40,6 +41,27 @@ Prepared statements remain in memory only and are cleared if the query node rest
 For more information, see xref:n1ql:n1ql-manage/query-plan-stability.adoc#error-policies[Error Policies].
 
 . Click btn:[Save].
+
+=== Using the UPDATE Statement
+
+You can also configure Plan Stability programmatically by running an `UPDATE` statement against the `system:settings` catalog.
+These settings apply at the cluster level to every query node in your cluster.
+
+To set the Plan Stability mode:
+
+[source,sqlpp]
+----
+UPDATE system:settings SET plan_stability.mode = "off";
+----
+
+To set the Plan Stability error policy:
+
+[source,sqlpp]
+----
+UPDATE system:settings SET plan_stability.error_policy = "moderate";
+----
+
+To get a list of acceptable values for `plan_stability.mode` and `plan_stability.error_policy`, see xref:n1ql:n1ql-intro/sysinfo.adoc#sys-settings[Monitor Settings].
 
 === Using the PREPARE Statement
 
@@ -117,3 +139,84 @@ For more information, see xref:n1ql:n1ql-intro/sysinfo.adoc#sys-settings[Monitor
 * xref:n1ql:n1ql-language-reference/prepare.adoc[PREPARE]
 * xref:n1ql:n1ql-intro/sysinfo.adoc#sys-settings[Monitor Settings]
 * xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[Monitor and Manage Prepared Statements].
+
+
+@startuml
+skinparam Monochrome true
+skinparam Shadowing false
+skinparam DefaultFontName Arial
+skinparam SequenceGroupHeaderFontWeight bold
+
+title Couchbase Query Service - Plan Generation, Persistence, and Reload Flow
+
+actor "Client / User" as Client
+participant "Query Service" as QS
+participant "QUERY_METADATA\n(Storage Bucket)" as Meta
+database "System Catalogs\n(system:prepareds)" as SystemCat
+
+== Plan Execution & Persistence Flow ==
+
+Client -> QS : Submit Query (Ad Hoc or Prepared)
+activate QS
+
+alt Query Execution Verification
+    QS -> QS : Verify dependencies\n(Indexes, Keyspaces)
+    alt Verification Failed
+        QS -> Client : Handle error per configured Error Policy
+    end
+end
+
+alt Ad Hoc Query
+    alt Cluster Setting = OFF or ON PREPARED STATEMENTS
+        QS -> QS : Build query plan
+        QS -> Client : Execute statement
+        QS -> QS : Discard plan
+    else Cluster Setting = ON ALL STATEMENTS
+        QS -> QS : Auto-prepare query
+        QS -> QS : Generate query plan
+        QS -> Meta : Save plan to QUERY_METADATA
+        QS -> Client : Execute statement
+    else Cluster Setting = FROZEN
+        alt Matching Saved Plan Exists
+            QS -> Meta : Fetch existing saved plan
+            Meta --> QS : Return plan
+            QS -> Client : Execute statement using saved plan
+        else No Matching Saved Plan
+            QS -> QS : Build temporary plan
+            QS -> Client : Execute statement (Do not save plan)
+        end
+    end
+
+else Prepared Statement
+    alt Cluster Setting = ON PREPARED STATEMENTS / ON ALL STATEMENTS \nOR Executed via PREPARE with SAVE
+        QS -> QS : Generate query plan
+        QS -> Meta : Save plan to QUERY_METADATA
+        QS -> Client : Execute statement
+    else Cluster Setting = OFF (Without SAVE)
+        QS -> QS : Build query plan
+        QS -> Client : Execute statement
+        QS -> QS : Discard plan
+    end
+end
+
+deactivate QS
+
+== Viewing Saved Plans ==
+
+Client -> SystemCat : Query system:prepareds
+activate SystemCat
+SystemCat --> Client : Return saved query plans
+deactivate SystemCat
+
+== System Upgrade / Restart Flow ==
+
+[-> QS : Couchbase Server Upgrade / Restart
+activate QS
+QS -> Meta : Read saved plans
+activate Meta
+Meta --> QS : Return saved plans
+deactivate Meta
+QS -> QS : Reload plans directly into memory
+deactivate QS
+
+@enduml
