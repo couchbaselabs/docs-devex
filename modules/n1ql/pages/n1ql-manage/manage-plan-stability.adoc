@@ -9,28 +9,29 @@
 
 == Configure Plan Stability
 
-You can configure plan stability using one of the following methods:
+You can configure plan stability using 1 of the following methods:
 
-* At the cluster level: 
-** <<using-the-web-console, Using the Couchbase Server Web Console>>
-** <<using-the-update-statement, Using the `UPDATE` statement>>
-* At the statement level: 
-** <<using-the-prepare-statement, Using the `PREPARE` statement>>
+** <<using-the-couchbase-server-web-console>>
+** <<using-system-settings>>
+** <<using-the-prepare-statement>>
 
-=== Using the Web Console
+=== Using the Couchbase Server Web Console
 
 When you configure Plan Stability in the Couchbase Server Web Console, settings apply automatically to every query node in your cluster. 
 
 . In the Couchbase Server Web Console, go to menu:Settings[Query].
+
 . From the *Plan Stability* list, select a mode. 
 +
 --
 * `Off`: Does not save execution plans to disk.
-Prepared statements remain in memory only and are cleared if the query node restart or upgrades.
 * `On Prepared Statements`: Saves execution plans to disk for all prepared statements.
 * `On All Statements`: Saves execution plans to disk for all queries, including prepared statements and ad-hoc queries.
 * `Frozen`: Does not save execution plans to disk for new queries, but uses existing saved plans for matching queries.
 --
++
+For more information about these modes, see xref:query-plan-stability.adoc#plan-stability-modes[Plan Stability Modes].
+
 . From the *Plan Stability Error Policy* list, select an error policy. 
 +
 --
@@ -38,23 +39,24 @@ Prepared statements remain in memory only and are cleared if the query node rest
 * `Moderate`: Generates a new plan to execute the statement, but keeps the original saved plan.
 * `Flexible`: Generates a new plan to execute the statement and overwrites the saved plan with the new one.
 --
-For more information, see xref:n1ql:n1ql-manage/query-plan-stability.adoc#error-policies[Error Policies].
++
+For more information about these policies, see xref:n1ql:n1ql-manage/query-plan-stability.adoc#error-policies[Error Policies].
 
 . Click btn:[Save].
 
-=== Using the UPDATE Statement
+=== Using System Settings
 
 You can also configure Plan Stability programmatically by running an `UPDATE` statement against the `system:settings` catalog.
 These settings apply at the cluster level to every query node in your cluster.
 
-To set the Plan Stability mode:
+To set the Plan Stability mode, use the following query: 
 
 [source,sqlpp]
 ----
 UPDATE system:settings SET plan_stability.mode = "off";
 ----
 
-To set the Plan Stability error policy:
+To set the Plan Stability error policy, use the following query: 
 
 [source,sqlpp]
 ----
@@ -65,12 +67,13 @@ To get a list of acceptable values for `plan_stability.mode` and `plan_stability
 
 === Using the PREPARE Statement
 
-When you use the `PREPARE` statement, you can explicitly specify which plans to persist using `SAVE` keyword. 
+You can also configure Plan Stability for individual queries.
+When you create a prepared statement using `PREPARE`, include the keyword `SAVE` to save the plan to persistent storage.
 
-* With `SAVE`: Saves the execution plan to disk. 
+* With `SAVE`: Saves the execution plan to persistent storage. 
 * Without `SAVE`: Keeps the execution plan in memory only. 
 
-The following example shows the usage of the `SAVE` keyword: 
+The following example shows how to use `SAVE`: 
 
 [source,sqlpp]
 ----
@@ -83,14 +86,16 @@ For more information, see the xref:n1ql:n1ql-language-reference/prepare.adoc[PRE
 
 == View Saved Plans
 
-You can view saved execution plans using the `system:prepareds` keyspace.
+To view all saved execution plans, use the `system:prepareds` catalog.
 
-For prepared statements, the saved plan appears under the name you specified when you ran `PREPARE`.
+If you want to retrieve a specific saved plan from the list, use its plan name:
 
-For ad-hoc queries (when the Plan Stability mode is `On All Statements`), the Query Service automatically prepares each query using xref:n1ql:n1ql-language-reference/prepare.adoc#auto-prepare[auto-prepare].
-Because these statements have no local name, the service generates a name from the statement text.
+* For prepared statements, the plan name matches the name you specify in the `PREPARE` statement.
 
-To view all saved plans, including both prepared and ad-hoc statements:
+* For ad-hoc queries, the Query Service generates the plan using xref:n1ql:n1ql-language-reference/prepare.adoc#auto-prepare[auto-prepare]. 
+Because ad-hoc queries have no local name, the service derives a name from the statement text.
+
+To view all saved plans, use the following query:
 
 [source,sqlpp]
 ----
@@ -104,18 +109,19 @@ To find the saved plan for a specific ad-hoc query, filter by the statement text
 SELECT *, meta().plan FROM system:prepareds WHERE statement LIKE "%FROM route WHERE airline%";
 ----
 
+Similarly, you can also delete saved plans from `system:prepareds`.
 For more information, see xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[Monitor and Manage Prepared Statements].
 
 == View Plan Stability Settings
 
-You can view the cluster-wide Plan Stability settings using the `system:settings` catalog.
+To get the cluster-wide Plan Stability settings, use the `system:settings` catalog.
 
 [source,sqlpp]
 ----
 SELECT * FROM system:settings;
 ----
 
-This returns the current `mode` and `error_policy` values, for example:
+This query returns the current `mode` and `error_policy` values, for example:
 
 [source,json]
 ----
