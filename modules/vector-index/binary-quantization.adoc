@@ -5,3 +5,132 @@
 :description: RaBitQ is a binary quantization method for reducing the storage and memory requirements of vector indexes.
 :stem: 
 :page-toclevels: 3
+
+ It is designed for large-scale vector search workloads where reducing index memory overhead and accelerating candidate retrieval are more important than preserving the uncompressed accuracy of a full-precision (FP32) index.
+
+RaBitQ is supported for Hyperscale Vector Indexes (HVI) and Composite Vector Indexes (CVI) that index dense vectors.
+RaBitQ indexes use Hamming similarity for initial candidate search.
+
+At the default setting of `nbit=1`, RaBitQ can provide up to **32x compression** compared with unquantized FP32 vectors.
+The actual storage savings and search performance depend on vector dimensionality, dataset distribution, index configuration, and whether full-precision vectors are retained for rescoring.
+
+== Quantization Comparison (SQ vs. PQ vs. RaBitQ)
+
+[cols="1,2,2,2,2,2",options="header"]
+|===
+| Quantization | Compression & Storage | Recall & Accuracy | Index Build Time | Query Latency | When to Choose
+
+| **SQ** (Scalar)
+| Moderate compression (~4x vs. FP32).
+| High recall; preserves vector distribution well.
+| Fast and simple build process.
+| Low latency for general queries.
+| You need a balanced default with predictable behavior and high recall.
+
+| **PQ** (Product)
+| High compression (8x–64x depending on subvectors and bits).
+| Variable recall depending on codebook training and dataset.
+| Slower build; requires codebook training.
+| Efficient search on memory-constrained datasets.
+| You need maximum memory reduction on clustered datasets and can accept training overhead.
+
+| **RaBitQ** (Binary)
+| Maximum compression (~32x at `nbit=1` vs. FP32; decreases as `nbit` increases).
+| Lower first-phase recall at `nbit=1`; two-phase rescoring restores high recall.
+| Fast build time ($\ge 3\times$ faster than PQ).
+| Fast Hamming candidate search; rescoring adds slight query overhead.
+| You have large, high-dimensional datasets ($\ge 384$ dimensions) and prioritize low memory footprint and fast builds.
+|===
+
+[NOTE]
+====
+Compression, recall, build times, and query latency depend on dataset size, vector dimensionality, index configuration, and query workload. Always benchmark with representative data before choosing a quantization method in production.
+====
+
+== Configuring the `nbit` Setting
+
+The `nbit` setting controls the number of bits used to represent each vector dimension during quantization.
+Supported values range from `1` to `9` (default: `1`).
+
+[cols="1,1.5,2,2.5",options="header"]
+|===
+| `nbit` Value | Compression | Accuracy & First-Phase Recall | Recommended Use
+
+| `1` (Default)
+| Highest (~32x vs. FP32)
+| Lowest first-phase recall; rescoring recommended
+| Very large datasets where memory reduction is the primary requirement.
+
+| `2–4`
+| Moderate (8x–16x)
+| Balanced compression and candidate recall
+| General large-scale workloads needing a balance of memory and recall.
+
+| `5–9`
+| Lower (3.5x–6x)
+| High first-phase recall
+| Workloads prioritizing candidate recall over maximum memory reduction.
+|===
+
+== Rescoring and Candidate Re-Ranking
+
+RaBitQ uses Hamming similarity to quickly retrieve candidate vectors during Phase 1 search. 
+
+When full-precision vectors are retained (`persist_full_vector: true`, the default), Couchbase automatically executes a Phase 2 rescoring step.
+The query engine re-ranks the top candidate vectors using the original distance metric (such as Cosine or Euclidean/L2) to recover high recall.
+
+* *Benefits:* Achieves near-FP32 search accuracy while retaining the memory and coarse-search benefits of binary quantization.
+* *Trade-offs:* Retaining full-precision vectors on disk increases storage footprint compared to quantized-only storage and adds a minor re-ranking overhead during query execution.
+
+== Constraints and Prerequisites
+
+* *Index Types:* Supported only on Hyperscale Vector Indexes (HVI) and Composite Vector Indexes (CVI).
+* *Vector Types:* Supported on Dense vectors only (Sparse vectors are not supported).
+* *Metric:* Requires `"similarity": "hamming"` at the index definition level.
+
+== Migrating Existing Indexes to RaBitQ
+
+You cannot convert an existing vector index to use RaBitQ in place.
+Index quantization settings, similarity metrics, and `nbit` values are specified at index creation time and cannot be altered using `ALTER INDEX`.
+
+To migrate an existing vector index to RaBitQ, follow the drop-and-rebuild workflow:
+
+. Create a new index with the RaBitQ configuration under a temporary name:
++
+[source,sql]
+----
+CREATE VECTOR INDEX `idx_products_vector_rabitq`
+ON `catalog`.`products`.`items`(`embedding` VECTOR)
+USING GSI
+WITH {
+  "dimension": 768,
+  "description": "IVF,RaBitQ",
+  "nbit": 1,
+  "similarity": "hamming"
+};
+----
+
+. Wait for the index build to complete.
+Monitor build progress in the Couchbase Web Console or by querying `system:indexes`:
++
+[source,sql]
+----
+SELECT name, state, progress 
+FROM system:indexes 
+WHERE name = "idx_products_vector_rabitq";
+----
+
+. Update applications or queries to reference the new index (if using explicit index hints) or allow SQL++ query optimization to route queries to the new index.
+
+. Drop the old index once traffic has safely transitioned:
++
+[source,sql]
+----
+DROP INDEX `catalog`.`products`.`items`.`idx_products_vector_old`;
+----
+
+[NOTE]
+====
+Because RaBitQ requires `"similarity": "hamming"`, queries that previously relied on unquantized or SQ8 indexes using Cosine or L2 distance will use Hamming distance for Phase 1 candidate retrieval.
+If `persist_full_vector: true` (the default) is enabled, rescoring transparently re-ranks candidates using the query's specified distance metric.
+====
