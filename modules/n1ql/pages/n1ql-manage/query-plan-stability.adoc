@@ -70,7 +70,7 @@ Plan Stability saves, reloads, and validates execution plans using the following
 
 When you run a query, the Query Service evaluates the statement type and the active Plan Stability configuration, as described in <<plan-stability-modes,Plan Stability Modes>>.
 
-For ad hoc queries, when the cluster setting is `On All Statements`, the Query Service automatically converts the query into a prepared statement (using xref:n1ql:n1ql-language-reference/prepare.adoc#auto-prepare[auto-prepare]) before saving the plan.
+When Plan Stability is active for ad hoc queries, the Query Service automatically converts the query into a prepared statement (using xref:n1ql:n1ql-language-reference/prepare.adoc#auto-prepare[auto-prepare]) before saving the plan.
 
 For prepared statements, you can save a plan regardless of the cluster setting by including `SAVE` in the `PREPARE` statement.
 
@@ -79,15 +79,19 @@ For more information, see <<storage>>.
 
 === Step 2: Plan Reload
 
-Upon a Couchbase Server upgrade or restart, the Query Service reloads plans from `QUERY_METADATA` directly into memory.
+After a Couchbase Server upgrade or restart, the Query Service reloads plans from `QUERY_METADATA` directly into memory.
+When you submit a query, the service checks if a matching plan exists.
 
-TIP: To view saved plans, query the xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-prepared[system:prepareds] catalog.
+To view saved plans, use the `system:prepareds` catalog.
+For more information, see xref:n1ql:n1ql-manage/manage-plan-stability.adoc#view-saved-plans[View Saved Plans].
 
 === Step 3: Plan Validation and Error Handling
 
 Before executing a saved plan, the Query Service verifies if all dependencies (such as indexes and keyspaces) still exist.
-If the verification fails, the service handles the query according to your configured error policy.
+If the validation fails, the service handles the query according to your configured error policy.
 For more information, see <<error-policies>>.
+
+If the validation succeeds, the Query Service executes the query using the saved plan.
 
 == Storage 
 
@@ -99,14 +103,14 @@ The Query Service automatically creates this bucket when you do 1 of the followi
 * Run a `PREPARE` statement with the `SAVE` keyword.
 * Set Plan Stability to `On Prepared Statements`, `On All Statements`, or `Frozen`.
 
-If you drop the bucket, the service automatically recreates it the next time either of these actions occurs.
+If you drop the bucket, the service automatically recreates it the next time these actions occur.
 
 [NOTE]
 ====
 * Users with admin privileges can drop the `QUERY_METADATA` bucket.
 * Dropping the bucket manually can trigger runtime errors during query execution.
 * Setting the Plan Stability mode to `Off` does not automatically drop the bucket.
-* Users with admin privileges must monitor and adjust the memory quota for the bucket to prevent low memory residency.
+* Users with admin privileges must monitor and adjust the memory quota for the `QUERY_METADATA` bucket to prevent low memory residency. 
 ====
 
 == Error Policies
