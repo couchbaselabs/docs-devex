@@ -246,3 +246,47 @@ ON  `demo`.`squad`.`context`(`vector` VECTOR)
                "description":"IVF,SQ8", 
                "train_list":15000};
 /* end::train-list[] */
+
+/* tag::create-sparse-idx[] */
+CREATE VECTOR INDEX `color_sparse_hyperscale`
+ON `vector-sample`.`color`.`rgb-sparse`(`sparse_vector` SPARSE VECTOR)
+WITH { "description": "IVF",
+       "persist_full_vector": false }
+/* end::create-sparse-idx[] */
+
+/* tag::sparse-query-single[] */
+WITH query_term_weight AS ([
+  (
+    SELECT RAW `index`
+    FROM `vector-sample`.color.`vocabulary`
+    WHERE term = "brown"
+  ),
+  [1.0]
+]),
+colors AS (
+  SELECT b.color
+  FROM `vector-sample`.color.`rgb-sparse` AS b
+  ORDER BY SPARSE_VECTOR_DISTANCE(b.sparse_vector, query_term_weight)
+  LIMIT 10)
+SELECT RAW colors;
+/* end::sparse-query-single[] */
+
+/* tag::sparse-query-multiple[] */
+WITH query_term_weights AS ([
+  ARRAY_FLATTEN(
+    ARRAY (
+      SELECT RAW `index`
+      FROM `vector-sample`.color.`vocabulary`
+      WHERE term = v
+    ) FOR v IN ["light", "sea", "green"] END,
+  1),
+  [1.0, 1.0, 1.0]
+]),
+colors AS (
+  SELECT b.color
+  FROM `vector-sample`.color.`rgb-sparse` AS b
+  ORDER BY SPARSE_VECTOR_DISTANCE(b.sparse_vector, query_term_weights)
+  LIMIT 10 )
+SELECT RAW colors;
+/* end::sparse-query-multiple[] */
+
