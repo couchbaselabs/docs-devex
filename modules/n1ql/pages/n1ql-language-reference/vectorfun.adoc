@@ -287,7 +287,7 @@ For more information and examples, see xref:vector-index:hyperscale-reranking.ad
 ====
 
 [[decode_vector,DECODE_VECTOR()]]
-== DECODE_VECTOR(`vector` [,{nbsp}``byte_order``])
+== DECODE_VECTOR(`vector` [,{nbsp}``byte_order`` [,{nbsp}``sparse``]])
 
 This function has an alias <<aliases,VECTOR_DECODE()>>.
 
@@ -298,20 +298,24 @@ Reverses the encoding done by the <<encode_vector>> function.
 === Arguments
 
 vector:: String, or any {sqlpp} expression that evaluates to a string, representing the base64 encoding of a vector value.
+If the `"sparse"` argument is present, the string must represent the base64 encoding of a sparse-term weight array.
 
 byte_order:: [Optional] A boolean which determines the byte order of the vector value.
 If `true`, it's big-endian.
 If `false`, it's little-endian.
 The default is `false`.
 
+sparse:: [Optional] A string with the value `"sparse"`.
+If present, the `vector` argument must be a base64 encoded sparse term-weight array.
+
 === Return Value
 
-An array of floating point numbers.
+An array of floating point numbers, or a sparse term-weight array, in which the first item is an array of integers representing terms, and the second item is an array of floating point numbers representing the corresponding term weights
 
-=== Example
+=== Examples
 
 [#decode_vector_ex]
-.DECODE_VECTOR() Example
+.DECODE_VECTOR() Example 1
 ====
 The following query decodes the base64 encoding of a vector value using two different byte orders.
 
@@ -344,8 +348,50 @@ SELECT DECODE_VECTOR("AACAPwAAAEAAAEBAAACAQA==") AS little_endian,
 ----
 ====
 
+[#decode_vector_ex_sparse]
+.DECODE_VECTOR() Example 2
+====
+The following query decodes the base64 encoding of a sparse term-weight array using two different byte orders.
+
+.Query
+[source,sqlpp]
+----
+SELECT DECODE_VECTOR("AQAAAAIAAAAAAEBAAACAQA==", false, "sparse") AS little_endian,
+       DECODE_VECTOR("AAAAAQAAAAJAQAAAQIAAAA==", true, "sparse") AS big_endian;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "little_endian": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "big_endian": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4
+      ]
+    ]
+  }
+]
+----
+====
+
 [[encode_vector,ENCODE_VECTOR()]]
-== ENCODE_VECTOR(`vector` [,{nbsp}``byte_order``])
+== ENCODE_VECTOR(`vector` [,{nbsp}``byte_order`` [,{nbsp}``sparse``]])
 
 This function has an alias <<aliases,VECTOR_ENCODE()>>.
 
@@ -356,20 +402,24 @@ Returns the https://en.wikipedia.org/wiki/Base64[base64] encoding of a vector va
 === Arguments
 
 vector:: An array of floating point numbers, or any {sqlpp} expression that evaluates to an array of floating point numbers.
+If the `"sparse"` argument is present, this must be a sparse-term weight array, or any {sqlpp} expression that evaluates to a sparse term-weight array.
 
 byte_order:: [Optional] A boolean which determines the byte order of the vector value.
 If `true`, it's big-endian.
 If `false`, it's little-endian.
 The default is `false`.
 
+sparse:: [Optional] A string with the value `"sparse"`.
+If present, the `vector` argument must resolve to a sparse term-weight array, in which the first item is an array of integers representing terms, and the second item is an array of floating point numbers representing the corresponding term weights.
+
 === Return Value
 
 A string representing the base64 encoding of the input expression.
 
-=== Example
+=== Examples
 
 [#encode_vector_ex]
-.ENCODE_VECTOR() Example
+.ENCODE_VECTOR() Example 1
 ====
 The following query encodes an array of floating point numbers using two different byte orders.
 
@@ -387,6 +437,30 @@ SELECT ENCODE_VECTOR([1, 2, 3, 4]) AS little_endian,
   {
     "little_endian": "AACAPwAAAEAAAEBAAACAQA==",
     "big_endian": "P4AAAEAAAABAQAAAQIAAAA=="
+  }
+]
+----
+====
+
+[#encode_vector_ex_sparse]
+.ENCODE_VECTOR() Example 2
+====
+The following query encodes a sparse term-weight array using two different byte orders.
+
+.Query
+[source,sqlpp]
+----
+SELECT ENCODE_VECTOR([[1, 2], [3, 4]], false, "sparse") AS little_endian,
+       ENCODE_VECTOR([[1, 2], [3, 4]], true, "sparse") AS big_endian;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "little_endian": "AQAAAAIAAAAAAEBAAACAQA==",
+    "big_endian": "AAAAAQAAAAJAQAAAQIAAAA=="
   }
 ]
 ----
@@ -1042,9 +1116,9 @@ This function always uses xref:vector-index:vectors-and-indexes-overview.adoc#do
 === Arguments
 
 vec:: The name of a field that contains sparse term-weight pairs.
-The field must contain a sparse term-weight array, in which the first item is an array of integers representing terms, and the second item is an array of floating point numbers representing the corresponding term weights.
+The field must contain a sparse term-weight array, or a string representing a base64 encoded sparse term-weight array, in which the first item is an array of integers representing terms, and the second item is an array of floating point numbers representing the corresponding term weights.
 
-queryvec:: A sparse term-weight array, in which the first item is an array of integers representing terms, and the second item is an array of floating point numbers representing the corresponding term weights.
+queryvec:: A sparse term-weight array, or a string representing a base64 encoded sparse term-weight array, in which the first item is an array of integers representing terms, and the second item is an array of floating point numbers representing the corresponding term weights.
 This represents the sparse term-weights to search for in the vector field.
 
 nprobes:: [Optional] An integer representing the number of centroids to probe for matching vectors.
