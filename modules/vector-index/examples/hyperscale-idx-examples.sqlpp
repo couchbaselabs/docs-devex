@@ -249,10 +249,21 @@ ON  `demo`.`squad`.`context`(`vector` VECTOR)
 
 /* tag::create-sparse-idx[] */
 CREATE VECTOR INDEX `color_sparse_hyperscale`
-ON `vector-sample`.`color`.`rgb-sparse`(`sparse_vector` SPARSE VECTOR)
+ON `vector-sample`.color.`rgb-sparse`(`sparse_vector` SPARSE VECTOR)
 WITH { "description": "IVF",
-       "persist_full_vector": false }
+       "similarity": "dot",
+       "num_replica": 0 }
+
 /* end::create-sparse-idx[] */
+
+/* tag::create-sparse-scalar[] */
+CREATE VECTOR INDEX `color_sparse_hyperscale_brightness`
+ON `vector-sample`.color.`rgb-sparse`(`sparse_vector` SPARSE VECTOR)
+INCLUDE (`brightness`)
+WITH { "description": "IVF",
+       "similarity": "dot",
+       "num_replica": 0 }
+/* end::create-sparse-scalar[] */
 
 /* tag::sparse-query-single[] */
 WITH query_term_weight AS ([
