@@ -1,5 +1,5 @@
 = GRANT
-:description: The GRANT statement allows granting any RBAC roles to a specific user or group.
+:description: The GRANT statement allows granting any RBAC roles or credentials a user or group.
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 
@@ -9,6 +9,19 @@
 
 [abstract]
 {description}
+
+Using `GRANT`, you can provide two types of access:
+
+* Roles: Grants RBAC roles to a user or group, giving them a predefined set of privileges.
+* Credentials: Permits a user or group to use a specific credential from the credential store. 
+To grant credential permissions, use the `GRANT CONSUME CREDENTIALSTORE` syntax. 
+For more information about credentials and credential store, see xref:<link>.
+//TODO: Link to the credential store documentation.
+
+NOTE: Only Full Administrators can run the GRANT statement.
+For more details about user roles, see {authorization-overview}[Authorization].
+
+== Role Types 
 
 Roles can be of the following two types:
 
@@ -23,9 +36,6 @@ Specify the keyspace name after the keyword ON.
 +
 For example: `pass:c[data_reader ON `travel-sample`]` +
 or `pass:c[query_select ON `travel-sample`.`inventory`.`airline`]`
-
-NOTE: Only Full Administrators can run the GRANT statement.
-For more details about user roles, see {authorization-overview}[Authorization].
 
 == Syntax
 
@@ -50,6 +60,13 @@ include::partial$grammar/dcl.ebnf[tag=grant-group]
 
 image::n1ql-language-reference/grant-group.png["Syntax diagram: refer to source code listing", align=left]
 
+[source,ebnf]
+----
+include::partial$grammar/dcl.ebnf[tag=grant-consume-credentialstore]
+----
+
+image::n1ql-language-reference/grant-consume-credentialstore.png["Syntax diagram: refer to source code listing", align=left]
+
 [horizontal]
 role::
 One of the {authorization-overview}[RBAC role names predefined] by Couchbase Server.
@@ -69,6 +86,10 @@ A user name created by the Couchbase Server RBAC system.
 
 group::
 A group name created by the Couchbase Server RBAC system.
+
+credential-name::
+The name of an existing credential in the credential store.
+For more information about credentials and credential store, see xref:<link>.
 
 NOTE: When granting roles to users, the keyword `USER` or `USERS` is optional.
 However, when granting roles to groups, you must include the keyword `GROUP` or `GROUPS`.
@@ -103,7 +124,7 @@ For more information about the syntax, see the {keyspace-ref}[CREATE INDEX] stat
 
 == Usage
 
-GRANT statements have two forms:
+The GRANT statements have three forms: 
 
 .{counter:form}. Unparameterized Roles
 [source,sqlpp]
@@ -120,7 +141,16 @@ GRANT query_select, views_admin
    TO bill, linda;
 ----
 
+.{counter:form}. Credentials Access
+[source, sqlpp]
+----
+GRANT CONSUME CREDENTIALSTORE aws_key
+   TO linda;
+----
+
 NOTE: Mixing of parameterized and unparameterized roles or syntax is not allowed and will create an error.
+
+NOTE: `GRANT CONSUME CREDENTIALSTORE` grants access to a named credential in the credential store rather than an RBAC role, and cannot be mixed with role-based GRANT syntax in the same statement.
 
 == Examples
 
@@ -147,3 +177,25 @@ GRANT query_select, data_reader ON `travel-sample` TO debby;
 GRANT data_reader ON `travel-sample` TO GROUP sales;
 ----
 ====
+
+.Grant a specific user permission to consume the `awsid` credential
+====
+[source,sqlpp]
+----
+GRANT CONSUME CREDENTIALSTORE `awsid` TO debby;
+----
+====
+
+.Grant a group permission to consume multiple credentials
+====
+[source,sqlpp]
+----
+GRANT CONSUME CREDENTIALSTORE `awsid`, `backup_s3` TO GROUP sales;
+----
+====
+
+== Related Links
+
+* xref:n1ql-language-reference/createcredentialstore.adoc[CREATE CREDENTIALSTORE]
+* xref:n1ql-language-reference/altercredentialstore.adoc[ALTER CREDENTIALSTORE]
+* xref:n1ql-language-reference/dropcredentialstore.adoc[DROP CREDENTIALSTORE]
