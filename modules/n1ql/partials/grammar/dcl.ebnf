@@ -18,13 +18,14 @@ grant-group ::= 'GRANT' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-re
 /* end::grant-group[] */   
 
 /* tag::grant-consume-credentialstore[] */
-grant-consume-credentialstore ::= 'GRANT' 'CONSUME' 'CREDENTIALSTORE' credential-name ( ',' credential-name )*
-          'TO' ( ( 'USER' | 'USERS' )? user ( ',' user )*
-               | ( 'GROUP' | 'GROUPS' ) group ( ',' group )* )
+grant-consume-credentialstore ::= 'GRANT' 'CONSUME' 'CREDENTIALSTORE' 
+                        'ON' credential-name ( ',' credential-name )*
+                        'TO' ( ( 'USER' | 'USERS' )? user ( ',' user )*
+                             | ( 'GROUP' | 'GROUPS' ) group ( ',' group )* )
 /* end::grant-consume-credentialstore[] */
 
 /* tag::revoke[] */
-revoke ::= revoke-user | revoke-group
+revoke ::= revoke-user | revoke-group | revoke-consume-credentialstore
 /* end::revoke[] */
 
 /* tag::revoke-user[] */
@@ -36,6 +37,13 @@ revoke-user ::= 'REVOKE' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-r
 revoke-group ::= 'REVOKE' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
            'FROM' ( 'GROUP' | 'GROUPS' ) group ( ',' group )*
 /* end::revoke-group[] */
+
+/* tag::revoke-consume-credentialstore[] */
+revoke-consume-credentialstore ::= 'REVOKE' 'CONSUME' 'CREDENTIALSTORE'
+                        'ON' credential-name ( ',' credential-name )*
+                        'FROM' ( ( 'USER' | 'USERS' )? user ( ',' user )*
+                              | ( 'GROUP' | 'GROUPS' ) group ( ',' group )* )
+/* end::revoke-consume-credentialstore[] */
 
 role ::= identifier
 user ::= identifier

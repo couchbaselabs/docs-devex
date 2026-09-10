@@ -1,5 +1,5 @@
 = GRANT
-:description: The GRANT statement allows granting any RBAC roles or credentials a user or group.
+:description: Use the GRANT statement to assign Role-Based Access Control (RBAC) roles or credential access to a user or group.
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 
@@ -10,29 +10,36 @@
 [abstract]
 {description}
 
-Using `GRANT`, you can provide two types of access:
+You can use `GRANT` to provide two types of access:
 
-* Roles: Grants RBAC roles to a user or group, giving them a predefined set of privileges.
-* Credentials: Permits a user or group to use a specific credential from the credential store. 
-To grant credential permissions, use the `GRANT CONSUME CREDENTIALSTORE` syntax. 
-For more information about credentials and credential store, see xref:<link>.
+Roles:: Grants RBAC roles to a user or group, giving them a predefined set of privileges.
+Roles can be simple or parameterized by a keyspace.
+For more information, see <<role-types>>.
+
+Credentials:: Grants a user or group permission to use a specific credential from the credential store.
++
+To grant access to a credential, use the `GRANT CONSUME CREDENTIALSTORE` statement.
+This statement grants the Credential Consumer RBAC role to the user or group. 
+For example, you can grant a user access to a specific AWS credential.
++
+For more information about credentials and the credential store, see xref:<link>.
 //TODO: Link to the credential store documentation.
 
-NOTE: Only Full Administrators can run the GRANT statement.
-For more details about user roles, see {authorization-overview}[Authorization].
+NOTE: Only Full Administrators can run the `GRANT` statement.
+For more information about user roles, see {authorization-overview}[Authorization].
 
-== Role Types 
+== Role Types
 
 Roles can be of the following two types:
 
 simple::
-Roles which apply generically to all keyspaces or resources in the cluster.
+Roles that apply generically to all keyspaces or resources in the cluster.
 +
 For example: `cluster_admin` or `bucket_admin`
 
 parameterized by a keyspace::
-Roles which are defined for the context of the specified keyspace only.
-Specify the keyspace name after the keyword ON.
+Roles that are defined for the context of the specified keyspace only.
+Specify the keyspace name after the keyword `ON`.
 +
 For example: `pass:c[data_reader ON `travel-sample`]` +
 or `pass:c[query_select ON `travel-sample`.`inventory`.`airline`]`
@@ -91,8 +98,8 @@ credential-name::
 The name of an existing credential in the credential store.
 For more information about credentials and credential store, see xref:<link>.
 
-NOTE: When granting roles to users, the keyword `USER` or `USERS` is optional.
-However, when granting roles to groups, you must include the keyword `GROUP` or `GROUPS`.
+NOTE: When granting roles or credentials to users, the keyword `USER` or `USERS` is optional.
+However, when granting roles or credentials to groups, you must include the keyword `GROUP` or `GROUPS`.
 You can use either the singular or plural form of these keywords as this does not affect the number of users or groups the role applies to.
 
 [[keyspace-ref,keyspace-ref]]
@@ -144,13 +151,15 @@ GRANT query_select, views_admin
 .{counter:form}. Credentials Access
 [source, sqlpp]
 ----
-GRANT CONSUME CREDENTIALSTORE aws_key
+GRANT CONSUME CREDENTIALSTORE ON `aws_key`
    TO linda;
 ----
 
-NOTE: Mixing of parameterized and unparameterized roles or syntax is not allowed and will create an error.
-
-NOTE: `GRANT CONSUME CREDENTIALSTORE` grants access to a named credential in the credential store rather than an RBAC role, and cannot be mixed with role-based GRANT syntax in the same statement.
+[NOTE]
+====
+* You cannot mix parameterized and unparameterized roles or syntax in the same statement, and doing so results in an error. 
+* `GRANT CONSUME CREDENTIALSTORE` grants access to a named credential in the credential store rather than an RBAC role, and you cannot mix it with role-based `GRANT` syntax in the same statement.
+====
 
 == Examples
 
@@ -178,24 +187,31 @@ GRANT data_reader ON `travel-sample` TO GROUP sales;
 ----
 ====
 
-.Grant a specific user permission to consume the `awsid` credential
+.Grant a specific user permission to consume an AWS credential
 ====
+
+The following statement grants a user permission to consume the credential `awsid`.
+To create this credential, see the examples in xref:n1ql:n1ql-language-reference/createcredentialstore.adoc#examples[CREATE CREDENTIALSTORE].
+
 [source,sqlpp]
 ----
-GRANT CONSUME CREDENTIALSTORE `awsid` TO debby;
+GRANT CONSUME CREDENTIALSTORE ON `awsid` TO debby;
 ----
 ====
 
 .Grant a group permission to consume multiple credentials
 ====
+
+The following statement grants a group permission to consume the credentials `awsid` and `backup_s3`.
+To create these credentials, see the examples in xref:n1ql:n1ql-language-reference/createcredentialstore.adoc#examples[CREATE CREDENTIALSTORE].
+
 [source,sqlpp]
 ----
-GRANT CONSUME CREDENTIALSTORE `awsid`, `backup_s3` TO GROUP sales;
+GRANT CONSUME CREDENTIALSTORE ON `awsid`, `backup_s3` TO GROUP sales;
 ----
 ====
 
 == Related Links
 
-* xref:n1ql-language-reference/createcredentialstore.adoc[CREATE CREDENTIALSTORE]
-* xref:n1ql-language-reference/altercredentialstore.adoc[ALTER CREDENTIALSTORE]
-* xref:n1ql-language-reference/dropcredentialstore.adoc[DROP CREDENTIALSTORE]
+* xref:n1ql-language-reference/revoke.adoc[]
+* xref:n1ql-language-reference/createcredentialstore.adoc[]
