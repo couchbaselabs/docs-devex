@@ -1,5 +1,5 @@
 = REVOKE
-:description: The REVOKE statement allows revoking of any RBAC roles from specific users or groups. 
+:description: Use the REVOKE statement to remove Role-Based Access Control (RBAC) roles or credential access from a user or group.
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 
@@ -9,6 +9,29 @@
 
 [abstract]
 {description}
+
+You can use `REVOKE` to remove two types of access:
+
+Roles:: Revokes RBAC roles from a user or group, removing a predefined set of privileges.
+Roles can be simple or parameterized by a keyspace.
+For more information, see <<role-types>>.
+
+Credentials:: Revokes a user or group's permission to use a specific credential from the credential store.
++
+To revoke access to a credential, use the `REVOKE CONSUME CREDENTIALSTORE` statement.
+This statement revokes the Credential Consumer RBAC role from the user or group.
+For example, you can revoke a user's access to a specific AWS credential.
+
+//TODO: For more information about credentials and the credential store, see xref:<link>. Link to the credential store doc.
+
+[NOTE]
+====
+* Only Full Administrators can run the `REVOKE` statement.
+For more information about user roles, see {authorization-overview}[Authorization].
+* The `REVOKE CONSUME CREDENTIALSTORE` statement is available only in Couchbase Server 8.5 and later.
+====
+
+== Role Types
 
 Roles can be of the following two types:
 
@@ -23,9 +46,6 @@ Specify the keyspace name after the keyword ON.
 +
 For example: `pass:c[data_reader ON `travel-sample`]` +
 or `pass:c[query_select ON `travel-sample`.`inventory`.`airline`]`
-
-NOTE: Only Full Administrators can run the REVOKE statement.
-For more details about user roles, see {authorization-overview}[Authorization].
 
 == Syntax
 
@@ -50,6 +70,13 @@ include::partial$grammar/dcl.ebnf[tag=revoke-group]
 
 image::n1ql-language-reference/revoke-group.png["Syntax diagram: refer to source code listing", align=left]
 
+[source,ebnf]
+----
+include::partial$grammar/dcl.ebnf[tag=revoke-consume-credentialstore]
+----
+
+image::n1ql-language-reference/revoke-consume-credentialstore.png["Syntax diagram: refer to source code listing", align=left]
+
 [horizontal]
 role::
 One of the {authorization-overview}[RBAC role names predefined] by Couchbase Server.
@@ -70,9 +97,13 @@ A user name created by the Couchbase Server RBAC system.
 group::
 A group name created by the Couchbase Server RBAC system.
 
-NOTE: When revoking roles from users, the keyword `USER` or `USERS` is optional. 
-However, when revoking roles from groups, you must include the keyword `GROUP` or `GROUPS`. 
-You can use either the singular or plural form of these keywords as this does not affect the number of users or groups from which the role is revoked.  
+credential-name::
+The name of an existing credential in the credential store.
+//TODO: For more information about credentials and credential store, see xref:<link>. Link to the credential store doc.
+
+NOTE: When revoking roles or credentials from users, the keyword `USER` or `USERS` is optional.
+However, when revoking roles or credentials from groups, you must include the keyword `GROUP` or `GROUPS`.
+You can use either the singular or plural form of these keywords as this does not affect the number of users or groups from which the role or credential access is revoked.
 
 [[keyspace-ref,keyspace-ref]]
 === Keyspace Reference
@@ -100,6 +131,38 @@ image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to so
 
 The simple name or fully qualified name of a keyspace.
 For more information about the syntax, see the {keyspace-ref}[CREATE INDEX] statement.
+
+== Usage
+
+The REVOKE statements have three forms:
+
+.{counter:form}. Unparameterized Roles
+[source,sqlpp]
+----
+REVOKE replication_admin, query_external_access
+   FROM cchaplan, jgleason;
+----
+
+.{counter:form}. Parameterized Roles
+[source,sqlpp]
+----
+REVOKE query_select, views_admin
+   ON orders, customers
+   FROM bill, linda;
+----
+
+.{counter:form}. Credentials Access
+[source, sqlpp]
+----
+REVOKE CONSUME CREDENTIALSTORE ON `aws_key`
+   FROM linda;
+----
+
+[NOTE]
+====
+* You cannot mix parameterized and unparameterized roles or syntax in the same statement, and doing so results in an error.
+* `REVOKE CONSUME CREDENTIALSTORE` revokes access to a named credential in the credential store rather than an RBAC role, and you cannot mix it with role-based `REVOKE` syntax in the same statement.
+====
 
 == Examples
 
@@ -130,3 +193,28 @@ REVOKE query_update
   FROM GROUP sales
 ----
 ====
+
+.Revoke a specific user's permission to consume an AWS credential
+====
+The following statement revokes a user's permission to consume the credential `awsid`.
+
+[source,sqlpp]
+----
+REVOKE CONSUME CREDENTIALSTORE ON `awsid` FROM debby;
+----
+====
+
+.Revoke a group's permission to consume multiple credentials
+====
+The following statement revokes a group's permission to consume the credentials `awsid` and `backup_s3`.
+
+[source,sqlpp]
+----
+REVOKE CONSUME CREDENTIALSTORE ON `awsid`, `backup_s3` FROM GROUP sales;
+----
+====
+
+== Related Links
+
+* xref:n1ql-language-reference/grant.adoc[]
+* xref:n1ql-language-reference/createcredentialstore.adoc[]
