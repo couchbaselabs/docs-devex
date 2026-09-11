@@ -4,11 +4,13 @@
 :page-product-name: {product-name}
 :page-aliases: fts:fts-perform-searches.adoc, fts:fts-searching-full-text-indexes-aliases.adoc, fts:fts-searching-with-sdk.adoc
 :description: Run a Search query to search and return the contents of a Search index.
+:page-toclevels: 3
 
 [abstract]
 {description}
 
-If you use the default search result xref:search-request-params.adoc#sort[sorting] of `_score`, a document's <<scoring,score>> determines where it appears in your search results. 
+If you use the default search result xref:search-request-params.adoc#sort[sorting] of `_score`, a document's <<scoring,score>> determines where it appears in your search results.
+You can choose a specific <<scoring,scoring algorithm>> or use xref:score-fusion/about-score-fusion.adoc[a score fusion algorithm] to change how document scores are calculated.
 
 NOTE: You must xref:create-search-indexes.adoc[create a Search index] before you can run a search with the Search Service.
 
@@ -59,9 +61,19 @@ hit_score = (query_1_boost * query_1_hit_score) + (knn_boost * knn_distance)
 
 When running a hybrid search with the <<ui,{page-ui-name}>> or <<api,REST API>>, the Search Service displays results as a disjunct (`OR`) between your regular Search and Vector Search queries. 
 
-TIP: When running a hybrid Search query and the `tf-idf` algorithm, you should add a `boost` value to your regular Search query to level the `tf-idf` score with the knn distance.
+==== Hybrid Searches with tf-idf
+
+When running a hybrid Search query with the `tf-idf` algorithm, you should add a `boost` value to your regular Search query to level the `tf-idf` score with the knn distance.
 Otherwise, you might see unexpected search results.
 This is because of the differences in the scoring algorithms between the 2 query types.
+
+For more information about how to set a `boost` value, see xref:search-request-params.adoc#boost[`boost`].
+
+If you're using the xref:score-fusion/about-score-fusion.adoc#rrf[Reciprocal Rank Fusion (RRF) algorithm] for your query, your `boost` values might not have any effect on your search results, unless they move a document across a rank boundary.
+
+If you use the xref:score-fusion/about-score-fusion.adoc#rsf[Relative Score Fusion (RSF) algorithm], boosting might have more of an effect on search results.
+The final result is dependent on how your document scores are distributed.
+A large `boost` value can improve the score of 1 document, but also compress the normalized scores of other documents for that query. 
 
 [#bm25]
 === bm25 Search Scoring
@@ -88,7 +100,9 @@ The calculation for a basic Search query is still based on the document's score 
 hit_score = (query_1_boost * query_1_hit_score) + (query_2_boost * query_2_hit_score)
 ----
 
-The calculation when running a hybrid Search query, that includes xref:vector-search:vector-search.adoc[a Vector Search query], is still: 
+==== Hybrid Searches with bm25
+
+The calculation when running a hybrid Search query, that includes xref:vector-search:vector-search.adoc[a Vector Search query], for the `bm25` algorithm is still: 
 
 ----
 hit_score = (query_1_boost * query_1_hit_score) + (knn_boost * knn_distance)
@@ -98,6 +112,13 @@ When running a hybrid search with the <<ui,{page-ui-name}>> or <<api,REST API>>,
 
 `bm25` supports better hybrid search results and richer result rankings. 
 It also gives more stable result ordering across Search index partitions, when xref:search-request-params.adoc#global_scoring[`global_scoring`] is enabled.
+
+You can use the xref:score-fusion/about-score-fusion.adoc#rrf[Reciprocal Rank Fusion (RRF) algorithm] or the xref:score-fusion/about-score-fusion.adoc#rsf[Relative Score Fusion (RSF) algorithm] with `bm25`.
+`boost` values have the same impact on `bm25` Search indexes and score fusion queries as with <<tf-idf>>:
+
+* If you use the xref:score-fusion/about-score-fusion.adoc#rrf[Reciprocal Rank Fusion (RRF) algorithm] for your query, your `boost` values might not have any effect on your search results, unless they move a document across a rank boundary.
+* If you use the xref:score-fusion/about-score-fusion.adoc#rsf[Relative Score Fusion (RSF) algorithm] for your query, the result of your `boost` depends on your document score distributions.
+A large `boost` value can improve the score of 1 document, but also compress the normalized scores of other documents for that query.
 
 [#ui]
 == Run a Search with the {page-ui-name}
@@ -193,3 +214,4 @@ For more information about how to use the Search Service from a {sqlpp} query, s
 * xref:customize-index.adoc[]
 * xref:index-aliases.adoc[]
 * xref:search-facets.adoc[]
+* xref:score-fusion/about-score-fusion.adoc[]
