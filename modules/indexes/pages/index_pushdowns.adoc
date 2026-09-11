@@ -11,28 +11,26 @@ The GSI Indexes are a vital part of query performance and are tightly coupled wi
 The Query engine implements many query processing optimizations to achieve the best possible performance for {sqlpp} queries.
 
 Query Indexer not only indexes data, it also supports various operations such as point scans, range scans, array indexing, sort order, and pagination.
-The Query engine tries to leverage the indexer functionality as much as possible by pushing down operations to the indexer as part of the index scan.
+The Query engine tries to use the indexer functionality as much as possible by pushing down operations to the indexer as part of the index scan.
 This helps performance, predominantly, in two ways:
 
 . Minimize the amount of data transferred from Indexer nodes to Query nodes.
 . Minimize the amount of processing done at Query nodes.
 
-.Examples on this Page
-****
+== Examples on this Page
+
 The examples in this topic use the travel-sample dataset which is shipped with Couchbase Server.
 For instructions on how to install the sample bucket, see xref:manage:manage-settings/install-sample-buckets.adoc[Sample Buckets].
 
 include::ROOT:partial$query-context.adoc[tag=statement]
-****
 
 == Index Projection
 
 When processing a SELECT or DML with a WHERE clause, the Query engine picks one or more qualified indexes to be used for the query.
-Note that each index will have document field names explicitly specified as index-keys, and some metadata fields, such as `meta().id`, implicitly stored in the index.
-In earlier releases, the Indexer used to return all index-keys available in the index for the matching documents.
-From Couchbase Server 5.0, the Query engine requests the exact list of fields needed for the query.
-For a covered query, it is the fields referred in projection, predicate, GROUP BY clauses, ORDER BY clauses, HAVING clauses, ON key, and subqueries of the query.
-For non-covered queries, it is just `META().id`.
+Each index has document field names explicitly specified as index-keys, and some metadata fields, such as `meta().id`, implicitly stored in the index.
+The Query engine requests the exact list of fields needed for the query.
+For a covered query, it's the fields referred in projection, predicate, GROUP BY clauses, ORDER BY clauses, HAVING clauses, ON key, and subqueries of the query.
+For non-covered queries, it's just `META().id`.
 
 For example, consider the following index and query:
 
@@ -65,9 +63,9 @@ include::example$pushdown-simple.jsonc[tag=projection]
 ----
 
 The query refers to fields `sourceairport` and `destinationairport`.
-The index is wider in scope, that is, it has `sourceairport`, `destinationairport`, and `schedule.day` fields.
+The index is wider in scope: it has `sourceairport`, `destinationairport`, and `schedule.day` fields.
 
-So, for each matching document, the query requires only a subset of the data stored in the index.
+For each matching document, the query requires only a subset of the data stored in the index.
 With index-projection support, the Query engine indicates the exact data requested as part of the index-scan.
 In this example,
 
@@ -75,7 +73,7 @@ In this example,
 This has only one entry (`0`) indicating the first index-key `sourceairport`.
 <2> Also, the `primary_key` indicates whether the index should return the primary key `meta().id` of the matching document.
 
-Note that in some cases (such as when `distinctScan` or `intersectScan` are used, as in this example), the primary key `meta().id` may be retrieved even though the query doesn’t explicitly specify it in the query.
+In some cases (such as when `distinctScan` or `intersectScan` are used, as in this example), the primary key `meta().id` may be retrieved even though the query does not explicitly specify it in the query.
 Without this optimization, index-scan would return all the index-keys defined in the index.
 If the `index_projection` field is missing in the EXPLAIN output, then Indexer would return all index-keys.
 ====
@@ -85,7 +83,7 @@ If the `index_projection` field is missing in the EXPLAIN output, then Indexer w
 The Query engine and GSI indexes support many optimizations for efficiently processing predicate push-downs.
 In general, this performance optimization is leveraged when the Query engine decides to use an Index-scan for processing a query, and whole or partial predicates can be pushed to the indexer to filter documents of interest to the query.
 
-For example, in the above query <<example-simple>> with a simple WHERE clause, the predicate (`sourceairport = "SFO"`) is pushed to the index `def_inventory_route_route_src_dst_day` with the following single `span` and `range`.
+For example, in the above query <<example-simple>> with a WHERE clause, the predicate (`sourceairport = "SFO"`) is pushed to the index `def_inventory_route_route_src_dst_day` with the following single `span` and `range`.
 These attributes exactly define different characteristics of the index scan:
 
 .Predicate Pushdown
@@ -100,7 +98,7 @@ include::example$pushdown-simple.jsonc[tag=predicate]
 
 * Each span defines details about one index-key summarizing corresponding predicate conditions into a range-scan lookup for the index.
 In this example, the predicate condition (`sourceairport = "SFO"`) translates to one span with one range that specifies both `low` and `high` values of "SFO" (to imply equals condition).
-* Refer to section xref:index-scans.adoc[] for more information.
+* For more information, see xref:index-scans.adoc[].
 ====
 
 == Composite Predicate Pushdown
@@ -132,13 +130,13 @@ For instance,
 
 [NOTE]
 ====
-This range may include some unwanted entries (such as "mark", "abby", "anne") which will be filtered subsequently.
+This range may include some unwanted entries (such as `"mark"`, `"abby"`, `"anne"`) which will be filtered subsequently.
 
 Queries with predicates such as `(age = 20) AND (name BETWEEN "joe" and "mark")` will need all the entries found using range scans.
 ====
 
 In general, when the predicate has a range condition on prefixing index-keys (such as `age`) may produce unwanted results from the range-scan index-lookups.
-In Couchbase Server, the Query service and Indexer are enhanced with complete and accurate predicate pushdown to filter such unnecessary results in the Indexer itself.
+In Couchbase Server, the Query Service and Indexer are enhanced with complete and accurate predicate pushdown to filter such unnecessary results in the Indexer itself.
 This improves query performance as it saves the additional overhead in transferring the unwanted data/results to query nodes and subsequently filtering the results.
 This is explained with an example in the following section: <<range-scan-prefix>>.
 
@@ -193,7 +191,7 @@ include::example$pushdown-comp-plan.jsonc[tags=index;ellipsis;final]
 === Composite Predicate with Skip-Key Range Scan
 
 In <<example-comp-explain>> above, the query has a composite predicate on continuous leading index-keys, namely the index-keys `distance` and `sourceairport`, which occur together at the start of the index definition.
-In Couchbase Server 6.5 and later, it is possible to push down a composite predicate on non-continuous leading index-keys.
+In Couchbase Server 6.5 and later, it's possible to push down a composite predicate on non-continuous leading index-keys.
 There must be a predicate on the first key in the index definition, and then on any of the subsequent index-keys.
 
 Consider the following query, which is a variant of the query in <<example-comp-explain>> above, and uses the same index.
@@ -210,8 +208,8 @@ USE INDEX (idx_route_src_dst_dist)
 WHERE distance < 2000 AND destinationairport = "LAX"; -- <1>
 ----
 
-<1> This query has a range predicate on the first index-key `distance` and an equality predicate on the 3rd index-key `destinationairport`.
-There is no predicate on the 2nd index-key `sourceairport`.
+<1> This query has a range predicate on the first index-key `distance` and an equality predicate on the third index-key `destinationairport`.
+The query has no predicate on the 2nd index-key `sourceairport`.
 
 .Results
 [source,json]
@@ -221,7 +219,7 @@ include::example$pushdown-skip.jsonc[tag=excerpt]
 
 <.> The EXPLAIN query plan output shows that the predicate is pushed-down to the indexer.
 <.> The first element of `range[]` corresponds to the index-key `distance` with (`low`, `high`) values (`null`, `2000`) respectively.
-<.> The second element of `range[]` corresponds to the index-key `sourceairport` with no low or high bounds, i.e. a whole range scan.
+<.> The second element of `range[]` corresponds to the index-key `sourceairport` with no low or high bounds -- in other words, a whole range scan.
 <.> The third element of `range[]` corresponds to the index-key `destinationairport` with (`low`, `high`) values (`"LAX"`, `"LAX"`) representing equals condition.
 
 By skipping the index-key that does not have a predicate, and including all the non-continuous index-keys that do have predicates, the query uses the index more effectively and reduces the number of documents that need to be fetched.
@@ -236,7 +234,7 @@ These operators may not always be pushed to Indexer, depending on the following 
 * Whether or not the whole predicate in the WHERE clause can be completely and accurately pushed to a single index.
 * When using IntersectScan, the Query engine uses multiple indexes to process the query.
 As such, LIMIT/OFFSET will need to be processed in the Query engine at a later stage of query processing, and hence cannot be pushed to the Indexer.
-* Whether or not the SELECT query has other clauses that may impact pagination, such as ORDER BY or JOIN.
+* Whether or not the SELECT query has other clauses that may affect pagination, such as ORDER BY or JOIN.
 For example,
  ** When ORDER BY key in the query is different from that of the index order, then the query layer will need to process the sort; and hence, in those cases, the pagination cannot be pushed to the indexer as shown in <<example-page-3>> below.
  ** For JOIN queries, index scans can be used only for the left side keyspace.
@@ -260,7 +258,7 @@ include::example$pushdown-def-city.n1ql[]
 ----
 EXPLAIN SELECT * FROM landmark
 WHERE city = "San Francisco"
-OFFSET  4000  LIMIT 10000;
+OFFSET 4000 LIMIT 10000;
 ----
 
 .Result
@@ -290,7 +288,7 @@ CREATE PRIMARY INDEX `def_inventory_landmark_primary`
 [source,sqlpp]
 ----
 EXPLAIN SELECT * FROM landmark
-OFFSET  4000  LIMIT 10000;
+OFFSET 4000 LIMIT 10000;
 ----
 
 .Result
@@ -321,7 +319,7 @@ EXPLAIN SELECT * FROM landmark
 USE INDEX(def_inventory_landmark_city)
 WHERE city = "San Francisco"
 ORDER BY name
-OFFSET  4000  LIMIT 10000;
+OFFSET 4000 LIMIT 10000;
 ----
 
 .Result
@@ -344,7 +342,7 @@ For example, ORDER BY may not be pushed down when the ORDER BY fields are not al
 [[example-idx-1]]
 .Ascending Sort by String Field
 ====
-Find all cities that start with "San", and sort the results by the city name in ascending order.
+Find all cities that start with `"San"`, and sort the results by the city name in ascending order.
 This example uses the `def_inventory_landmark_city` index that comes pre-installed and can be made by the statement:
 
 .Index
@@ -368,14 +366,14 @@ include::example$pushdown-idx-1.jsonc[tags=index;ellipsis;query]
 // ...
 ----
 
-<1> In this example, you can see that the query plan does not have an ORDER operator before the final projection.
+<1> In this example, the query plan does not have an ORDER operator before the final projection.
 That means order pushdown is being leveraged, and the query is relying on the index order.
 ====
 
 [[example-idx-2]]
 .Ascending Sort by Primary Key
 ====
-Find all cities that start with "San", and sort the results by the document primary key in ascending order.
+Find all cities that start with `"San"`, and sort the results by the document primary key in ascending order.
 This example uses the `def_inventory_landmark_city` index that comes pre-installed and can be made by the statement:
 
 .Index
@@ -398,19 +396,19 @@ ORDER BY meta().id;
 include::example$pushdown-idx-2.jsonc[tags=index;ellipsis;query]
 ----
 
-<1> In this example, you can see an additional ORDER operator before the final projection, because the ORDER BY field `meta().id` is different from the index order key `city`.
+<1> In this example, an additional ORDER operator appears before the final projection, because the ORDER BY field `meta().id` is different from the index order key `city`.
 ====
 
 [discrete]
 === Limitation
 
 Currently the Query engine supports order pushdown only when the ORDER BY keys are aligned with the Index order.
-But reverse-scan of the index is not supported.
+Reverse-scan of the index is not supported.
 
 For example, in <<example-idx-1>> above, you can see that the query plan does not have an ORDER operator before the final projection, because the index order is the same as the ascending order specified in the query.
 Similarly, in the following example <<example-idx-3>>, the ORDER BY clause has DESC, and that matches with the index order defined by the index `idx_landmark_city_desc`.
 
-However, the ASC order in <<example-idx-1>> will not be able to leverage the index order in the index `idx_landmark_city_desc`, nor will the DESC order in <<example-idx-3>> be able to leverage the index order in the index `def_inventory_landmark_city`.
+However, the `ASC` order in <<example-idx-1>> will not be able to use the index order in the index `idx_landmark_city_desc`, nor will the DESC order in <<example-idx-3>> be able to use the index order in the index `def_inventory_landmark_city`.
 
 [[example-idx-3]]
 .Descending Sort by String Field

@@ -1,0 +1,203 @@
+= Hybrid Searches with Score Fusion
+:page-topic-type: concept
+:description: As of Couchbase Server version 8.5 and later, you can use new algorithms to combine your standard Search query document scores with Vector Search scores to get better hybrid search results.
+:page-status: Couchbase Server 8.5
+:page-toclevels: 3
+:stem: latexmath
+
+[abstract]
+{description}
+
+The Search Service supports the following score fusion algorithms for hybrid searches: 
+
+* <<rrf,>>
+* <<rsf,>>
+
+You can use either algorithm to make sure the Search Service returns any documents ranked highly by lexical or semantic search signals as the most relevant documents in your results.
+
+[#rrf]
+== Reciprocal Rank Fusion (RRF)
+
+Reciprocal Rank Fusion (RRF) is a rank-based algorithm for merging results from standard Search queries and Vector Search results.
+The algorithm does not rely on score values, but the way each document ranks in its respective results list.
+
+For example, if you had a result set for a hybrid search: 
+
+* Any documents that appear in both results benefit from reciprocal rank contributions and rank higher in your final document scoring.
+* The weights assigned to the list of documents from your standard search and Vector Search queries, configure the relative importance of the reciprocal rank score.
+
+Any document that's ranked higher on one list is assigned a higher score using RRF. 
+
+Specifically, a document's score can be calculated as: 
+
+[latexmath]
+++++
+\begin{equation}
+score(d) = \sum_{i\in \text{\{fts, knn\}}}  W_i \cdot \frac{1} {k + \text{rank}_i(d)} = w_{fts} \cdot \frac{1} {k + \text{rank}_{fts}(d)} + w_{knn} \cdot \frac{1} {k + \text{rank}_{knn}(d)}
+\end{equation}
+++++
+
+By default, the Search Service sets the value of stem:[k] in the RRF formula to `60`.
+You can configure this value xref:search-request-params.adoc#score-rank-constant[in your Search request].
+
+=== When To Use Reciprocal Rank Fusion (RRF)
+
+For example, if you had the following results from a standard lexical search in your documents, for a user searching for support tickets or documentation:
+
+----
+{ 
+  "Doc A": {
+    "score": 12.5, 
+    "rank": 1
+  },
+  "Doc B": {
+    "score": 11.9, 
+    "rank": 2
+  },
+  "Doc C": {
+    "score": 1.2, 
+    "rank": 3
+  }
+}
+----
+
+For the same documents in this example, if you had the following Vector Search results: 
+
+----
+{ 
+  "Doc C": {
+    "score": 0.92, 
+    "rank": 1
+  },
+  "Doc B": {
+    "score": 0.89, 
+    "rank": 2
+  },
+  "Doc D": {
+    "score": 0.88, 
+    "rank": 3
+  }
+}
+----
+
+The lexical search and Vector Search scores are scored on completely different scales.
+`Doc C` also scores low on a lexical search, but is highly semantically relevant.
+The RRF algorithm works well in this scenario - `Doc C` and `Doc B` would have higher scores in the final result set because of their ranking in their initial results.
+
+The RRF algorithm works best for hybrid searches when: 
+
+* Scores are not comparable across standard search and Vector Search.
+* Scores are noisy. 
+* Scores are hard to normalize. 
+* You need robust hybrid document rankings, but do not want to calibrate scores across your 2 different search types.
+
+=== Run a Reciprocal Rank Fusion (RRF) Query
+
+To use the RRF algorithm for a hybrid search with the Search Service: 
+
+. xref:vector-search:create-vector-search-index-ui.adoc[] or xref:vector-search:create-vector-search-index-rest-api.adoc[], with xref:about-mappings.adoc#fields[additional child field mappings] for a standard Search query.
+. xref:run-searches.adoc[Run a Search query] with the following parameters: 
+** A xref:search-request-params.adoc#query[`query` object]
+** A xref:search-request-params.adoc#knn[`knn` array]
+** The xref:search-request-params.adoc#score[`score` property] set to `rrf`.
+** A xref:search-request-params.adoc#fusion-params[`params` object] configured for the `rrf` algorithm.
+
+For more information and examples, see xref:score-fusion/run-hybrid-search-score-fusion.adoc[].
+
+[#rsf]
+== Relative Score Fusion (RSF)
+
+Relative Score Fusion (RSF) is a score-based algorithm for putting standard Search queries and Vector Search results on the same scale.
+The RSF algorithm normalizes the scores for standard and Vector Search queries by setting the highest scoring document to a value of `1`, and the lowest to a value of `0`, while scaling the rest of the scores between those values.
+After normalizing, the Search Service combines your document scores with weighted addition. 
+
+Specifically, the Search Service normalizes your document scores using the following formula, where stem:[s] is the score of the document stem:[(d)]: 
+
+[latexmath]
+++++
+\begin{equation}
+s^{norm}_{i} \hspace{1mm} (d) = \frac{s_i(d) - s_{min}} {s_{max} - s_{min}}
+\end{equation}
+++++
+
+Then, the RSF score for a document stem:[(d)] can be calculated as: 
+
+[latexmath]
+++++
+\begin{equation}
+score(d) = w_{fts} \cdot s_{fts} \hspace{1mm} ^{norm}(d) + w_{knn} \cdot s_{knn} \hspace{1mm} ^{norm}(d)
+\end{equation}
+++++
+
+=== When To Use Relative Score Fusion (RSF)
+
+For example, if you had the following results from a standard lexical search in your documents, for a user running a search for a new phone: 
+
+----
+{ 
+  "Doc A": {
+    "product": "iPhone 15 Pro Max",
+    "score": 98, 
+    "rank": 1
+  },
+  "Doc B": {
+    "product": "iPhone 15 Pro",
+    "score": 96, 
+    "rank": 2
+  },
+  "Doc C": {
+    "product": "iPhone case",
+    "score": 20, 
+    "rank": 3
+  }
+}
+----
+
+For the same documents in this example, if you had the following Vector Search results: 
+
+----
+{ 
+  "Doc C": {
+    "score": 0.91, 
+    "rank": 1
+  },
+  "Doc B": {
+    "score": 0.89, 
+    "rank": 2
+  },
+  "Doc A": {
+    "score": 0.88, 
+    "rank": 3
+  }
+}
+----
+
+If you used <<rrf,>> with these results, the Search Service might rank `Doc C` too high, because of its position as `Rank 1` in your Vector Search.
+But, `Doc C` only scores a `20` on your lexical search. 
+
+If you use the RSF algorithm, the weaker lexical score for `Doc C` is preserved after normalization, and the Search Service keeps `Doc A` and `Doc B` as higher ranking results.
+
+The RSF algorithm works best for hybrid searches when:
+
+* You need to keep the magnitude of your scores in your final document ranking.
+* The confidence in your document scoring is important.
+* Using a rank-only method would over-promote a semantically related, but weaker document match.
+
+=== Run a Relative Score Fusion (RSF) Query
+
+To use the RSF algorithm for a hybrid search with the Search Service: 
+
+. xref:vector-search:create-vector-search-index-ui.adoc[] or xref:vector-search:create-vector-search-index-rest-api.adoc[], with xref:about-mappings.adoc#fields[additional child field mappings] for a standard Search query.
+. xref:run-searches.adoc[Run a Search query] with the following parameters: 
+** A xref:search-request-params.adoc#query[`query` object]
+** A xref:search-request-params.adoc#knn[`knn` array]
+** The xref:search-request-params.adoc#score[`score` property] set to `rsf`.
+** A xref:search-request-params.adoc#fusion-params[`params` object] configured for the `rsf` algorithm.
+
+For more information and examples, see xref:score-fusion/run-hybrid-search-score-fusion.adoc[].
+
+== See Also
+
+* xref:score-fusion/run-hybrid-search-score-fusion.adoc[]
+* xref:search-request-params.adoc[]
+* xref:vector-search:vector-search.adoc[]
