@@ -2058,7 +2058,10 @@ For more information about the `\{search-index-name\}` object, see <<vectors,>>.
 Set the consistency to bounded or unbounded consistency: 
 
 * `at_plus`: The Search query executes but requires that the Search index matches the timestamp of the last document update. 
-You must provide a `vectors` object 
+You must provide a `vectors` object
+* `scan_plus`: The Search query executes but requires that the consistency vectors in the Search index match the consistency vectors in the Search query.
+In `scan_plus`, the Search Service automatically fetches consistency vectors from the Data Service and adds them to the Search query.
+You do not need to provide a `vectors` object.
 * `not_bounded`: The Search query executes without a consistency requirement. 
 `not_bounded` is faster than `at_plus`, as it doesn't rely on a `vectors` object or wait for the Search index to match the Data Service index.
 
@@ -2100,6 +2103,8 @@ For examples on how to obtain and use a `MutationToken` with the Couchbase SDKs,
  | xref:python-sdk:howtos:full-text-searching-with-sdk.adoc#scan-consistency-and-consistent-with[Python]
  | xref:ruby-sdk:howtos:full-text-searching-with-sdk.adoc#consistency[Ruby]
  | xref:scala-sdk:howtos:full-text-searching-with-sdk.adoc#consistency[Scala]
+
+If you use `scan_plus` consistency, you can omit the `vectors` object and let the Search Service automatically fetch and attach consistency vectors to your Search query.
 
 [cols="1,1,1,2"]
 |====
