@@ -442,22 +442,55 @@ The following example assumes that an FTS index called `travel-sample._default.t
 ----
 
 function OnUpdate(doc, meta) {
-    var count = 0;
-    
+
     // 1. Create the search type using the couchbase.SearchQuery helper
     let myQuery = couchbase.SearchQuery.match('hotel');
     
     // 2. Execute the search query
-    var it = couchbase.searchQuery("travel-sample._default.travel_sample_test", myQuery, {"limit": 10});
+    var it = couchbase.searchQuery("travel-sample._default.travel_sample_test", myQuery, {"size": 5});
 
     // 3. Iterate through the search results
     for (let row of it) {
-        count++;
         log("Match found: ", row);
     }
-    
-    if (count > 0) {
-        log("Found " + count + " search results for document: " + meta.id);
+}
+----
+
+The following example uses a match query, which searches for documents containing a specified term or phrase in a given field.
+
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    // 1. Create a match query, scoped to a specific field with fuzzy matching
+    let myQuery = couchbase.SearchQuery.match("location hostel")
+        .field("reviews.content")
+        .operator("and")
+        .fuzziness(2);
+
+    // 2. Execute the search query
+    var it = couchbase.searchQuery("travel-sample._default.travel_sample_test", myQuery, {"size": 5});
+
+    // 3. Iterate through the search results
+    for (let row of it) {
+        log("Match found: ", row);
+    }
+}
+----
+
+The following example uses a matchAll query, which returns every document in the index.
+
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    // 1. Create a matchAll query to return every document in the index
+    let myQuery = couchbase.SearchQuery.matchAll();
+
+    // 2. Execute the search query
+    var it = couchbase.searchQuery("travel-sample._default.travel_sample_test", myQuery, {"size": 5});
+
+    // 3. Iterate through the search results
+    for (let row of it) {
+        log("Match found: ", row);
     }
 }
 ----
