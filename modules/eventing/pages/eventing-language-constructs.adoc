@@ -413,6 +413,91 @@ function OnUpdate(doc, meta) {
 
 For more information about {sqlpp} Analytics, see xref:server:analytics:1_intro.adoc[].
 
+
+[#search_call]
+=== `couchbase.{zwsp}searchQuery({wj})`
+
+ifeval::['{page-component-version}' == '8.1'] 
+_(Introduced in Couchbase Server 8.1)_
+endif::[]
+
+The `couchbase.searchQuery()` function allows you to execute the Full Text Search (FTS) queries directly from your Eventing Function. 
+
+A sample JavaScript function looks like the following.
+
+[source,javascript]
+----
+JavaScript 
+couchbase.searchQuery(indexname, query, options)
+----
+To define the search request, you must use the `couchbase.SearchQuery` helper class. 
+This class is used to create the specific search type (such as match, term, and phrase) and configure all underlying options for the request. 
+Once constructed, you pass this object into the `couchbase.searchQuery()` function's `query` parameter to execute the search and fetch the results.
+
+The function returns a query iterator—working exactly like the N1QL query iterator—which allows you to iterate over the result set using standard JavaScript mechanisms like `for...of` loops.
+
+The following example assumes that an FTS index called `travel-sample._default.travel_sample_test` already exists. 
+
+[source,javascript]
+----
+
+function OnUpdate(doc, meta) {
+
+    // 1. Create the search type using the couchbase.SearchQuery helper
+    let myQuery = couchbase.SearchQuery.match('hotel');
+    
+    // 2. Execute the search query
+    var it = couchbase.searchQuery("travel-sample._default.travel_sample_test", myQuery, {"size": 5});
+
+    // 3. Iterate through the search results
+    for (let row of it) {
+        log("Match found: ", row);
+    }
+}
+----
+
+The following example uses a match query, which searches for documents containing a specified term or phrase in a given field.
+
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    // 1. Create a match query, scoped to a specific field with fuzzy matching
+    let myQuery = couchbase.SearchQuery.match("location hostel")
+        .field("reviews.content")
+        .operator("and")
+        .fuzziness(2);
+
+    // 2. Execute the search query
+    var it = couchbase.searchQuery("travel-sample._default.travel_sample_test", myQuery, {"size": 5});
+
+    // 3. Iterate through the search results
+    for (let row of it) {
+        log("Match found: ", row);
+    }
+}
+----
+
+The following example uses a matchAll query, which returns every document in the index.
+
+[source,javascript]
+----
+function OnUpdate(doc, meta) {
+    // 1. Create a matchAll query to return every document in the index
+    let myQuery = couchbase.SearchQuery.matchAll();
+
+    // 2. Execute the search query
+    var it = couchbase.searchQuery("travel-sample._default.travel_sample_test", myQuery, {"size": 5});
+
+    // 3. Iterate through the search results
+    for (let row of it) {
+        log("Match found: ", row);
+    }
+}
+----
+
+// For more information about constructing search queries, see the Node.js SDK API reference for `couchbase.SearchQuery`.
+// For more information about {sqlpp} FTS, see xref:server:fts:1_intro.adoc[].
+
 [#crc64_call]
 === `crc64()`
 
