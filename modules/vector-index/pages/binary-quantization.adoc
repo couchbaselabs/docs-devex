@@ -6,9 +6,12 @@
 :stem: 
 :page-toclevels: 3
 
+[abstract]
+{description}
+
  It is designed for large-scale vector search workloads where reducing index memory overhead and accelerating candidate retrieval are more important than preserving the uncompressed accuracy of a full-precision (FP32) index.
 
-RaBitQ is supported for Hyperscale Vector Indexes (HVI) and Composite Vector Indexes (CVI) that index dense vectors.
+RaBitQ is supported for Hyperscale Vector Indexes (HVI), Composite Vector Indexes (CVI) and Search Vector Indexes.
 RaBitQ indexes use Hamming similarity for initial candidate search.
 
 At the default setting of `nbit=1`, RaBitQ can provide up to 32x compression compared with unquantized FP32 vectors.
@@ -36,23 +39,24 @@ The actual storage savings and search performance depend on vector dimensionalit
 
 | *RaBitQ* (Binary)
 | Maximum compression (~32x at `nbit=1` vs. FP32; decreases as `nbit` increases).
+NOTE:For Search Vector Indexes, nbit is always 1 and cannot be configured to a different value.
 | Lower first-phase recall at `nbit=1`; two-phase rescoring restores high recall.
 | Fast build time ($\ge 3\times$ faster than PQ).
 | Fast Hamming candidate search; rescoring adds slight query overhead.
 | You have large, high-dimensional datasets ($\ge 384$ dimensions) and prioritize low memory footprint and fast builds.
 |===
 
-[NOTE]
-====
-Compression, recall, build times, and query latency depend on dataset size, vector dimensionality, index configuration, and query workload. Always benchmark with representative data before choosing a quantization method in production.
-====
+NOTE:Compression, recall, build times, and query latency depend on dataset size, vector dimensionality, index configuration, and query workload.
+Always benchmark with representative data before choosing a quantization method in production.
+
+
 
 == Limitations and Scope
 
 Before implementing RaBitQ, consider the following scope and configuration requirements:
 
 * *Index Types:* RaBitQ is available exclusively for Hyperscale Vector Indexes (HVI) and Composite Vector Indexes (CVI).
-It's not supported for standard GSI or FTS vector indexes.
+It's not supported for standard GSI or Search indexes.
 * *Vector Types:* RaBitQ indexes only Dense vector fields.
 Sparse vectors are not supported.
 * *Similarity Metric:* The index definition must specify `"similarity": "hamming"` in the `WITH` clause.
@@ -244,6 +248,78 @@ WITH {
   "similarity": "hamming",
   "persist_full_vector": true
 };
+----
+
+* Search Vector Index with RaBitQ
+
+The following curl command creates a Search (FTS) Vector Index on a dense 768-dimensional vector field, optimized for IVF and RaBitQ:
+
+[source,shell]
+----
+curl -s -XPUT -H "Content-Type: application/json" \
+  -u ${CB_USERNAME}:${CB_PASSWORD} \
+  http://${CB_HOSTNAME}:8094/api/bucket/Cohere1M/scope/_default/index/TestVectorIndex \
+  -d '{
+  "name": "TestVectorIndex",
+  "type": "fulltext-index",
+  "params": {
+    "mapping": {
+      "type_field": "_type",
+      "scoring_model": "tf-idf",
+      "default_type": "_default",
+      "default_analyzer": "standard",
+      "default_datetime_parser": "dateTimeOptional",
+      "default_field": "_all",
+      "store_dynamic": false,
+      "index_dynamic": false,
+      "docvalues_dynamic": false,
+      "types": {
+        "_default._default": {
+          "enabled": true,
+          "dynamic": false,
+          "properties": {
+            "emb": {
+              "enabled": true,
+              "dynamic": false,
+              "fields": [
+                {
+                  "name": "emb",
+                  "type": "vector",
+                  "index": true,
+                  "dims": 768,
+                  "similarity": "dot_product",
+                  "vector_index_optimized_for": "ivf,rabitq"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "default_mapping": {
+        "dynamic": false,
+        "enabled": false
+      }
+    },
+    "store": {
+      "indexType": "scorch",
+      "kvStoreName": ""
+    },
+    "doc_config": {
+      "mode": "scope.collection.type_field",
+      "type_field": "type",
+      "docid_prefix_delim": "",
+      "docid_regexp": ""
+    }
+  },
+  "sourceType": "couchbase",
+  "sourceName": "Cohere1M",
+  "sourceParams": {},
+  "planParams": {
+    "maxPartitionsPerPIndex": 1024,
+    "indexPartitions": 1,
+    "numReplicas": 0
+  }
+}'
 ----
 
 === `persist_full_vector` Configuration and Rescoring
