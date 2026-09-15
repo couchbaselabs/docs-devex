@@ -103,7 +103,7 @@ See xref:vector-index:vectors-and-indexes-overview.adoc#sq[Scalar Quantization] 
 
 ===== PQ Settings
 
-If you choose to use PQ in your index, you must set two values:
+If you choose to use PQ in your index, you must set 2 values:
 
 * The number of subquantizers (number of subspaces PQ splits the vector's dimensions into) to use.
 This value must be a divisor of the number of dimensions in the vector.
@@ -132,6 +132,61 @@ pq-settings ::= 'PQ' subquantizers 'x' number-of-bits
 For example, `PQ32x8` has PQ break the vector's dimensions into 32 subspaces, each of which has 256 centroids.
 See xref:vector-index:vectors-and-indexes-overview.adoc#pq[Product Quantization] for more information about how PQ works.
 
+==== RaBitQ Settings
+
+RaBitQ (Randomized Binary Quantization) is a binary quantization method that encodes each vector dimension into a small number of bits.
+It provides the highest compression of any quantization method available for Hyperscale Vector indexes, at the cost of requiring a two-phase search to achieve high recall.
+
+To use RaBitQ, set the quantization in the `description` parameter to `RaBitQ`:
+
+[source,ebnf]
+----
+rabitq-settings ::= 'RaBitQ' nbit?
+----
+
+Where `nbit` is an optional integer from `1` to `9` (default: `1`) that sets the number of bits used to encode each vector dimension.
+For example, `RaBitQ4` uses 4 bits per dimension.
+
+You must also set `"similarity": "hamming"` when using RaBitQ.
+No other similarity metric is supported with this quantization method.
+
+[cols="1,3",options="header"]
+|===
+| Setting | Effect
+
+| `RaBitQ` or `RaBitQ1`
+| Uses 1 bit per dimension (~32x compression vs. FP32). Maximum compression, lowest first-phase recall.
+Rescoring is recommended.
+
+| `RaBitQ4`
+| Uses 4 bits per dimension (~8x compression). Balanced compression and recall.
+
+| `RaBitQ9`
+| Uses 9 bits per dimension (~3.5x compression). Highest first-phase recall, lowest compression benefit.
+|===
+
+Higher `nbit` values improve first-phase recall at the cost of reduced compression.
+
+Constraints::
+* RaBitQ is only available for Hyperscale Vector Indexes and Composite Vector Indexes with the Dense vector type.
+* You must set `"similarity": "hamming"` when using RaBitQ.
+Cosine, L2, and Dot Product metrics are not supported at the index level.
+* Your dataset must contain at least 1,000 non-null vectors before creating a RaBitQ index.
+
+=== Two-Phase Search and Rescoring
+
+RaBitQ uses a two-phase search process to balance speed and accuracy:
+
+1. *Phase 1 (coarse search)*: Couchbase Server uses Hamming distance (bitwise comparison) to quickly identify candidate vectors from the binary-encoded index.
+2. *Phase 2 (rescoring)*: Couchbase Server re-ranks the candidates using the original full-precision vectors to improve recall accuracy.
+
+By default, Couchbase Server stores full-precision vectors alongside the binary-encoded index (`persist_full_vector: true`).
+This enables Phase 2 rescoring.
+To disable full-vector storage and rescoring, set `persist_full_vector` to `false` in the `WITH` clause.
+Disabling rescoring reduces disk usage but may significantly reduce recall accuracy.
+
+See xref:vector-index:binary-quantization.adoc[Binary Quantization] for guidance on when to choose RaBitQ over SQ or PQ.
+
 ==== Algorithm Settings Examples
 
 The following table shows several `description` values along with an explanation.
@@ -149,6 +204,16 @@ The index uses Scalar Quantization with an 8-bit index, meaning it breaks each o
 The index uses Product Quantization.
 PQ breaks the vector space into 8 subspaces, each of which uses 8-bits to represent centroids in the subspace.
 This settings means each subspace has 256 centroids.
+
+| `IVF,RaBitQ`
+| Couchbase Server chooses the number of centroids.
+The index uses RaBitQ binary quantization at 1 bit per dimension (~32x compression vs FP32).
+Similarity must be set to "hamming" and rescoring is recommended.
+
+| `IVF1024,RaBitQ4`
+| IVF uses 1024 centroids.
+The index uses RaBitQ with 4 bits per dimension (~8x compression). Balanced compression and recall.
+
 
 |===
 
