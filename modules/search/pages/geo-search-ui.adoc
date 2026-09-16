@@ -4,11 +4,12 @@
 :page-product-name: {product-name}
 :page-aliases: fts:fts-creating-index-from-UI-classic-editor-geopoint.adoc
 :description: Search for geospatial data in your Couchbase {page-product-name} cluster with a compatible Search index and the Couchbase {page-ui-name}.
+:page-toclevels: 3
 
 [abstract]
 {description}
 
-For more information about how the Search Service scores documents in search results, see xref:run-searches.adoc#scoring[Scoring for Search Queries].
+For more information about geospatial searches with the Search Service, see xref:search-for-geo.adoc[].
 
 == Prerequisites
 
@@ -19,6 +20,12 @@ For more information about how to deploy a new node and Services on your cluster
 For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[].
 
 * You have documents in your cluster that contain geospatial data.
++
+For more information about the supported data types, see: 
+
+** xref:field-data-types-reference.adoc#geopoint[geopoint]
+** xref:field-data-types-reference.adoc#geoshape[geoshape]
+** xref:field-data-types-reference.adoc#geoshape-v2[geoshape_v2]
 
 * Your user account has the xref:learn:security/roles.adoc#search-admin[`Search Admin`] role for the bucket where you want to create the Search index.
 +
@@ -45,7 +52,8 @@ To create the Search index from the Web Console:
 ====
 Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
 
-For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope. You cannot have 2 indexes with the same name inside the same bucket and scope.
+For Couchbase Server version 7.6 and later, your index name must be unique inside your selected bucket and scope.
+You cannot have 2 indexes with the same name inside the same bucket and scope.
 ====
 
 . In the *Bucket* list, select the bucket where you want to create the index.
@@ -74,7 +82,7 @@ For example, the following query searches a geospatial field, `geo`, for any loc
 +
 [source,json]
 ----
-include::example$geospatial-search-query.jsonc[]
+include::example$geo_search/geospatial-search-query.jsonc[]
 ----
 
 [TIP]
@@ -83,6 +91,73 @@ include::example$geospatial-search-query.jsonc[]
 You can generate a full command-line curl example from the preceding query in the {page-ui-name} to use with the REST API.
 Click *show advanced query settings*, then *show command-line curl example* to get the example code.
 ====
+
+[#geoshape-v2]
+== Example: Run a Geospatial Search Query with a New geoshape_v2 Mapping
+
+[.status]#Couchbase Server 8.5#
+
+From Couchbase Server version 8.5 and later, you can use a new type of geoshape index to improve the performance of geospatial searches with the Search Service.
+You should upgrade your `geopoint` and `geoshape` field data types to the new `geoshape_v2` field data type for the best results with your geospatial searches.
+
+[TIP]
+====
+To use the following example against the `landmark` collection in the `travel-sample` dataset, run the following {sqlpp} query from the xref:tools:query-workbench.adoc[Query Workbench]: 
+
+[source,sqlpp]
+----
+include::example$geo_search/geospatial-sqlpp-query.sqlpp[]
+----
+====
+
+=== Create a New geoshape_v2 Geospatial Search Index
+
+To create a Search index with a `geoshape_v2` mapping with the {page-ui-name}:
+
+. Go to *Search*.
+. Click btn:[Add Index].
+. In the *Index Name* field, enter a name for the index.
++ 
+[NOTE]
+====
+Your index name must start with an alphabetic character (a-z or A-Z). It can only contain alphanumeric characters (a-z, A-Z, or 0-9), hyphens (-), or underscores (_).
+
+Your index name must be unique inside your selected bucket and scope.
+You cannot have 2 indexes with the same name inside the same bucket and scope.
+====
+
+. In the *Bucket* list, select the `travel-sample` bucket.
+. Expand *Customize Index*. 
+. Select *Use non-default scope/collection(s)*.
+.. In the *Scope* list, select the `inventory` scope. 
+. xref:create-type-mapping.adoc[] on the `landmark` collection. 
+. xref:create-child-field.adoc[] on the new type mapping with the following settings: 
+.. In the *Field* field, enter `geojson`.
+.. In the *Type* list, select *geoshape_v2*. 
+.. Select *Index*.
+.. Select *Store*.
+. Click btn:[OK].
+. Click btn:[Create Index].
+
+=== Query a New geoshape_v2 Geospatial Search Index
+
+To query a new `geoshape_v2` Search index with the {page-ui-name}:
+
+. Go to *Search*.
+. Click the geospatial Search index you created in the first part of the example.
+. In the *Search this index* field, enter a search query.
++
+Make sure your geospatial query is contained in a `geometry_v2` object.
+//Fill in link
++
+For example, the following query searches for any geojson data from the `geojson` field, contained `within` the defined `Polygon` shape:
++
+[source,json]
+----
+include::example$geo_search/geoshape-v2-search-query-ui.jsonc[]
+----
+
+If you used the `travel-sample` dataset, the example Search index, and ran the preceding query, results could include `landmark_24880` and `landmark_15910`.
 
 == Next Steps
 
