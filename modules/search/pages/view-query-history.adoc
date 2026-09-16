@@ -1,0 +1,99 @@
+= View Search Query History
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: You can use the {page-ui-name} or the Search REST API to view a history of all Search queries on your cluster.
+:page-toclevels: 3
+
+[abstract]
+{description}
+
+When Search query history is enabled, the Search Service saves a record of each query made against each Search index on your cluster.
+
+== Prerequisites
+
+* You have the Search Service enabled on a node in your cluster.
+For more information about how to deploy a new node and Services on your cluster, see xref:server:manage:manage-nodes/node-management-overview.adoc[].
+
+* You have a bucket with scopes and collections in your cluster.
+For more information about how to create a bucket, see xref:server:manage:manage-buckets/create-bucket.adoc[].
+
+* To view Search query history, you must have xref:create-search-indexes.adoc[created a Search index] and xref:run-searches.adoc[ran at least 1 Search query].
+
+* To view and enable Search query history, you must have the xref:learn:security/roles.adoc#search-admin[`Search Admin`] role on your user account for the bucket or buckets that contain your Search indexes.
+
+* To enable Search query history, you must have logged in to the Couchbase {page-ui-name}. 
+
+
+== Procedure 
+
+To view the history of Search queries on your cluster, you need to <<enable,>>. 
+
+Then, you can <<view,>> or <<view-all,>>.
+
+[#enable]
+=== Enable Search Query History 
+
+To enable Search query history on your cluster: 
+
+. Go to menu:Settings[Search].
+. In *Search History*, select *Enabled*.
+. (Optional) In the *Search History Records* field, enter the maximum number of Search query records to keep on each node running the Search Service in your cluster.
++
+The default is 8000 records.
+
+[#view]
+=== View Search Query History for a Search Index
+
+To view Search query history for a Search index on your cluster: 
+
+. Go to *Search*.
+. Click the Search index where you want to view query history.
+. Click btn:[Index details] (image:index-details-button.png["The Index Details button, which is a hamburger menu with 3 bars."]).
+. Click btn:[Search History].
+. (Optional) Use the available *Filters* to change the records displayed in the {page-ui-name}.
++
+You can filter Search query records by *Min duration*, *Status*, or set a *Limit* for the number of results.
+Click btn:[Apply] to apply any filters.
+Click btn:[Clear] to remove filters.
+. To view the record for a specific query, next to the query you want to view, click btn:[view].
++
+The {page-ui-name} displays a JSON record containing details about the specific Search query, including a timestamp, the body of the Search query, time taken to process the query, and number of results.
+For example: 
++
+[source,json]
+----
+include::example$view-search-query-history.jsonc[]
+----
++
+NOTE: As shown in the example, the Search Service's query history redacts any vectors from xref:vector-search:vector-search.adoc[Search Vector index] queries.
+
+[#view-all]
+=== View Search Query History for All Search Indexes with the REST API
+
+To view the Search query history for all Search indexes on your cluster using the REST API: 
+
+. In your command-line tool, enter a `curl` command.
++
+`curl` defaults to using `GET` for requests. 
+. Set your header content to include `"Content-Type: application/json"`.
+. Enter your username, password, and the Search Service endpoint on port `8094`: 
++
+[source,console]
+----
+include::example$view-search-query-history-request.sh[]
+----
++
+To use SSL, use the `https` protocol in the Search Service endpoint URL and port `18094`.
+Modify the `limit` and `offset` parameters as needed.
++
+The Search Service returns a response like the following, containing a `results` array with JSON objects for each Search query on your cluster:
++
+[source,json]
+----
+include::example$view-search-query-history-full.jsonc[]
+----
+
+== Next Steps
+
+For more information about other details you can view about your Search indexes, see xref:view-index-details.adoc[].
