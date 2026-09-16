@@ -4,6 +4,15 @@ CREATE VECTOR INDEX `color_desc_hyperscale`
        WITH { "dimension":1536, "similarity":"L2", "description":"IVF8,SQ4" }
 /* end::create-rgb-idx[] */
 
+/* tag::create-wait-idx[] */
+CREATE VECTOR INDEX `color_wait_hyperscale` 
+       ON `vector-sample`.`color`.`rgb`(`embedding_vector_dot` VECTOR)
+       WITH { "dimension": 1536,
+              "similarity": "L2",
+              "description": "IVF8,SQ4",
+              "train_list_wait": true }
+/* end::create-wait-idx[] */
+
 /* tag::rgb-entry[] */
 SELECT 
   d.id,
@@ -237,3 +246,58 @@ ON  `demo`.`squad`.`context`(`vector` VECTOR)
                "description":"IVF,SQ8", 
                "train_list":15000};
 /* end::train-list[] */
+
+/* tag::create-sparse-idx[] */
+CREATE VECTOR INDEX `color_sparse_hyperscale`
+ON `vector-sample`.color.`rgb-sparse`(`sparse_vector` SPARSE VECTOR)
+WITH { "description": "IVF",
+       "similarity": "dot",
+       "num_replica": 0 }
+
+/* end::create-sparse-idx[] */
+
+/* tag::create-sparse-scalar[] */
+CREATE VECTOR INDEX `color_sparse_hyperscale_brightness`
+ON `vector-sample`.color.`rgb-sparse`(`sparse_vector` SPARSE VECTOR)
+INCLUDE (`brightness`)
+WITH { "description": "IVF",
+       "similarity": "dot",
+       "num_replica": 0 }
+/* end::create-sparse-scalar[] */
+
+/* tag::sparse-query-single[] */
+WITH query_term_weight AS ([
+  (
+    SELECT RAW `index`
+    FROM `vector-sample`.color.`vocabulary`
+    WHERE term = "brown"
+  ),
+  [1.0]
+]),
+colors AS (
+  SELECT b.color
+  FROM `vector-sample`.color.`rgb-sparse` AS b
+  ORDER BY SPARSE_VECTOR_DISTANCE(b.sparse_vector, query_term_weight)
+  LIMIT 10)
+SELECT RAW colors;
+/* end::sparse-query-single[] */
+
+/* tag::sparse-query-multiple[] */
+WITH query_term_weights AS ([
+  ARRAY_FLATTEN(
+    ARRAY (
+      SELECT RAW `index`
+      FROM `vector-sample`.color.`vocabulary`
+      WHERE term = v
+    ) FOR v IN ["light", "sea", "green"] END,
+  1),
+  [1.0, 1.0, 1.0]
+]),
+colors AS (
+  SELECT b.color
+  FROM `vector-sample`.color.`rgb-sparse` AS b
+  ORDER BY SPARSE_VECTOR_DISTANCE(b.sparse_vector, query_term_weights)
+  LIMIT 10 )
+SELECT RAW colors;
+/* end::sparse-query-multiple[] */
+
