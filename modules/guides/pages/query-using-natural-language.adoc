@@ -1,0 +1,63 @@
+= Query Using Natural Language
+:page-topic-type: concept
+:description: Query your data using natural language instead of {sqlpp}, and hold multi-turn conversations with your data using AI chat sessions.
+
+[abstract]
+{description}
+
+include::ROOT:partial$component-signpost.adoc[]
+
+== Overview
+
+You can query your Couchbase Server data using natural language, instead of using {sqlpp} statement .
+The Query Service sends your prompt to a large language model (LLM), which converts it into a {sqlpp} query.
+For `SELECT` queries, the service runs it and returns the results.
+
+You can use natural language with the Query Service in the following ways:
+
+* Ask a single question and get an answer immediately.
+* Start a conversation, and ask follow-up questions that build on earlier ones.
+* Pause a conversation to free up resources, and resume it later.
+
+=== Ask a Single Question
+
+Use the xref:n1ql:n1ql-language-reference/using-ai.adoc[USING AI] statement to convert one natural-language prompt into a {sqlpp} query.
+
+USING AI is stateless. 
+Each request is independent, and the Query Service does not retain any context between requests.
+For example:
+
+[source,sqlpp]
+----
+USING AI How many hotels provide free parking?;
+----
+
+=== Have a Conversation
+
+To ask follow-up questions that build on earlier ones, start a chat session:
+
+. Use xref:n1ql:n1ql-language-reference/begin-chat.adoc[BEGIN CHAT] to start a chat session.
+. Send xref:n1ql:n1ql-language-reference/using-ai.adoc[USING AI] statements within the chat session.
+The Query Service uses the conversation so far as context for each new prompt.
+. Use xref:n1ql:n1ql-language-reference/end-chat.adoc[END CHAT] to close the chat session and free its resources.
+
+Each chat session is held in memory on the query node that created it, so only a limited number of chat sessions can be active at the same time.
+
+=== Pause and Resume a Conversation
+
+If you want to free up space for other chat sessions, or continue a conversation later, pause it instead of ending it:
+
+* Use xref:n1ql:n1ql-language-reference/pause-chat.adoc[PAUSE CHAT] to save the chat session and remove it from memory.
+* Use xref:n1ql:n1ql-language-reference/resume-chat.adoc[RESUME CHAT] to reload a paused chat session and continue the conversation.
+
+A paused chat session is retained for 7 days.
+If you do not resume it within that time, it expires and you cannot recover it.
+
+== See Also
+
+* xref:n1ql:n1ql-language-reference/using-ai.adoc[USING AI]
+* xref:n1ql:n1ql-language-reference/begin-chat.adoc[BEGIN CHAT]
+* xref:n1ql:n1ql-language-reference/end-chat.adoc[END CHAT]
+* xref:n1ql:n1ql-language-reference/pause-chat.adoc[PAUSE CHAT]
+* xref:n1ql:n1ql-language-reference/resume-chat.adoc[RESUME CHAT]
+
