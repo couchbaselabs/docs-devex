@@ -1,0 +1,204 @@
+= BEGIN CHAT
+:page-topic-type: reference
+:description: Use the BEGIN CHAT statement to start a stateful AI chat session, so you can ask follow-up questions that build on earlier ones.
+:example-note: To try this example, use xref:n1ql:n1ql-intro/cbq.adoc[cbq shell] with Couchbase Server version 8.0 or later.
+:query-settings: xref:n1ql:n1ql-manage/query-settings.adoc
+:natural_orgid: {query-settings}#natural_orgid
+:natural_cred: {query-settings}#natural_cred
+:natural_context: {query-settings}#natural_context
+
+[abstract]
+{description}
+
+== Purpose
+
+Use the BEGIN CHAT statement to start an AI chat session with the Query Service.
+
+A chat session lets you ask a series of related questions using xref:n1ql:n1ql-language-reference/using-ai.adoc[USING AI] statements.
+A standalone USING AI statement is stateless: each request is independent.
+Inside a chat session, the Query Service keeps track of the conversation so far and uses it as context when it generates a {sqlpp} query for each new prompt.
+
+For example, you could ask `How many hotels are in London?`, and then follow up with `Which of those offer free parking?` without repeating the context from your first question.
+
+BEGIN CHAT returns a chat ID.
+Use this ID to:
+
+* Send xref:n1ql:n1ql-language-reference/using-ai.adoc[USING AI] statements to the same session.
+* Close the session with xref:n1ql:n1ql-language-reference/end-chat.adoc[END CHAT].
+* Free the session's memory without losing it, using xref:n1ql:n1ql-language-reference/pause-chat.adoc[PAUSE CHAT].
+
+== Prerequisites
+
+Before you use the BEGIN CHAT statement, make sure you have:
+
+* A Couchbase Capella account.
+* Your Capella account credentials and organization ID.
+
+NOTE: Although BEGIN CHAT requires a Capella account, you can use it with any instance of Couchbase Server 8.0 or later.
+
+[[syntax]]
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/utility.ebnf[tag=begin-chat]
+----
+
+image::n1ql-language-reference/begin-chat.png["Syntax diagram: see source code listing", align=left]
+
+options::
+[Optional] A JSON object that sets default <<optional-parameters,options>> for every USING AI statement you send within this chat session.
++
+By default, the statement uses the {natural_orgid}[natural_orgid], {natural_cred}[natural_cred], and {natural_context}[natural_context] request-level parameters to determine the organization ID, credentials, and keyspaces for the session.
+You can override them by specifying the relevant parameters in the <<optional-parameters,options>> object.
+
+[[optional-parameters]]
+=== Options
+
+[cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **creds** +
+__optional__
+| Couchbase Capella account credentials to authenticate the session.
+
+Can be one of the following:
+
+* A string in the username:password format.
+* An object with the fields `user` and `pass`, similar to the xref:n1ql:n1ql-manage/query-settings.adoc#Credentials[creds] request-level parameter.
+
+If specified, this value overrides the {natural_cred}[natural_cred] request-level parameter for every USING AI statement sent within this session.
+
+This parameter does not support Single Sign-On (SSO), Multi-Factor Authentication (MFA), or social login credentials (such as Google or GitHub).
+
+To ensure your credentials are passed securely, see xref:n1ql:n1ql-language-reference/using-ai.adoc#handling-passwords[Handling Passwords Securely].
+
+| String or object
+
+| **keyspaces** +
+__optional__
+| One or more keyspaces for the session.
+
+Can be one of the following:
+
+* A string matching the {natural_context}[natural_context] specification.
+* An array of comma-separated strings.
+
+If specified, this value overrides the {natural_context}[natural_context] request-level parameter for every USING AI statement sent within this session.
+
+| String or an array of strings
+
+| **orgId** +
+__optional__
+| Couchbase Capella organization ID for the session.
+
+If specified, this value overrides the {natural_orgid}[natural_orgid] request-level parameter for every USING AI statement sent within this session.
+
+To find your organization ID, log in to your Couchbase Capella account and check the URL in your web browser.
+The organization ID is the `oid` parameter in the URL.
+
+For example, in the URL `+++https://cloud.couchbase.com/databases?oid=5c670d3e-12a3-456b-7c89-123456789ab+++`, the organization ID is `5c670d3e-12a3-456b-7c89-123456789ab`.
+
+| String
+
+|===
+
+[[usage]]
+== Usage
+
+To start a chat session, run a BEGIN CHAT statement.
+The Query Service creates the session, holds it in memory on the query node that processed the request, and returns a chat ID.
+
+Each chat session consumes memory on that query node, so only a limited number of sessions can be active at the same time.
+// TODO(TW): confirm the concurrency limit, and whether it's per node, per organization, or per user.
+
+Pass the chat ID to any USING AI statement you want to run within the session.
+See <<example-1>>.
+
+When you're done with a session, close it with xref:n1ql:n1ql-language-reference/end-chat.adoc[END CHAT] to free its resources.
+If you want to keep the conversation but don't need it right now, use xref:n1ql:n1ql-language-reference/pause-chat.adoc[PAUSE CHAT] instead.
+A paused session is retained for 7 days; if you don't resume it within that time, it expires and can't be recovered.
+
+For more information about the overall workflow, see xref:guides:query-using-natural-language.adoc[Query Using Natural Language].
+
+== Result
+
+A JSON object containing the new chat ID, status, and metrics.
+
+[source,json]
+----
+{
+    "requestID": "...",
+    "chatId": "...",
+    "status": "success",
+    "metrics": { ... }
+}
+----
+
+== Examples
+
+In the following examples:
+
+* Replace `<USER>` with your Couchbase Capella username.
+* Replace `<PASSWORD>` with your Couchbase Capella password.
+* Replace `<ORGID>` with your Couchbase Capella organization ID.
+
+[[example-1]]
+.Starting a chat session and asking a follow-up question
+====
+{example-note}
+
+.Request
+[source,sqlpp]
+----
+\set -natural_context travel-sample.inventory.hotel;
+\set -natural_cred <USER>:<PASSWORD>;
+\set -natural_orgid <ORGID>;
+BEGIN CHAT;
+----
+
+.Response
+[source,json]
+----
+{
+    "requestID": "3f1e2b8a-1234-4a5b-9c6d-abcdef123456",
+    "chatId": "chat-8f3a9c21",
+    "status": "success",
+    "metrics": {
+        "elapsedTime": "0.312s",
+        "executionTime": "0.010s",
+        "resultCount": 0,
+        "resultSize": 0
+    }
+}
+----
+
+Use the returned `chatId` in a subsequent USING AI statement to continue the conversation:
+
+[source,sqlpp]
+----
+USING AI WITH {"chatId": "chat-8f3a9c21"} How many hotels provide free parking?;
+----
+====
+
+[[begin-chat-limitations]]
+== Limitations
+
+When using the statement, consider the following:
+
+* To run the statement on Couchbase Server, use the cbq shell, an SDK, or the Query REST API.
+The statement does not function when run directly through the Query Workbench or Couchbase Shell (cbsh).
+* You cannot use the `creds` and `natural_cred` parameters with the following types of credentials:
+** Single Sign-On (SSO)
+** Multi-Factor Authentication (MFA)
+** Social logins (such as Google or GitHub)
+* A chat session is held in memory on the query node that created it. Only a limited number of sessions can be active at the same time.
+
+== See Also
+
+* xref:n1ql:n1ql-language-reference/using-ai.adoc[USING AI]
+* xref:n1ql:n1ql-language-reference/end-chat.adoc[END CHAT]
+* xref:n1ql:n1ql-language-reference/pause-chat.adoc[PAUSE CHAT]
+* xref:n1ql:n1ql-language-reference/resume-chat.adoc[RESUME CHAT]
+* xref:guides:query-using-natural-language.adoc[Query Using Natural Language]
