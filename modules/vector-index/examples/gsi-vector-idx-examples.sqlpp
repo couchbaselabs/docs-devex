@@ -80,3 +80,43 @@ WHERE b.brightness > 190.0
 order by APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, 
 question_vec[0], "DOT")  LIMIT 3;
 /* end::query-vectors-idx-subquery-filtered[] */
+
+/* tag::create-sparse-idx[] */
+CREATE INDEX `color_sparse_idx`
+ON `vector-sample`.color.`rgb-sparse`(`sparse_vector` SPARSE VECTOR, color, brightness)
+WITH { "description": "IVF",
+       "num_replica": 0 }
+/* end::create-sparse-idx[] */
+
+/* tag::sparse-query-single[] */
+WITH query_term_weight AS ([
+  (
+    SELECT RAW `index`
+    FROM `vector-sample`.color.`vocabulary`
+    WHERE term = "brown"
+  ),
+  [1.0]
+])
+SELECT b.color, b.description
+FROM `vector-sample`.color.`rgb-sparse` AS b
+ORDER BY SPARSE_VECTOR_DISTANCE(b.sparse_vector, query_term_weight)
+LIMIT 3;
+/* end::sparse-query-single[] */
+
+/* tag::sparse-query-multiple[] */
+WITH query_term_weights AS ([
+  ARRAY_FLATTEN(
+    ARRAY (
+      SELECT RAW `index`
+      FROM `vector-sample`.color.`vocabulary`
+      WHERE term = v
+    ) FOR v IN ["light", "sea", "green"] END,
+  1),
+  [1.0, 1.0, 1.0]
+])
+SELECT b.color, b.description,b .brightness
+FROM `vector-sample`.color.`rgb-sparse` AS b
+WHERE b.brightness > 190.0
+ORDER BY SPARSE_VECTOR_DISTANCE(b.sparse_vector, query_term_weights)
+LIMIT 3;
+/* end::sparse-query-multiple[] */
