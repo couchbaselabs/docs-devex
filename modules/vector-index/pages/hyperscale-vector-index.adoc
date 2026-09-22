@@ -2,17 +2,19 @@
 :page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
-:description: Hyperscale Vector Indexes are optimized to index a single vector column. They offer the highest performance of any index when it comes to vector data.
+:description: Hyperscale Vector Indexes are optimized to index a single vector field. They offer the highest performance of any index when it comes to vector data.
 :stem:
 :page-toclevels: 3
-:index-name: Hyperscale Vector index
-:index-name-plural: Hyperscale Vector indexes
+:index-name: Hyperscale Vector Index
+:index-name-plural: Hyperscale Vector Indexes
+
+include::partial$editable-style.adoc[]
 
 [abstract]
 {description}
 They can scale up to a billion documents containing vectors with a large number of dimensions.
 
-Because they provide the best performance, consider testing a Hyperscale Vector index for your application before resorting to the other types of indexes.
+Because they provide the best performance, consider testing a Hyperscale Vector Index for your application before resorting to the other types of indexes.
 If you find their performance does not meet your needs, then test using a Composite Vector Index or a Search Vector Index.
 
 == How the Hyperscale Vector Index Works
@@ -20,14 +22,14 @@ If you find their performance does not meet your needs, then test using a Compos
 The Hyperscale Vector Index primarily relies on data stored in an optimized format on disk.
 By relying on disk storage, they have lower memory requirements than other index types.
 
-You add a single vector column to a Hyperscale Vector Index.
-The vector value can be an array of floating point values.
+You add a single vector field to a Hyperscale Vector Index.
 You can nest the array in another array as long as you use an xref:n1ql:n1ql-language-reference/unnest.adoc[UNNEST clause] to extract it from the containing array.
-You can also store the vector in a BASE64 string.
+If your documents contain multiple embedded vectors, you can create multiple indexes -- one for each vector attribute.
 
+[#prerequisites]
 == Prerequisites
 
-Hyperscale Vector Indexes have the following requirements:
+All Hyperscale Vector Indexes have the following requirements:
 
 * You must have the Index Service enabled on at least one node in your cluster.
 For more information about how to deploy a new node and Services on your database, see xref:manage:manage-nodes/node-management-overview.adoc[].
@@ -37,10 +39,9 @@ For more information about how to deploy a new node and Services on your databas
 * You must have a bucket your database.
 For more information about how to create a bucket, see xref:manage:manage-buckets/create-bucket.adoc[].
 
-* You have documents in a collection that contain one or more vector embeddings.
-You can add a single vector to a Hyperscale Vector Index.
-If your documents contain multiple embedded vectors, you can create multiple indexes -- one for each vector attribute.
-+
+Dense Hyperscale Vector Indexes have the following additional requirements:
+
+* You have documents in a collection that contain one or more dense vector embeddings.
 Embeddings can be an array of floating point numbers or a base64 encoded string.
 Couchbase {product-name} does not embed vectors itself.
 You must use an external embedding model to embed vectors into your data and add them to your documents.
@@ -51,72 +52,136 @@ If a vector does not meet both of these requirements, the vector index treats it
 
 * You must know the number of dimensions the vector contains.
 The embedding model you use to embed the vectors may determine this value for you.
-For example,  OpenAI API's `text-embedding-ada-002` embedding model creates vectors that have 1536 dimensions.
+For example, OpenAI API's `text-embedding-ada-002` embedding model creates vectors that have 1536 dimensions.
 
 * You must decide whether you want to use the default distance metric and quantization for your index.
-By default, a Hyperscale Vector index uses the xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean distance squared] metric and xref:vector-index:vectors-and-indexes-overview.adoc#sq[Scalar Quantization (SQ)] with 8 bits per vector dimension (`SQ8`).
+By default, a Hyperscale Vector Index uses the xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean distance squared] metric and xref:vector-index:vectors-and-indexes-overview.adoc#sq[Scalar Quantization (SQ)] with 8 bits per vector dimension (`SQ8`).
 The metrics affect how the index compares vectors.
 The quantization determines how much memory your index uses and the amount of processing Couchbase {product-name} must perform to train and search them.
 See xref:vector-index:vectors-and-indexes-overview.adoc#vector_similarity[Vector Similarity Metrics] and xref:vector-index:vectors-and-indexes-overview.adoc#quantization[Quantization] for more information.
 
+Sparse Hyperscale Vector Indexes have the following additional requirements:
+
+* You have documents in a collection that contain one or more sparse term-weight pairs.
+The sparse term-weight field must contain a sparse term-weight array, or a string representing a base64 encoded sparse term-weight array.
+
+* A sparse term-weight array must be an array with two items: the first an array of integers representing terms, and the second an array of floating point numbers representing the corresponding term weights.
+The number of terms must be the same as the number of term weights.
+
+* Couchbase {product-name} does not create sparse term-weight pairs itself.
+You must use an external sparse-retrieval model to produce a set of term-weight pairs from your data and add them to your documents.
+
 === Examples on this Page
 
-include::vector-search:partial$download-sample-partial.adoc[]
-
-[#create-index]
-include::vector-index:partial$create-hyperscale-index-ui.adoc[opts=optional]
-
-== Create a Hyperscale Vector Index Using {sqlpp}
-
-Use the `CREATE VECTOR INDEX` statement to create a Hyperscale Vector Index.
-This statement is similar to the `CREATE INDEX` statement that you use to create Global Secondary Indexes (GSI).
-See xref:guides:create-index.adoc[] for an overview of creating indexes.
-You must also supply a `WITH` clause to set some additional information about the vector column that the Hyperscale index needs.
-
-The following syntax shows the minimum required parameters to create a Hyperscale Vector index:
-
-[source,sqlpp]
-----
-CREATE VECTOR INDEX `<index_name>`
-       ON `<collection>`(`<key_name>` VECTOR)
-       WITH {"dimension": <dimensions>,
-             "similarity": <similarity_metric>,
-             "description": <centroids_and_quantization>
-        };
-----
-
-NOTE: This syntax for the `CREATE VECTOR INDEX` shows the minimum required parameters to get you started.
-For the full syntax, see xref:n1ql:n1ql-language-reference/createvectorindex.adoc[] in the SQL++ for Query Reference.
-
-The parameters in this statement are:
-
-* `index_name` is a string that sets the name of the index.
-* `collection` is the path of the collection to index.
-* `key_name` is the name of the key containing the vector that you want to index.
-The key value must be an array of floating point numbers or a base64 encoded string.
-* `dimensions` The number of dimensions in the vector as an integer.
-The embedded model you use to embed the vectors determines the number of dimensions in the vector.
-* `similarity_metric` is a string that sets the distance metric to use when comparing vectors during index creation.
-+
-include::partial$distance-metric-list.adoc[]
-
-+
-For the greatest accuracy, use the distance metric you plan to use to query the data.
-* `centroids_and_quantization` is a string containing the settings for the quantization and index algorithms.
-See <<#algo_settings>> in the next section for more information.
+include::partial$download-sample-partial.adoc[]
 
 include::partial$index-algorithm-settings.adoc[]
 
+[#create-index]
+== Create a Hyperscale Vector Index
+
+To create a Hyperscale Vector Index, use the Couchbase Web Console or a {sqlpp} statement.
+
+[tabs]
+====
+Couchbase Web Console::
++
+--
+include::vector-index:partial$create-hyperscale-index-ui.adoc[opts=optional]
+--
+
+{sqlpp}::
++
+--
+To create a Hyperscale Vector Index using {sqlpp}, use the `CREATE VECTOR INDEX` statement.
+This statement is similar to the `CREATE INDEX` statement that you use to create Global Secondary Indexes (GSI).
+
+The following syntax shows the minimum required parameters to create a Hyperscale Vector Index:
+
+[source,sqlpp,subs=macros]
+----
+CREATE VECTOR INDEX pass:q[<span contenteditable="plaintext-only">index-name</span>]
+  ON pass:q[<span contenteditable="plaintext-only">keyspace-ref</span>](pass:q[<span contenteditable="plaintext-only">index-key</span>] pass:q[<span contenteditable="plaintext-only">index-attrib</span> VECTOR])
+  WITH {
+    "dimension": pass:q[<span contenteditable="plaintext-only">dimension</span>],
+    "similarity": pass:q[<span contenteditable="plaintext-only">similarity</span>],
+    "description": pass:q[<span contenteditable="plaintext-only">description</span>]
+  };
+----
+
+. Specify a name for the vector index.
+For information about valid index names, see xref:n1ql:n1ql-language-reference/createvectorindex.adoc#syntax[Syntax].
+
+. In the `ON` clause, specify path to the collection where you have documents that contain a vector field.
+
+. In parentheses, specify the vector field to use as the index key in your Hyperscale Vector Index.
+
+. If the vector field contains dense embeddings, add `DENSE VECTOR` (or just `VECTOR`) to the vector field name.
+If the vector field contains sparse term-weight pairs, add `SPARSE VECTOR` to the vector field name.
+For more information, see xref:vector-index:vectors-and-indexes-overview.adoc#dense-and-sparse-vector-indexes[Dense and Sparse Vector Indexes].
+
+. Use the `WITH` clause to set additional information about the vector field that the Hyperscale index needs.
++
+[horizontal]
+dimension:: For dense vector indexes, set the number of dimensions in the vector as an integer.
+The embedded model you use to embed the vectors determines the number of dimensions in the vector.
+
+similarity:: For dense vector indexes, set the distance metric to use when comparing vectors during index creation.
+For the greatest accuracy, use the distance metric you plan to use to query the data.
++
+include::partial$distance-metric-list.adoc[]
+
+description:: Set the quantization and the number of centroids Couchbase {product-name} to create the index.
+The `description` parameter is a string in the following format:
++
+[source,ebnf]
+----
+description ::= '"' 'IVF' number-of-centroids?
+              ( ',' (sq-settings | pq-settings) )? '"'
+----
+
++
+* For sparse vector indexes, set the description to `IVF`.
+
+* For dense vector indexes, specify the number of centroids to create in your index by adding an integer value after the `IVF` in the `description` parameter.
++
+A larger value creates smaller centroids.
+If you do not provide a value after the `IVF` in your `description` parameter, Couchbase sets the number of centroids to the number of vectors in your data divided by 1000.
+For more information about how to set this value, see <<number-of-centroids>>.
+
+* For dense vector indexes, select the type of quantization to use for simplifying the vectors stored in your index by adding a comma followed by either `PQ` or `SQ` after the IVF setting in the `description` value.
++
+For more information about how to choose quantization on your index, see <<quantization-setting>>.
+
+NOTE: This syntax for the `CREATE VECTOR INDEX` shows the minimum required parameters to get you started.
+For the full syntax, see xref:n1ql:n1ql-language-reference/createvectorindex.adoc[] in the {sqlpp} for Query Reference.
+--
+====
+
+=== Resolve Index Creation Errors
+
+If an error occurs while Couchbase Server tries to create your Hyperscale Vector Index, on the *Vector Indexes* page, the *Status* of your index changes to *Error*.
+
+To view the details of the error:
+
+. Click the *Error* status to open the Query Workbench.
+. Click btn:[Execute] to drop and rebuild the index.
+. In the query results, find the error details.
+
+Depending on the error, you might need to try recreating your index with a new configuration.
 
 [#examples]
-=== Create Hyperscale Vector Index Example
+=== Index Examples
 
-The examples in this section use a dataset that contains information about colors including a text description of the color.
-There's also a field named `couchbase_search_query.knn.vector` that contains an embedded vector for the color description.
+To try the examples in this section, you must install the vector sample data as described in <<prerequisites>>.
 
-include::vector-search:partial$download-sample-partial.adoc[]
+[#ex-view-dense-vector-field]
+.View an embedded dense Hyperscale vector field
+====
+The `rgb` collection contains information about colors, including a text description of the color.
+The `embedding_vector_dot` field contains an embedded vector for the description of the color.
 
-The following query returns a sample document from the data in the `vector-sample.color.rgb` collection, truncating the embedded vector to 4 values to make the result readable:
+The following query returns a sample document from the data in the `rgb` collection, truncating the embedded vector to 4 values to make the result readable:
 
 [source,sqlpp]
 ----
@@ -125,88 +190,189 @@ include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=rgb-entry]
 
 The result of running the query is:
 
-[#example-results]
 [source,json]
 ----
 include::vector-index:example$hyperscale-idx-data.json[tag=rgb-document]
 ----
+====
 
-The following example creates an Hyperscale vector index for the vector column named `embedding-vector-dot`.
+[#ex-create-dense-hyperscale-vector-index]
+.Create a dense Hyperscale Vector Index
+====
+The following example creates a dense Hyperscale Vector Index for the vector field named `embedding_vector_dot`.
 
 [source,sqlpp]
 ----
 include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-rgb-idx]
 ----
 
-The key pieces of this example are:
-
-* The `CREATE VECTOR INDEX` statement creates a Hyperscale Vector index.
-This differs from the `CREATE INDEX` statement used to create a Global Secondary Index (GSI).
-* The `WITH` clause defines several settings specific to Hyperscale Vector indexes:
-** It uses the Euclidean distance (`l2`) similarity function when locating centroids.
-This function has high accuracy, which matters in a dataset with only 153 documents.
-** Also, because the dataset is so small, the example sets the `description` to `IVF8,SQ4`.
+. This example uses the Euclidean distance (`l2`) similarity function when locating centroids.
+This function has high accuracy, which matters in a dataset with only 153 documents. @/similarity/
+. Because the dataset is so small, the example sets the `description` to `IVF8,SQ4`.
 This value has the xref:vector-index:vectors-and-indexes-overview.adoc#IVF[inverted file algorithm] use just 8 centroids.
 It also uses 4-bit xref:vector-index:vectors-and-indexes-overview.adoc#sq[scalar quantization].
-These settings limit the fragmentation of the small dataset.
+These settings limit the fragmentation of the small dataset. @/description/
 
 In most cases, you'll not use these settings in a production environment.
+====
 
-== Query with a Hyperscale Vector Index
+[#ex-view-sparse-vector-field]
+.View a sparse Hyperscale vector field
+====
+The `rgb-sparse` collection contains exactly the same fields as the `rgb` collection, except that instead of the `embedding_vector_dot` field, it has a `sparse_vector` field containing sparse term-weight pairs.
 
-To use your Hyperscale Vector index, use the `SELECT` statement with an `ORDER BY` clause containing a call to the xref:n1ql:n1ql-language-reference/vectorfun.adoc#approx_vector_distance[APPROX_VECTOR_DISTANCE()] function.
-The query selects the Hyperscale Vector index when this function includes the vector key that the index covers.
-
-A typical query looks like this:
+The following query returns a sample document from the data in the `rgb-sparse` collection, showing the `sparse_vector` field.
 
 [source,sqlpp]
 ----
-SELECT <fields>
-       FROM <collection>
-       ORDER BY APPROX_VECTOR_DISTANCE(
-                <collection-vector-column>,
-                <search-vector-value>,
-                <distance-metric>,
-                <centroids-to-probe>,
-                <rerank>,
-                <topNScan>
-        ) LIMIT <number-of-results>;
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=sparse-entry]
 ----
 
-The `APPROX_VECTOR_DISTANCE` parameters shown in the example are:
+The result of running the query is:
 
-* `collection-vector-column` is the name of the key containing the vector in the collection.
-* `search-vector-value` is the vector value to search for in the collection column.
-It can be an array of floating point numbers or a base64 encoded string.
-* `distance-metric` is the distance metric to use when comparing the vectors.
-This value should match the distance metric you used when you created the index.
-* `centroids-to-probe` is an optional integer value that sets the number of centroids to probe for matching vectors.
-By default, the vector search only probes a single centroid.
-* `rerank` is an optional Boolean that can only be used when `centroids-to-probe` is specified.
-It specifies whether the function should use full vectors to achieve better results.
-For more information, see xref:vector-index:hyperscale-reranking.adoc[].
-* `topNScan` is an optional positive integer that can only be used when `centroids-to-probe` and `rerank` are specified.
-If specified, it sets the number of records to scan.
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=sparse-entry]
+----
 
-Also use a `LIMIT` clause to return just the number of results you need.
-The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the number of matches you need.
+The `sparse_vector` field is an array with two items: the first an array of integers representing terms, and the second an array of floating point numbers representing the corresponding term weights.
 
-NOTE: You can also call the function xref:n1ql:n1ql-language-reference/vectorfun.adoc#vector_distance[VECTOR_DISTANCE()] to find similar vectors.
-However, this function does not use the Hyperscale Vector index to perform the vector search.
-Instead, it performs a brute-force search for similar vectors.
-It's useful to measure the recall of your Hyperscale Vector index.
-See xref:vector-index:vector-index-best-practices.adoc#recall-accuracy[Determine Recall Rate] for more information about measuring recall.
+You can look up the token IDs against the `vocabulary` collection to find the term for a given token ID.
 
-[#query-example]
-=== Hyperscale Vector Index Query Example
+To see how the sparse term-weights were calculated, see <<appendix>>.
+====
 
-You must supply a vector value in your query that Couchbase {product-name} can compare to the vectors in the index.
+[#ex-view-sparse-terms]
+.View the sparse term vocabulary
+====
+The `vocabulary` collection contains a corpus-wide vocabulary list of high-signal terms taken from the `rgb-sparse` collection, and maps each term to a stable integer ID.
+
+The following query returns the first few records from this collection.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=sparse-vocabulary]
+----
+
+The result of running the query is:
+
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=sparse-vocabulary]
+----
+====
+
+[#ex-create-sparse-hyperscale-vector-index]
+.Create a sparse Hyperscale Vector Index
+====
+The following example creates a sparse Hyperscale Vector Index for the vector field named `sparse_vector`.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-sparse-idx]
+----
+====
+
+== Query with a Hyperscale Vector Index
+
+To use your Hyperscale Vector Index, use the `SELECT` statement with an `ORDER BY` clause containing a call to a vector distance function.
+
+* For dense embedded vectors, use the xref:n1ql:n1ql-language-reference/vectorfun.adoc#approx_vector_distance[APPROX_VECTOR_DISTANCE()] function.
+
+* For sparse term-weight pairs, use the xref:n1ql:n1ql-language-reference/vectorfun.adoc#sparse_vector_distance[SPARSE_VECTOR_DISTANCE()] function.
+
+The query selects the Hyperscale Vector Index when the vector distance function includes the vector key that the index covers.
+
+=== Query with a Dense Hyperscale Vector Index
+
+To query with a dense Hyperscale Vector Index, you must supply a dense embedded vector value in your query that Couchbase {product-name} can compare to the vectors in the index.
 In actual use, your application generates a vector for the query value using the same embedding model it used to embed the vectors in your documents.
 
-To avoid the complication of calling an embedding model, this example uses embedded vectors in the `rgb_questions.json` file that's included in `color_data_2vectors.zip`.
-For this example, the contents of this file are loaded into a collection named `vector-sample.color.rgb-questions`.
+A typical query using a dense Hyperscale Vector Index looks like this:
+
+[source,sqlpp,subs=macros]
+----
+SELECT pass:q[<span contenteditable="plaintext-only">fields</span>]
+       FROM pass:q[<span contenteditable="plaintext-only">collection</span>]
+       ORDER BY APPROX_VECTOR_DISTANCE(
+                pass:q[<span contenteditable="plaintext-only">vec</span>],
+                pass:q[<span contenteditable="plaintext-only">queryvec</span>],
+                pass:q[<span contenteditable="plaintext-only">metric</span>],
+                pass:q[<span contenteditable="plaintext-only">nprobes</span>],
+                pass:q[<span contenteditable="plaintext-only">rerank</span>],
+                pass:q[<span contenteditable="plaintext-only">topNScan</span>]
+        ) LIMIT pass:q[<span contenteditable="plaintext-only">number-of-results</span>];
+----
+
+The xref:n1ql:n1ql-language-reference/vectorfun.adoc#approx_vector_distance[APPROX_VECTOR_DISTANCE()] function has the following arguments:
+
+[horizontal]
+vec:: The name of the key containing the vector in the collection.
+queryvec:: The vector value to search for in the collection field.
+It can be an array of floating point numbers or a base64 encoded string.
+metric:: The distance metric to use when comparing the vectors.
+This value should match the distance metric you used when you created the index.
+nprobes:: An optional integer value that sets the number of centroids to probe for matching vectors.
+By default, the vector search only probes a single centroid.
+rerank:: An optional Boolean that can only be used when `nprobes` is specified.
+It specifies whether the function should use full vectors to achieve better results.
+For more information, see xref:vector-index:hyperscale-reranking.adoc[].
+topNScan:: An optional positive integer that can only be used when `nprobes` and `rerank` are specified.
+If specified, it sets the number of records to scan.
+
+Use a `LIMIT` clause to return just the number of results you need.
+The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the number of matches you need.
+
+NOTE: You can also call the function xref:n1ql:n1ql-language-reference/vectorfun.adoc#vector_distance[VECTOR_DISTANCE()] to find similar dense embedded vectors.
+However, this function does not use the Hyperscale Vector Index to perform the vector search.
+Instead, it performs a brute-force search for similar vectors.
+It's useful to measure the recall of your Hyperscale Vector Index.
+See xref:vector-index:vector-index-best-practices.adoc#recall-accuracy[Determine Recall Rate] for more information about measuring recall.
+
+=== Query with a Sparse Hyperscale Vector Index
+
+To query with a sparse Hyperscale Vector Index, you must supply a sparse term-weight array in your query that Couchbase {product-name} can compare to the sparse term-weights in the index.
+You must use the same term-weight vocabulary for the query as that used for the sparse term-weights in your documents.
+
+A typical query using a sparse Hyperscale Vector Index looks like this:
+
+[source,sqlpp,subs=macros]
+----
+SELECT pass:q[<span contenteditable="plaintext-only">fields</span>]
+       FROM pass:q[<span contenteditable="plaintext-only">collection</span>]
+       ORDER BY SPARSE_VECTOR_DISTANCE(
+                pass:q[<span contenteditable="plaintext-only">vec</span>],
+                pass:q[<span contenteditable="plaintext-only">queryvec</span>],
+                pass:q[<span contenteditable="plaintext-only">nprobes</span>],
+                pass:q[<span contenteditable="plaintext-only">topNScan</span>]
+        ) LIMIT pass:q[<span contenteditable="plaintext-only">number-of-results</span>];
+----
+
+The xref:n1ql:n1ql-language-reference/vectorfun.adoc#sparse_vector_distance[SPARSE_VECTOR_DISTANCE()] function has the following arguments:
+
+[horizontal]
+vec:: The name of the field containing the vector in the collection.
+queryvec:: The vector value to search for in the collection field.
+It can be sparse term-weight array or a base64 encoded string.
+nprobes:: An optional integer value that sets the number of centroids to probe for matching vectors.
+By default, the vector search only probes a single centroid.
+topNScan:: An optional positive integer that can only be used when `nprobes` is specified.
+If specified, it sets the number of records to scan.
+
+Use a `LIMIT` clause to return just the number of results you need.
+The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the number of matches you need.
+
+[#query-example]
+=== Query Examples
+
+To try the examples in this section, you must install the vector sample data as described in <<prerequisites>>.
+
+.View dense embedded vectors for a query
+====
+To avoid the complication of calling an embedding model, this example uses embedded vectors from the `rgb-questions` collection.
 This collection contains a `question` attribute which is a search prompt for a particular color.
 The `couchbase_search_query.knn.vector` attribute contains the embedded vector for the `question` attribute.
+
 The following query lists several attributes from a document in the collection.
 It truncates the `couchbase_search_query.knn.vector` attribute to just the first 4 dimensions of the vector for readability:
 
@@ -221,9 +387,13 @@ The output of the query looks like this:
 ----
 include::vector-index:example$hyperscale-idx-data.json[tag=query-rgb-questions-output]
 ----
+====
 
+.Query with a dense Hyperscale Vector Index
+====
 To use the embedded vector, you need to include the `couchbase_search_query.knn.vector` attribute in your query's `SELECT` statement.
-You can either directly copy and paste the entire array into your query or use a subquery to retrieve it from the `vector-sample.color.rgb-questions` collection.
+You can either directly copy and paste the entire array into your query or use a subquery to retrieve it from the `rgb-questions` collection.
+
 The following example uses a subquery to get the vector, and also includes the `wanted_similar_color_from_search` attribute in the output which shows you the color that the query should return.
 
 [source,sqlpp]
@@ -231,19 +401,17 @@ The following example uses a subquery to get the vector, and also includes the `
 include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=query-rgb-with-subquery]
 ----
 
-In this example, the `APPROX_VECTOR_DISTANCE` function compares the vector in the `couchbase_search_query.knn.vector` attribute to the vectors in the index.
-The parameters the example passes to this function are:
-
-* The `embedding-vector-dot` is the name of the indexed vector key in the collection.
-* The `couchbase_search_query.knn[0].vector` is the vector search value to compare to the vectors in the index.
-This value is the result of the subquery that gets the vector from the `rgb-questions` collection.
-* `l2` is the distance metric to use.
-* `4` is the number of centroids to probe for matching vectors.
+. The `couchbase_search_query.knn[0].vector` is the vector search value to compare to the vectors in the index.
+This value is the result of the subquery that gets the vector from the `rgb-questions` collection. @/couchbase_search_query.knn/
+. The `APPROX_VECTOR_DISTANCE` function compares the vector in the `couchbase_search_query.knn.vector` attribute to the vectors in the index. @/APPROX_VECTOR_DISTANCE/
+. The `embedding_vector_dot` is the name of the indexed vector key in the collection. @/embedding_vector_dot/
+. `l2` is the distance metric to use. @/l2/
+. `4` is the number of centroids to probe for matching vectors.
 This value defaults to `1`.
 This example sets this value to `4` because the dataset is small.
 In a small dataset, it's more likely that relevant vectors are not associated with the same centroid.
 This parameter broadens the search beyond a single centroid to find more relevant vectors.
-If you re-run the query with the default value of `1`, you'll see that the results are less relevant.
+If you re-run the query with the default value of `1`, you'll see that the results are less relevant. @/, 4/
 
 The result of running the query is:
 
@@ -254,10 +422,42 @@ include::vector-index:example$hyperscale-idx-data.json[tag=query-rgb-color]
 
 The second result, `sky blue`, matches the `wanted_similar_color_from_search` attribute as the most relevant color to the question posed in the `question` attribute.
 All of the results are still relevant to the question.
+====
 
-=== Getting the Vector Distance
+.Query with a sparse Hyperscale Vector Index
+====
+To perform a sparse vector index query for a precise term in the `rbg-sparse` collection, you must first look up the integer associated with that term in the `vocabulary` collection, and then assign your required weight to that term to build a sparse term-weight array.
+You can then measure the vector distance between the query sparse term-weights and the sparse term-weights in the `sparse-vectors` field.
 
-You can use the `APPROX_VECTOR_DISTANCE` function as a predicate to return the distance between the search vector and the vectors in the index.
+The following query finds colors from the `rgb-sparse` collection whose titles or descriptions contain exact or near-exact matches for the term `brown`.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=sparse-query-single]
+----
+
+. The `vocabulary` collection associates a unique sequential integer with each of the terms used to generate the sparse term-weight pairs.
+The first subquery finds the integer associated with the query term. @/vocabulary/
+
+. The second element in the array assigns a weight to the query term. @/1.0/
+
+. The `sparse_vector` field in the `rgb-sparse` collection contains sparse term-weight pairs based on the color names and descriptions. @/rgb-sparse/
+
+The result of running the query is:
+
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=sparse-query-single]
+----
+
+The first result matches the query term precisely.
+The remaining results have a name or a description which overlaps with the query term, with decreasing relevance.
+====
+
+[#getting-the-vector-distance]
+.Get the vector distance
+====
+You can use a vector distance function as a predicate to return the distance between the search vector and the vectors in the index.
 You may want to get this value when the distance is meaningful, such as when it represents a real-world measurement.
 
 The following example returns the distance between the search vector and the vectors in the index by adding an alias for the results of the `APPROX_VECTOR_DISTANCE` function in the `SELECT` statement as well as the `ORDER BY` clause:
@@ -273,4 +473,21 @@ The result of running the query is:
 ----
 include::vector-index:example$hyperscale-idx-data.json[tag=query-rgb-distance]
 ----
+====
 
+[appendix#appendix]
+== Sparse Term-Weights in the Sample Data
+
+To calculate the sparse term-weights in the `rgb-sparse` collection, tokens were taken from the `color`, `verbs`, and `description` fields.
+
+. Each token's weight was calculated using https://en.wikipedia.org/wiki/Tf%E2%80%93idf[TF-IDF].
+
+. Terms from the `color` field had their weight multiplied by 4, and terms from the `verbs` field had their weight multiplied by 2.
+
+. The top 12 terms per document were then kept and rescaled so the strongest term is ~2.0.
+
+This mimics how real sparse-retrieval models such as https://en.wikipedia.org/wiki/Learned_sparse_retrieval[SPLADE] or https://en.wikipedia.org/wiki/Okapi_BM25[BM25/TF‑IDF] produce a small set of high-signal term-weight pairs per document, with the color's own name naturally surfacing as the dominant term.
+
+== See Also
+
+* See xref:guides:create-index.adoc[] for an overview of creating indexes.
