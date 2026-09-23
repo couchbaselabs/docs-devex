@@ -17,6 +17,8 @@ an integer instead of a string), then `NULL` is returned as the result.
 
 Checks whether a token in the input object exactly matches the specified search token.
 
+This function has an alias `HAS_TOKEN`.
+
 === Syntax
 
 ....
@@ -29,48 +31,99 @@ input_obj:: Any JSON object, or any valid xref:n1ql-language-reference/index.ado
 token_expr:: A token string, or any valid xref:n1ql-language-reference/index.adoc[expression] which evaluates to a string, that is being searched for.
 
 options::
-An optional JSON object to control tokenization.
-Within options:
-names;; A boolean to include object names (default: true)
-case;; Either "lower" or "upper" for case folding (default: no change to the original text)
-specials;; A boolean to include strings with special characters, such as email addresses and URLs (default: false)
-split;; A boolean to split string values into words (default: true)
-trim;; A boolean to trim spaces around unsplit string values (default: true)
+An optional JSON object to control tokenization. 
+For more information, see <<options>>.
+
+==== Options 
+
+[cols="1,3,1"]
+|===
+|Name |Description |Schema
+
+|`names`
+a| Determines whether search within JSON object key names. 
+
+* If `true`, includes key names in tokenization.
+* If `false`, ignores key names and searches values only.
+
+*Default:* `true`
+|Boolean
+
+|`case`
+| Converts characters for case folding. 
+Supported values are `"lower"` and `"upper"`. 
+
+By default, the function preserves the original casing. 
+
+|String
+
+|`specials`
+a| Determines whether to treat strings with special characters (such as email addresses and URLs) as single tokens.
+
+* If `true`, keeps strings with special characters as single tokens (for example, `user@example.com`).
+* If `false`, splits strings on special characters (for example, `user`, `example`, `com`).
+
+*Default:* `false`
+
+|Boolean
+
+|`split`
+a| Determines whether to split string values into individual word tokens.
+
+* If `true`, splits strings into words based on whitespace.
+* If `false`, treats the entire string value as a single token. 
+
+*Default:* `true`
+
+|Boolean
+
+|`trim`
+a| Determines whether to remove leading and trailing whitespaces around unsplit string values. 
+
+* If `true`, trims whitespaces around unsplit strings.
+* If `false`, retains original whitespace around unsplit strings. 
+
+*Default:* `true`
+|Boolean
+|===
 
 === Return Value
 A boolean, representing whether the search expression exists within the input object.
 
-The function returns `true` if the sub-string exists within the input string, otherwise `false` is returned.
+The function returns `true` if the sub-string exists within the input string, else returns `false`.
 
-=== Examples
-
-include::ROOT:partial$query-context.adoc[tag=section]
+=== Example
 
 .Finding hotels with the word "Inn" within their name
 ====
 [source,sqlpp]
 ----
 SELECT name
-FROM hotel
-WHERE CONTAINS_TOKEN(name, "Inn",{"specials":true})
-LIMIT 4;
+FROM [
+  {"name": "Sportsman Inn"},
+  {"name": "Keefer's Inn"},
+  {"name": "Quality Inn King City Hotel"},
+  {"name": "Premier Inn, Albert Dock"},
+  {"name": "Central Bakery"}
+] AS hotel
+WHERE CONTAINS_TOKEN(name, "Inn", {"specials":true});
 ----
 
 [source,json]
 ----
 [
-    {
-        "name": "Sportsman Inn"
-    },
-    {
-        "name": "Keefer's Inn"
-    },
-    {
-        "name": "Quality Inn King City Hotel"
-    },
-    {
-        "name": "Premier Inn, Albert Dock"
-    }
+  {
+    "name": "Sportsman Inn"
+  },
+  {
+    "name": "Keefer's Inn"
+  },
+  {
+    "name": "Quality Inn King City Hotel"
+  },
+  {
+    "name": "Premier Inn, Albert Dock"
+  }
 ]
 ----
 ====
@@ -92,47 +145,98 @@ token_expr:: A token string, or any valid xref:n1ql-language-reference/index.ado
 
 options::
 An optional JSON object to control tokenization.
-Within options:
-names;; A boolean to include object names (default: true)
-case;; Either "lower" or "upper" for case folding (default: no change to the original text)
-specials;; A boolean to include strings with special characters, such as email addresses and URLs (default: false)
-split;; A boolean to split string values into words (default: true)
-trim;; A boolean to trim spaces around unsplit string values (default: true)
+For more information, see <<options>>.
+
+==== Options 
+
+[cols="1,3,1"]
+|===
+|Name |Description |Schema
+
+|`names`
+a| Determines whether search within JSON object key names. 
+
+* If `true`, includes key names in tokenization.
+* If `false`, ignores key names and searches values only.
+
+*Default:* `true`
+|Boolean
+
+|`case`
+| Converts characters for case folding. 
+Supported values are `"lower"` and `"upper"`. 
+
+By default, the function preserves the original casing. 
+
+|String
+
+|`specials`
+a| Determines whether to treat strings with special characters (such as email addresses and URLs) as single tokens.
+
+* If `true`, keeps strings with special characters as single tokens (for example, `user@example.com`).
+* If `false`, splits strings on special characters (for example, `user`, `example`, `com`).
+
+*Default:* `false`
+
+|Boolean
+
+|`split`
+a| Determines whether to split string values into individual word tokens.
+
+* If `true`, splits strings into words based on whitespace.
+* If `false`, treats the entire string value as a single token. 
+
+*Default:* `true`
+
+|Boolean
+
+|`trim`
+a| Determines whether to remove leading and trailing whitespaces around unsplit string values. 
+
+* If `true`, trims whitespaces around unsplit strings.
+* If `false`, retains original whitespace around unsplit strings. 
+
+*Default:* `true`
+|Boolean
+|===
 
 === Return Value
 A boolean, representing whether the search expression exists within the input object.
 
-This returns `true` if the sub-string exists within the input string, otherwise `false` is returned.
+The function returns `true` if the sub-string exists within the input string, else returns `false`.
 
-=== Examples
-
-include::ROOT:partial$query-context.adoc[tag=section]
+=== Example
 
 .Finding email addresses of UK hotels
 ====
 [source,sqlpp]
 ----
 SELECT email
-FROM hotel
-WHERE CONTAINS_TOKEN_LIKE(email, "%uk",{"specials":true})
-LIMIT 4;
+FROM [
+  {"email": "glencoe@syha.org.uk"},
+  {"email": "owner@hillhousellanrhidian.co.uk"},
+  {"email": "julia@number38thegower.co.uk"},
+  {"email": "stay@holiday-harlech.co.uk"},
+  {"email": "info@parishotel.fr"}
+] AS hotel
+WHERE CONTAINS_TOKEN_LIKE(email, "%uk", {"specials":true});
 ----
 
 [source,json]
 ----
 [
-    {
-        "email": "glencoe@syha.org.uk"
-    },
-    {
-        "email": "owner@hillhousellanrhidian.co.uk"
-    },
-    {
-        "email": "julia@number38thegower.co.uk"
-    },
-    {
-        "email": "stay@holiday-harlech.co.uk"
-    }
+  {
+    "email": "glencoe@syha.org.uk"
+  },
+  {
+    "email": "owner@hillhousellanrhidian.co.uk"
+  },
+  {
+    "email": "julia@number38thegower.co.uk"
+  },
+  {
+    "email": "stay@holiday-harlech.co.uk"
+  }
 ]
 ----
 ====
@@ -154,59 +258,105 @@ token_expr:: A token string, or any valid xref:n1ql-language-reference/index.ado
 
 options::
 An optional JSON object to control tokenization.
-Within options:
-names;; A boolean to include object names (default: true)
-case;; Either "lower" or "upper" for case folding (default: no change to the original text)
-specials;; A boolean to include strings with special characters, such as email addresses and URLs (default: false)
-split;; A boolean to split string values into words (default: true)
-trim;; A boolean to trim spaces around unsplit string values (default: true)
+For more information, see <<options>>.
+
+==== Options 
+
+[cols="1,3,1"]
+|===
+|Name |Description |Schema
+
+|`names`
+a| Determines whether search within JSON object key names. 
+
+* If `true`, includes key names in tokenization.
+* If `false`, ignores key names and searches values only.
+
+*Default:* `true`
+|Boolean
+
+|`case`
+| Converts characters for case folding. 
+Supported values are `"lower"` and `"upper"`. 
+
+By default, the function preserves the original casing. 
+
+|String
+
+|`specials`
+a| Determines whether to treat strings with special characters (such as email addresses and URLs) as single tokens.
+
+* If `true`, keeps strings with special characters as single tokens (for example, `user@example.com`).
+* If `false`, splits strings on special characters (for example, `user`, `example`, `com`).
+
+*Default:* `false`
+
+|Boolean
+
+|`split`
+a| Determines whether to split string values into individual word tokens.
+
+* If `true`, splits strings into words based on whitespace.
+* If `false`, treats the entire string value as a single token. 
+
+*Default:* `true`
+
+|Boolean
+
+|`trim`
+a| Determines whether to remove leading and trailing whitespaces around unsplit string values. 
+
+* If `true`, trims whitespaces around unsplit strings.
+* If `false`, retains original whitespace around unsplit strings. 
+
+*Default:* `true`
+|Boolean
+|===
 
 === Return Value
 A boolean, representing whether the search expression exists within the input object.
 
-This returns `true` if the sub-string exists within the input string, otherwise `false` is returned.
+The function returns `true` if the sub-string exists within the input string, else returns `false`.
 
-=== Examples
-
-include::ROOT:partial$query-context.adoc[tag=section]
+=== Example
 
 .Finding hotels with the word "Inn" within their name
 ====
 [source,sqlpp]
 ----
 SELECT name
-FROM hotel
-WHERE CONTAINS_TOKEN_REGEXP(name, "In+.*",{"specials":true})
-LIMIT 4;
+FROM [
+  {"name": "Sportsman Inn"},
+  {"name": "Inveraray Youth Hostel"},
+  {"name": "Inverness Youth Hostel"},
+  {"name": "Indian Cove Campground"},
+  {"name": "Central Bakery"}
+] AS hotel
+WHERE CONTAINS_TOKEN_REGEXP(name, "In+.*", {"specials":true});
 ----
 
 [source,json]
 ----
 [
-    {
-        "name": "Sportsman Inn"
-    },
-    {
-        "name": "Inveraray Youth Hostel"
-    },
-    {
-        "name": "Inverness Youth Hostel"
-    },
-    {
-        "name": "Indian Cove Campground"
-    }
+  {
+    "name": "Sportsman Inn"
+  },
+  {
+    "name": "Inveraray Youth Hostel"
+  },
+  {
+    "name": "Inverness Youth Hostel"
+  },
+  {
+    "name": "Indian Cove Campground"
+  }
 ]
 ----
 ====
-
-[#fn-str-title]
-== HAS_TOKEN
-
-Alias for <<section_kqy_hj4_qz,CONTAINS_TOKEN()>>.
 
 [#fn-str-token]
 include::partial$n1ql-language-reference/fun-token.adoc[]
 
 == Aliases
 
-* `HAS_TOKEN` is an alias for <section_kqy_hj4_qz>>.
+* `HAS_TOKEN` is an alias for <<section_kqy_hj4_qz>>.
