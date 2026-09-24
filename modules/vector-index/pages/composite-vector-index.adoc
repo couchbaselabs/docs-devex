@@ -2,11 +2,13 @@
 :page-topic-type: guide
 :page-ui-name: {ui-name}
 :page-product-name: {product-name}
-:description: A Composite Vector index is a Global Secondary Index (GSI) with a single vector column that combines scalar queries with semantic search.
+:description: A Composite Vector Index is a Global Secondary Index (GSI) with a single vector column that combines scalar queries with semantic search.
 :stem:
 :page-toclevels: 3
-:index-name: Composite Vector index
-:index-name-plural: Composite Vector indexes
+:index-name: Composite Vector Index
+:index-name-plural: Composite Vector Indexes
+
+include::partial$editable-style.adoc[]
 
 [abstract]
 {description}
@@ -21,7 +23,13 @@ When your query contains an embedded vector, the Index Service uses any non-vect
 Then it performs a vector similarity search to locate semantically related vectors.
 Handling the non-vector predicates first reduces the number of vector similarity comparisons the Index Service must do to find similar vectors.
 
+You can add a single vector field to a Composite Vector index.
+If your documents contain multiple embedded vectors, you can create multiple indexes -- one for each vector attribute.
+
+[#prerequisites]
 == Prerequisites
+
+All Composite Vector Indexes have the following requirements:
 
 * You must have the Index Service enabled on at least one node in your cluster.
 For more information about how to deploy a new node and Services on your database, see xref:manage:manage-nodes/node-management-overview.adoc[].
@@ -31,13 +39,16 @@ For more information about how to create a bucket, see xref:manage:manage-bucket
 
 * Your account must have the xref:learn:security/roles.adoc#query-manage-index[Query Manage Index] or an administrator role to be able to create an index.
 
-* You have documents in a collection that contain one or more vector embeddings.
-You can add a single vector to a Composite Vector index.
-If your documents contain multiple embedded vectors, you can create multiple indexes -- one for each vector attribute.
-+
+Dense Composite Vector Indexes have the following additional requirements:
+
+* You have documents in a collection that contain one or more dense vector embeddings.
 Embeddings can be an array of floating point numbers or a base64 encoded string.
 Couchbase {product-name} does not embed vectors itself.
 You must use an external embedding model to embed vectors into your data and add them to your documents.
+
+* The vectors you add to an index must contain the same number of dimensions.
+Also the values in the vector must be 32-bit floating point numbers.
+If a vector does not meet both of these requirements, the vector index treats it as a NULL value and the document is not added to the index.
 
 * You must know the number of dimensions the vector contains.
 The embedding model you use to embed the vectors may determine this value for you.
@@ -48,56 +59,131 @@ The metrics affect how the index compares vectors.
 The quantization determines how much memory your index uses and the amount of processing Couchbase {product-name} must perform to train and search them.
 See xref:vector-index:vectors-and-indexes-overview.adoc#vector_similarity[Vector Similarity Metrics] and xref:vector-index:vectors-and-indexes-overview.adoc#quantization[Quantization] for more information.
 
+Sparse Composite Vector Indexes have the following additional requirements:
+
+* You have documents in a collection that contain one or more sparse term-weight pairs.
+The sparse term-weight field must contain a sparse term-weight array, or a string representing a base64 encoded sparse term-weight array.
+
+* A sparse term-weight array must be an array with two items: the first an array of integers representing terms, and the second an array of floating point numbers representing the corresponding term weights.
+The number of terms must be the same as the number of term weights.
+
+* Couchbase {product-name} does not create sparse term-weight pairs itself.
+You must use an external sparse-retrieval model to produce a set of term-weight pairs from your data and add them to your documents.
+
 === Examples on this Page
 
-include::vector-search:partial$download-sample-partial.adoc[]
-
-[#create-index]
-include::vector-index:partial$create-composite-index-ui.adoc[opts=optional]
-
-== Create a Composite Vector Index Using {sqlpp}
-
-Creating a Composite Vector index is similar to creating a non-vector GSI index.
-See xref:guides:create-index.adoc[] for an overview of creating indexes.
-In the `CREATE INDEX` statement to create the Composite Vector index, add the `VECTOR` key attribute after the vector's key name to declare it as an embedded vector.
-
-The index key that refers to a vector field may be the only index key.
-If there are multiple index keys, the index key referring to the vector field may be any of the index keys, including the leading index key.
-
-You must also use the xref:n1ql:n1ql-language-reference/createindex.adoc#index-with[WITH] clause to specify some additional information for the vector column.
-The format for this clause with the most commonly used parameters is:
-
-[source,sqlpp]
-----
-WITH {"dimension": <dimensions>,
-      "similarity": <similarity_metric>,
-      "description": <centroids_and_quantization>
-     };
-----
-
-NOTE: The `WITH` clause can contain other parameters that affect how the index processes vectors.
-For a full list of the parameters that affect a Composite Vector index, see xref:n1ql:n1ql-language-reference/createindex.adoc[] in the {sqlpp} for Query Reference.
-
-* `dimensions` is an integer value that sets the number of dimensions in the vector.
-This value is set by the embedded model you used to embed the vectors.
-* `similarity_metric` is a string that sets the distance metric to use when comparing vectors during index creation.
-+
-include::partial$distance-metric-list.adoc[]
-
-+
-For the greatest accuracy, use the distance function you plan to use when querying vector data.
-* `centroids_and_quantization` is a string containing the settings for the quantization and index algorithms.
-See <<#algo_settings>> in the next section for more information.
+include::partial$download-sample-partial.adoc[]
 
 include::partial$index-algorithm-settings.adoc[]
 
+[#create-index]
+== Create a Composite Vector Index
+
+To create a Composite Vector Index, use the Couchbase Web Console or a {sqlpp} statement.
+
+[tabs]
+====
+Couchbase Web Console::
++
+--
+include::partial$create-composite-index-ui.adoc[opts=optional]
+--
+
+{sqlpp}::
++
+--
+To create a Composite Vector Index using {sqlpp}, use the `CREATE INDEX` statement.
+Creating a Composite Vector index is similar to creating a non-vector GSI index.
+
+The format for this clause with the most commonly used parameters is:
+
+[source,sqlpp,subs=macros]
+----
+CREATE INDEX pass:q[<span contenteditable="plaintext-only">index-name</span>]
+  ON pass:q[<span contenteditable="plaintext-only">keyspace-ref</span>](pass:q[<span contenteditable="plaintext-only">index-keys-and-attribs</span>])
+  WITH {
+    "dimension": pass:q[<span contenteditable="plaintext-only">dimension</span>],
+    "similarity": pass:q[<span contenteditable="plaintext-only">similarity</span>],
+    "description": pass:q[<span contenteditable="plaintext-only">description</span>]
+  };
+----
+
+. Specify a name for the vector index.
+For information about valid index names, see xref:n1ql:n1ql-language-reference/createindex.adoc#syntax[Syntax].
+
+. In the `ON` clause, specify the path to a collection where you have documents that contain a vector field.
+
+. In parentheses, specify the vector field to use as the index key in your Composite Vector Index.
+The index key that refers to a vector field may be the only index key.
+If there are multiple index keys, the index key referring to the vector field may be any of the index keys, including the leading index key.
+
+. If the vector field contains dense embeddings, add `DENSE VECTOR` (or just `VECTOR`) to the vector field name.
+If the vector field contains sparse term-weight pairs, add `SPARSE VECTOR` to the vector field name.
+For more information, see xref:vector-index:vectors-and-indexes-overview.adoc#dense-and-sparse-vector-indexes[Dense and Sparse Vector Indexes].
+
+. Use the `WITH` clause to set additional information about the vector field.
++
+[horizontal]
+dimension:: For dense vector indexes, set the number of dimensions in the vector as an integer.
+The embedded model you use to embed the vectors determines the number of dimensions in the vector.
+
+similarity:: For dense vector indexes, set the distance metric to use when comparing vectors during index creation.
+For the greatest accuracy, use the distance metric you plan to use to query the data.
++
+include::partial$distance-metric-list.adoc[]
+
+description:: Set the quantization algorithm and the number of centroids.
+The `description` parameter is a string in the following format:
++
+[source,ebnf]
+----
+description ::= '"' 'IVF' number-of-centroids?
+              ( ',' (sq-settings | pq-settings) )? '"'
+----
+
++
+* For sparse vector indexes, set the description to `IVF`.
+
+* For dense vector indexes, specify the number of centroids to create in your index by adding an integer value after the `IVF` in the `description` parameter.
++
+A larger value creates smaller centroids.
+If you do not provide a value after the `IVF` in your `description` parameter, Couchbase sets the number of centroids to the number of vectors in your data divided by 1000.
+For more information about how to set this value, see <<number-of-centroids>>.
+
+* For dense vector indexes, select the type of quantization to use by adding a comma followed by either `PQ` or `SQ` after the `IVF` setting in the `description` value.
++
+For more information about how to choose quantization on your index, see <<quantization-setting>>.
+
+NOTE: The `CREATE INDEX` statement may contain other parameters that affect the Composite Vector Index.
+For the full syntax, see xref:n1ql:n1ql-language-reference/createindex.adoc[] in the {sqlpp} for Query Reference.
+--
+====
+
+=== Resolve Index Creation Errors
+
+If an error occurs while Couchbase Server tries to create your Composite Vector Index, on the *Vector Indexes* page, the *Status* of your index changes to *Error*.
+
+To view the details of the error:
+
+. Click the *Error* status to open the Query Workbench.
+. Click btn:[Execute] to drop and rebuild the index.
+. In the query results, find the error details.
+
+Depending on the error, you might need to try recreating your index with a new configuration.
+
 [#examples]
-=== Examples
+=== Index Examples
 
-The following examples show you how to create two Composite Vector index with a vector column using sample data.
-They both use the data from the `color_data_2vectors.zip` file mentioned earlier.
+To try the examples in this section, you must install the vector sample data as described in <<prerequisites>>.
 
-The following query gets a single document from the `rgb` collection in the `vector-sample` bucket's `color` scope.
+[#ex-view-dense-vector-field]
+.View an embedded dense vector field
+====
+The `rgb` collection contains information about colors, including a text description of the color.
+The `embedding_vector_dot` field contains an embedded vector for the description of the color.
+The embedded vector contains 1536 dimensions.
+
+The following query gets a single document from the `rgb` collection.
 It truncates the `embedding_vector_dot` attribute to the first four values to improve readability.
 
 [source,sqlpp]
@@ -111,10 +197,12 @@ The result of running this query is:
 ----
 include::vector-index:example$composite-vector-data.json[tag=sample-doc]
 ----
+====
 
-==== Index the RGB Values
-
-The `rgb.json` file's `colorvect_l2` attribute defines an array containing the RGB values for the entry's color.
+[#ex-index-rgb-values]
+.Index a simple vector field
+====
+The `rgb` collection's `colorvect_l2` attribute defines an array containing the RGB values for the entry's color.
 While this technically is not an embedded vector, you can still create a vector index column for this array.
 The following example creates a Composite Vector index for this attribute as an embedded vector as well as the color's name and brightness.
 
@@ -123,19 +211,19 @@ The following example creates a Composite Vector index for this attribute as an 
 include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-rgb-idx]
 ----
 
-In this example:
+. The number of dimensions is 3, because there are three values in the array containing the RGB value. @/dimension/
 
-* The number of dimensions is 3, because there are three values in the array containing the RGB value.
-* The similarity function is `L2`.
+. The similarity function is `L2`.
 This function works well to find related vectors which are close by the search vector.
 In this example, finding similar colors depends more on proximity than the magnitude or alignment of the vectors.
-See xref:vectors-and-indexes-overview.adoc#vector_similarity[Vector Similarity] for a comparison of similarity functions.
-* The `description` lets Couchbase {product-name} decide the number of centroids for the IVF algorithm.
+See xref:vectors-and-indexes-overview.adoc#vector_similarity[Vector Similarity] for a comparison of similarity functions. @/similarity/
+
+. The `description` lets Couchbase {product-name} decide the number of centroids for the IVF algorithm.
 It also chooses to use Scalar Quantization with an 8-bit index, splitting each dimension into 256 bins.
 This setting does not actually save any space in the index, as each of the RGB dimensions are already 8-bit values.
-However, in this example, memory use is not a concern as the dataset is small.
+However, in this example, memory use is not a concern as the dataset is small. @/similarity/
 
-The result of running example is:
+The result of running the query is:
 
 [source,json]
 ----
@@ -147,27 +235,26 @@ The result of running example is:
   }
 ]
 ----
+====
 
-==== Create a Composite Vector Index Using the Embedded Vectors
-
-The `embedding_vector_dot` attribute contains the embedded vectors for the text in the `description` attribute.
-The data sample shown in <<#examples>> truncated this attribute to several values.
-The embedded vector contains 1536 dimensions.
-
-The following example creates a Composite Vector index that indexes the embedded vectors in the `embedding_vector_dot` as well as indexing the scalar `color` that contains the color's name and `brightness`.
+[#ex-create-dense-CVI]
+.Create a dense Composite Vector Index
+====
+The following example creates a dense Composite Vector Index that indexes the embedded vectors in the `embedding_vector_dot` field, as well as indexing the scalars `color` that contains the color's name, and `brightness`.
 
 [source,sqlpp]
 ----
 include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-vectors-idx]
 ----
 
-This example uses the Dot Product similarity function.
-This function works better with the embedded text content than the Euclidean function used in the previous example.
-It also uses the same algorithms as the previous example -- Couchbase {product-name} chooses the number of centroids, and uses SQ quantization with 256 bins.
+. This example uses the Dot Product similarity function.
+This function works better with the embedded text content than the Euclidean function used in <<ex-index-rgb-values>>. @/similarity/
+
+. It also uses the same algorithms as <<ex-index-rgb-values>> -- Couchbase {product-name} chooses the number of centroids, and uses SQ quantization with 256 bins. @/description/
 
 If successful, Couchbase {product-name} responds with:
 
-[source, json]
+[source,json]
 ----
 [
   {
@@ -180,14 +267,16 @@ If successful, Couchbase {product-name} responds with:
 
 After Couchbase {product-name} creates the index, it begins training it.
 Depending on your system, this training can take several seconds.
+====
 
-==== Create a Composite Vector Index with a Scalar Leading Key
-
+[#ex-create-dense-CVI-scalar-leading-key]
+.Create a Composite Vector Index with a scalar leading key
+====
 If a Composite Vector index has multiple index keys, the leading index key may be a scalar field, rather than the vector field.
 This enables the Index Service to pre-filter using a scalar field.
 This is a key advantage that a Composite Vector index has over a Hyperscale Vector index with included scalar fields.
 
-The following example creates a Composite Vector index that indexes the scalar `color` and brightness fields, as well as the embedded vectors in the `embedding_vector_dot` field.
+The following example creates a Composite Vector index that indexes the scalar `color` and `brightness` fields, as well as the embedded vectors in the `embedding_vector_dot` field.
 
 [source,sqlpp]
 ----
@@ -209,28 +298,173 @@ If successful, Couchbase {product-name} responds with:
 
 After Couchbase {product-name} creates the index, it begins training it.
 Depending on your system, this training can take several seconds.
+====
+
+[#ex-view-sparse-vector-field]
+.View a sparse vector field
+====
+The `rgb-sparse` collection contains exactly the same fields as the `rgb` collection, except that instead of the `embedding_vector_dot` field, it has a `sparse_vector` field containing sparse term-weight pairs.
+
+The following query returns a sample document from the data in the `rgb-sparse` collection, showing the `sparse_vector` field.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=sparse-entry]
+----
+
+The result of running the query is:
+
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=sparse-entry]
+----
+
+The `sparse_vector` field is an array with two items: the first an array of integers representing terms, and the second an array of floating point numbers representing the corresponding term weights.
+
+You can look up the token IDs against the `vocabulary` collection to find the term for a given token ID.
+
+To see how the sparse term-weights were calculated, see <<appendix>>.
+====
+
+[#ex-view-sparse-terms]
+.View the sparse term vocabulary
+====
+The `vocabulary` collection contains a corpus-wide vocabulary list of high-signal terms taken from the `rgb-sparse` collection, and maps each term to a stable integer ID.
+
+The following query returns the first few records from this collection.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=sparse-vocabulary]
+----
+
+The result of running the query is:
+
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=sparse-vocabulary]
+----
+====
+
+[#ex-create-sparse-CVI]
+.Create a sparse Composite Vector Index
+====
+The following example creates a Composite Vector Index that indexes the scalar `color` and `brightness` fields, as well as the sparse term-weight pairs in the `sparse_vector` field.
+
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=create-sparse-idx]
+----
+====
 
 == Query with a Composite Vector Index
 
-You query embedded vector attributes to find similar vectors, and therefore similar semantic content.
-To find the most similar vectors, use an `ORDER BY` clause in your query to return the most relevant vectors first.
-In this clause, call one of two functions that actually performs the vector comparisons: `APPROX_VECTOR_DISTANCE` or `VECTOR_DISTANCE`.
-The first of these functions is faster, but less precise.
-The second is more precise, but slower.
-Which you choose depends on your use case.
+You query vector fields to find similar vectors, and therefore similar semantic content.
+To find the most similar vectors, use the `SELECT` statement with an `ORDER BY` clause containing a call to a vector distance function to return the most relevant vectors first.
 
-To use your Composite Vector index, use the `SELECT` statement with an `ORDER BY` clause containing a call to the `APPROX_VECTOR_DISTANCE` function.
-This function selects the Composite Vector index when you query the vector key that the index covers.
+* For dense embedded vectors, use the xref:n1ql:n1ql-language-reference/vectorfun.adoc#approx_vector_distance[APPROX_VECTOR_DISTANCE()] function.
 
-You should use a `LIMIT` clause to return just the number of vectors you need.
+* For sparse term-weight pairs, use the xref:n1ql:n1ql-language-reference/vectorfun.adoc#sparse_vector_distance[SPARSE_VECTOR_DISTANCE()] function.
+
+The query selects the Composite Vector Index when the vector distance function includes the vector key that the index covers.
+
+=== Query with a Dense Composite Vector Index
+
+To query with a dense Composite Vector Index, you must supply a dense embedded vector value in your query that Couchbase {product-name} can compare to the vectors in the index.
+In a production environment, your application generates a vector for the query value using the same embedding model it used to embed the vectors in your documents.
+
+A typical query using a dense Composite Vector Index looks like this:
+
+[source,sqlpp,subs=macros]
+----
+SELECT pass:q[<span contenteditable="plaintext-only">fields</span>]
+       FROM pass:q[<span contenteditable="plaintext-only">collection</span>]
+       ORDER BY APPROX_VECTOR_DISTANCE(
+                pass:q[<span contenteditable="plaintext-only">vec</span>],
+                pass:q[<span contenteditable="plaintext-only">queryvec</span>],
+                pass:q[<span contenteditable="plaintext-only">metric</span>],
+                pass:q[<span contenteditable="plaintext-only">nprobes</span>],
+                pass:q[<span contenteditable="plaintext-only">rerank</span>],
+                pass:q[<span contenteditable="plaintext-only">topNScan</span>]
+        ) WHERE pass:q[<span contenteditable="plaintext-only">condition</span>]
+        LIMIT pass:q[<span contenteditable="plaintext-only">number-of-results</span>];
+----
+
+The xref:n1ql:n1ql-language-reference/vectorfun.adoc#approx_vector_distance[APPROX_VECTOR_DISTANCE()] function has the following arguments:
+
+[horizontal]
+vec:: The name of the key containing the vector in the collection.
+queryvec:: The vector value to search for in the collection field.
+It can be an array of floating point numbers or a base64 encoded string.
+metric:: The distance metric to use when comparing the vectors.
+This value should match the distance metric you used when you created the index.
+nprobes:: An optional integer value that sets the number of centroids to probe for matching vectors.
+By default, the vector search only probes a single centroid.
+rerank:: An optional Boolean that can only be used when `nprobes` is specified.
+It specifies whether the function should use full vectors to achieve better results.
+For more information, see xref:vector-index:hyperscale-reranking.adoc[].
+topNScan:: An optional positive integer that can only be used when `nprobes` and `rerank` are specified.
+If specified, it sets the number of records to scan.
+
+Using additional scalar fields in your search can improve your results and reduce the overhead of performing a vector search.
+For example, using a `WHERE` clause to filter on an additional scalar field reduces the number of vectors an index scan has to compare.
+Searching for scalar values requires less resources than vector searches.
+
+Use a `LIMIT` clause to return just the number of results you need.
 The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the required number of matches.
 
-You can also perform vector comparisons using the VECTOR_DISTANCE function.
-This function does not select a Hyperscale Vector index or a Composite Vector Index, but performs a brute-force comparison.
+NOTE: You can also compare dense embedded vectors using the xref:n1ql:n1ql-language-reference/vectorfun.adoc#vector_distance[VECTOR_DISTANCE()] function.
+This function does not select a Hyperscale Vector Index or a Composite Vector Index, but performs a brute-force comparison.
+The `APPROX_VECTOR_DISTANCE()` function is faster, but less precise.
+The `VECTOR_DISTANCE()` function is more precise, but slower.
+Which you choose depends on your use case.
 
-=== Query RGB Values
 
-Querying the RGB values in `rgb.colorvect_l2` requires a vector with only three values.
+=== Query with a Sparse Composite Vector Index
+
+To query with a sparse Composite Vector Index, you must supply a sparse term-weight array in your query that Couchbase {product-name} can compare to the sparse term-weights in the index.
+You must use the same term-weight vocabulary for the query as that used for the sparse term-weights in your documents.
+
+A typical query using a sparse Composite Vector Index looks like this:
+
+[source,sqlpp,subs=macros]
+----
+SELECT pass:q[<span contenteditable="plaintext-only">fields</span>]
+       FROM pass:q[<span contenteditable="plaintext-only">collection</span>]
+       ORDER BY SPARSE_VECTOR_DISTANCE(
+                pass:q[<span contenteditable="plaintext-only">vec</span>],
+                pass:q[<span contenteditable="plaintext-only">queryvec</span>],
+                pass:q[<span contenteditable="plaintext-only">nprobes</span>],
+                pass:q[<span contenteditable="plaintext-only">topNScan</span>]
+        )  WHERE pass:q[<span contenteditable="plaintext-only">condition</span>]
+        LIMIT pass:q[<span contenteditable="plaintext-only">number-of-results</span>];
+----
+
+The xref:n1ql:n1ql-language-reference/vectorfun.adoc#sparse_vector_distance[SPARSE_VECTOR_DISTANCE()] function has the following arguments:
+
+[horizontal]
+vec:: The name of the field containing the vector in the collection.
+queryvec:: The vector value to search for in the collection field.
+It can be sparse term-weight array or a base64 encoded string.
+nprobes:: An optional integer value that sets the number of centroids to probe for matching vectors.
+By default, the vector search only probes a single centroid.
+topNScan:: An optional positive integer that can only be used when `nprobes` is specified.
+If specified, it sets the number of records to scan.
+
+If necessary, use a `WHERE` clause to filter on an additional scalar field to reduce the number of vectors the index scan has to compare.
+
+Use a `LIMIT` clause to return just the number of results you need.
+The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the number of matches you need.
+
+[#query-example]
+=== Query Examples
+
+To try the examples in this section, you must install the vector sample data as described in <<prerequisites>>.
+
+[#ex-query-rgb-values]
+.Query a simple vector field
+====
+Querying the RGB values in `colorvect_l2` requires a vector with only three values.
 You can just specify the vector by hand.
 The following example finds colors that are similar to gray, which has an RGB value of 128, 128, 128:
 
@@ -297,7 +531,11 @@ The other results are all shades of gray:
     }
 ]
 ----
+====
 
+[#ex-query-other-predicates]
+.Query and filter a simple vector field
+====
 You can also add other predicates to help reduce the workload of searching for similar vectors by excluding vectors.
 The following example searches for colors similar to gray which has an RGB value of 128, 128, 128 and have a brightness greater than 128:
 
@@ -357,15 +595,18 @@ The result of running this query are:
     }
 ]
 ----
+====
 
-===  Query the Embedded Vectors
+[#ex-view-dense-query-vectors]
+.View dense embedded vectors for a query
+====
+To query a collection containing an embedded vector, you must supply an embedded vector in the query.
 
-To query the `color_desc_idx` Composite Vector index containing the embedded vector for the description attribute, you must supply a vector.
-In a production environment, your application calls the same embedding model it called to generate the embedded vectors in your documents to generate a vector for the query value.
+To avoid the complication of calling an embedding model, the examples on this page use embedded vectors from the `rgb-questions` collection.
+This collection contains a `question` attribute which is a search prompt for a particular color.
+The `couchbase_search_query.knn.vector` attribute contains the embedded vector for the `question` attribute.
 
-For this example, you can use embedded vectors in the `rgb_questions.json` file that's in the `color_data_2vectors.zip` file.
-This file contains a `question` attribute containing a search prompt for a particular color.
-The following query gets a single document from the `rgb_questions` collection in the `vector-sample` bucket's `color` scope.
+The following query gets a single document from the `rgb_questions` collection.
 It truncates the `couchbase_search_query.knn.vector` attribute to the first four values to improve readability.
 
 [source,sqlpp]
@@ -373,18 +614,20 @@ It truncates the `couchbase_search_query.knn.vector` attribute to the first four
 include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=get-sample-doc-question]
 ----
 
-The result of the query shows the content of one of the documents:
-
+The output of the query looks like this:
 
 [source,json]
 ----
 include::vector-index:example$composite-vector-data.json[tag=sample-doc-question]
 ----
+====
 
-The `couchbase_search_query.knn.vector` attribute contains the embedded vector for the `question` attribute.
-
-This example queries the `embedding_vector_dot` column.
-It appears here with most of the 1536 vectors omitted:
+[#ex-query-with-dense-CVI]
+.Query with a dense Composite Vector Index
+====
+To compare your question to the embedded vectors in the `embedding_vector_dot` field, you need to include the embedded vectors for the question in your query's vector distance function.
+You could directly copy and paste the entire array into your query.
+An example is shown here, with most of the 1536 vectors omitted.
 
 [source,sqlpp]
 ----
@@ -393,8 +636,7 @@ include::vector-index:example$query-vectors-idx-whole.sqlpp[tags=!query-vectors-
 
 Click btn:[icon:github[\] View] to see and copy the entire query with all the vectors.
 
-Another option is to import the `rgb_questions.json` file into another collection in the `vector-sample` bucket's `color` scope named `rgb-questions`.
-Then you can use a subquery to get the vectors for the question and use it in your query of the `rgb` collection's `embedding_vector_dot` attribute:
+Another option is to use a subquery to get the vectors for the question from the `rgb_questions` collection.
 
 [source,sqlpp]
 ----
@@ -431,14 +673,12 @@ In either case, the results of the query are the same:
 ----
 
 The second result, the color papaya whip, matches the `rgb_questions` collection's `wanted_similar_color_from_search` attribute.
+====
 
-=== Adding a Scalar
-
-Using additional scalar fields in your search can improve your results and reduce the overhead of performing a vector search.
-For example, filtering on an additional scalar field reduces the number of vectors an index scan has to compare.
-Searching for scalar values requires less resources than vector searches.
-
-The example that created the `color_desc_idx` index added fields in addition to the `embedding_vector_dot` vector field.
+[#ex-query-and-filter-with-dense-CVI]
+.Query and filter with a dense Composite Vector Index
+====
+<<ex-create-dense-CVI>> added scalar fields to the `color_desc_idx` index in addition to the `embedding_vector_dot` vector field.
 The following example adds a filter based on the `brightness` field to reduce the number of vectors that get compared and also improve the results.
 
 The version of the query that performs a subquery of the `rgb-questions` to get the vector value is:
@@ -478,3 +718,51 @@ The results show that this query moves the papaya whip entry to the top.
     }
 ]
 ----
+====
+
+[#ex-query-with-sparse-CVI]
+.Query with a sparse Composite Vector Index
+====
+To perform a sparse vector index query for a precise term in the `rbg-sparse` collection, you must first look up the token ID associated with that term in the `vocabulary` collection, and then assign your required weight to that term to build a sparse term-weight array.
+You can then measure the vector distance between the query sparse term-weights and the sparse term-weights in the `sparse-vectors` field.
+
+The following query finds colors from the `rgb-sparse` collection whose titles or descriptions contain exact or near-exact matches for the term `brown`, and have a brightness greater than 100.
+
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=sparse-query-single]
+----
+
+. The `vocabulary` collection associates a unique sequential integer with each of the terms used to generate the sparse term-weight pairs.
+The first subquery finds the integer associated with the query term. @/vocabulary/
+
+. The second element in the array assigns a weight to the query term. @/1.0/
+
+. The `sparse_vector` field in the `rgb-sparse` collection contains sparse term-weight pairs based on the color names and descriptions. @/rgb-sparse/
+
+The result of running the query is:
+
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=sparse-query-single]
+----
+
+The results have a name or a description which overlaps with the query term, with decreasing relevance.
+====
+
+[appendix#appendix]
+== Sparse Term-Weights in the Sample Data
+
+To calculate the sparse term-weights in the `rgb-sparse` collection, tokens were taken from the `color`, `verbs`, and `description` fields.
+
+. Each token's weight was calculated using https://en.wikipedia.org/wiki/Tf%E2%80%93idf[TF-IDF].
+
+. Terms from the `color` field had their weight multiplied by 4, and terms from the `verbs` field had their weight multiplied by 2.
+
+. The top 12 terms per document were then kept and rescaled so the strongest term is ~2.0.
+
+This mimics how real sparse-retrieval models such as https://en.wikipedia.org/wiki/Learned_sparse_retrieval[SPLADE] or https://en.wikipedia.org/wiki/Okapi_BM25[BM25/TF‑IDF] produce a small set of high-signal term-weight pairs per document, with the color's own name naturally surfacing as the dominant term.
+
+== See Also
+
+* See xref:guides:create-index.adoc[] for an overview of creating indexes.

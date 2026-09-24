@@ -83,7 +83,7 @@ question_vec[0], "DOT")  LIMIT 3;
 
 /* tag::create-sparse-idx[] */
 CREATE INDEX `color_sparse_idx`
-ON `vector-sample`.color.`rgb-sparse`(`sparse_vector` SPARSE VECTOR, color, brightness)
+ON `vector-sample`.color.`rgb-sparse`(color, brightness, `sparse_vector` SPARSE VECTOR)
 WITH { "description": "IVF",
        "num_replica": 0 }
 /* end::create-sparse-idx[] */
@@ -99,6 +99,7 @@ WITH query_term_weight AS ([
 ])
 SELECT b.color, b.description
 FROM `vector-sample`.color.`rgb-sparse` AS b
+WHERE b.brightness > 100.0
 ORDER BY SPARSE_VECTOR_DISTANCE(b.sparse_vector, query_term_weight)
 LIMIT 3;
 /* end::sparse-query-single[] */

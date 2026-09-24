@@ -22,7 +22,7 @@ If you find their performance does not meet your needs, then test using a Compos
 The Hyperscale Vector Index primarily relies on data stored in an optimized format on disk.
 By relying on disk storage, they have lower memory requirements than other index types.
 
-You add a single vector field to a Hyperscale Vector Index.
+You can add a single vector field to a Hyperscale Vector Index.
 You can nest the array in another array as long as you use an xref:n1ql:n1ql-language-reference/unnest.adoc[UNNEST clause] to extract it from the containing array.
 If your documents contain multiple embedded vectors, you can create multiple indexes -- one for each vector attribute.
 
@@ -34,10 +34,10 @@ All Hyperscale Vector Indexes have the following requirements:
 * You must have the Index Service enabled on at least one node in your cluster.
 For more information about how to deploy a new node and Services on your database, see xref:manage:manage-nodes/node-management-overview.adoc[].
 
-* Your account must have the xref:learn:security/roles.adoc#query-manage-index[Query Manage Index] or an administrator role to be able to create an index.
-
-* You must have a bucket your database.
+* You must have a bucket with scopes and collections in your database.
 For more information about how to create a bucket, see xref:manage:manage-buckets/create-bucket.adoc[].
+
+* Your account must have the xref:learn:security/roles.adoc#query-manage-index[Query Manage Index] or an administrator role to be able to create an index.
 
 Dense Hyperscale Vector Indexes have the following additional requirements:
 
@@ -54,7 +54,7 @@ If a vector does not meet both of these requirements, the vector index treats it
 The embedding model you use to embed the vectors may determine this value for you.
 For example, OpenAI API's `text-embedding-ada-002` embedding model creates vectors that have 1536 dimensions.
 
-* You must decide whether you want to use the default distance metric and quantization for your index.
+* You must decide what distance metric and quantization you want your index to use.
 By default, a Hyperscale Vector Index uses the xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean distance squared] metric and xref:vector-index:vectors-and-indexes-overview.adoc#sq[Scalar Quantization (SQ)] with 8 bits per vector dimension (`SQ8`).
 The metrics affect how the index compares vectors.
 The quantization determines how much memory your index uses and the amount of processing Couchbase {product-name} must perform to train and search them.
@@ -87,7 +87,7 @@ To create a Hyperscale Vector Index, use the Couchbase Web Console or a {sqlpp} 
 Couchbase Web Console::
 +
 --
-include::vector-index:partial$create-hyperscale-index-ui.adoc[opts=optional]
+include::partial$create-hyperscale-index-ui.adoc[opts=optional]
 --
 
 {sqlpp}::
@@ -101,7 +101,7 @@ The following syntax shows the minimum required parameters to create a Hyperscal
 [source,sqlpp,subs=macros]
 ----
 CREATE VECTOR INDEX pass:q[<span contenteditable="plaintext-only">index-name</span>]
-  ON pass:q[<span contenteditable="plaintext-only">keyspace-ref</span>](pass:q[<span contenteditable="plaintext-only">index-key</span>] pass:q[<span contenteditable="plaintext-only">index-attrib</span> VECTOR])
+  ON pass:q[<span contenteditable="plaintext-only">keyspace-ref</span>](pass:q[<span contenteditable="plaintext-only">index-key-and-attrib</span>])
   WITH {
     "dimension": pass:q[<span contenteditable="plaintext-only">dimension</span>],
     "similarity": pass:q[<span contenteditable="plaintext-only">similarity</span>],
@@ -112,7 +112,7 @@ CREATE VECTOR INDEX pass:q[<span contenteditable="plaintext-only">index-name</sp
 . Specify a name for the vector index.
 For information about valid index names, see xref:n1ql:n1ql-language-reference/createvectorindex.adoc#syntax[Syntax].
 
-. In the `ON` clause, specify path to the collection where you have documents that contain a vector field.
+. In the `ON` clause, specify the path to a collection where you have documents that contain a vector field.
 
 . In parentheses, specify the vector field to use as the index key in your Hyperscale Vector Index.
 
@@ -120,7 +120,7 @@ For information about valid index names, see xref:n1ql:n1ql-language-reference/c
 If the vector field contains sparse term-weight pairs, add `SPARSE VECTOR` to the vector field name.
 For more information, see xref:vector-index:vectors-and-indexes-overview.adoc#dense-and-sparse-vector-indexes[Dense and Sparse Vector Indexes].
 
-. Use the `WITH` clause to set additional information about the vector field that the Hyperscale index needs.
+. Use the `WITH` clause to set additional information about the vector field.
 +
 [horizontal]
 dimension:: For dense vector indexes, set the number of dimensions in the vector as an integer.
@@ -131,7 +131,7 @@ For the greatest accuracy, use the distance metric you plan to use to query the 
 +
 include::partial$distance-metric-list.adoc[]
 
-description:: Set the quantization and the number of centroids Couchbase {product-name} to create the index.
+description:: Set the quantization algorithm and the number of centroids.
 The `description` parameter is a string in the following format:
 +
 [source,ebnf]
@@ -149,7 +149,7 @@ A larger value creates smaller centroids.
 If you do not provide a value after the `IVF` in your `description` parameter, Couchbase sets the number of centroids to the number of vectors in your data divided by 1000.
 For more information about how to set this value, see <<number-of-centroids>>.
 
-* For dense vector indexes, select the type of quantization to use for simplifying the vectors stored in your index by adding a comma followed by either `PQ` or `SQ` after the IVF setting in the `description` value.
+* For dense vector indexes, select the type of quantization to use by adding a comma followed by either `PQ` or `SQ` after the `IVF` setting in the `description` value.
 +
 For more information about how to choose quantization on your index, see <<quantization-setting>>.
 
@@ -176,10 +176,11 @@ Depending on the error, you might need to try recreating your index with a new c
 To try the examples in this section, you must install the vector sample data as described in <<prerequisites>>.
 
 [#ex-view-dense-vector-field]
-.View an embedded dense Hyperscale vector field
+.View an embedded dense vector field
 ====
 The `rgb` collection contains information about colors, including a text description of the color.
 The `embedding_vector_dot` field contains an embedded vector for the description of the color.
+The embedded vector contains 1536 dimensions.
 
 The following query returns a sample document from the data in the `rgb` collection, truncating the embedded vector to 4 values to make the result readable:
 
@@ -196,7 +197,7 @@ include::vector-index:example$hyperscale-idx-data.json[tag=rgb-document]
 ----
 ====
 
-[#ex-create-dense-hyperscale-vector-index]
+[#ex-create-dense-HVI]
 .Create a dense Hyperscale Vector Index
 ====
 The following example creates a dense Hyperscale Vector Index for the vector field named `embedding_vector_dot`.
@@ -217,7 +218,7 @@ In most cases, you'll not use these settings in a production environment.
 ====
 
 [#ex-view-sparse-vector-field]
-.View a sparse Hyperscale vector field
+.View a sparse vector field
 ====
 The `rgb-sparse` collection contains exactly the same fields as the `rgb` collection, except that instead of the `embedding_vector_dot` field, it has a `sparse_vector` field containing sparse term-weight pairs.
 
@@ -262,7 +263,7 @@ include::vector-index:example$hyperscale-idx-data.json[tag=sparse-vocabulary]
 ----
 ====
 
-[#ex-create-sparse-hyperscale-vector-index]
+[#ex-create-sparse-HVI]
 .Create a sparse Hyperscale Vector Index
 ====
 The following example creates a sparse Hyperscale Vector Index for the vector field named `sparse_vector`.
@@ -275,7 +276,8 @@ include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-sparse-id
 
 == Query with a Hyperscale Vector Index
 
-To use your Hyperscale Vector Index, use the `SELECT` statement with an `ORDER BY` clause containing a call to a vector distance function.
+You query vector fields to find similar vectors, and therefore similar semantic content.
+To find the most similar vectors, use the `SELECT` statement with an `ORDER BY` clause containing a call to a vector distance function to return the most relevant vectors first.
 
 * For dense embedded vectors, use the xref:n1ql:n1ql-language-reference/vectorfun.adoc#approx_vector_distance[APPROX_VECTOR_DISTANCE()] function.
 
@@ -286,7 +288,7 @@ The query selects the Hyperscale Vector Index when the vector distance function 
 === Query with a Dense Hyperscale Vector Index
 
 To query with a dense Hyperscale Vector Index, you must supply a dense embedded vector value in your query that Couchbase {product-name} can compare to the vectors in the index.
-In actual use, your application generates a vector for the query value using the same embedding model it used to embed the vectors in your documents.
+In a production environment, your application generates a vector for the query value using the same embedding model it used to embed the vectors in your documents.
 
 A typical query using a dense Hyperscale Vector Index looks like this:
 
@@ -321,11 +323,10 @@ topNScan:: An optional positive integer that can only be used when `nprobes` and
 If specified, it sets the number of records to scan.
 
 Use a `LIMIT` clause to return just the number of results you need.
-The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the number of matches you need.
+The query pushes the `LIMIT` clause down into the index scan so that the scan ends after finding the required number of matches.
 
-NOTE: You can also call the function xref:n1ql:n1ql-language-reference/vectorfun.adoc#vector_distance[VECTOR_DISTANCE()] to find similar dense embedded vectors.
-However, this function does not use the Hyperscale Vector Index to perform the vector search.
-Instead, it performs a brute-force search for similar vectors.
+NOTE: You can also compare dense embedded vectors using the xref:n1ql:n1ql-language-reference/vectorfun.adoc#vector_distance[VECTOR_DISTANCE()] function.
+This function does not select a Hyperscale Vector Index or a Composite Vector Index, but performs a brute-force comparison.
 It's useful to measure the recall of your Hyperscale Vector Index.
 See xref:vector-index:vector-index-best-practices.adoc#recall-accuracy[Determine Recall Rate] for more information about measuring recall.
 
@@ -367,14 +368,17 @@ The query pushes the `LIMIT` clause down into the index scan so that the scan en
 
 To try the examples in this section, you must install the vector sample data as described in <<prerequisites>>.
 
+[#ex-view-dense-query-vectors]
 .View dense embedded vectors for a query
 ====
-To avoid the complication of calling an embedding model, this example uses embedded vectors from the `rgb-questions` collection.
+To query a collection containing an embedded vector, you must supply an embedded vector in the query.
+
+To avoid the complication of calling an embedding model, the examples on this page use embedded vectors from the `rgb-questions` collection.
 This collection contains a `question` attribute which is a search prompt for a particular color.
 The `couchbase_search_query.knn.vector` attribute contains the embedded vector for the `question` attribute.
 
 The following query lists several attributes from a document in the collection.
-It truncates the `couchbase_search_query.knn.vector` attribute to just the first 4 dimensions of the vector for readability:
+It truncates the `couchbase_search_query.knn.vector` attribute to just the first 4 dimensions of the vector for readability.
 
 [source,sqlpp]
 ----
@@ -389,9 +393,10 @@ include::vector-index:example$hyperscale-idx-data.json[tag=query-rgb-questions-o
 ----
 ====
 
+[#ex-query-with-dense-HVI]
 .Query with a dense Hyperscale Vector Index
 ====
-To use the embedded vector, you need to include the `couchbase_search_query.knn.vector` attribute in your query's `SELECT` statement.
+To compare your question to the embedded vectors in the `embedding_vector_dot` field, you need to include the embedded vectors for the question in your query's vector distance function.
 You can either directly copy and paste the entire array into your query or use a subquery to retrieve it from the `rgb-questions` collection.
 
 The following example uses a subquery to get the vector, and also includes the `wanted_similar_color_from_search` attribute in the output which shows you the color that the query should return.
@@ -424,9 +429,10 @@ The second result, `sky blue`, matches the `wanted_similar_color_from_search` at
 All of the results are still relevant to the question.
 ====
 
+[#ex-query-with-sparse-HVI]
 .Query with a sparse Hyperscale Vector Index
 ====
-To perform a sparse vector index query for a precise term in the `rbg-sparse` collection, you must first look up the integer associated with that term in the `vocabulary` collection, and then assign your required weight to that term to build a sparse term-weight array.
+To perform a sparse vector index query for a precise term in the `rbg-sparse` collection, you must first look up the token ID associated with that term in the `vocabulary` collection, and then assign your required weight to that term to build a sparse term-weight array.
 You can then measure the vector distance between the query sparse term-weights and the sparse term-weights in the `sparse-vectors` field.
 
 The following query finds colors from the `rgb-sparse` collection whose titles or descriptions contain exact or near-exact matches for the term `brown`.
