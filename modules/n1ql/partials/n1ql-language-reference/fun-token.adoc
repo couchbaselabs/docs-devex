@@ -1,18 +1,18 @@
 == TOKENS
 
-This function tokenizes (i.e.
-breaks up into meaningful segments) the given input string based on specified delimiters, and other options.
-It recursively enumerates all tokens in a JSON value and returns an array of values (JSON atomic values) as the result.
+This function tokenizes, or splits, an input string into meaningful segments based on the delimiters and other options you specify.
+For a JSON value, it recursively extracts every token and returns them as an array of JSON atomic values.
 
 === Syntax
 
 ....
-TOKENS(in_str, opt)
+TOKENS(in_str, options)
 ....
 
 ==== Arguments
-in_str::
-A valid JSON object, this can be anything: constant literal, simple JSON value, JSON key name or the whole document itself.
+in_str:: [Required]
+The JSON value to tokenize.
+It can be a constant literal, a scalar value, a key name, or an entire document.
 +
 The following table lists the rules for each JSON type:
 +
@@ -38,30 +38,56 @@ The following table lists the rules for each JSON type:
 | SPLIT(string)
 
 | array
-| FLATTEN(TOKENS(element) for each element in array
-
-(Concatenation of element tokens)
+| FLATTEN(TOKENS(element)) for each element in the array (concatenation of element tokens)
 
 | object
-| For each name-value pair, name+TOKENS(value)
+| For each name-value pair, name + TOKENS(value)
 |===
 
-opt::
-A JSON object indicating the options passed to the `TOKENS()` function.
+options::
+A JSON object indicating the options passed to the function.
+For more information, see <<options>>.
+
+==== Options
+
 Options can take the following options, and each invocation of `TOKENS()` can choose one or more of the options:
-{"name": true};; *Optional*.
-Valid values are `true` or `false`.
-By default, this is set to true and `TOKENS()` will include field names.
-You can choose to not include field names by setting this option to `false`.
-{"case":"lower"};; *Optional*.
-Valid values are [.in]`lower` or [.in]`upper`.
-Default is neither, as in it returns the case of the original data.
-Use this option to specify the case sensitivity.
-{"specials": true};; *Optional*.
-Use this option to preserve strings with specials characters, such as email addresses, URLs, and hyphenated phone numbers.
-The default value is `false`.
+
+[cols="1,3,1"]
+|===
+|Name |Description |Schema
+
+|`name` +
+__optional__
+a| Determines whether to include field names in the tokenization.
+
+* If `true`, includes field names.
+* If `false`, excludes field names.
+
+*Default:* `true`
+|Boolean
+
+|`case` +
+__optional__
+a| Converts characters for case folding.
+Supported values are `lower` and `upper`.
+
+By default, the function preserves the original casing.
+
+|String
+
+|`specials` +
+__optional__
+a| Determines whether to preserve strings with special characters, such as email addresses, URLs, and hyphenated phone numbers, as single tokens.
+
+* If `true`, keeps strings with special characters as single tokens (for example, `user@example.com`).
+* If `false`, splits strings on special characters (for example, `user`, `example`, `com`).
+
+*Default:* `false`
 +
-NOTE: The `specials` options preserves special characters except at the end of a word.
+NOTE: The `specials` option preserves special characters except at the end of a word.
+
+|Boolean
+|===
 
 === Return Value
 An array of strings containing all of the tokens obtained from the input string.
