@@ -1,0 +1,192 @@
+= Hybrid Queries with Hyperscale or Composite Vector Indexes
+:page-topic-type: reference
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:page-status: Couchbase Server 8.5
+:description: You can combine a sparse vector query and a dense vector query and fuse the results into a single, unified list.
+:keywords: hybrid query, result fusion, dual index
+
+// Cross-references
+:prerequisites: xref:vector-index:hyperscale-vector-index.adoc#prerequisites
+
+[abstract]
+{description}
+
+This page is about hybrid queries using Hyperscale Vector Indexes and Composite Vector Indexes.
+For hybrid search, which combines a Search query with a Vector Search query, see xref:vector-search:vector-search.adoc[].
+
+== Overview
+
+By itself, a dense vector query or a sparse vector query may not provide the results you need.
+A dense vector query is good for broad semantic queries, but may not match rare, specialized tokens; whereas a sparse vector query can match specific search terms and brand names, but may miss general semantic similarities.
+
+For most AI applications, including retrieval-augmented generation (RAG) pipelines and agentic AI systems, a multi-stage approach is required.
+This chains together a dense vector query and a sparse vector query and fuses the results.
+This is known as a *((hybrid query))*, and the key final step is known as *((result fusion))*.
+
+This page focuses on *((dual index))* hybrid queries, which fuse the results of a dense vector query and a sparse vector query.
+However, you can also perform hybrid queries with two dense vector queries, two sparse vector queries, a Flex Vector Search query and a dense vector query, and so on.
+
+=== Hybrid Queries and Filtering
+
+Hybrid queries select for on **relevance**, combining a document's semantic meaning and lexical precision to create a single, unified relevance score.
+
+Filtering, in contrast, is about **scope**.
+It applies rigid, Boolean constraints to a document's attributes, such as category, brand, or date, typically before a relevance query is performed.
+This serves to restrict the query space, reducing computational cost.
+
+In practice, you would use these together in a two-stage process: first filter to narrow the candidate set, then perform a hybrid query on that filtered set to find the most relevant results.
+
+== Procedure
+
+To perform a dual index hybrid query:
+
+. Use a dense vector subquery with a Hyperscale or Composite Vector Index to find similar dense embedded vectors.
+. Use a sparse vector subquery with a Hyperscale or Composite Vector Index to find similar sparse term-weights.
+. Use the `RECIPROCAL_FUSION()` function to fuse the dense subquery and sparse subquery scores in a single ranking.
+
+For more information about `RECIPROCAL_FUSION()` function, including details of how it works and the supported ranking fusion methods, see xref:n1ql:n1ql-language-reference/vectorfun.adoc#reciprocal_fusion[RECIPROCAL_FUSION()].
+
+NOTE: When using the `RECIPROCAL_FUSION()` function to fuse the results of a dense vector subquery and a sparse vector subquery, you do not need to explicitly include the vector distances in the results of the dense vector and sparse vector subqueries.
+
+[#examples]
+== Examples
+
+To try the examples on this page, you must do the following:
+
+. Install the vector sample data, as described in xref:vector-index:hyperscale-vector-index.adoc#prerequisites[Prerequisites].
+
+. Create a dense Hyperscale Vector index in the `rbg` collection on the field named `embedding-vector-dot`, as described in xref:n1ql:n1ql-language-reference/createvectorindex.adoc#ex-create-rgb-idx[CREATE VECTOR INDEX Example 1].
+
+. Create a sparse Hyperscale Vector index in the `rbg-sparse` collection on the field named `sparse_vectors`, as described in xref:n1ql:n1ql-language-reference/createvectorindex.adoc#ex-create-sparse-idx[CREATE VECTOR INDEX Example 5].
+
+For the examples on this page, the path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+[[ex-hybrid-query-question]]
+.Get vectors for a dense vector query
+====
+The following query shows a question intended to search for the color called `tomato`, and the embedded vector for this question.
+
+[source,sqlpp]
+----
+include::example$hybrid-query.sqlpp[tag=hybrid-query-question]
+----
+
+The vector is truncated to the first four dimensions for readability.
+
+.Result
+[source,json]
+----
+include::example$hybrid-query-question.json[]
+----
+====
+
+[[ex-hybrid-query-dense]]
+.Query with a dense Hyperscale Vector Index
+====
+The following query uses a dense Hyperscale Vector Index to find the colors whose descriptions match the question vector most closely.
+
+[source,sqlpp]
+----
+include::example$hybrid-query.sqlpp[tag=hybrid-query-dense]
+----
+
+The results include various shades of red, but the exact color `tomato` is not found.
+
+.Result
+[source,json]
+----
+include::example$hybrid-query-dense.json[]
+----
+====
+
+[[ex-hybrid-query-sparse]]
+.Query with a sparse Hyperscale Vector Index
+====
+The following query uses a sparse Hyperscale Vector Index to find the colors whose name or descriptions match the precise term `tomato`.
+
+[source,sqlpp]
+----
+include::example$hybrid-query.sqlpp[tag=hybrid-query-sparse]
+----
+
+The results include `tomato`, but no other shades of red are found.
+
+.Result
+[source,json]
+----
+include::example$hybrid-query-sparse.json[]
+----
+====
+
+[[ex-hybrid-query-fused]]
+.Fuse the results of dense and sparse vector queries
+====
+The following query uses reciprocal reranking to fuse the results of <<ex-hybrid-query-dense>> and <<ex-hybrid-query-sparse>>.
+When using the 
+
+[source,sqlpp]
+----
+include::example$hybrid-query.sqlpp[tag=hybrid-query-fused]
+----
+
+The results now include `#FF6347` (the color ID for `tomato`), and other closely related shades of red.
+The two topmost results, `#FF0000` and `#FF6347`, both have an identical score, so either of these may be the first result.
+
+.Result
+[source,json]
+----
+include::example$hybrid-query-fused.json[]
+----
+
+The results only contain the color IDs and the ranking scores.
+For an example which returns more information, see <<ex-hybrid-query-description>>.
+====
+
+[[ex-hybrid-query-weighted]]
+.Weight the results of the sparse vector query
+====
+The following query improves the results of <<ex-hybrid-query-fused>>.
+It applies a bigger weight to the results of the sparse vector query, so that matches for sparse terms are always returned first.
+
+[source,sqlpp]
+----
+include::example$hybrid-query.sqlpp[tag=hybrid-query-weighted]
+----
+
+The results for `#FF6347` (the color ID for `tomato`) now always come first, and other closely related shades of red follow.
+
+.Result
+[source,json]
+----
+include::example$hybrid-query-weighted.json[]
+----
+
+Again, the results only contain the color IDs and the ranking scores.
+For an example which returns more information, see <<ex-hybrid-query-description>>.
+====
+
+[[ex-hybrid-query-description]]
+.Include names and descriptions in the fused results
+====
+The `RECIPROCAL_FUSION()` function only returns IDs, and scores if specified.
+The following query uses a lookup join to find the names and descriptions of the colors returned by the hybrid query.
+
+[source,sqlpp]
+----
+include::example$hybrid-query.sqlpp[tag=hybrid-query-description]
+----
+
+The results now include color names and descriptions.
+
+.Result
+[source,json]
+----
+include::example$hybrid-query-description.json[]
+----
+====
+
+See Also
+
+* xref:vector-index:hyperscale-vector-index.adoc[]
+* xref:vector-index:composite-vector-index.adoc[]

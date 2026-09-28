@@ -50,7 +50,7 @@ To select a Hyperscale Vector index or Composite Vector index for the query, the
 COSINE;; xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
 DOT;; xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
 L2;;
-EUCLIDEAN;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
+EUCLIDEAN;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]
 L2_SQUARED;;
 EUCLIDEAN_SQUARED;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean Squared Distance]
 
@@ -150,7 +150,7 @@ This example finds the colors from the `rgb` collection that are similar to gray
 include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-rgb-idx]
 ----
 
-The top result is the entry for gray. 
+The top result is the entry for gray.
 The other results are all shades of gray:
 
 .Results
@@ -610,13 +610,14 @@ SELECT NORMALIZE_VECTOR([1, 2, 3, 4]) AS normalized;
 
 [[reciprocal_fusion,RECIPROCAL_FUSION()]]
 == RECIPROCAL_FUSION(`options`, `input1` [, `input2`, ..., `input16`])
-//[.status]#Couchbase Server 8.5#
+
+[.status]#Couchbase Server 8.5#
 
 === Description
 
-Combines and re-ranks results from multiple search methods into a single ranked list. 
+Combines and re-ranks results from multiple search methods into a single ranked list.
 
-You can use this function to perform hybrid search and ranking fusion directly in {sqlpp} by combining results from vector searches and full-text searches. 
+You can use this function to perform hybrid search and ranking fusion directly in {sqlpp} by combining results from vector searches and full-text searches.
 The function processes all input arguments in parallel and automatically removes duplicate documents before merging.
 
 //TODO: Add links to hybrid search and rank fusion docs when available.
@@ -627,13 +628,13 @@ The function supports the following ranking fusion methods:
 * Relative Score Fusion (RSF)
 * Score-based methods such as SUM, AVG, MIN, MAX, and MEDIAN
 
-//TODO: Add links to RPF and RSF docs when available. 
+//TODO: Add links to RPF and RSF docs when available.
 
-You can also configure how the function normalizes, weighs, and aggregates scores to produce the final ranked list. 
+You can also configure how the function normalizes, weighs, and aggregates scores to produce the final ranked list.
 
 === Arguments
 
-options:: [Required] A JSON object specifying options for the function. 
+options:: [Required] A JSON object specifying options for the function.
 +
 To use default settings for all fields, pass an empty JSON object `{}`.
 For a list of available options, see <<options>>.
@@ -651,8 +652,8 @@ You must provide at least 1 input, and you can provide up to 16 inputs.
 
 | **fusion** +
 __optional__
-| The method used to combine the result sets. 
-The only supported value is `"unionall"`. 
+| The method used to combine the result sets.
+The only supported value is `"unionall"`.
 
 *Default*: `"unionall"`.
 
@@ -661,9 +662,9 @@ The only supported value is `"unionall"`.
 | **scorer** +
 __optional__
 
-| The ranking or fusion algorithm to use. 
+| The ranking or fusion algorithm to use.
 
-Specify one of the following values: 
+Specify one of the following values:
 
 * `"RRF"`: Reciprocal Rank Fusion
 * `"RSF"`: Relative Score Fusion
@@ -681,7 +682,7 @@ __optional__
 
 | Determines whether to return the individual input scores alongside the final fused score.
 
-If `true`, returns both the final fused score and the individual scores. 
+If `true`, returns both the final fused score and the individual scores.
 
 If `false`, returns only the final fused score.
 
@@ -698,12 +699,12 @@ __optional__
 | **args** +
 __optional__
 
-| A JSON object that specifies additional options for individual inputs.
+| An array of JSON objects, each of which specifies additional options for an individual input.
 
-| <<args>> Object
+| <<args>> array
 |===
 
-==== Args 
+==== Args
 
 [options="header", cols="1a,3a,1a"]
 |===
@@ -735,7 +736,7 @@ Specify one of the following values:
 
 * `"none"`: Applies no normalization.
 * `"sigmoid"`: Applies a sigmoid function to scale scores.
-* `"minMaxScaler"`: Scales scores to a specified range (for example, 0 to 1).  
+* `"minMaxScaler"`: Scales scores to a specified range (for example, 0 to 1).
 
 *Default*: `"none"`
 | String
@@ -754,7 +755,7 @@ You can specify nested fields using dot notation (for example, `"meta.id"`).
 | **pathScore** +
 __optional__
 
-| The JSON path to the field used for ranking, such as a score or distance field. 
+| The JSON path to the field used for ranking, such as a score or distance field.
 
 *Default*: `"score"`
 | String
@@ -784,7 +785,7 @@ __optional__
 If `true`, treats the value as a score.
 
 If `false`, treats the value as a distance.
-The function then calculates the final score based on the `normalization` setting. 
+The function then calculates the final score based on the `normalization` setting.
 
 * If `normalization` is `"none"`: Calculates the score as `1 - (distance / max_distance)`.
 * If `normalization` is set to any other method (for example, `"minMaxScaler"`): Normalizes the distance using the specified method, and then calculates the score as `1 - normalized_distance`.
@@ -798,14 +799,14 @@ The function then calculates the final score based on the `normalization` settin
 The function performs various steps to combine and rank the search results:
 
 Deduplication::
-If a same document appears multiple times within a single input, the function resolves it into a single entry. 
+If a same document appears multiple times within a single input, the function resolves it into a single entry.
 It identifies duplicate documents using the `pathId` field, and then combines their scores using the specified `aggregator` method.
 
-Normalization (Optional):: 
-Different search methods use different scoring scales. 
+Normalization (Optional)::
+Different search methods use different scoring scales.
 To make them comparable, the function applies the specified `normalization` method to scale all scores to a standard range (for example, `0` to `1`).
 +
-By default, the function treats the value at `pathScore` as a distance metric. 
+By default, the function treats the value at `pathScore` as a distance metric.
 If you want to treat the value as a score instead, set `isScore` to `true`.
 
 Weighting (Optional)::
@@ -817,14 +818,16 @@ Finally, the function combines all processed inputs into a single ranked list us
 
 === Return Value
 
-Returns an array of objects, where documents are sorted by their calculated rank. 
+Returns an array of objects, where documents are sorted by their calculated rank.
 
 If `score` is set to `true`, each returned object contains the final fused score and the individual scores from each input.
 
 === Examples
 
-.Using default settings
+[#reciprocal_fusion_ex_default]
+.RECIPROCAL_FUSION() Example 1
 ====
+Using default settings.
 
 .Query
 [source,sqlpp]
@@ -867,8 +870,10 @@ SELECT RECIPROCAL_FUSION({}, vector_results, text_results) AS fused_results;
 ----
 ====
 
-.Using RSF without normalization
-====  
+[#reciprocal_fusion_ex_rsf]
+.RECIPROCAL_FUSION() Example 2
+====
+Using RSF without normalization.
 
 .Query
 [source,sqlpp]
@@ -894,24 +899,24 @@ SELECT RECIPROCAL_FUSION(
     "score": true,
     "limit": 4,
     "args": [
-        { "aggregator":"sum", 
-          "normalization":"none", 
-          "weight":1.0, "penalty":60, 
-          "pathId":"id", 
-          "pathScore":"score", 
-          "isScore":true 
+        { "aggregator":"sum",
+          "normalization":"none",
+          "weight":1.0, "penalty":60,
+          "pathId":"id",
+          "pathScore":"score",
+          "isScore":true
         },
-        { "aggregator":"sum", 
-          "normalization":"none", 
-          "weight":1.0, 
-          "penalty":60, 
-          "pathId":"id", 
-          "pathScore":"score", 
-          "isScore":true 
+        { "aggregator":"sum",
+          "normalization":"none",
+          "weight":1.0,
+          "penalty":60,
+          "pathId":"id",
+          "pathScore":"score",
+          "isScore":true
         }
     ]
   }, vector_results, text_results) AS fused_results;
-----  
+----
 
 .Results
 [source,json]
@@ -944,8 +949,11 @@ SELECT RECIPROCAL_FUSION(
 ----
 ====
 
-.Using RRF with normalization and weights
+[#rrf]
+.RECIPROCAL_FUSION() Example 3
 ====
+Using RRF with normalization and weights.
+
 .Query
 [source,sqlpp]
 ----
@@ -966,21 +974,21 @@ SELECT RECIPROCAL_FUSION(
     "score": true,
     "limit": 4,
     "args": [
-        { "aggregator":"sum", 
-          "normalization":"minMaxScaler", 
-          "weight": 2.0, 
-          "penalty": 60, 
-          "pathId":"id", 
-          "pathScore":"score", 
-          "isScore": true 
+        { "aggregator":"sum",
+          "normalization":"minMaxScaler",
+          "weight": 2.0,
+          "penalty": 60,
+          "pathId":"id",
+          "pathScore":"score",
+          "isScore": true
         },
-        { "aggregator":"sum", 
-          "normalization":"minMaxScaler", 
-          "weight": 1.0, 
-          "penalty": 60, 
-          "pathId":"id", 
-          "pathScore":"score", 
-          "isScore": true 
+        { "aggregator":"sum",
+          "normalization":"minMaxScaler",
+          "weight": 1.0,
+          "penalty": 60,
+          "pathId":"id",
+          "pathScore":"score",
+          "isScore": true
         }
     ]
   },
@@ -990,7 +998,7 @@ SELECT RECIPROCAL_FUSION(
 ----
 
 .Results
-[source,json] 
+[source,json]
 ----
 [{
     "fused_results": [{
@@ -1020,8 +1028,10 @@ SELECT RECIPROCAL_FUSION(
 ----
 ====
 
-.Using distance metrics instead of scores
+[#reciprocal_fusion_ex_distance]
+.RECIPROCAL_FUSION() Example 4
 ====
+Using distance metrics instead of scores.
 
 .Query
 [source,sqlpp]
@@ -1043,18 +1053,18 @@ SELECT RECIPROCAL_FUSION(
     "score": true,
     "limit": 5,
     "args": [
-        { "aggregator":"sum", 
-          "normalization":"minMaxScaler", 
-          "weight":1.0, 
-          "penalty":60, 
-          "pathId":"id", 
+        { "aggregator":"sum",
+          "normalization":"minMaxScaler",
+          "weight":1.0,
+          "penalty":60,
+          "pathId":"id",
           "pathScore":"distance"
         },
-        { "aggregator":"sum", 
-          "normalization":"minMaxScaler", 
-          "weight":1.0, 
-          "penalty":60, 
-          "pathId":"id", 
+        { "aggregator":"sum",
+          "normalization":"minMaxScaler",
+          "weight":1.0,
+          "penalty":60,
+          "pathId":"id",
           "pathScore":"distance"
         }
     ]
@@ -1093,9 +1103,12 @@ SELECT RECIPROCAL_FUSION(
     ]
 }]
 ----
+
 In this example, the query omits the `isScore` parameter.
 By default, `isScore` is set to `false` and the function treats the `pathScore` value as a distance metric.
 ====
+
+For more information and examples using the vector sample data, see xref:vector-index:hybrid-vector-queries.adoc[].
 
 [[sparse_vector_distance,SPARSE_VECTOR_DISTANCE()]]
 == SPARSE_VECTOR_DISTANCE(`vec`, `queryvec` [,{nbsp}``nprobes`` [,{nbsp}``topNScan``]])
@@ -1214,8 +1227,6 @@ The query returns 6 colors where the sparse term-weight pairs associated with th
 ----
 include::vector-index:example$hyperscale-idx-data.json[tag=sparse-query-single]
 ----
-
-The query only returns 6 results because only these results 
 ====
 
 
@@ -1276,7 +1287,7 @@ metric:: A string representing the distance metric to use when comparing the vec
 COSINE;; xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
 DOT;; xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
 L2;;
-EUCLIDEAN;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
+EUCLIDEAN;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]
 L2_SQUARED;;
 EUCLIDEAN_SQUARED;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean Squared Distance]
 
