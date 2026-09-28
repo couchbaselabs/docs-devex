@@ -436,17 +436,63 @@ and each dimension maps a specific token to a weight.
 A token is equivalent to a word, part of a word, or a contiguous sequence of words or characters.
 This means that a sparse vector enables you to search for rare keywords or specialized terms.
 
-=== Combine Dense Vector Search and Sparse Vector Search
+[plantuml,sparse-vector-index,svg]
+....
+@startuml
 
-By itself, a dense vector search or a sparse vector search may not provide the results you need.
-A dense vector search is good for broad semantic queries, but may not match rare, specialized tokens; whereas a sparse vector search can match specific search terms and brand names but may miss general semantic similarities.
+package "Source Data" as src {
+  map "**<U+0023>FB8737**" as apricot {
+    id => <U+0023>FB8737
+    color => <back:lime>apricot</back>
+    description => <back:lime>Apricot</back> is a warm and inviting color ...
+  }
+}
+
+package "Database" as db <<rectangle>> {
+  package "Vocabulary" as vocab {
+    map "**Tokens**" as tokens {
+    1 => <back:lime>apricot</back>
+    2 => aqua
+    3 => aromatherapy
+    4 => ...
+    }
+  }
+  package "Documents" as docs {
+    map "**<U+0023>FB8737**" as doc {
+      id => <U+0023>FB8737
+      color => apricot
+      description => Apricot is a warm and inviting color ...
+      sparse_vectors => [\n  <color:red>[<back:lime>1</back>, 39, 155]</color>,\n  <color:blue>[<back:lime>2.00</back>, 0.2494, 0.2553]</color>\n]
+    }
+  }
+}
+
+circle " " as model
+note left of model
+Sparse-retrieval model finds high-signal tokens in the source data,
+assigns an ID to each token, and calculates token weights for each
+document. The highest weight tokens are stored for each document.
+end note
+
+tokens::1 . doc::sparse_vectors
+src -- model
+model --> db
+
+@enduml
+....
+
+A sparse term-weight field must be an array with two items: the first an array of integers representing the token IDs, and the second an array of floating point numbers representing the corresponding term weights.
+The number of token IDs must be the same as the number of term weights.
+A separate vocabulary collection maps each unique token ID to a term.
+
+=== Fuse Dense Vector Queries and Sparse Vector Queries
+
+By itself, a dense vector query or a sparse vector query may not provide the results you need.
+A dense vector query is good for broad semantic queries, but may not match rare, specialized tokens; whereas a sparse vector query can match specific search terms and brand names but may miss general semantic similarities.
 
 For most AI applications, including retrieval-augmented generation (RAG) pipelines and agentic AI systems, a multi-stage approach is required.
-This chains together dense vector search and sparse vector search:
-
-. Find the dense scores: cosine similarity of dense embeddings.
-. Find the sparse scores: dot product of term weights.
-. Use Reciprocal Rank Fusion (RRF) to combine the dense scores and sparse scores in a single ranking.
+This chains together dense vector queries and sparse vector queries, and fuses the results into a single, unified response.
+For more information, see xref:vector-index:hybrid-vector-queries.adoc[].
 
 [#vector-indexes-without-data]
 == Vector Indexes without Data
