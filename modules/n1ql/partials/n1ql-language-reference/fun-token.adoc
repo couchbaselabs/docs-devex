@@ -83,8 +83,10 @@ a| Determines whether to preserve strings with special characters, such as email
 * If `false`, splits strings on special characters (for example, `user`, `example`, `com`).
 
 *Default:* `false`
-+
-NOTE: The `specials` option preserves special characters except at the end of a word.
+
+NOTE: When `specials` is `true`, special characters are preserved only within a token, not at the end of it.
+For example, tokenizing `http://example.com/` returns `http://example.com`.
+The function removes the trailing slash but keeps the internal colon and slashes.
 
 |Boolean
 |===
@@ -158,13 +160,11 @@ SELECT ARRAY_SORT(
 
 .Convert all of the URL data into UPPER case and adds the full URL to the delimited words
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
-
 [source,sqlpp]
 ----
 SELECT ARRAY_SORT( TOKENS(url) ) AS defaulttoken,
        ARRAY_SORT( TOKENS(url, {"specials":true, "case":"UPPER"}) ) AS specialtoken
-FROM hotel
+FROM [ {"url": "http://www.yha.org.uk"} ] AS sample
 LIMIT 1;
 ----
 
@@ -217,7 +217,6 @@ WHERE ANY v IN TOKENS(url, {"specials":true, "case":"UPPER"})
       SATISFIES v = "HTTP://WWW.YHA.ORG.UK"
       END;
 ----
-
 [source,json]
 ----
 {
