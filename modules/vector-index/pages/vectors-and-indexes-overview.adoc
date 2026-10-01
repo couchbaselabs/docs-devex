@@ -5,6 +5,7 @@
 :page-product-name: {product-name}
 :description: This page is a high-level overview of vectors and how they work in indexes.
 :page-toclevels: 3
+:imagesdir: ../assets/images
 
 [abstract]
 {description}
@@ -152,7 +153,7 @@ However, it does not take the square root of the sum distances between the vecto
 
 
 Euclidean Distance Formula::
- latexmath:[L2(x, y) = \sqrt{\sum_{i=1}^n (x_i - y_i)^2}]
+latexmath:[L2(x, y) = \sqrt{\sum_{i=1}^n (x_i - y_i)^2}]
 
 
 Euclidean Squared Distance Formula::
@@ -193,7 +194,7 @@ The magnitude of the vectors is important when determining the strength of the r
 For example:
 
 * Recommending related products based on a shopper's previous purchases.
-* Personalizing a music service's user home page  based on the user's likes and dislikes of artists and songs.
+* Personalizing a music service's user home page based on the user's likes and dislikes of artists and songs.
 * Targeting ads based on a user's interests and previous interactions with the service.
 
 [#cosine]
@@ -417,3 +418,78 @@ After Couchbase {product-name} builds and trains the new index, you can drop the
 You should consider the need to retrain your indexes when choosing which quantization to use.
 For example, the PQ quantization requires more resources to train than SQ.
 If your dataset evolves rapidly, you may choose to not use PQ because you'll need to perform more frequent retraining.
+
+[#dense-and-sparse-vector-indexes]
+== Dense and Sparse Vector Indexes
+
+[.status]#Couchbase Server 8.5#
+
+By default, Hyperscale Vector Indexes and Composite Vector Indexes are ((dense vector indexes)).
+Dense vector indexes are built on a vector field which contains dense embeddings.
+Dense vector fields have hundreds or thousands of dimensions, and most dimensions contain a value.
+This means that dense vector indexes capture semantic similarity and generalize across concepts, but that they may miss exact matches for keywords or product-specific terms.
+
+Couchbase Server 8.5 introduces ((sparse vector indexes)).
+Sparse vector indexes are built on a vector field which contains sparse term-weight pairs.
+A sparse vector field has only a few dimensions,
+and each dimension maps a specific token to a weight.
+A token is equivalent to a word, part of a word, or a contiguous sequence of words or characters.
+This means that a sparse vector enables you to search for rare keywords or specialized terms.
+
+[plantuml,sparse-vector-index,svg]
+....
+@startuml
+
+package "Source Data" as src {
+  map "**<U+0023>FB8737**" as apricot {
+    id => <U+0023>FB8737
+    color => <back:lime>apricot</back>
+    description => <back:lime>Apricot</back> is a warm and inviting color ...
+  }
+}
+
+package "Database" as db <<rectangle>> {
+  package "Vocabulary" as vocab {
+    map "**Tokens**" as tokens {
+    1 => <back:lime>apricot</back>
+    2 => aqua
+    3 => aromatherapy
+    4 => ...
+    }
+  }
+  package "Documents" as docs {
+    map "**<U+0023>FB8737**" as doc {
+      id => <U+0023>FB8737
+      color => apricot
+      description => Apricot is a warm and inviting color ...
+      sparse_vectors => [\n  <color:red>[<back:lime>1</back>, 39, 155]</color>,\n  <color:blue>[<back:lime>2.00</back>, 0.2494, 0.2553]</color>\n]
+    }
+  }
+}
+
+circle " " as model
+note left of model
+Sparse-retrieval model finds high-signal tokens in the source data,
+assigns an ID to each token, and calculates token weights for each
+document. The highest weight tokens are stored for each document.
+end note
+
+tokens::1 . doc::sparse_vectors
+src -- model
+model --> db
+
+@enduml
+....
+
+A sparse term-weight field must be an array with two items: the first an array of integers representing the token IDs, and the second an array of floating point numbers representing the corresponding term weights.
+The number of token IDs must be the same as the number of term weights.
+A separate vocabulary collection maps each unique token ID to a term.
+
+=== Fuse Dense Vector Queries and Sparse Vector Queries
+
+By itself, a dense vector query or a sparse vector query may not provide the results you need.
+A dense vector query is good for broad semantic queries, but may not match rare, specialized tokens; whereas a sparse vector query can match specific search terms and brand names but may miss general semantic similarities.
+
+For most AI applications, including retrieval-augmented generation (RAG) pipelines and agentic AI systems, a multi-stage approach is required.
+This chains together dense vector queries and sparse vector queries, and fuses the results into a single, unified response.
+For more information, see xref:vector-index:hybrid-vector-queries.adoc[].

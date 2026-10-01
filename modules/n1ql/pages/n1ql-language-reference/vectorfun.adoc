@@ -50,7 +50,7 @@ To select a Hyperscale Vector index or Composite Vector index for the query, the
 COSINE;; xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
 DOT;; xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
 L2;;
-EUCLIDEAN;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
+EUCLIDEAN;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]
 L2_SQUARED;;
 EUCLIDEAN_SQUARED;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean Squared Distance]
 
@@ -77,11 +77,11 @@ Returns a numeric value representing the approximate vector distance.
 
 To try the examples in this section, you must do the following:
 
-* Install the `rgb` and `rgb-questions` collections from the supplied vector sample, as described in xref:vector-index:hyperscale-vector-index.adoc#prerequisites[Prerequisites].
+. Install the `rgb` and `rgb-questions` collections from the supplied vector sample, as described in xref:vector-index:hyperscale-vector-index.adoc#prerequisites[Prerequisites].
 
-* Create a Composite Vector index in the `rbg` collection on the field named `colorvect_l2`, as described in xref:n1ql:n1ql-language-reference/createindex.adoc#ex-create-rgb-idx[CREATE INDEX Example 6].
+. Create a Composite Vector index in the `rbg` collection on the field named `colorvect_l2`, as described in xref:n1ql:n1ql-language-reference/createindex.adoc#ex-create-rgb-idx[CREATE INDEX Example 6].
 
-* Create a Hyperscale Vector index in the `rbg` collection on the field named `embedding-vector-dot`, as described in xref:n1ql:n1ql-language-reference/createvectorindex.adoc#ex-create-rgb-idx[CREATE VECTOR INDEX Example 1].
+. Create a Hyperscale Vector index in the `rbg` collection on the field named `embedding-vector-dot`, as described in xref:n1ql:n1ql-language-reference/createvectorindex.adoc#ex-create-rgb-idx[CREATE VECTOR INDEX Example 1].
 
 [#approx_vector_distance_ex_simple]
 .APPROX_VECTOR_DISTANCE() Example 1
@@ -150,7 +150,7 @@ This example finds the colors from the `rgb` collection that are similar to gray
 include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-rgb-idx]
 ----
 
-The top result is the entry for gray. 
+The top result is the entry for gray.
 The other results are all shades of gray:
 
 .Results
@@ -217,7 +217,7 @@ The query finds the colors from the `rgb` collection whose descriptions are most
 .Query
 [source,sqlpp]
 ----
-include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=exact-query]
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=untuned-query]
 ----
 
 . The `vector` field in the `rgb-questions` collection contains the embedded vectors associated with the presupplied questions. @/couchbase_search_query.knn/
@@ -229,7 +229,7 @@ The query returns 10 colors where the embedded vector associated with the color 
 .Results
 [source,json]
 ----
-include::vector-index:example$hyperscale-idx-data.json[tag=exact-query-results]
+include::vector-index:example$hyperscale-idx-data.json[tag=untuned-query-results]
 ----
 
 Compare this with the result of <<vector_distance_ex_embedded>>.
@@ -287,7 +287,7 @@ For more information and examples, see xref:vector-index:hyperscale-reranking.ad
 ====
 
 [[decode_vector,DECODE_VECTOR()]]
-== DECODE_VECTOR(`vector` [,{nbsp}``byte_order``])
+== DECODE_VECTOR(`vector` [,{nbsp}``byte_order`` [,{nbsp}``sparse``]])
 
 This function has an alias <<aliases,VECTOR_DECODE()>>.
 
@@ -298,20 +298,24 @@ Reverses the encoding done by the <<encode_vector>> function.
 === Arguments
 
 vector:: String, or any {sqlpp} expression that evaluates to a string, representing the base64 encoding of a vector value.
+If the `"sparse"` argument is present, the string must represent the base64 encoding of a sparse-term weight array.
 
 byte_order:: [Optional] A boolean which determines the byte order of the vector value.
 If `true`, it's big-endian.
 If `false`, it's little-endian.
 The default is `false`.
 
+sparse:: [Optional] A string with the value `"sparse"`.
+If present, the `vector` argument must be a base64 encoded sparse term-weight array.
+
 === Return Value
 
-An array of floating point numbers.
+An array of floating point numbers, or a sparse term-weight array, in which the first item is an array of integers representing token IDs, and the second item is an array of floating point numbers representing the corresponding term weights.
 
-=== Example
+=== Examples
 
 [#decode_vector_ex]
-.DECODE_VECTOR() Example
+.DECODE_VECTOR() Example 1
 ====
 The following query decodes the base64 encoding of a vector value using two different byte orders.
 
@@ -344,8 +348,50 @@ SELECT DECODE_VECTOR("AACAPwAAAEAAAEBAAACAQA==") AS little_endian,
 ----
 ====
 
+[#decode_vector_ex_sparse]
+.DECODE_VECTOR() Example 2
+====
+The following query decodes the base64 encoding of a sparse term-weight array using two different byte orders.
+
+.Query
+[source,sqlpp]
+----
+SELECT DECODE_VECTOR("AQAAAAIAAAAAAEBAAACAQA==", false, "sparse") AS little_endian,
+       DECODE_VECTOR("AAAAAQAAAAJAQAAAQIAAAA==", true, "sparse") AS big_endian;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "little_endian": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "big_endian": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4
+      ]
+    ]
+  }
+]
+----
+====
+
 [[encode_vector,ENCODE_VECTOR()]]
-== ENCODE_VECTOR(`vector` [,{nbsp}``byte_order``])
+== ENCODE_VECTOR(`vector` [,{nbsp}``byte_order`` [,{nbsp}``sparse``]])
 
 This function has an alias <<aliases,VECTOR_ENCODE()>>.
 
@@ -356,20 +402,24 @@ Returns the https://en.wikipedia.org/wiki/Base64[base64] encoding of a vector va
 === Arguments
 
 vector:: An array of floating point numbers, or any {sqlpp} expression that evaluates to an array of floating point numbers.
+If the `"sparse"` argument is present, this must be a sparse-term weight array, or any {sqlpp} expression that evaluates to a sparse term-weight array.
 
 byte_order:: [Optional] A boolean which determines the byte order of the vector value.
 If `true`, it's big-endian.
 If `false`, it's little-endian.
 The default is `false`.
 
+sparse:: [Optional] A string with the value `"sparse"`.
+If present, the `vector` argument must resolve to a sparse term-weight array, in which the first item is an array of integers representing token IDs, and the second item is an array of floating point numbers representing the corresponding term weights.
+
 === Return Value
 
 A string representing the base64 encoding of the input expression.
 
-=== Example
+=== Examples
 
 [#encode_vector_ex]
-.ENCODE_VECTOR() Example
+.ENCODE_VECTOR() Example 1
 ====
 The following query encodes an array of floating point numbers using two different byte orders.
 
@@ -387,6 +437,30 @@ SELECT ENCODE_VECTOR([1, 2, 3, 4]) AS little_endian,
   {
     "little_endian": "AACAPwAAAEAAAEBAAACAQA==",
     "big_endian": "P4AAAEAAAABAQAAAQIAAAA=="
+  }
+]
+----
+====
+
+[#encode_vector_ex_sparse]
+.ENCODE_VECTOR() Example 2
+====
+The following query encodes a sparse term-weight array using two different byte orders.
+
+.Query
+[source,sqlpp]
+----
+SELECT ENCODE_VECTOR([[1, 2], [3, 4]], false, "sparse") AS little_endian,
+       ENCODE_VECTOR([[1, 2], [3, 4]], true, "sparse") AS big_endian;
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "little_endian": "AQAAAAIAAAAAAEBAAACAQA==",
+    "big_endian": "AAAAAQAAAAJAQAAAQIAAAA=="
   }
 ]
 ----
@@ -536,16 +610,15 @@ SELECT NORMALIZE_VECTOR([1, 2, 3, 4]) AS normalized;
 
 [[reciprocal_fusion,RECIPROCAL_FUSION()]]
 == RECIPROCAL_FUSION(`options`, `input1` [, `input2`, ..., `input16`])
-//[.status]#Couchbase Server 8.5#
+
+[.status]#Couchbase Server 8.5#
 
 === Description
 
-Combines and re-ranks results from multiple search methods into a single ranked list. 
+Combines and re-ranks results from multiple search methods into a single ranked list.
 
-You can use this function to perform hybrid search and ranking fusion directly in {sqlpp} by combining results from vector searches and full-text searches. 
+You can use this function to perform hybrid search and ranking fusion directly in {sqlpp} by combining results from vector searches and full-text searches.
 The function processes all input arguments in parallel and automatically removes duplicate documents before merging.
-
-//TODO: Add links to hybrid search and rank fusion docs when available.
 
 The function supports the following ranking fusion methods:
 
@@ -553,13 +626,13 @@ The function supports the following ranking fusion methods:
 * Relative Score Fusion (RSF)
 * Score-based methods such as SUM, AVG, MIN, MAX, and MEDIAN
 
-//TODO: Add links to RPF and RSF docs when available. 
+You can also configure how the function normalizes, weighs, and aggregates scores to produce the final ranked list.
 
-You can also configure how the function normalizes, weighs, and aggregates scores to produce the final ranked list. 
+For more information about Reciprocal Rank Fusion (RRF) and Relative Score Fusion (RSF), see xref:search:score-fusion/about-score-fusion.adoc[] in the Search Service documentation.
 
 === Arguments
 
-options:: [Required] A JSON object specifying options for the function. 
+options:: [Required] A JSON object specifying options for the function.
 +
 To use default settings for all fields, pass an empty JSON object `{}`.
 For a list of available options, see <<options>>.
@@ -577,8 +650,8 @@ You must provide at least 1 input, and you can provide up to 16 inputs.
 
 | **fusion** +
 __optional__
-| The method used to combine the result sets. 
-The only supported value is `"unionall"`. 
+| The method used to combine the result sets.
+The only supported value is `"unionall"`.
 
 *Default*: `"unionall"`.
 
@@ -587,9 +660,9 @@ The only supported value is `"unionall"`.
 | **scorer** +
 __optional__
 
-| The ranking or fusion algorithm to use. 
+| The ranking or fusion algorithm to use.
 
-Specify one of the following values: 
+Specify one of the following values:
 
 * `"RRF"`: Reciprocal Rank Fusion
 * `"RSF"`: Relative Score Fusion
@@ -605,9 +678,9 @@ Specify one of the following values:
 | **score** +
 __optional__
 
-| Determies whether to return the individual input scores alongside the final fused score.
+| Determines whether to return the individual input scores alongside the final fused score.
 
-If `true`, returns both the final fused score and the individual scores. 
+If `true`, returns both the final fused score and the individual scores.
 
 If `false`, returns only the final fused score.
 
@@ -624,12 +697,12 @@ __optional__
 | **args** +
 __optional__
 
-| A JSON object that specifies additional options for individual inputs.
+| An array of JSON objects, each of which specifies additional options for an individual input.
 
-| <<args>> Object
+| <<args>> array
 |===
 
-==== Args 
+==== Args
 
 [options="header", cols="1a,3a,1a"]
 |===
@@ -661,7 +734,7 @@ Specify one of the following values:
 
 * `"none"`: Applies no normalization.
 * `"sigmoid"`: Applies a sigmoid function to scale scores.
-* `"minMaxScaler"`: Scales scores to a specified range (for example, 0 to 1).  
+* `"minMaxScaler"`: Scales scores to a specified range (for example, 0 to 1).
 
 *Default*: `"none"`
 | String
@@ -680,7 +753,7 @@ You can specify nested fields using dot notation (for example, `"meta.id"`).
 | **pathScore** +
 __optional__
 
-| The JSON path to the field used for ranking, such as a score or distance field. 
+| The JSON path to the field used for ranking, such as a score or distance field.
 
 *Default*: `"score"`
 | String
@@ -710,7 +783,7 @@ __optional__
 If `true`, treats the value as a score.
 
 If `false`, treats the value as a distance.
-The function then calculates the final score based on the `normalization` setting. 
+The function then calculates the final score based on the `normalization` setting.
 
 * If `normalization` is `"none"`: Calculates the score as `1 - (distance / max_distance)`.
 * If `normalization` is set to any other method (for example, `"minMaxScaler"`): Normalizes the distance using the specified method, and then calculates the score as `1 - normalized_distance`.
@@ -724,14 +797,14 @@ The function then calculates the final score based on the `normalization` settin
 The function performs various steps to combine and rank the search results:
 
 Deduplication::
-If a same document appears multiple times within a single input, the function resolves it into a single entry. 
+If a same document appears multiple times within a single input, the function resolves it into a single entry.
 It identifies duplicate documents using the `pathId` field, and then combines their scores using the specified `aggregator` method.
 
-Normalization (Optional):: 
-Different search methods use different scoring scales. 
+Normalization (Optional)::
+Different search methods use different scoring scales.
 To make them comparable, the function applies the specified `normalization` method to scale all scores to a standard range (for example, `0` to `1`).
 +
-By default, the function treats the value at `pathScore` as a distance metric. 
+By default, the function treats the value at `pathScore` as a distance metric.
 If you want to treat the value as a score instead, set `isScore` to `true`.
 
 Weighting (Optional)::
@@ -743,14 +816,16 @@ Finally, the function combines all processed inputs into a single ranked list us
 
 === Return Value
 
-Returns an array of objects, where documents are sorted by their calculated rank. 
+Returns an array of objects, where documents are sorted by their calculated rank.
 
 If `score` is set to `true`, each returned object contains the final fused score and the individual scores from each input.
 
 === Examples
 
-.Using default settings
+[#reciprocal_fusion_ex_default]
+.RECIPROCAL_FUSION() Example 1
 ====
+Using default settings.
 
 .Query
 [source,sqlpp]
@@ -793,8 +868,10 @@ SELECT RECIPROCAL_FUSION({}, vector_results, text_results) AS fused_results;
 ----
 ====
 
-.Using RSF without normalization
-====  
+[#reciprocal_fusion_ex_rsf]
+.RECIPROCAL_FUSION() Example 2
+====
+Using RSF without normalization.
 
 .Query
 [source,sqlpp]
@@ -820,24 +897,24 @@ SELECT RECIPROCAL_FUSION(
     "score": true,
     "limit": 4,
     "args": [
-        { "aggregator":"sum", 
-          "normalization":"none", 
-          "weight":1.0, "penalty":60, 
-          "pathId":"id", 
-          "pathScore":"score", 
-          "isScore":true 
+        { "aggregator":"sum",
+          "normalization":"none",
+          "weight":1.0, "penalty":60,
+          "pathId":"id",
+          "pathScore":"score",
+          "isScore":true
         },
-        { "aggregator":"sum", 
-          "normalization":"none", 
-          "weight":1.0, 
-          "penalty":60, 
-          "pathId":"id", 
-          "pathScore":"score", 
-          "isScore":true 
+        { "aggregator":"sum",
+          "normalization":"none",
+          "weight":1.0,
+          "penalty":60,
+          "pathId":"id",
+          "pathScore":"score",
+          "isScore":true
         }
     ]
   }, vector_results, text_results) AS fused_results;
-----  
+----
 
 .Results
 [source,json]
@@ -870,8 +947,11 @@ SELECT RECIPROCAL_FUSION(
 ----
 ====
 
-.Using RRF with normalization and weights
+[#rrf]
+.RECIPROCAL_FUSION() Example 3
 ====
+Using RRF with normalization and weights.
+
 .Query
 [source,sqlpp]
 ----
@@ -892,21 +972,21 @@ SELECT RECIPROCAL_FUSION(
     "score": true,
     "limit": 4,
     "args": [
-        { "aggregator":"sum", 
-          "normalization":"minMaxScaler", 
-          "weight": 2.0, 
-          "penalty": 60, 
-          "pathId":"id", 
-          "pathScore":"score", 
-          "isScore": true 
+        { "aggregator":"sum",
+          "normalization":"minMaxScaler",
+          "weight": 2.0,
+          "penalty": 60,
+          "pathId":"id",
+          "pathScore":"score",
+          "isScore": true
         },
-        { "aggregator":"sum", 
-          "normalization":"minMaxScaler", 
-          "weight": 1.0, 
-          "penalty": 60, 
-          "pathId":"id", 
-          "pathScore":"score", 
-          "isScore": true 
+        { "aggregator":"sum",
+          "normalization":"minMaxScaler",
+          "weight": 1.0,
+          "penalty": 60,
+          "pathId":"id",
+          "pathScore":"score",
+          "isScore": true
         }
     ]
   },
@@ -916,7 +996,7 @@ SELECT RECIPROCAL_FUSION(
 ----
 
 .Results
-[source,json] 
+[source,json]
 ----
 [{
     "fused_results": [{
@@ -946,8 +1026,10 @@ SELECT RECIPROCAL_FUSION(
 ----
 ====
 
-.Using distance metrics instead of scores
+[#reciprocal_fusion_ex_distance]
+.RECIPROCAL_FUSION() Example 4
 ====
+Using distance metrics instead of scores.
 
 .Query
 [source,sqlpp]
@@ -969,18 +1051,18 @@ SELECT RECIPROCAL_FUSION(
     "score": true,
     "limit": 5,
     "args": [
-        { "aggregator":"sum", 
-          "normalization":"minMaxScaler", 
-          "weight":1.0, 
-          "penalty":60, 
-          "pathId":"id", 
+        { "aggregator":"sum",
+          "normalization":"minMaxScaler",
+          "weight":1.0,
+          "penalty":60,
+          "pathId":"id",
           "pathScore":"distance"
         },
-        { "aggregator":"sum", 
-          "normalization":"minMaxScaler", 
-          "weight":1.0, 
-          "penalty":60, 
-          "pathId":"id", 
+        { "aggregator":"sum",
+          "normalization":"minMaxScaler",
+          "weight":1.0,
+          "penalty":60,
+          "pathId":"id",
           "pathScore":"distance"
         }
     ]
@@ -1019,8 +1101,160 @@ SELECT RECIPROCAL_FUSION(
     ]
 }]
 ----
+
 In this example, the query omits the `isScore` parameter.
 By default, `isScore` is set to `false` and the function treats the `pathScore` value as a distance metric.
+====
+
+For more information and examples using the vector sample data, see xref:vector-index:hybrid-vector-queries.adoc[].
+
+[[sparse_vector_distance,SPARSE_VECTOR_DISTANCE()]]
+== SPARSE_VECTOR_DISTANCE(`vec`, `queryvec` [,{nbsp}``nprobes`` [,{nbsp}``topNScan``]])
+
+[.status]#Couchbase Server 8.5#
+
+This function has an alias <<aliases,SPARSE_DISTANCE()>>.
+
+=== Description
+
+Finds the distance between a provided array of sparse term-weight pairs, and the content of a specified field that contains sparse term-weight pairs.
+
+This function works best with a sparse Hyperscale Vector index or a sparse Composite Vector index.
+If a query contains this function, and the cluster has a Hyperscale Vector index or a Composite Vector index with a sparse vector index key which is the same as the sparse vector field referenced by the function, then the Query optimizer selects that Hyperscale Vector index or Composite Vector index for use with the query containing this function.
+
+This function always uses xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product] as the distance metric comparing the sparse term-weight pairs.
+
+=== Arguments
+
+vec:: The name of a field that contains sparse term-weight pairs.
+The field must contain a sparse term-weight array, or a string representing a base64 encoded sparse term-weight array, in which the first item is an array of integers representing token IDs, and the second item is an array of floating point numbers representing the corresponding term weights.
+
+queryvec:: A sparse term-weight array, or a string representing a base64 encoded sparse term-weight array, in which the first item is an array of integers representing token IDs, and the second item is an array of floating point numbers representing the corresponding term weights.
+This represents the sparse term-weights to search for in the vector field.
+
+nprobes:: [Optional] An integer representing the number of centroids to probe for matching vectors.
+If the Query Service selects a Hyperscale Vector index or Composite Vector index for the query, this option defaults to the `scan_nprobes` setting that you used when you created the index.
+If an invalid value is provided, defaults to `1`.
+
+topNScan:: [Optional; can only be used when `nprobes` is specified]
+This option only applies if using a Hyperscale Vector index.
+A positive integer representing the number of records to scan.
+The default is `0`, meaning the function uses the indexer default.
+
+=== Return Value
+
+Returns a negative numeric value representing the vector distance.
+
+=== Examples
+
+To try the examples in this section, you must do the following:
+
+. Download the example file xref:vector-index:attachment$rgb-sparse.json[rgb-sparse.json], and import the data into a collection called `pass:c[`vector-sample`.color.`rgb-sparse`]`.
+
+. Download the example file xref:vector-index:attachment$vocabulary.json[vocabulary.json], and import the data into a collection called `pass:c[`vector-sample`.color.vocabulary]`.
+
+. Create a sparse Hyperscale Vector index in the `rbg-sparse` collection on the field named `sparse_vectors`, as described in xref:n1ql:n1ql-language-reference/createvectorindex.adoc#ex-create-sparse-idx[CREATE VECTOR INDEX Example 5].
+
+[#sparse_vector_distance_ex_simple]
+.SPARSE_VECTOR_DISTANCE() Example 1
+====
+The following query finds the vector distance between sets of sparse term-weight pairs.
+
+.Query
+[source,sqlpp]
+----
+WITH data AS ([
+  {"vector": [[1, 2], [3, 4]], "similarity": "identical"},
+  {"vector": [[1, 2], [3, 5]], "similarity": "close"},
+  {"vector": [[1, 2, 6], [7, 8, 9]], "similarity": "distant"}
+])
+SELECT
+  similarity,
+  SPARSE_VECTOR_DISTANCE(vector, [[1], [3]]) AS one_term,
+  SPARSE_VECTOR_DISTANCE(vector, [[1, 2], [3, 4]]) AS two_terms
+FROM data;
+----
+
+The results show how the distance changes as the similarity decreases.
+
+.Results
+[source,json]
+----
+[
+  {
+    "similarity": "identical",
+    "one_term": -9,
+    "two_terms": -25
+  },
+  {
+    "similarity": "close",
+    "one_term": -9,
+    "two_terms": -29
+  },
+  {
+    "similarity": "distant",
+    "one_term": -21,
+    "two_terms": -53
+  }
+]
+----
+====
+
+[#sparse_vector_distance_ex_simple]
+.SPARSE_VECTOR_DISTANCE() Example 2
+====
+The following query finds colors from the `rgb-sparse` collection whose titles or descriptions contain exact or near-exact matches for the term `brown`.
+
+.Query
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=sparse-query-single]
+----
+
+. The `vocabulary` collection associates a unique sequential integer with each of the terms used to generate the sparse term-weight pairs.
+The first subquery finds the integer associated with the query term. @/vocabulary/
+
+. The second element in the array assigns a weight to the query term. @/1.0/
+
+. The `sparse_vector` field in the `rgb-sparse` collection contains sparse term-weight pairs based on the color names and descriptions. @/rgb-sparse/
+
+The query returns 6 colors where the sparse term-weight pairs associated with the color name and description match via dot-product overlap with the query term and weight.
+
+.Results
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=sparse-query-single]
+----
+====
+
+
+[#sparse_vector_distance_ex_multiple]
+.SPARSE_VECTOR_DISTANCE() Example 3
+====
+The following query finds colors from the `rgb-sparse` collection whose titles or descriptions contain exact or near-exact matches for the terms `light`, `sea`, and `green`.
+
+.Query
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=sparse-query-multiple]
+----
+
+. The ARRAY constructor uses a subquery to find the integer associated with each of the query terms in turn. @/vocabulary/
+
+. The ARRAY_FLATTEN function flattens the results to generate the first element in the query term-weights array.
+This two-step process ensures that the query terms are preserved in the correct order. @/ARRAY_FLATTEN/
+
+. The second element in the array assigns the same weight to each of the query terms. @/1.0/
+
+. The `sparse_vector` field in the `rgb-sparse` collection contains sparse term-weight pairs based on the color names and descriptions. @/rgb-sparse/
+
+The query returns 10 colors where the sparse term-weight pairs associated with the color name and description match via dot-product overlap with the query terms and weights.
+
+.Results
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=sparse-query-multiple]
+----
 ====
 
 [[vector_distance,VECTOR_DISTANCE()]]
@@ -1051,7 +1285,7 @@ metric:: A string representing the distance metric to use when comparing the vec
 COSINE;; xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
 DOT;; xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
 L2;;
-EUCLIDEAN;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
+EUCLIDEAN;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]
 L2_SQUARED;;
 EUCLIDEAN_SQUARED;; xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean Squared Distance]
 
@@ -1155,6 +1389,7 @@ Some vector functions have aliases.
 * `ANN_DISTANCE()` is an alias for <<approx_vector_distance>>.
 * `KNN_DISTANCE()` is an alias for <<vector_distance>>.
 * `NORMALISE_VECTOR()` is an alias for <<normalize_vector>>.
+* `SPARSE_VECTOR()` is an alias for <<sparse_vector_distance>>.
 * `VECTOR_DECODE()` is an alias for <<decode_vector>>.
 * `VECTOR_ENCODE()` is an alias for <<encode_vector>>.
 * `VECTOR_NORMALISE()` is an alias for <<normalize_vector>>.

@@ -1,0 +1,131 @@
+/* tag::hybrid-query-question[] */
+SELECT id, wanted_similar_color_from_search, question,
+ARRAY_CONCAT(
+  couchbase_search_query.knn[0].vector[0:4], 
+  ["..."]
+) AS vector
+FROM `vector-sample`.color.`rgb-questions`
+WHERE meta().id = "#FF6347";
+/* end::hybrid-query-question[] */
+
+/* tag::hybrid-query-dense[] */
+WITH question_vec AS (
+  SELECT RAW couchbase_search_query.knn[0].vector
+  FROM `vector-sample`.color.`rgb-questions`
+  WHERE meta().id = "#FF6347"
+)
+SELECT meta(d).id, d.color, d.description
+FROM `vector-sample`.color.rgb AS d
+ORDER BY APPROX_VECTOR_DISTANCE(d.embedding_vector_dot, question_vec[0], "l2", 4)
+LIMIT 5;
+/* end::hybrid-query-dense[] */
+
+/* tag::hybrid-query-sparse[] */
+WITH query_term_weight AS ([
+  (
+    SELECT RAW id
+    FROM `vector-sample`.color.vocabulary
+    WHERE token = "tomato"
+  ),
+  [1.0]
+])
+SELECT meta(s).id, s.description, s.color
+FROM `vector-sample`.color.`rgb-sparse` AS s
+ORDER BY SPARSE_VECTOR_DISTANCE(s.sparse_vector, query_term_weight)
+LIMIT 10;
+/* end::hybrid-query-sparse[] */
+
+/* tag::hybrid-query-fused[] */
+WITH question_vec AS (
+       SELECT RAW couchbase_search_query.knn[0].vector
+       FROM `vector-sample`.color.`rgb-questions`
+       WHERE meta().id = "#FF6347"),
+     dense_results AS (
+       SELECT meta(d).id
+       FROM `vector-sample`.color.rgb AS d
+       ORDER BY APPROX_VECTOR_DISTANCE(d.embedding_vector_dot, question_vec[0], "l2", 4)
+       LIMIT 10),
+     query_term_weight AS ([
+       (
+         SELECT RAW id
+         FROM `vector-sample`.color.vocabulary
+         WHERE token = "tomato"
+       ),
+       [1.0]
+     ]),
+     sparse_results AS (
+       SELECT meta(s).id
+       FROM `vector-sample`.color.`rgb-sparse` AS s
+       ORDER BY SPARSE_VECTOR_DISTANCE(s.sparse_vector, query_term_weight)
+       LIMIT 10 )
+SELECT RECIPROCAL_FUSION({"score": true, "limit": 3},
+                          sparse_results,
+                          dense_results) AS fused_results;
+/* end::hybrid-query-fused[] */
+
+/* tag::hybrid-query-weighted[] */
+WITH question_vec AS (
+       SELECT RAW couchbase_search_query.knn[0].vector
+       FROM `vector-sample`.color.`rgb-questions`
+       WHERE meta().id = "#FF6347"),
+     dense_results AS (
+       SELECT meta(d).id
+       FROM `vector-sample`.color.rgb AS d
+       ORDER BY APPROX_VECTOR_DISTANCE(d.embedding_vector_dot, question_vec[0], "l2", 4)
+       LIMIT 10),
+     query_term_weight AS ([
+       (
+         SELECT RAW id
+         FROM `vector-sample`.color.vocabulary
+         WHERE token = "tomato"
+       ),
+       [1.0]
+     ]),
+     sparse_results AS (
+       SELECT meta(s).id
+       FROM `vector-sample`.color.`rgb-sparse` AS s
+       ORDER BY SPARSE_VECTOR_DISTANCE(s.sparse_vector, query_term_weight)
+       LIMIT 10 )
+SELECT RECIPROCAL_FUSION({"score": true,
+                          "limit": 3,
+                          "args": [
+                            {"weight": 2},
+                            {"weight": 1}
+                          ]}, sparse_results, dense_results) AS fused_results;
+/* end::hybrid-query-weighted[] */
+
+/* tag::hybrid-query-description[] */
+WITH question_vec AS (
+       SELECT RAW couchbase_search_query.knn[0].vector
+       FROM `vector-sample`.color.`rgb-questions`
+       WHERE meta().id = "#FF6347"),
+     dense_results AS (
+       SELECT meta(d).id
+       FROM `vector-sample`.color.rgb AS d
+       ORDER BY APPROX_VECTOR_DISTANCE(d.embedding_vector_dot, question_vec[0], "l2", 4)
+       LIMIT 10),
+     query_term_weight AS ([
+       (
+         SELECT RAW id
+         FROM `vector-sample`.color.vocabulary
+         WHERE token = "tomato"
+       ),
+       [2.0]
+     ]),
+     sparse_results AS (
+       SELECT meta(s).id
+       FROM `vector-sample`.color.`rgb-sparse` AS s
+       ORDER BY SPARSE_VECTOR_DISTANCE(s.sparse_vector, query_term_weight)
+       LIMIT 10 ),
+     fused_results AS (
+       SELECT RAW RECIPROCAL_FUSION({"limit": 3,
+                                     "args": [
+                                       {"weight": 2},
+                                       {"weight": 1}
+                                     ]}, sparse_results, dense_results)
+     )
+SELECT f.id, c.color, c.description
+FROM fused_results[0] AS f
+JOIN `vector-sample`.color.rgb AS c
+ON KEYS f.id;
+/* end::hybrid-query-description[] */
