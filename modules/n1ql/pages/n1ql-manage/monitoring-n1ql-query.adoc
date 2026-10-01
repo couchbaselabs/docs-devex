@@ -732,6 +732,10 @@ A completed request is logged if any of the qualifiers are met (logical OR).
 `statement`:: Log requests that match the specified LIKE search pattern in the query text.
 `plan`:: Log requests where the specified plan field values appear in the query plan.
 `errors`:: Log requests with at least this many errors. 
+`results`:: Log requests if the number of results exceeds this value.
+`size`:: Log requests if the size of results exceeds this value.
+`mutations`:: Log requests if they perform more than this number of mutations.
+`counts`:: Log requests if the number of documents processed by certain operators (such as fetch, scan, sort, and join) exceeds this value.
 
 For full details, see xref:n1ql-rest-admin:index.adoc#Logging_Parameters[Logging Parameters].
 
@@ -1317,44 +1321,36 @@ This captures the whole query plan, and includes profiling information regarding
 
 To get execution timing information from these system catalogs, you must explicitly specify `meta().plan` in the projection list for the SELECT query.
 
-Within these system catalogs, not all statements have a `meta().plan` attribute.
+Within these system catalogs, all statements have a `meta().plan` attribute.
+The Query Service collects these plans automatically for all requests, independent of the `profile` setting.
 
-* With <<sys-active-req,system:active_requests>> and <<sys-completed-req,system:completed_requests>>, the `meta().plan` attribute is only available for statements that you run when profile is set to `timings`.
-
-* With <<sys-prepared,system:prepareds>>, the `meta().plan` attribute is available for all statements.
-
-[NOTE]
-====
-When request profiling is set to `timings`, profiling information is likely to use 100KB+ per entry in the `system:completed_requests` keyspace.
-
-* Due to the added overhead of running both profiling and xref:manage:manage-logging/manage-logging.adoc[logging], turn on both of them only when needed.
-Running only one of them continuously has no noticeable affect on performance.
-* Profiling does not carry any extra cost beyond memory for completed requests, so it's fine to run it continuously.
-====
+NOTE: The Query Service processes timing data into a plan document as soon as a request completes. 
+This reduces the memory usage but increases the CPU overhead.
 
 [[example-2]]
 .Plan Details
 ====
-Getting the plan for a statement that you ran when the profile was set to `timings` returns results similar to the following.
+The following example shows the execution timings and plan details returned by the `meta().plan` attribute. 
 
 [source,json]
 ----
 [
   {
   // ...
-    "plan": {
+  "plan": {
       "#operator": "Authorize",
+      "#planPreparedTime": "2026-05-27T08:22:15.988Z",
       "#stats": {
         "#phaseSwitches": 4,
-        "execTime": "1.725µs",
-        "servTime": "21.312µs"
+        "execTime": "1.542µs",
+        "servTime": "6.041µs"
       },
       "privileges": {
         "List": [
           {
-            "Priv": 7,
-            "Props": 0,
-            "Target": "default:travel-sample.inventory.route"
+            "Target": "",
+            "Priv": 4,
+            "Props": 0
           }
         ]
       },
@@ -1362,90 +1358,71 @@ Getting the plan for a statement that you ran when the profile was set to `timin
         "#operator": "Sequence",
         "#stats": {
           "#phaseSwitches": 2,
-          "execTime": "1.499µs"
+          "execTime": "3.167µs"
         },
         "~children": [
           {
-            "#operator": "PrimaryScan3",
+            "#operator": "PrimaryScan",
             "#stats": {
-              "#heartbeatYields": 6,
-              "#itemsOut": 24024,
-              "#phaseSwitches": 96099,
-              "execTime": "84.366121ms",
-              "kernTime": "3.021901421s",
-              "servTime": "69.320752ms"
+              "#itemsIn": 2,
+              "#itemsOut": 2,
+              "#phaseSwitches": 11,
+              "execTime": "112.292µs",
+              "kernTime": "6.792µs",
+              "servTime": "15.210291ms"
             },
-            "bucket": "travel-sample",
-            "index": "def_inventory_route_primary",
-            "index_projection": {
-              "primary_key": true
-            },
-            "keyspace": "route",
-            "namespace": "default",
-            "scope": "inventory",
-            "using": "gsi"
+            "index": "#primary",
+            "keyspace": "active_requests",
+            "namespace": "#system",
+            "using": "system"
           },
           {
             "#operator": "Fetch",
             "#stats": {
-              "#heartbeatYields": 7258,
-              "#itemsIn": 24024,
-              "#itemsOut": 24024,
-              "#phaseSwitches": 99104,
-              "execTime": "70.34694ms",
-              "kernTime": "142.630196ms",
-              "servTime": "3.021959695s"
+              "#itemsIn": 2,
+              "#itemsOut": 1,
+              "#phaseSwitches": 12,
+              "execTime": "300.667µs",
+              "kernTime": "8.964417ms",
+              "servTime": "6.344958ms"
             },
-            "bucket": "travel-sample",
-            "keyspace": "route",
-            "namespace": "default",
-            "scope": "inventory"
+            "keyspace": "active_requests",
+            "namespace": "#system"
           },
           {
             "#operator": "InitialProject",
             "#stats": {
-              "#itemsIn": 24024,
-              "#itemsOut": 24024,
-              "#phaseSwitches": 96100,
-              "execTime": "15.331951ms",
-              "kernTime": "3.219612458s"
+              "#itemsIn": 1,
+              "#phaseSwitches": 4,
+              "execTime": "229.833µs",
+              "kernTime": "15.62325ms"
             },
+            "discard_original": true,
+            "preserve_order": true,
             "result_terms": [
               {
                 "expr": "self",
                 "star": true
-              }
-            ]
-          },
-          {
-            "#operator": "Order",
-            "#stats": {
-              "#itemsIn": 24024,
-              "#itemsOut": 24024,
-              "#phaseSwitches": 72078,
-              "execTime": "147.889352ms",
-              "kernTime": "3.229055752s"
-            },
-            "sort_terms": [
+              },
               {
-                "expr": "(`route`.`sourceairport`)"
+                "expr": "(meta(`active_requests`).`plan`)"
               }
             ]
           },
           {
             "#operator": "Stream",
             "#stats": {
-              "#itemsIn": 24024,
-              "#itemsOut": 24024,
-              "#phaseSwitches": 24025,
-              "execTime": "11.851634134s"
-            }
+              "#phaseSwitches": 1,
+              "execTime": "1.615874ms",
+              "state": "running"
+            },
+            "serializable": true
           }
         ]
       },
       "~versions": [
-        "7.0.0-N1QL",
-        "7.0.0-4960-enterprise"
+        "8.0.1-N1QL",
+        "8.0.1-4625-enterprise"
       ]
     }
   }
@@ -1481,16 +1458,24 @@ Statements
 a| {blank}
 a| {blank}
 a| {blank}
-a| icon:check[fw] phases
-a| icon:check[fw] phases
+a| [%hardbreaks]
+icon:check[fw] phases
+icon:check[fw] timings
+a| [%hardbreaks]
+icon:check[fw] phases
+icon:check[fw] timings
 a| icon:check[fw] timings
 
 | `phases`
 a| icon:check[fw] phases
 a| icon:check[fw] phases
 a| {blank}
-a| icon:check[fw] phases
-a| icon:check[fw] phases
+a| [%hardbreaks]
+icon:check[fw] phases
+icon:check[fw] timings
+a| [%hardbreaks]
+icon:check[fw] phases
+icon:check[fw] timings
 a| icon:check[fw] timings
 
 | `timings`
