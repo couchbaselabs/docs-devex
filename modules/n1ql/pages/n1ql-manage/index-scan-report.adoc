@@ -1,0 +1,493 @@
+= Index Scan Reports
+:page-status: Couchbase Server 8.5
+:example-caption!:
+:description: An index scan report shows where an index scan spent its time and how much it read, so you can tell whether a slow scan is waiting for consistency, reading from disk, or reading far more index entries than the query needs.
+
+[abstract]
+{description}
+
+include::ROOT:partial$component-signpost.adoc[]
+
+[#overview]
+== Overview
+
+When a query profile shows that most of the time goes into an index scan, the profile alone does not say why.
+An index scan report breaks that time down from the Index Service's side.
+For each scan, it reports:
+
+* How long the indexer waited for an index snapshot that meets the query's scan consistency.
+* How long it spent fetching sequence numbers for a `request_plus` scan.
+* How long storage spent reading from disk.
+* How many index entries it read, and how many rows it returned.
+* For a partitioned or replicated index, which partitions each scan used.
+
+The report is attached to the scan operator in the query's execution timings, under the `#indexStats` key.
+You see it when you run a query with profiling set to `timings`, and in `system:completed_requests`.
+
+Scan reports are off by default.
+An administrator must turn them on before any report appears.
+
+The report is not part of `EXPLAIN` output.
+`EXPLAIN` shows the plan without running the query, and the report only exists once the scan has run.
+
+[#enable]
+== Enable Scan Reports
+
+Scan reports are controlled by the *Generate Scan Report* index setting, which applies to the whole cluster.
+The setting is available in Couchbase Server Enterprise Edition and Couchbase Server Community Edition, once every node in the cluster runs Couchbase Server 8.5 or later.
+
+Generating a report adds work to every index scan.
+Turn the setting on while you investigate a performance problem, and turn it off afterwards.
+
+The change takes effect for new scans without a restart.
+
+[tabs]
+====
+Couchbase Server Web Console::
++
+--
+. Go to menu:Settings[General].
+. Under *Index Storage Mode*, expand *Advanced Index Settings*.
+. Select *Generate Scan Report*.
+. Click btn:[Save].
+
+To change this setting, you need the Full Admin or Cluster Admin role.
+For more information, see xref:manage:manage-settings/general-settings.adoc#index-storage-mode[Index Storage Mode].
+--
+
+REST API::
++
+--
+Set `generateScanReport` to `true` with the xref:rest-api:post-settings-indexes.adoc[Set GSI Settings] REST API:
+
+[source,sh]
+----
+curl -X POST -u $USER:$PASSWORD \
+  http://$HOST:8091/settings/indexes \
+  -d generateScanReport=true
+----
+
+To turn scan reports off again, set `generateScanReport` to `false`.
+--
+====
+
+[#get]
+== Get a Scan Report
+
+The report comes in 2 forms:
+
+Concise report::
+Timings and counts for the scan, averaged or totalled across the index nodes it used.
+This is what you get by default once scan reports are on.
+
+Detailed report::
+The concise report, plus a separate set of timings and counts for each index node the scan read from, with the partitions it read there.
+You get it when you set the `scanreport_wait` request parameter to a duration greater than 0.
+
+[#get-profile]
+=== Get the Report in the Query Response
+
+Set `profile` to `timings` for the request.
+You can find the report in `profile.executionTimings`, on each scan operator that has a report.
+
+For the detailed report, also set `scanreport_wait`.
+This is how long, at most, each scan waits after it finishes for the index nodes to send their reports.
+It's a duration such as `"10ms"` or `"1s"`, from 0 to 15 seconds.
+Use the smallest value that gives you a complete report: the wait adds to the query's execution time.
+
+[tabs]
+====
+REST API::
++
+--
+.Concise report
+[source,sh]
+----
+curl $BASE_URL/query/service -u $USER:$PASSWORD \
+  -d 'profile=timings&statement=SELECT name FROM `travel-sample`.inventory.hotel WHERE city = "Paris"'
+----
+
+.Detailed report
+[source,sh]
+----
+curl $BASE_URL/query/service -u $USER:$PASSWORD \
+  -d 'profile=timings&scanreport_wait=100ms&statement=SELECT name FROM `travel-sample`.inventory.hotel WHERE city = "Paris"'
+----
+--
+
+{sqlpp}::
++
+--
+.Concise report
+[source,sqlpp]
+----
+\set -profile "timings";
+SELECT name FROM `travel-sample`.inventory.hotel WHERE city = "Paris";
+----
+
+.Detailed report
+[source,sqlpp]
+----
+\set -profile "timings";
+\set -scanreport_wait "100ms";
+SELECT name FROM `travel-sample`.inventory.hotel WHERE city = "Paris";
+----
+--
+====
+
+For more information about these parameters, see xref:n1ql:n1ql-manage/query-settings.adoc#scanreport_wait[scanreport_wait] and xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#enable-settings-per-session-or-per-query[Enable Query Profiling for a Request].
+
+[#get-completed]
+=== Get the Report from Completed Requests
+
+The concise report is also stored with the query plan in `system:completed_requests`, for requests that meet the completed-requests logging threshold.
+To see it, include `meta().plan` in the projection:
+
+[source,sqlpp]
+----
+SELECT meta().plan, statement, elapsedTime
+FROM system:completed_requests
+WHERE statement LIKE "%hotel%"
+ORDER BY requestTime DESC
+LIMIT 1;
+----
+
+`system:completed_requests` keeps only the concise report.
+If you set `scanreport_wait`, the per-partition details are only in the query response.
+
+For more information, see xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-completed-req[Monitor and Manage Completed Requests].
+
+[#read]
+== Read a Scan Report
+
+[#read-where]
+=== Find the Report in the Execution Timings
+
+Look for `#indexStats` on these operators in the execution timings:
+
+* `IndexScan3`, `IndexScan2`, and the span scans under `IndexScan`
+* `PrimaryScan3` and `PrimaryScan`
+* `IndexJoin` and `IndexNest`
+
+The operator's `index` field names the index the report belongs to, and `index_id` gives its ID as shown in `system:indexes`.
+
+When an operator runs several scans, its report combines them.
+For example, the inner side of a nested-loop join runs a scan for each row from the outer side.
+The `num_scans` field tells you how many scans the report covers.
+
+The following example shows a concise report on an `IndexScan3` operator.
+
+.Concise report
+[source,json]
+----
+{
+  "#operator": "IndexScan3",
+  "#stats": {
+    "#heartbeatYields": 1,
+    "#itemsOut": 140,
+    "#phaseSwitches": 563,
+    "execTime": "412.307µs",
+    "kernTime": "11.208µs",
+    "servTime": "1.729511ms"
+  },
+  "#indexStats": {
+    "defn": [12910651324837780000],
+    "num_scans": 1,
+    "srvr_avg_ns": {
+      "total": 1523406,
+      "wait": 210118,
+      "scan": 1190562,
+      "diskRead": 402911
+    },
+    "srvr_total_counts": {
+      "rowsReturn": 140,
+      "rowsScan": 140,
+      "bytesRead": 6720,
+      "cacheHitPer": 12
+    }
+  },
+  "index": "def_inventory_hotel_city",
+  "index_id": "b32bd8f9f3e1d8c2",
+  "keyspace": "hotel"
+}
+----
+
+// Illustrative example. Field names and structure are from indexing 537940b2 secondary/scanreport; values are invented.
+// Replace with captured output from an 8.5 build. See docs-aidlc feature/index-scan-report notes/POC.md.
+
+[#read-top]
+=== Report Fields
+
+[cols="1,1,3"]
+|===
+| Field | Type | Description
+
+| `defn`
+| Array of numbers
+| Internal IDs of the index definitions scanned.
+To identify the index, use the operator's `index` field instead.
+
+| `num_scans`
+| Number
+| The number of index scans the report combines.
+
+| `srvr_avg_ns`
+| Object
+| Average time the index nodes spent on each scan, in nanoseconds.
+See <<read-timings>>.
+
+| `srvr_total_counts`
+| Object
+| Rows and bytes the index nodes read and returned, totalled across all scans.
+See <<read-counts>>.
+
+| `partns`
+| Object
+| The partitions scanned.
+Present only for a partitioned index, or an index with 2 or more replicas.
+See <<read-partns>>.
+
+| `retries`
+| Number
+| The number of times a scan was retried, for example against another replica.
+Omitted when no scan was retried.
+
+| `detailed`
+| Array of objects
+| Present only in the detailed report.
+See <<read-detailed>>.
+|===
+
+A field with a value of 0 is left out of the report.
+For example, a report has no `diskRead` field when the scan read nothing from disk.
+
+[#read-timings]
+=== Timings
+
+The `srvr_avg_ns` object holds the time the index nodes spent, in nanoseconds.
+When a scan used several index nodes, each timing is the average across them.
+When an operator ran several scans, it's the average across the scans.
+
+[cols="1,3,3"]
+|===
+| Field | Measures | A high value suggests
+
+| `total`
+| The whole of the request on the index node, from receiving it to sending the last row.
+| Compare with the operator's `servTime` to see how much of the scan time is spent on the index node.
+
+| `wait`
+| Waiting for an index snapshot that meets the request's scan consistency.
+| The index is behind the latest mutations.
+Check whether the query needs `request_plus` or `at_plus` consistency, and whether the Index Service is keeping up with the mutation rate.
+
+| `scan`
+| Waiting for the snapshot and then reading the index.
+This includes the time in `wait`.
+| Subtract `wait` to get the time spent reading the index.
+If that's high, look at `rowsScan` and `diskRead`.
+
+| `getseqnos`
+| Fetching the latest sequence numbers from the Data Service, for a scan with `request_plus` consistency.
+| The cost of `request_plus` itself.
+Use `not_bounded` where the query can tolerate it.
+
+| `diskRead`
+| Storage reading index data from disk.
+Reported for Standard Index Storage only.
+| The index data the scan needs is not in memory.
+Consider a larger Index Service memory quota, or a more selective index.
+|===
+
+[#read-counts]
+=== Counts
+
+The `srvr_total_counts` object holds what the index nodes read and returned, totalled across nodes, partitions, and scans.
+
+[cols="1,3,3"]
+|===
+| Field | Measures | What to look for
+
+| `rowsScan`
+| Index entries read.
+| Compare with `rowsReturn`.
+
+| `rowsReturn`
+| Rows the index nodes sent to the Query Service, after any filtering, aggregation, and limit applied in the index.
+| If `rowsScan` is much larger than `rowsReturn`, the index is reading entries the query does not use.
+See <<diagnose>>.
+
+| `bytesRead`
+| Bytes of index keys and document keys read.
+| Large values with a low `rowsReturn` point to a wide index key or an unselective scan.
+
+| `cacheHitPer`
+| The percentage of index entries for which the index node reused the decoded keys of the previous entry, instead of decoding them again.
+This is averaged, not totalled.
+| This is not a memory or disk cache hit ratio.
+It's higher when consecutive entries share leading key values.
+|===
+
+[#read-partns]
+=== Partitions
+
+The `partns` object shows which partitions the scans used.
+Each key is the ID of an index instance.
+Each replica of the index is a separate instance.
+
+In a report for a single scan, each value is the list of partition IDs scanned on that instance:
+
+[source,json]
+----
+"partns": {
+  "6123045851262958493": [3, 7]
+}
+----
+
+In a report that combines several scans, each value maps a partition ID to the number of scans that used it:
+
+[source,json]
+----
+"partns": {
+  "6123045851262958493": { "3": 12, "5": 4 }
+}
+----
+
+If every partition appears for a query whose predicate includes the partition keys, partition elimination did not happen.
+For more information, see xref:n1ql:n1ql-language-reference/index-partitioning.adoc[Index Partitioning].
+
+[#read-detailed]
+=== Detailed Report
+
+With `scanreport_wait` set, the report also has a `detailed` array, with an entry for each scan.
+Each entry has its own `defn`, `srvr_avg_ns`, `srvr_total_counts`, `partns`, and `retries`, and a `detailed` object of its own.
+
+That inner `detailed` object has an entry for each index node the scan read from.
+Its key is the index instance ID, then the IDs of the partitions read on that node in brackets, then `#` and the attempt number, starting at 0.
+For example, `6123045851262958493[3,5]#0` covers partitions 3 and 5 of that instance, read on a single node, on the first attempt.
+Each entry holds:
+
+* `srvr_ns`: the same timings as `srvr_avg_ns`, for that entry alone.
+* `srvr_counts`: the same counts as `srvr_total_counts`, for that entry alone.
+
+For a vector index, the entries in the inner `detailed` object can also include:
+
+[cols="1,3"]
+|===
+| Field | Measures
+
+| `srvr_ns.decode`
+| Average time to decode a vector, in nanoseconds.
+
+| `srvr_ns.distComp`
+| Average time to compute the distance for a vector, in nanoseconds.
+
+| `srvr_counts.rowsFiltered`
+| Rows removed by a filter applied in the index.
+
+| `srvr_counts.rowsReranked`
+| Rows reranked.
+|===
+
+These vector fields appear only in the detailed report.
+
+.Detailed report
+[source,json]
+----
+"#indexStats": {
+  "defn": [6808363591581873000],
+  "num_scans": 1,
+  "srvr_avg_ns": { "total": 2840115, "wait": 96210, "scan": 2512840, "diskRead": 1830092 },
+  "srvr_total_counts": { "rowsReturn": 46, "rowsScan": 3870, "bytesRead": 185760, "cacheHitPer": 4 },
+  "partns": { "6123045851262958493": [3, 7] },
+  "detailed": [
+    {
+      "defn": 6808363591581873000,
+      "srvr_avg_ns": { "total": 2840115, "wait": 96210, "scan": 2512840, "diskRead": 1830092 },
+      "srvr_total_counts": { "rowsReturn": 46, "rowsScan": 3870, "bytesRead": 185760, "cacheHitPer": 4 },
+      "partns": { "6123045851262958493": [3, 7] },
+      "detailed": {
+        "6123045851262958493[3]#0": {
+          "srvr_ns": { "total": 4977602, "wait": 102544, "scan": 4410381, "diskRead": 3511870 },
+          "srvr_counts": { "rowsReturn": 21, "rowsScan": 3390, "bytesRead": 162720, "cacheHitPer": 3 }
+        },
+        "6123045851262958493[7]#0": {
+          "srvr_ns": { "total": 702628, "wait": 89876, "scan": 615299, "diskRead": 148314 },
+          "srvr_counts": { "rowsReturn": 25, "rowsScan": 480, "bytesRead": 23040, "cacheHitPer": 5 }
+        }
+      }
+    }
+  ]
+}
+----
+
+// Illustrative example. Structure from indexing 537940b2 secondary/scanreport (ToMap, AggregateScanReportsFn); values are invented.
+// Replace with captured output from an 8.5 build.
+
+In this example, the scan of partition 3 read 7 times as many entries as the scan of partition 7, and spent most of its time on disk.
+The concise averages hide that difference.
+
+[#diagnose]
+== Diagnose a Slow Index Scan
+
+[cols="2,2,3"]
+|===
+| What the report shows | Likely cause | What to try
+
+| `wait` is a large part of `total`
+| The scan waits for the index to catch up with recent mutations.
+| Use `not_bounded` scan consistency where the query can accept it.
+If the query needs `request_plus`, check the Index Service for mutation backlog.
+
+| `getseqnos` is high
+| The cost of fetching sequence numbers for `request_plus`.
+| As for `wait`.
+
+| `diskRead` is a large part of `scan`
+| Index data is being read from disk.
+| Increase the Index Service memory quota, or make the index smaller or more selective.
+
+| `rowsScan` is much larger than `rowsReturn`
+| The index reads entries that the query then discards, because the predicate is not fully pushed down to the index.
+| Add the filtered fields to the index key, or reorder the index keys so that the most selective equality predicates come first.
+See xref:indexes:index_pushdowns.adoc[Index Pushdowns].
+
+| `rowsScan` is much larger than `rowsReturn` for an aggregate query
+| Grouping and aggregation are not pushed down to the index.
+| See xref:indexes:groupby-aggregate-performance.adoc[Grouping and Aggregate Pushdowns].
+
+| `partns` lists every partition when the predicate includes the partition keys
+| Partition elimination did not happen.
+| Check that the predicate includes every partition key in an equality or `IN` predicate.
+See xref:n1ql:n1ql-language-reference/index-partitioning.adoc[Index Partitioning].
+
+| One entry in the detailed report is much slower than the others
+| One partition or index node is skewed or overloaded.
+| Check the index's partition key for skew, and the load on that index node.
+
+| `retries` is greater than 0
+| A scan was retried, for example on another replica after a failure.
+| Check the health of the Index Service nodes.
+See xref:indexes:index-replication.adoc[Index Availability and Performance].
+|===
+
+Record a report for important queries while they perform well.
+After a change to an index, the data, or the cluster topology, compare against it to see what moved.
+
+[#limitations]
+== Limitations
+
+* Count scans, such as `IndexCountScan2` for a covered `COUNT(*)`, and Search index scans do not produce a report.
+* `diskRead` is reported for Standard Index Storage only.
+It never appears for Memory-Optimized Index Storage.
+* During an upgrade, index nodes still running an earlier version do not send reports, so a report covers only the scans served by Couchbase Server 8.5 nodes.
+* If index nodes do not send their reports in time, the report covers only the reports that arrived.
+* `system:completed_requests` stores only the concise report, and only for requests it logs.
+
+[#related-links]
+== Related Links
+
+* xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc[Manage and Monitor Queries]
+* xref:n1ql:n1ql-manage/query-settings.adoc[Settings and Parameters]
+* xref:manage:manage-settings/general-settings.adoc#index-storage-mode[Index Storage Mode]
+* xref:rest-api:post-settings-indexes.adoc[Set GSI Settings]
