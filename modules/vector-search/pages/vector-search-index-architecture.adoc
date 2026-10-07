@@ -56,6 +56,7 @@ Stale segments are deleted when they're no longer used by any new queries.
 As smaller segments are merged together through the merger routine, the Search Service automatically runs any needed retraining for Search Vector Indexes.
 The segments for a Search Vector Index can contain different index types and use a separate indexing pipeline, choosing the appropriate indexing algorithm based on the size of your available documents.
 
+[#index-formats]
 == Vector Search and FAISS
 
 Vector Search specifically uses https://faiss.ai/index.html[FAISS^] indexes.
@@ -63,7 +64,7 @@ Any vectors inside your documents are indexed using FAISS, to create a new query
 These FAISS indexes are embedded within segments alongside any text indexes and other data structures. 
 
 Vector Search chooses the best https://github.com/facebookresearch/faiss/wiki/Faiss-indexes[FAISS index class^], or vector search algorithm, for your data, and automatically tunes parameters to provide a balance of recall and latency.
-You can choose to prioritize recall, latency, or memory efficiency with the xref:search:child-field-options-reference.adoc#optimized[Optimized For] setting on your index.
+You can choose to prioritize recall, latency, or memory efficiency with the xref:search:child-field-options-reference.adoc#optimized[Optimized For] setting on your index, or choose to use binary quantized indexes to reduce your memory and storage requirements.
 You can also choose to xref:fine-tune-vector-search.adoc[fine tune your Vector Search queries] to override the default balancing for your index, and change the number of centroids or probes searched in a query. 
 
 The FAISS indexes created for your vector data can be: 
@@ -73,46 +74,80 @@ The FAISS indexes created for your vector data can be:
 
 The specific type of index used depends on the number of vectors in your dataset: 
 
+[cols="1,1,2,4"]
 |====
-| Vector Count | Index Types | Description
+| Vector Count | Index Types | Description | Quantization
 
 | >=10,000 
 | IVF with scalar quantization
-a| Vectors are indexed with <<ivf,>> indexes and <<scalar-quant,>>.
+| Vectors are indexed with <<ivf,>>.
+a| IVF indexes can use <<scalar-quant,>>.
 
-If xref:search:child-field-options-reference.adoc#optimized[Optimized For] is set to *recall* or *latency*, Vector Search uses 8bit scalar quantization.
-If set to *memory-efficient*, Vector Search uses 4bit scalar quantization.
+If xref:search:child-field-options-reference.adoc#optimized[Optimized For] is set to: 
+
+* *recall* or *latency*: Vector Search uses <<scalar-quant,8bit scalar quantization>>.
+* *memory-efficient*: Vector Search uses <<scalar-quant,4bit scalar quantization>>.
+* *bivf-sq8*: If your cluster is running Couchbase Sever version 8.5 or later, Vector Search uses <<ivf-binary,binary quantization>>.
+* *ivf,rabitq*: If your cluster is running Couchbase Sever version 8.5 or later, Vector Search uses <<ivf-binary,RaBitQ quantization>>.
 
 | >=1000
-| IVF with Flat
+| IVF with FLAT
 | Vectors are indexed with <<ivf,>> combined with <<flat,>>. 
-Indexes do not use <<scalar-quant,>>. 
+a| IVF with FLAT indexes do not use <<scalar-quant,>>.
+
+From Couchbase Server version 8.5 and later, if xref:search:child-field-options-reference.adoc#optimized[Optimized For] is set to: 
+
+* *bivf-flat*: Vector Search uses <<flat-binary,binary quantization>>.
+* *ivf,rabitq*: Vector Search uses <<ivf-binary,RaBitQ quantization>>.
 
 | <1000
-| Flat
+| FLAT
 | Vectors are indexed with <<flat,>>.
-Indexes do not use <<scalar-quant,>>. 
+a| FLAT indexes do not use <<scalar-quant,>>. 
+
+From Couchbase Server version 8.5 and later, if xref:search:child-field-options-reference.adoc#optimized[Optimized For] is set to *bivf-flat*, Vector Search uses <<flat-binary,binary quantization>>.
 |====
 
 [#flat]
 === FLAT Indexes
 
-The most basic kind of index that Vector Search can use for your vectors is a flat index.
+The most basic kind of index that Vector Search can use for your vectors is a FLAT index.
 
-Vector Search uses flat indexes for data that contains less than 1000 vectors.
+Vector Search uses FLAT indexes for data that contains less than 1000 vectors.
 
-Flat indexes are a list of vectors. 
+FLAT indexes are a list of vectors. 
 Searches run on a nearest neighbor process, based on examining the query vector against each vector in the index and calculating the distance.
-Results for flat indexes are very accurate, but performance does not scale well as a dataset grows.
+Results for FLAT indexes are very accurate, but performance does not scale well as a dataset grows.
 
-If a Search Vector Index uses only flat indexes, no training is required - IDs are mapped directly to vectors with exact vector comparisons, with no need for preprocessing or learning on the data.
+If a Search Vector Index uses only FLAT indexes, no training is required - IDs are mapped directly to vectors with exact vector comparisons, with no need for preprocessing or learning on the data.
+
+[#flat-binary]
+==== FLAT Indexes and Binary Quantization 
+
+[.status]#Couchbase Server 8.5#
+
+FLAT indexes only support threshold-based binary quantization.
+From Couchbase Server version 8.5 and later, if you want to use binary quantization, the Search Service converts each element in your vectors to a bit.
+This conversion reduces the overall storage footprint of your vectors.
+
+In threshold-based binary quantization, each bit is set to either a 0 or a 1:
+
+* If the float is greater than 0, it becomes a 1.
+* If the float is less than 0, it becomes 0.
+
+The binary representation of the floats can keep the directional similarity of vectors and keep vectors with similar meaning close together in the binary space, just as they would be in floating-point space.
+
+The different options for binary quantization all have similar throughput, but can vary on latency and recall.
+For more information about the available quantization options, see xref:search:child-field-options-reference.adoc#optimized[Optimized For].
+
+Binary indexes use Hamming Distance to calculate your document scores in search results.
 
 [#ivf]
-=== Inverted File Index (IVF)
+=== Inverted File Indexes (IVF)
 
 For reduced latency, Vector Search can also use Inverted File Indexes (IVF).
 
-Vector Search uses a combination of IVF and flat indexes for data that contains between 1000 and 9999 vectors.
+Vector Search uses a combination of IVF and FLAT indexes for data that contains between 1000 and 9999 vectors.
 For even larger datasets, Vector Search uses IVF indexes with <<scalar-quant,>>.
 
 IVF creates partitions called Voronoi cells in an index. 
@@ -132,7 +167,64 @@ The training data helps to encode and compress the vectors in your index with <<
 All training occurs during building and merging <<segments,>>.
 
 IVF indexes that also use flat indexing automatically train to determine the centroids of cells, but still use exact vector comparisons within each cell.
-Training still occurs while building and merging <<segments,>>. 
+Training still occurs while building and merging <<segments,>>.
+
+[#fast-merge-gpus-ivf]
+==== Fast Merge and GPU Processing for IVF Indexes
+
+[.status]#Couchbase Server 8.5#
+
+From Couchbase Server version 8.5 and later, you can turn on *Vector Index Fast Merge* to reduce the resource consumption required for merging segments in an IVF index during reindexing and training.
+This setting helps improve the scalability of larger Search Vector Indexes by changing the underlying merging behavior for segments in large Search Vector Indexes.
+Fast merge has no effect on indexes with less than 1000 vectors.
+
+You can turn on *Vector Index Fast Merge* at the index level, and it applies to all `vector` type fields defined in your Search Vector Index.
+For more information about how to enable this setting for your Search Vector Index, see xref:search:set-advanced-settings.adoc[] or xref:search:search-index-params.adoc#store[`store` object].
+
+From Couchbase Server version 8.5 and later, the Search Service can support using the available GPUs on your cluster to improve IVF index creation, training, and <<query-gpu,searching>>.
+If you choose to use *Vector Index Fast Merge*, you cannot turn on GPU processing for any `vector` child field in your index.
+
+To use GPU processing for a `vector` field, your cluster must meet the following software and hardware requirements: 
+
+[cols="1,1"]
+|====
+|Component |Requirements
+
+|OS
+a|Linux (x86_64)
+
+Not available on Windows or macOS platforms
+
+|NVIDIA GPU
+|Your GPU must support https://developer.nvidia.com/cuda/gpus[Compute Capability 3.5 or later^]
+
+|https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64[CUDA Toolkit^]
+a|You need 1 of the following CUDA Toolkit versions:
+
+* 11.4
+* 11.8
+* 12.1
+* 12.4
+
+Choose a CUDA Toolkit version that matches your NVIDIA driver.
+
+|NVIDIA Driver 
+a| Make sure that your NVIDIA driver and CUDA Toolkit are compatible: 
+
+* R520+ for CUDA 11.8 
+* R530+ for CUDA 12.x
+
+|Compiler 
+|Use a C++17 compatible compiler - such as https://gcc.gnu.org/[GCC 9.3.1 or later^]
+
+|BLAS Library
+|Use https://github.com/OpenMathLib/OpenBLAS[OpenBLAS^]
+|====
+
+For more information about how to turn on the GPU processing setting for a specific `vector` field, see xref:search:child-field-options-reference.adoc#gpu[Child Field Options], xref:search:quick-index-field-options.adoc#gpu[Quick Index Field Options], or xref:search:search-index-params.adoc#gpu[Fields Array].
+
+Both *Vector Index Fast Merge* and GPU processing are only supported on IVF indexes.
+<<flat,FLAT indexes>> do not contain enough vectors to use these features.
 
 [#scalar-quant]
 ==== Scalar Quantization 
@@ -146,12 +238,34 @@ Scalar quantization in Vector Search does not have a significant effect on the r
 
 Vector Search uses both 8bit and 4bit scalar quantization for indexes, based on your xref:search:child-field-options-reference.adoc#optimized[Optimized For] setting.
 
+[#ivf-binary]
+==== IVF Indexes and Binary Quantization
+
+[.status]#Couchbase Server 8.5#
+
+IVF indexes can support https://github.com/VectorDB-NTU/RaBitQ-Library[RaBitQ quantization^] and threshold-based quantization.
+From Couchbase Server version 8.5 and later, if you want to use binary quantization, the Search Service converts each element in your vectors to a bit.
+This conversion reduces the overall storage footprint of your vectors.
+
+In threshold-based binary quantization, each bit is set to either a 0 or a 1:
+
+* If the float is greater than 0, it becomes a 1.
+* If the float is less than 0, it becomes 0.
+
+In RaBitQ quantization, each vector is rotated on a learned orthogonal projection of the entire vector set before being quantized using threshold-based quantization.
+The Search Service initially uses a random matrix for the orthogonal projection, before adjusting the matrix iteratively to get an ideal spread for thresholding.
+
+The different options for binary quantization all have similar throughput, but can vary on latency and recall.
+For more information about the available quantization options, see xref:search:child-field-options-reference.adoc#optimized[Optimized For].
+
+Binary indexes use https://www.ibm.com/think/topics/hamming-distance[Hamming Distance^] to calculate your document scores in search results.
+
 [#encryption]
 == Search Vector Index Encryption
 
-//[.status]#Couchbase Server 8.5#
+[.status]#Couchbase Server 8.5#
 
-From the next major release of Couchbase Server, if you xref:manage:manage-security/encrypt-data-at-rest.adoc[enable encryption at rest] on your cluster, the Search Service encrypts any files related to your Search Vector indexes that contain indirect or direct references to user data. 
+From Couchbase Server version 8.5 and later, if you xref:manage:manage-security/encrypt-data-at-rest.adoc[enable encryption at rest] on your cluster, the Search Service encrypts any files related to your Search Vector indexes that contain indirect or direct references to user data. 
 
 The Search Service encrypts the same data and files for Search Vector indexes as xref:search:search-index-architecture.adoc#encryption[Search indexes].
 For Search Vector indexes, the entire FAISS index and your vector to document mappings are encrypted.
@@ -170,6 +284,17 @@ Results are scored, and based on the xref:search:search-request-params.adoc#sort
 
 For a Vector Search query, search results include the top `k` nearest neighbor vectors to the vector in the Search query. 
 For more information about how results are scored and returned for Search requests, see xref:search:run-searches.adoc#scoring[Scoring for Search Queries].
+
+[#query-gpu]
+=== Processing Queries with GPUs
+
+[.status]#Couchbase Server 8.5#
+
+From Couchbase Server version 8.5 and later, if you turn on xref:search:child-field-options-reference.adoc#gpu[using GPUs for a vector field], the Search Service can use the available GPU resources on your cluster for query processing.
+
+The Search Service batches queries before sending them for GPU processing, which might cause a slight increase in latency for individual queries, while increasing overall performance.
+
+If for any reason the Search Service cannot use your cluster's GPUs at processing time, the Search Service automatically falls back to the standard Search query processing behavior.
 
 == See Also
 
