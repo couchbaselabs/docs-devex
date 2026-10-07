@@ -1,0 +1,175 @@
+= Use External Models to Rerank Vector Queries
+:page-topic-type: guide
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: You can use an external or hosted model to rerank a recordset.
+:stem:
+:page-status: Couchbase Server 8.5
+
+[abstract]
+{description}
+You can use this technique to refine the output of a query using dense or sparse Hyperscale or Composite Vector Indexes.
+
+== External Reranking Models
+
+You can use full vector persistence to enable reranking in queries using a Hyperscale Vector Index to refine the query results.
+However, full vector persistence is only available with dense Hyperscale Vector Indexes, increases the size of the indexes, and slows down queries.
+
+Another approach is to use an external or hosted cross-encoder or LLM-based model to rerank a recordset.
+You can use this technique to improve the results of a query using dense or sparse Hyperscale or Composite Vector Indexes, or indeed any query that outputs a text field.
+
+To save costs and reduce the number of records sent to the external or hosted model, use an initial query to produce a candidate set of documents, and then use the external or hosted model to refine the results.
+
+[#prerequisites]
+== Prerequisites
+
+To use an external or hosted model to rerank a recordset, you must have one of the following:
+
+* User credentials for an external AI service with a reranking model, such as https://cohere.com[Cohere] or https://jina.ai[Jina].
+* A locally hosted AI server with a reranking model, such as https://michaelfeil.eu/infinity[Infinity] or https://llama.app[Llama].
+
+If your AI service requires credentials to authenticate, store the credentials in the Couchbase {product-name} credential store.
+For more information, see xref:learn:security/credential-store.adoc[].
+
+The external or hosted model must accept the request body schema understood by Cohere or Jina.
+Couchbase {product-name} sends the texts to rank wrapped in an array called `"documents"`.
+
+== Rerank the Results of a Vector Query
+
+To rerank the results of a query using a dense or sparse Hyperscale or Composite Vector Index:
+
+. Use a subquery with dense or sparse Hyperscale or Composite Vector Index to generate a candidate recordset.
+
+. Use the `AI_RERANK()` function, or the `AI_COMPUTE()` function with the `"rerank"` action, to rerank the results.
+
+  * Specify a string field from the candidate recordset as the field to process.
+
+  * Specify a natural language query.
+  The external or hosted model compares the string field from the candidate recordset against the natural language query.
+  For example, the natural language query could be the same search string that you used in the initial subquery.
+
+For more information, see xref:n1ql:n1ql-language-reference/windowfun.adoc#fn-window-ai-rerank[AI_RERANK()] and xref:n1ql:n1ql-language-reference/windowfun.adoc#fn-window-ai-compute[AI_COMPUTE()].
+
+[#examples]
+== Examples
+
+To try the examples in this section, you must do the following:
+
+* Install the `rgb` and `rgb-questions` collections from the supplied vector sample, as described in xref:vector-index:hyperscale-vector-index.adoc#prerequisites[Prerequisites].
+
+* Create a Hyperscale Vector index in the `rbg` collection on the field named `embedding-vector-dot`, as described in xref:n1ql:n1ql-language-reference/createvectorindex.adoc#ex-create-rgb-idx[CREATE VECTOR INDEX Example 1].
+
+* Create a Composite Vector index in the `rbg` collection on the field named `embedding-vector-dot`, as described in xref:n1ql:n1ql-language-reference/createindex.adoc#ex-create-vectors-idx[CREATE INDEX Example 7].
+
+You must also have access to an external or hosted reranking model, as described in <<prerequisites>>.
+The examples in this section use Infinity.
+
+[#ex-HVI-no-rerank]
+.Query with dense Hyperscale Vector Index, no external reranking
+====
+The following example uses full vector persistence to rerank the results of a dense Hyperscale Vector Index query, but does not use any external reranking.
+The query finds colors from the `rgb` collection whose descriptions are most similar to the following presupplied question:
+
+> What is a soft and gentle hue that can add warmth and brightness to a room?
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=rerank-after-example]
+----
+
+The color that's most relevant to the search results, `#FFFFEO` light yellow, is only second in the results, despite the full vector persistence.
+
+[source,json]
+----
+include::vector-index:example$hyperscale-idx-data.json[tag=rerank-after]
+----
+====
+
+[#ex-HVI-rerank]
+.Query with dense Hyperscale Vector Index and external reranking
+====
+Instead of full vector persistence, the following example uses an external reranking model to refine the results of <<ex-HVI-no-rerank>>.
+
+[source,sqlpp]
+----
+include::vector-index:example$external-reranking.sqlpp[tag=hyperscale]
+----
+
+. The description field from the candidate recordset is sent to the external model for reranking. @/AI_RERANK/
+
+. The question whose embedded vector was used to generate the candidate recordset is reused as the natural language query to rerank the results. @14
+
+. The function does not define any partitions, but aggregates over the whole recordset. @/OVER()/
+
+Light yellow is now first in the results.
+
+[source,json]
+----
+include::vector-index:example$external-reranking-hyperscale.json[]
+----
+====
+
+[#ex-CVI-no-rerank]
+.Query with dense Composite Vector Index, no external reranking
+====
+The following example uses a dense Composite Vector Index to find colors from the `rgb` collection whose descriptions are most similar to the following presupplied question:
+
+> What is the name of the color that is reminiscent of a tropical fruit and has a calming effect, often used in fashion and interior design?
+
+[source,sqlpp]
+----
+include::vector-index:example$gsi-vector-idx-examples.sqlpp[tag=query-vectors-idx-subquery]
+----
+
+The color that's most relevant to the search results, `#FFEFD5` papaya whip, is second in the results.
+
+[source,json]
+----
+[
+  {
+    "color": "cantalope",
+    "description": "The color cantaloupe is a soft and soothing shade that evokes feelings of calmness
+    and relaxation. It is a refreshing hue that brings to mind the juicy and sweet fruit it is named
+    after. This delicate color is a pale orange with hints of pink, giving it a subtle and gentle
+    appearance. It is a perfect color for creating a peaceful and tranquil atmosphere."
+  },
+  {
+    "color": "papaya whip",
+    "description": "Papaya whip is a soft and mellow color that can be described as a light shade of
+    peach or coral. It has a calming and soothing effect, similar to the tropical fruit it is named
+    after. This color is perfect for creating a warm and inviting atmosphere, and it pairs well with
+    other pastel shades or neutral tones. Papaya whip is a versatile color that can be used in both
+    fashion and interior design, adding a touch of elegance and sophistication to any space."
+  },
+  {
+    "color": "apricot",
+    "description": "Apricot is a warm and inviting color, reminiscent of the soft glow of a sunset. It
+    has the ability to soften the harshness of other colors and enliven any space it is used in. It is a
+    delicate and soothing hue, perfect for creating a cozy and welcoming atmosphere."
+  }
+]
+----
+====
+
+[#ex-CVI-rerank]
+.Query with dense Composite Vector Index and external reranking
+====
+The following example uses an external reranking model to refine the results of <<ex-CVI-no-rerank>>.
+
+[source,sqlpp]
+----
+include::vector-index:example$external-reranking.sqlpp[tag=composite]
+----
+
+Papaya whip is now first in the results.
+
+[source,json]
+----
+include::vector-index:example$external-reranking-composite.json[]
+----
+====
+
+== See Also
+
+* xref:vector-index:vector-index-best-practices.adoc[]
+* xref:vector-index:hyperscale-reranking.adoc[]
