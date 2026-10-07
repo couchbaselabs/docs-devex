@@ -1,0 +1,25 @@
+{
+  "explain": true,
+  "fields": ["price_per_night", "cancellationPolicy", "rating"],
+  "highlight": {},
+  "query": {
+    "custom_filter": {
+      "query": {
+        "must": {
+          "conjuncts": [
+            { "match": "hotel" },
+            { "field": "city", "match": "paris" }
+          ]
+        }
+      },
+      "fields": ["price_per_night", "cancellationPolicy", "rating"],
+      "params": {
+        "stay_nights": 5,
+        "budget": 2000
+      },
+      "source": "function hotel_filter(doc, params){ var f = doc.fields || {}; var price = f.price_per_night; if (price === undefined) return false; var nights = params.stay_nights || 1; var budget = params.budget; if (budget === undefined) return true; return (price * nights) <= budget; }"
+    }
+  },
+  "size": 10,
+  "from": 0
+}

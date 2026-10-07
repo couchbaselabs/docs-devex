@@ -1563,6 +1563,13 @@ include::example$simple-search-index-payload.jsonc[tag=fields]
 
 TIP: To view the entire JSON payload, click btn:[View].
 
+If you wanted to index a xref:vector-search:vector-search.adoc[vector field and turn your Search index into a Search Vector index], the `fields` array for a vector field named `embedding` could look like the following: 
+
+[source,json]
+----
+include::example$search-index-fields-array-vector.jsonc[]
+----
+
 The `fields` array is located inside a <<child-fields,{field_name} object>>.
 It contains the following properties: 
 
@@ -1632,6 +1639,10 @@ This behavior is the same as using xref:child-field-options-reference.adoc#searc
 
 include::partial$vector-search-field-descriptions.adoc[tag=similarity_metric]
 
+|[[gpu]]gpu |Boolean |No a|
+
+include::partial$vector-search-field-descriptions.adoc[tag=gpu]
+
 |store |Boolean |Yes a|
 
 To include the content of the child field in the Search index and allow its content to be viewed in search results, set `store` to `true`.
@@ -1659,6 +1670,7 @@ The child field's type. Can be one of:
 * `boolean`
 * `geopoint`
 * `geoshape`
+* (Server version 8.5 and later) `geoshape_v2`
 * `disabled`
 * `ip`
 * `vector`
@@ -1689,7 +1701,7 @@ TIP: To view the entire JSON payload, click btn:[View].
 
 The `store` object contains the following properties: 
 
-[cols="1,1,1,2"]
+[cols="2,1,1,4"]
 |====
 |Property |Type |Required? |Description
 
@@ -1708,6 +1720,17 @@ An object that contains settings for background merging behavior in your Search 
 For more information, see <<scorch-merge,>>.
 
 |segmentVersion |Integer |No |The `segmentVersion` is always `16`.
+
+|vector_index_fast_merge |Boolean |No a|
+
+If you're creating a xref:vector-search:vector-search.adoc[Search Vector Index] with more than 1000 vectors, set `vector_index_fast_merge` to `true` to improve reindexing and training performance for `vector` type fields.
+
+This setting has no effect for smaller Search Vector indexes.
+
+For more information, see xref:vector-search:vector-search-index-architecture.adoc#ivf[Inverted File Indexes (IVF)].
+
+NOTE: This setting can only be turned on if you already have vectors stored in your documents.
+You cannot turn on this setting if you're creating an index without any data.
 
 |====
 
