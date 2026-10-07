@@ -332,7 +332,9 @@ include::example$run-search-full-request.jsonc[tag=query]
 Use any of the following properties to run a boolean query. 
 A boolean query searches for a combination of queries that a document must match to be included in search results. 
 
-Boolean queries use a <<compound-queries,compound query array>> inside the <<must,must>>, <<must_not,must_not>> and <<should,should>> objects to set the queries a document must match. 
+Boolean queries use a <<compound-queries,compound query array>> inside the <<must,must>>, <<must_not,must_not>> and <<should,should>> objects to set the queries a document must match.
+
+From Couchbase Server version 8.5 and later, you can also add a <<boolean-filter,filter>> object to add an additional query as a filter on your boolean query.
 
 [cols="1,1,4,4"]
 |====
@@ -389,6 +391,23 @@ a|
 include::example$query-boolean.jsonc[tag=should]
 ----
 
+|[[boolean-filter]]filter 
+|Object
+a| [.status]#Couchbase Server 8.5#
+
+Add a `filter` object to add an additional query as a filter on the documents returned by a boolean query.
+You can use any other type of query supported by the Search Service as the contents of `filter`.
+
+The query in the `filter` object does not affect the final score of a document.
+It only changes whether a document is added or removed from the search result set.
+
+a|
+.reviews.content must mention "location" and "nice view" but only return documents with free_breakfast as "true"
+[source,json]
+----
+include::example$query-boolean.jsonc[tag=filter]
+----
+
 |====
 
 [#compound-queries]
@@ -419,6 +438,7 @@ You can create objects in a `conjuncts` array to describe any of the available q
 * <<numeric-range-queries,Numeric Range Queries>>
 * <<date-range-queries,Date Range Queries>>
 * <<term-range-queries,Term Range Queries>>
+* <<ip-address-range-queries,IP Address Range Queries>>
 * <<geopoint-queries-distance,Distance/Radius-Based Geopoint Queries>>
 * <<geopoint-queries-rectangle,Rectangle-Based Geopoint Queries>>
 * <<geopoint-queries-polygon,Polygon-Based Geopoint Queries>>
@@ -431,6 +451,7 @@ You can create objects in a `conjuncts` array to describe any of the available q
 * <<geojson-queries-geometrycollection,GeometryCollection GeoJSON Queries>>
 * <<geojson-queries-circle,Circle GeoJSON Queries>>
 * <<geojson-queries-envelope,Envelope GeoJSON Queries>>
+* <<geoshape-v2-queries,geoshape_v2 Queries>>
 
 a| 
 .reviews.date field must be between 2001-10-09 and 2016-10-31 and description field must contain "pool"
@@ -455,6 +476,7 @@ You can create objects in a `disjuncts` array to describe any of the available q
 * <<numeric-range-queries,Numeric Range Queries>>
 * <<date-range-queries,Date Range Queries>>
 * <<term-range-queries,Term Range Queries>>
+* <<ip-address-range-queries,IP Address Range Queries>>
 * <<geopoint-queries-distance,Distance/Radius-Based Geopoint Queries>>
 * <<geopoint-queries-rectangle,Rectangle-Based Geopoint Queries>>
 * <<geopoint-queries-polygon,Polygon-Based Geopoint Queries>>
@@ -467,6 +489,7 @@ You can create objects in a `disjuncts` array to describe any of the available q
 * <<geojson-queries-geometrycollection,GeometryCollection GeoJSON Queries>>
 * <<geojson-queries-circle,Circle GeoJSON Queries>>
 * <<geojson-queries-envelope,Envelope GeoJSON Queries>>
+* <<geoshape-v2-queries,geoshape_v2 Queries>>
 
 a|
 .free_parking field must be true or checkin field must be "1PM"
@@ -1029,7 +1052,9 @@ include::example$query-geopoint.jsonc[tag=distance]
 ----
 
 To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>.
+
+include::partial$geoshape-v2-tip.adoc[]
 
 [cols="1,1,1,2"]
 |====
@@ -1086,6 +1111,8 @@ The resulting rectangle is used as the search area for geo location values.
 To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
+include::partial$geoshape-v2-tip.adoc[]
+
 [cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description
@@ -1134,6 +1161,8 @@ The resulting polygon is used as the search area for geo location values.
 To use a Geopoint query, you must have a child field in your Search index with the `geopoint` type.
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
+include::partial$geoshape-v2-tip.adoc[]
+
 [cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description
@@ -1165,6 +1194,8 @@ include::example$query-geojson.jsonc[tag=point]
 To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+include::partial$geoshape-v2-tip.adoc[]
 
 [cols="1,1,1,2"]
 |====
@@ -1234,6 +1265,8 @@ To use a GeoJSON query, you must have a child field in your Search index with th
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
+include::partial$geoshape-v2-tip.adoc[]
+
 [cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description
@@ -1301,6 +1334,8 @@ include::example$query-geojson.jsonc[tag=polygon]
 To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+include::partial$geoshape-v2-tip.adoc[]
 
 [cols="1,1,1,2"]
 |====
@@ -1373,6 +1408,8 @@ To use a GeoJSON query, you must have a child field in your Search index with th
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
+include::partial$geoshape-v2-tip.adoc[]
+
 [cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description
@@ -1441,7 +1478,9 @@ include::example$query-geojson.jsonc[tag=multilinestring]
 
 To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>.
+
+include::partial$geoshape-v2-tip.adoc[]
 
 [cols="1,1,1,2"]
 |====
@@ -1524,6 +1563,8 @@ To use a GeoJSON query, you must have a child field in your Search index with th
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
+include::partial$geoshape-v2-tip.adoc[]
+
 [cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description
@@ -1596,6 +1637,8 @@ include::example$query-geojson.jsonc[tag=geometrycollection]
 To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+
+include::partial$geoshape-v2-tip.adoc[]
 
 [cols="1,1,1,2"]
 |====
@@ -1681,7 +1724,9 @@ include::example$query-geojson.jsonc[tag=circle]
 
 To use a GeoJSON query, you must have a child field in your Search index with the `geoshape` type.
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
-For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>.
+
+include::partial$geoshape-v2-tip.adoc[]
 
 [cols="1,1,1,2"]
 |====
@@ -1770,6 +1815,8 @@ To use a GeoJSON query, you must have a child field in your Search index with th
 The `geoshape` field must contain a `type` property and a `coordinates` array. 
 For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>. 
 
+include::partial$geoshape-v2-tip.adoc[]
+
 [cols="1,1,1,2"]
 |====
 |Property |Type |Required? |Description
@@ -1826,6 +1873,121 @@ For MultiPolygons or GeometryCollections containing only Polygons, the query Env
 
 |====
 
+[#geoshape-v2-queries]
+=== geoshape_v2 Queries
+
+[.status]#Couchbase Server 8.5#
+
+From Couchbase Server version 8.5 and later, you can use a new `geoshape_v2` field data type and `geometry_v2` query object to query your geospatial data. 
+
+The new field data type and query use a new matching algorithm for geospatial data that improves performance in geospatial queries.
+For more information, see xref:search-for-geo.adoc#geoshape-v2[Cell-Based Geospatial Search Indexes].
+
+A `geometry_v2` query object still can use the same properties as any other GeoJSON query type to search for geolocation data: 
+
+[source,json]
+----
+include::example$query-geoshape-v2.jsonc[]
+----
+
+To use a `geometry_v2` query, you must have a child field in your Search index with the `geoshape_v2` type.
+For more information about how to create a child field, see xref:create-child-field.adoc[] or <<child-fields,the {field-name} object>>.
+
+[cols="1,1,1,2"]
+|====
+|Property |Type |Required? |Description
+
+|[[geometry-v2]]geometry_v2
+|Object
+|Yes
+a| Contains the <<geoshape-v2-shape,shape property>> and <<geoshape-v2-relation,relation>> property. 
+
+Defines the GeoJSON shape and how the Search Service should find a match in documents. 
+
+IMPORTANT: You cannot query a `geoshape_v2` field with the old `geometry` object.
+You must use `geometry_v2`.
+
+|shape
+|Object
+|Yes
+a| Contains the <<geoshape-v2-type,type property>>, <<geoshape-v2-coordinates,coordinates property>>, and the <<geoshape-v2-radius,radius property>>. 
+
+Defines the specific GeoJSON shape to use in the query. 
+
+|[[geoshape-v2-type]]type
+|String
+|Yes
+a| Set the type to the type of GeoJSON shape you want to use in your query. 
+
+You can use: 
+
+* <<geojson-queries-point,>> (`Point`)
+* <<geojson-queries-linestring,>> (`LineString`)
+* <<geojson-queries-polygon,>> (`Polygon`)
+* <<geojson-queries-multipoint,>> (`MultiPoint`)
+* <<geojson-queries-multilinestring,>> (`MultiLineString`)
+* <<geojson-queries-multipolygon,>> (`MultiPolygon`)
+* <<geojson-queries-geometrycollection,>> (`GeometryCollection`)
+* <<geojson-queries-circle,>> (`Circle`)
+* <<geojson-queries-envelope,>> (`Envelope`)
+
+|[[geoshape-v2-coordinates]]coordinates 
+|Array 
+|Yes
+a| An array of coordinates that describes the shape in <<geoshape-v2-type,type>>.
+
+For the best results, make sure the floating point values in your `coordinates` array are not longer than 8 decimal places.
+
+The specific format of your `coordinates` array changes based on the GeoJSON shape you want to use:
+
+* <<point-coordinates,Point>>
+* <<linestring-coordinates,LineString>>
+* <<polygon-coordinates,Polygon>>
+* <<multipoint-coordinates,MultiPoint>>
+* <<multilinestring-coordinates,MultiLineString>>
+* <<multipolygon-coordinates,MultiPolygon>>
+* <<geometrycollection-coordinates,GeometryCollection>>
+* <<circle-coordinates,Circle>>
+* <<envelope-coordinates,Envelope>>
+
+|[[geoshape-v2-radius]]radius (Circle Queries Only)
+|String
+|For Circle Queries
+a| If your query <<geoshape-v2-type,type>> is set to `Circle`, set the radius of the Circle. 
+
+Enter the radius as a single string, with a numeric value and a unit value.
+For example, `100.5mi`.
+
+You can use the following distance units: 
+
+* `mm`: Millimeters 
+* `cm`: Centimeters
+* `in`: Inches
+* `yd`: Yards
+* `ft`: Feet
+* `m`: Meters
+* `km`: Kilometers
+* `mi`: Miles
+* `nm`: Nautical miles
+
+|[[geoshape-v2-relation]]relation
+|String
+|Yes
+a| Set how the Search Service should return a match for your `geometry_v2` query.
+
+The supported values for the `relation` property depend on your <<geoshape-v2-type,type>> value:
+
+* <<point-relation,Point>>
+* <<linestring-relation,LineString>>
+* <<polygon-relation,Polygon>>
+* <<multipoint-relation,MultiPoint>>
+* <<multilinestring-relation,MultiLineString>>
+* <<multipolygon-relation,MultiPolygon>>
+* <<geometrycollection-relation,GeometryCollection>>
+* <<circle-relation,Circle>>
+* <<envelope-relation,Envelope>>
+|====
+
 === Special Queries 
 
 You can use the following special queries as the only properties inside a `query` object to return all or no documents from your Search index in search results. 
@@ -1860,8 +2022,167 @@ include::example$query-special.jsonc[tag=match_none]
 
 |====
 
+[#custom-filter-queries]
+=== Custom Filter Queries
+[.status]#Couchbase Server 8.5#
+[.edition]#{enterprise}#
+
+From Couchbase Server version 8.5 and later, you can use a `custom_filter` query to run a JavaScript user-defined function (UDF) during query execution that adds or removes a document from your search results by returning a `boolean` value.
+
+NOTE: You must xref:custom-scripts/enable-custom-script-queries.adoc[turn on Custom Script Query Execution] on your cluster before you can run a `custom_filter` query.
+
+For example, the following `custom_filter` query calculates the average `Cleanliness` rating from a `hotel` document's reviews.
+Documents are only added to search results if this average rating is greater than or equal to `3.0`:
+
+[source,json]
+----
+include::example$custom-scripts/query-custom-filter.jsonc[tag=short]
+----
+
+A `custom_filter` query can contain the following properties: 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|query
+|Object
+|Yes
+a| A `custom_filter` query object must contain a nested <<query-object,`query` object>>, which can be any other valid query - including <<boolean-queries,Boolean Queries>> and <<compound-queries,Compound Queries>>.
+This nested query runs to find matching documents to pass to your user-defined function (UDF).
+
+|source
+|String
+|Yes
+a| The JavaScript source code for your UDF, as a single string.
+
+Your `source` property must include a named function declaration, such as: 
+
+----
+function my_score(doc, params) { ... }
+----
+
+The function must return a Boolean value.
+
+If the function returns `true`, the Search Service keeps the document in your search results.
+If the function returns `false`, the Search Service removes the document from your search results.
+
+|params
+|Object
+|No
+a| A JSON object with any parameters that you want to pass to your UDF.
+
+Access the `params` object from inside your UDF's `source` code as the function's second argument.
+Access values using dot notation - for example, `params.min`.
+
+|fields
+|Array of Strings
+|No
+a| An array of xref:child-field-options-reference.adoc#store[stored] field names from your Search index that you want to pass to your UDF.
+
+Access the field values from inside your UDF's `source` code through the `doc.fields` object.
+Any nested object fields from your documents must use bracket notation and be surrounded by escaped quotes (`\"`), as shown in the preceding example query.
+
+The Search Service converts stored field values to the following JavaScript types before passing them to your UDF:
+
+* Text fields become strings.
+* Numeric fields become numbers.
+* Boolean fields become Booleans.
+* Vector, geopoint, and geoshape fields become arrays.
+
+You can set `fields` to `["*"]` to pass every available stored field from your Search index to your UDF, but this can negatively affect your Search performance. 
+
+If a field is not stored in your Search index, your UDF receives the value of that field as `undefined`.
+
+|====
+
+[#custom-score-queries]
+=== Custom Score Queries
+[.status]#Couchbase Server 8.5#
+[.edition]#{enterprise}#
+
+From Couchbase Server version 8.5 and later, you can use a `custom_score` query to run a JavaScript user-defined function (UDF) that calculates a new score for documents in your search results.
+
+Unlike a <<custom-filter-queries,`custom_filter` query>>, a `custom_score` query never removes documents from your search results.
+Every document that matches the inner `query` object keeps its place in your results, with a new score from your UDF.
+
+NOTE: You must xref:custom-scripts/enable-custom-script-queries.adoc[turn on Custom Script Query Execution] on your cluster before you can run a `custom_score` query.
+
+For example, the following `custom_score` query takes the values from the `reviews.ratings.Cleanliness` array and boosts a document's score if the average rating for `Cleanliness` is greater than or equal to `3.0`: 
+
+[source,json]
+----
+include::example$custom-scripts/query-custom-score.jsonc[tag=short]
+----
+
+A `custom_score` query can contain the following properties: 
+
+[cols="1,1,1,4"]
+|====
+|Property |Type |Required? |Description
+
+|query
+|Object
+|Yes
+a| A `custom_score` query object must contain a nested <<query-object,`query` object>>, which can be any other valid query - including <<boolean-queries,Boolean Queries>> and <<compound-queries,Compound Queries>>.
+This nested query runs to find matching documents to pass to your user-defined function (UDF).
+
+|source
+|String
+|Yes
+a| The JavaScript source code for your UDF, as a single string.
+
+Your `source` property must include a named function declaration, such as: 
+
+----
+function my_score(doc, params) { ... }
+----
+
+The function must return a numeric value, such as:
+
+* `float64`
+* `int`
+* `int64`
+* `uint64`
+
+The Search Service uses the returned value from your UDF as the document's new score in your search results.
+If your UDF returns a runtime error, the Search Service uses the document's original score, instead.
+
+You can access a document's original score value in your `source` object with `doc.score`.
+
+|params
+|Object
+|No
+a| A JSON object with any parameters that you want to pass to your UDF.
+
+Access the `params` object from inside your UDF's `source` code as the function's second argument.
+Access values using dot notation - for example, `params.min`.
+
+|fields
+|Array of Strings
+|No
+a| An array of xref:child-field-options-reference.adoc#store[stored] field names from your Search index that you want to pass to your UDF.
+
+Access the field values from inside your UDF's `source` code through the `doc.fields` object.
+Any nested object fields from your documents must use bracket notation and be surrounded by escaped quotes (`\"`), as shown in the preceding example query.
+
+The Search Service converts stored field values to the following JavaScript types before passing them to your UDF:
+
+* Text fields become strings.
+* Numeric fields become numbers.
+* Boolean fields become Booleans.
+* Vector, geopoint, and geoshape fields become arrays.
+
+You can set `fields` to `["*"]` to pass every available stored field from your Search index to your UDF, but this can negatively affect your Search performance.
+
+If a field is not stored in your Search index, your UDF receives the value of that field as `undefined`.
+
+|====
+
+TIP: To reduce the resource costs for custom script queries, consider using a <<custom-filter-query,`custom_filter` query>> to reduce the number of matching documents before you change your document scores with a `custom_score` query.
+
 [#additional-query-properties]
-=== Additional Query Object Properties 
+=== Additional Query Object Properties
 
 You can use the following properties to modify the results returned by specific query types. 
 
@@ -2182,7 +2503,31 @@ For more information, see xref:search-facets.adoc#term-facet[Term Facet].
 
 For Numeric Range and Date Range facets, the total number of categories returned depends on the number of ranges defined for the facet. 
 
-|field |String |Yes |The name of the field to use to collect facet information. 
+|field |String |Yes |The name of the field to use to collect facet information.
+
+|term_prefix |String |No a|
+
+[.status]#Couchbase Server 8.5#
+
+If you are collecting a xref:search-facets.adoc#term-facet[Term Facet] on Couchbase Server version 8.5 or later, add a `term_prefix` property to add a prefix filter to the facets collected by your search.
+
+For example, you could add a facet to collect values from a `country` field, but add a filter to only return countries that start with the string `united`.
+
+This filter does not affect document scoring.
+
+For more information, see xref:search-facets.adoc#filter-term-facets[Filter a Term Facet].
+
+|term_pattern |String |No a|
+
+[.status]#Couchbase Server 8.5#
+
+If you are collecting a xref:search-facets.adoc#term-facet[Term Facet] on Couchbase Server version 8.5 or later, add a `term_pattern` property to add a regular expression filter to the facets collected by your search.
+
+For example, you could add a facet to collect values from an `email` field, but add a filter to only return email addresses with a `.edu` domain, by adding a regular expression filter.
+
+This filter does not affect document scoring.
+
+For more information, see xref:search-facets.adoc#filter-term-facets[Filter a Term Facet].
 
 |numeric_ranges |Array |No a|
 
