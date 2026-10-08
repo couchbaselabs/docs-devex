@@ -32,8 +32,25 @@ To use an external or hosted model to rerank a recordset, you must have one of t
 If your AI service requires credentials to authenticate, store the credentials in the Couchbase {product-name} credential store.
 For more information, see xref:learn:security/credential-store.adoc[].
 
+You must add the URI of the AI service, including the protocol, the port, and the path for the reranking endpoint, to the cluster allowlist.
+For more information, see xref:manage:manage-settings/query-ui-settings.adoc#curl-function-access[CURL Function Access].
+
+If you're using a credential of type `http` to authenticate, you must also add the URI of the AI service, including the protocol, the port, and the path for the reranking endpoint, to the credential's own allowlist.
+For more information, see xref:learn:security/credential-store.adoc#guardrails[Guardrails].
+
 The external or hosted model must accept the request body schema understood by Cohere or Jina.
-Couchbase {product-name} sends the texts to rank wrapped in an array called `"documents"`.
+Couchbase {product-name} sends the request body as follows:
+
+* The texts to rank are wrapped in an array called `documents`.
+* The natural language query is sent in a field called `query`.
+* The required model, if specified, is sent in a field called `model`.
+
+The external or hosted model must output the results schema used by Cohere or Jina:
+
+* The output must have a top-level `results` or `data` array.
+* Each object in this array must have a numeric `index` field and a numeric `relevance_score` field.
+
+If the external or hosted model does not use these input and output schemas, the function may generate an error or give null results.
 
 == Rerank the Results of a Vector Query
 
@@ -62,7 +79,7 @@ To try the examples in this section, you must do the following:
 
 * Create a Composite Vector index in the `rgb` collection on the field named `embedding_vector_dot`, as described in xref:n1ql:n1ql-language-reference/createindex.adoc#ex-create-vectors-idx[CREATE INDEX Example 7].
 
-You must also have access to an external or hosted reranking model, as described in <<prerequisites>>.
+You must also have access to an allowed external or hosted reranking model, as described in <<prerequisites>>.
 The examples in this section use Infinity.
 
 [#ex-HVI-no-rerank]

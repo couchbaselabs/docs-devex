@@ -149,6 +149,7 @@ Window functions therefore operate on the query result set.
 
 [[fn-window-ai-compute,AI_COMPUTE()]]
 == AI_COMPUTE(`expr`, `options` [,{nbsp}``args``{nbsp}...]{nbsp})
+:section: fn-window-ai-compute
 
 [.status]#Couchbase Server 8.5#
 
@@ -157,6 +158,7 @@ Window functions therefore operate on the query result set.
 Aggregates a field across a recordset or partition, and uses an external or hosted cross-encoder or LLM-based model to process the aggregated field according to the action you specify.
 
 // tag::fn-window-ai-compute-prereqs[]
+[id={section}-prereq]
 ==== Prerequisites
 
 To use this function, you must have one of the following:
@@ -166,6 +168,12 @@ To use this function, you must have one of the following:
 
 If your AI service requires credentials to authenticate, store the credentials in the Couchbase {product-name} credential store.
 For more information, see xref:learn:security/credential-store.adoc[].
+
+You must add the URI of the AI service, including the protocol, the port, and the path for any endpoints that you want to use, to the cluster allowlist.
+For more information, see xref:manage:manage-settings/query-ui-settings.adoc#curl-function-access[CURL Function Access].
+
+If you're using a credential of type `http` to authenticate, you must also add the URI of the AI service, including the protocol, the port, and the path for any endpoints that you want to use, to the credential's own allowlist.
+For more information, see xref:learn:security/credential-store.adoc#guardrails[Guardrails].
 // end::fn-window-ai-compute-prereqs[]
 
 // tag::fn-window-ai-compute-usage[]
@@ -215,10 +223,23 @@ rerank::
 --
 // tag::fn-window-ai-compute-action-rerank[]
 In this case, the function ranks the specified field based on its similarity to a provided natural language argument.
-
-The external or hosted model must accept the request body schema understood by Cohere or Jina.
-Couchbase {product-name} sends the texts to rank wrapped in an array called `"documents"`.
 // end::fn-window-ai-compute-action-rerank[]
+
+// tag::fn-window-ai-compute-prereqs-rerank[]
+The external or hosted model must accept the request body schema understood by Cohere or Jina.
+Couchbase {product-name} sends the request body as follows:
+
+* The texts to rank are wrapped in an array called `documents`.
+* The natural language query is sent in a field called `query`.
+* The required model, if specified, is sent in a field called `model`.
+
+The external or hosted model must output the results schema used by Cohere or Jina:
+
+* The output must have a top-level `results` or `data` array.
+* Each object in this array must have a numeric `index` field and a numeric `relevance_score` field.
+
+If the external or hosted model does not use these input and output schemas, the function may generate an error or give null results.
+// end::fn-window-ai-compute-prereqs-rerank[]
 --
 
 *Values*: `"rerank"`
@@ -249,12 +270,16 @@ __optional__
 
 | Any options to pass in the request header.
 The options which are supported or required depend on the external or hosted AI service.
-| String
+
+If `cred_id` is specified, any header options you specify are sent along with the stored credentials.
+
+*Example*: `{"Authorization": "Bearer ..."}`
+| Object
 
 | **cred_id** +
 __optional__
 
-| The credentials for the external or hosted AI service.
+| The ID of the credential, stored in the credential store, to use to authenticate with the AI service.
 For more information, see xref:learn:security/credential-store.adoc[].
 
 | String
@@ -278,10 +303,14 @@ It may not include any other window specification clauses.
 To process the entire result set, leave the window specification empty.
 
 === Return Value
-For the rerank action, the function returns a number greater than 0 and less than or equal to 1.
-The higher the value, the higher the ranking.
+For the rerank action, the function returns the relevance score returned by the AI service.
+The value and its scale depend on the service and model being used.
+Generally, the higher the value, the higher the ranking.
 
 === Example
+
+To try this example, you must have access to an allowed external or hosted reranking model, as described in xref:{section}-prereq[].
+This example uses Infinity.
 
 ====
 Within each group, rank the similarity of the candidate documents to the following question:
@@ -340,6 +369,7 @@ For more examples, showing how to use an external or hosted model to rerank the 
 
 [[fn-window-ai-rerank,AI_RERANK()]]
 == AI_RERANK(`expr`, `options`, `query`)
+:section: fn-window-ai-rerank
 
 [.status]#Couchbase Server 8.5#
 
@@ -351,6 +381,8 @@ It aggregates a field across a recordset or partition, and uses an external or h
 include::windowfun.adoc[tags=fn-window-ai-compute-action-rerank]
 
 include::windowfun.adoc[tags=fn-window-ai-compute-prereqs]
+
+include::windowfun.adoc[tags=fn-window-ai-compute-prereqs-rerank]
 
 include::windowfun.adoc[tags=fn-window-ai-compute-usage]
 
@@ -391,10 +423,14 @@ It may not include any other window specification clauses.
 To compute the entire result set, leave the window specification empty.
 
 === Return Value
-A number greater than 0 and less than or equal to 1.
-The higher the value, the higher the ranking.
+The relevance score returned by the AI service.
+The value and its scale depend on the service and model being used.
+Generally, the higher the value, the higher the ranking.
 
 === Example
+
+To try this example, you must have access to an allowed external or hosted reranking model, as described in  xref:{section}-prereq[].
+This example uses Infinity.
 
 ====
 Within each group, rank the similarity of the candidate documents to the following question:
