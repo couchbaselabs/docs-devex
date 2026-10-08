@@ -13,7 +13,8 @@ You can use this technique to refine the output of a query using dense or sparse
 == External Reranking Models
 
 You can use full vector persistence to enable reranking in queries using a Hyperscale Vector Index to refine the query results.
-However, full vector persistence is only available with dense Hyperscale Vector Indexes, increases the size of the indexes, and slows down queries.
+However, full vector persistence is only available with dense Hyperscale Vector Indexes.
+It also increases the size of the indexes, and slows down queries.
 
 Another approach is to use an external or hosted cross-encoder or LLM-based model to rerank a recordset.
 You can use this technique to improve the results of a query using dense or sparse Hyperscale or Composite Vector Indexes, or indeed any query that outputs a text field.
@@ -97,7 +98,10 @@ include::vector-index:example$external-reranking.sqlpp[tag=hyperscale]
 
 . The description field from the candidate recordset is sent to the external model for reranking. @/AI_RERANK/
 
-. The question whose embedded vector was used to generate the candidate recordset is reused as the natural language query to rerank the results. @14
+. The reranking model used in this example does not require credentials.
+In a production environment, specify the credential ID as required. @/cred_id/
+
+. The question whose embedded vector was used to generate the candidate recordset is reused as the natural language query to rerank the results. @15
 
 . The function does not define any partitions, but aggregates over the whole recordset. @/OVER()/
 
