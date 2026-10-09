@@ -69,7 +69,7 @@ include::partial$grammar/n1ql.ebnf[tag=window-function-arguments]
 
 image::n1ql-language-reference/window-function-arguments.png["Syntax diagram", align=left]
 
-Refer to individual functions below for details of the arguments.
+See individual functions below for details of the arguments.
 
 [[window-function-options]]
 === Window Function Options
@@ -129,9 +129,9 @@ include::partial$n1ql-language-reference/over-clause.adoc[tag=body]
 
 With some window functions, the window specification may include a {window-partition-clause}[window partition clause], a {window-order-clause}[window order clause], and a {window-frame-clause}[window frame clause].
 With other window functions, the window specification may only include a subset of these clauses.
-Refer to individual functions below for details of the clauses permitted within the window specification.
+See individual functions below for details of the clauses permitted within the window specification.
 
-Note that any restrictions on the clauses permitted in the window specification apply equally, whether the function has an inline window definition, or a reference to a named window.
+Any restrictions on the clauses permitted in the window specification apply equally, whether the function has an inline window definition, or a reference to a named window.
 
 == Usage
 
@@ -147,11 +147,351 @@ If necessary, you can specify one window function in a {subqueries}[subquery], a
 Window functions are processed after {join}[JOIN] clauses, the {let}[LET] clause, the {where}[WHERE] clause, and the {groupby}[GROUP BY], {groupby}[LETTING], and {groupby}[HAVING] clauses.
 Window functions therefore operate on the query result set.
 
+[[fn-window-ai-compute,AI_COMPUTE()]]
+== AI_COMPUTE(`expr`, `options` [,{nbsp}``args``{nbsp}...]{nbsp})
+:section: fn-window-ai-compute
+
+[.status]#Couchbase Server 8.5#
+
+=== Description
+
+Aggregates a field across a recordset or partition, and uses an external or hosted cross-encoder or LLM-based model to process the aggregated field according to the action you specify.
+
+// tag::fn-window-ai-compute-prereqs[]
+[id={section}-prereq]
+==== Prerequisites
+
+To use this function, you must have one of the following:
+
+* User credentials for an external AI service, such as https://cohere.com[Cohere] or https://jina.ai[Jina].
+* A locally hosted AI server, such as https://michaelfeil.eu/infinity[Infinity] or https://llama.app[Llama].
+
+If your AI service requires credentials to authenticate, store the credentials in the Couchbase {product-name} credential store.
+For more information, see xref:learn:security/credential-store.adoc[].
+
+You must add the URI of the AI service, including the protocol, the port, and the path for any endpoints that you want to use, to the cluster allowlist.
+For more information, see xref:manage:manage-settings/query-ui-settings.adoc#curl-function-access[CURL Function Access].
+
+If you're using a credential of type `http` to authenticate, you must also add the URI of the AI service, including the protocol, the port, and the path for any endpoints that you want to use, to the credential's own allowlist.
+For more information, see xref:learn:security/credential-store.adoc#guardrails[Guardrails].
+// end::fn-window-ai-compute-prereqs[]
+
+// tag::fn-window-ai-compute-usage[]
+==== Usage
+
+To save costs and reduce the number of records sent to the external or hosted model, use an initial query to produce a candidate set of documents, and then use this function to refine the results.
+For example, use this function to rerank the output of a query using a dense or sparse vector index.
+// end::fn-window-ai-compute-usage[]
+
+=== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/n1ql.ebnf[tag=ai-compute-function]
+----
+
+image::n1ql-language-reference/ai-compute-function.png["Syntax diagram", align=left]
+
+=== Arguments
+
+expr:: [Required] The string field to send to the external or hosted model for processing.
+For example, this could be the result of a subquery producing a set of candidate documents.
+
+options:: [Required] A JSON object specifying options for the function.
+For a list of available options, see <<fn-window-ai-compute-options>>.
+
+args:: [Depends on action] Any extra arguments required.
++
+When the action is set to `"rerank"`, one extra argument is required.
+This must be a string, or an expression resolving to a string, containing a natural language query.
+The external or hosted model compares the value of the `expr` argument against this query.
+
+[[fn-window-ai-compute-options]]
+==== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+| **action** +
+__required__
+| The operation to apply within the partition.
+The only supported value is `"rerank"`.
+
+rerank::
++
+--
+// tag::fn-window-ai-compute-action-rerank[]
+In this case, the function ranks the specified field based on its similarity to a provided natural language argument.
+// end::fn-window-ai-compute-action-rerank[]
+
+// tag::fn-window-ai-compute-prereqs-rerank[]
+The external or hosted model must accept the request body schema understood by Cohere or Jina.
+Couchbase {product-name} sends the request body as follows:
+
+* The texts to rank are wrapped in an array called `documents`.
+* The natural language query is sent in a field called `query`.
+* The required model, if specified, is sent in a field called `model`.
+
+The external or hosted model must output the results schema used by Cohere or Jina:
+
+* The output must have a top-level `results` or `data` array.
+* Each object in this array must have a numeric `index` field and a numeric `relevance_score` field.
+
+If the external or hosted model does not use these input and output schemas, the function may generate an error or give null results.
+// end::fn-window-ai-compute-prereqs-rerank[]
+--
+
+*Values*: `"rerank"`
+| String
+
+// tag::fn-window-ai-compute-options[]
+| **uri** +
+__required__
+
+| The URI of the external or hosted AI service to use.
+This must include the protocol, port, and path, if any.
+
+*Example*: `+"http://host.docker.internal:7997/rerank"+`
+| String
+
+| **model** +
+__optional__
+
+| The name of the model to use.
+The available models, and the default that's selected if you do not specify a model, depend on the AI service you're using.
+For a locally hosted model, you may not need to specify this option.
+
+*Example*: `+"BAAI/bge-reranker-base"+`
+| String
+
+| **header** +
+__optional__
+
+| Any options to pass in the request header.
+The options which are supported or required depend on the external or hosted AI service.
+
+If `cred_id` is specified, any header options you specify are sent along with the stored credentials.
+
+*Example*: `{"Authorization": "Bearer ..."}`
+| Object
+
+| **cred_id** +
+__optional__
+
+| The ID of the credential, stored in the credential store, to use to authenticate with the AI service.
+For more information, see xref:learn:security/credential-store.adoc[].
+
+| String
+
+| **batchSize** +
+__optional__
+
+| The number of documents to send to the external or hosted model in one batch.
+
+This option has no effect on reranking operations --
+reranking always operates on the full partition.
+
+| Integer (int64)
+// end::fn-window-ai-compute-options[]
+|===
+
+=== Window Specification
+
+The window specification may include an optional {window-partition-clause}[window partition clause].
+It may not include any other window specification clauses.
+To process the entire result set, leave the window specification empty.
+
+=== Return Value
+For the rerank action, the function returns the relevance score returned by the AI service.
+The value and its scale depend on the service and model being used.
+Generally, the higher the value, the higher the ranking.
+
+=== Example
+
+To try this example, you must have access to an allowed external or hosted reranking model, as described in xref:{section}-prereq[].
+This example uses Infinity.
+
+====
+Within each group, rank the similarity of the candidate documents to the following question:
+
+> What is Couchbase?
+
+.Query
+[source,sqlpp]
+----
+WITH data AS ([
+  {"grp": 1, "text": "Paris is in France."},
+  {"grp": 2, "text": "SQL++ was formerly known as N1QL."},
+  {"grp": 1, "text": "Couchbase is the operational platform for AI."},
+  {"grp": 2, "text": "The sky is blue."}
+])
+SELECT d.grp, d.text,
+AI_COMPUTE(d.text,
+  {
+    "action": "rerank",
+    "uri": "http://host.docker.internal:7997/rerank"
+  },
+  "What is Couchbase?")
+  OVER(PARTITION BY d.grp) AS score
+FROM data AS d;
+----
+
+.Results
+[source,json]
+----
+[
+    {
+        "grp": 1,
+        "text": "Paris is in France.",
+        "score": 0.00003735054997378029
+    },
+    {
+        "grp": 1,
+        "text": "Couchbase is the operational platform for AI.",
+        "score": 0.9994944334030151
+    },
+    {
+        "grp": 2,
+        "text": "SQL++ was formerly known as N1QL.",
+        "score": 0.00024807584122754633
+    },
+    {
+        "grp": 2,
+        "text": "The sky is blue.",
+        "score": 0.00003738358282134868
+    }
+]
+----
+====
+
+For more examples, showing how to use an external or hosted model to rerank the results of a vector query, see xref:vector-index:external-reranking.adoc[].
+
+[[fn-window-ai-rerank,AI_RERANK()]]
+== AI_RERANK(`expr`, `options`, `query`)
+:section: fn-window-ai-rerank
+
+[.status]#Couchbase Server 8.5#
+
+=== Description
+
+This function provides the same functionality as <<fn-window-ai-compute>> with the `action` set to `"rerank"`.
+It aggregates a field across a recordset or partition, and uses an external or hosted cross-encoder or LLM-based model to process the aggregated field.
+
+include::windowfun.adoc[tags=fn-window-ai-compute-action-rerank]
+
+include::windowfun.adoc[tags=fn-window-ai-compute-prereqs]
+
+include::windowfun.adoc[tags=fn-window-ai-compute-prereqs-rerank]
+
+include::windowfun.adoc[tags=fn-window-ai-compute-usage]
+
+=== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/n1ql.ebnf[tag=ai-rerank-function]
+----
+
+image::n1ql-language-reference/ai-rerank-function.png["Syntax diagram", align=left]
+
+=== Arguments
+
+expr:: [Required] The string field to send to the external or hosted model for processing.
+For example, this could be the result of a subquery producing a set of candidate documents.
+
+options:: [Required] A JSON object specifying options for the function.
+For a list of available options, see <<fn-window-ai-rerank-options>>.
+
+query:: [Required] A string, or an expression resolving to a string, containing a natural language query.
+The external or hosted model compares the value of the `expr` argument against this query.
+
+[[fn-window-ai-rerank-options]]
+==== Options
+
+[options="header", cols="1a,3a,1a"]
+|===
+| Name | Description | Schema
+
+include::windowfun.adoc[tags=fn-window-ai-compute-options]
+|===
+
+=== Window Specification
+
+The window specification may include an optional {window-partition-clause}[window partition clause].
+It may not include any other window specification clauses.
+To compute the entire result set, leave the window specification empty.
+
+=== Return Value
+The relevance score returned by the AI service.
+The value and its scale depend on the service and model being used.
+Generally, the higher the value, the higher the ranking.
+
+=== Example
+
+To try this example, you must have access to an allowed external or hosted reranking model, as described in  xref:{section}-prereq[].
+This example uses Infinity.
+
+====
+Within each group, rank the similarity of the candidate documents to the following question:
+
+> What is Couchbase?
+
+.Query
+[source,sqlpp]
+----
+WITH data AS ([
+  {"grp": 1, "text": "Paris is in France."},
+  {"grp": 2, "text": "SQL++ was formerly known as N1QL."},
+  {"grp": 1, "text": "Couchbase is the operational platform for AI."},
+  {"grp": 2, "text": "The sky is blue."}
+])
+SELECT d.grp, d.text,
+AI_RERANK(d.text,
+  {
+    "uri": "http://host.docker.internal:7997/rerank"
+  },
+  "What is Couchbase?")
+  OVER(PARTITION BY d.grp) AS score
+FROM data AS d;
+----
+
+.Results
+[source,json]
+----
+[
+    {
+        "grp": 1,
+        "text": "Paris is in France.",
+        "score": 0.00003735054997378029
+    },
+    {
+        "grp": 1,
+        "text": "Couchbase is the operational platform for AI.",
+        "score": 0.9994944334030151
+    },
+    {
+        "grp": 2,
+        "text": "SQL++ was formerly known as N1QL.",
+        "score": 0.00024807584122754633
+    },
+    {
+        "grp": 2,
+        "text": "The sky is blue.",
+        "score": 0.00003738358282134868
+    }
+]
+----
+====
+
+For more examples, showing how to use an external or hosted model to rerank the results of a vector query, see xref:vector-index:external-reranking.adoc[].
+
 [[fn-window-cume-dist,CUME_DIST()]]
 == CUME_DIST()
 
 === Description
-Returns the percentile rank of the current object as part of the cumulative distribution -- that is, the number of objects ranked lower than or equal to the current object, including the current object, divided by the total number of objects in the window partition.
+Returns the percentile rank of the current object as part of the cumulative distribution.
+The cumulative distribution is the number of objects ranked lower than or equal to the current object, including the current object, divided by the total number of objects in the window partition.
 
 === Syntax
 
@@ -239,7 +579,8 @@ LIMIT 7;
 == DENSE_RANK()
 
 === Description
-Returns the dense rank of the current object -- that is, the number of distinct objects preceding this object in the current window partition, plus one.
+Returns the dense rank of the current object.
+The dense rank is the number of distinct objects preceding this object in the current window partition, plus one.
 
 The objects are ordered by the {window-order-clause}[window order clause].
 If any objects are tied, they will have the same rank.
@@ -469,7 +810,7 @@ LIMIT 7;
 Refer also to {window-ex-3}[WINDOW Clause example 3] for a query showing this function used with the WINDOW clause.
 
 [[fn-window-lag,LAG()]]
-== LAG(`expr` {startsb}, `offset` {startsb}, `default` {endsb} {endsb} )
+== LAG(`expr` [,{nbsp}``offset`` [,{nbsp}``default``{nbsp}]{nbsp}]{nbsp})
 
 === Description
 Returns the value of an object at a given offset prior to the current object position.
@@ -717,7 +1058,7 @@ This would mean that the longest distance would always be the same as the curren
 Refer also to {window-ex-3}[WINDOW Clause example 3] for a query showing this function used with the WINDOW clause.
 
 [[fn-window-lead,LEAD()]]
-== LEAD(`expr` {startsb}, `offset` {startsb}, `default` {endsb} {endsb} )
+== LEAD(`expr` [,{nbsp}``offset`` [,{nbsp}``default``{nbsp}]{nbsp}]{nbsp})
 
 === Description
 Returns the value of an object at a given offset ahead of the current object position.
@@ -1189,7 +1530,8 @@ LIMIT 16;
 == PERCENT_RANK()
 
 === Description
-Returns the percentile rank of the current object -- that is, the rank of the object minus one, divided by the total number of objects in the window partition minus one.
+Returns the percentile rank of the current object.
+The percentile rank is the rank of the object minus one, divided by the total number of objects in the window partition minus one.
 
 === Syntax
 
@@ -1277,7 +1619,8 @@ LIMIT 7;
 == RANK()
 
 === Description
-Returns the rank of the current object -- that is, the number of distinct objects preceding this object in the current window partition, plus one.
+Returns the rank of the current object.
+The rank is the number of distinct objects preceding this object in the current window partition, plus one.
 
 The objects are ordered by the {window-order-clause}[window order clause].
 If any objects are tied, they will have the same rank.
