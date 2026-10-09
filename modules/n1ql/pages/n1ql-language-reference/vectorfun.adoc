@@ -1109,7 +1109,7 @@ By default, `isScore` is set to `false` and the function treats the `pathScore` 
 For more information and examples using the vector sample data, see xref:vector-index:hybrid-vector-queries.adoc[].
 
 [[sparse_vector_distance,SPARSE_VECTOR_DISTANCE()]]
-== SPARSE_VECTOR_DISTANCE(`vec`, `queryvec` [,{nbsp}``nprobes`` [,{nbsp}``topNScan``]])
+== SPARSE_VECTOR_DISTANCE(`vec`, `queryvec` [,{nbsp}``nprobes`` [,{nbsp}``topNScan`` [,{nbsp}``topNTerms``]]])
 
 [.status]#Couchbase Server 8.5#
 
@@ -1139,6 +1139,17 @@ topNScan:: [Optional; can only be used when `nprobes` is specified]
 This option only applies if using a Hyperscale Vector index.
 A positive integer representing the number of records to scan.
 The default is `0`, meaning the function uses the indexer default.
+
+topNTerms:: [Optional; can only be used when `nprobes` and `topNScan` are specified]
+This option applies to both Hyperscale and Composite Vector Indexes.
+Caps how many query terms the index scores for with this query.
+The specified number of query terms with the largest absolute weight are kept.
+It lowers the cost of a scan; it does not change the 
+terms that are stored.
++
+Must be a non-negative integer.
+To disable query pruning for one query, pass a value larger than the number of terms in the query vector.
+If omitted or set to `0`, the function defaults to the indexer setting.
 
 === Return Value
 
