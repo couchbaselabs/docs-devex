@@ -21,7 +21,6 @@ The actual storage savings and search performance depend on vector dimensionalit
 
 * *Index Types:* Supported only on Hyperscale Vector Indexes (HVI) and Composite Vector Indexes (CVI).
 * *Vector Types:* Supported on dense vectors only (Sparse vectors are not supported).
-* *Metric:* Requires `"similarity": "hamming"` at the index definition level.
 
 == Quantization Comparison (SQ, PQ, and RaBitQ)
 
@@ -45,8 +44,7 @@ The actual storage savings and search performance depend on vector dimensionalit
 
 | *RaBitQ* (Binary)
 | Maximum compression (~32x at `nbit=1` vs. FP32; decreases as `nbit` increases).
-
-NOTE: For Search Vector Indexes, nbit is always 1 and cannot be configured to a different value.
+For Search Vector Indexes, nbit is always 1 and cannot be configured to a different value.
 | Lower first-phase recall at `nbit=1`; two-phase rescoring restores high recall.
 | Fast build time (at least 3 times faster than PQ)
 | Fast Hamming candidate search; rescoring adds slight query overhead.
@@ -120,13 +118,13 @@ Make sure your collection is populated with representative vector data before is
 === Migrating Existing Indexes to RaBitQ
 
 You cannot convert an existing vector index (such as an unquantized, SQ8, or PQ index) to use RaBitQ in place.
-Index creation defines quantization parameters, similarity metrics, and nbit values as immutable, and ALTER INDEX cannot modify them
+Index creation defines quantization parameters, similarity metrics, and nbit values as immutable, and ALTER INDEX cannot modify them.
 
 To migrate an existing production vector index to RaBitQ without application downtime, follow the create-and-swap workflow:
 
 . Create a new RaBitQ index using a temporary name:
 +
-[source,sql]
+[source,sqlpp]
 ----
 CREATE VECTOR INDEX `idx_items_vector_rabitq`
 ON `catalog`.`products`.`items`(`embedding` VECTOR)
@@ -142,7 +140,7 @@ WITH {
 . Monitor the build status until the index is fully online.
 Check the build progress in the Couchbase Web Console or by querying `system:indexes`:
 +
-[source,sql]
+[source,sqlpp]
 ----
 SELECT name, state, progress
 FROM system:indexes
@@ -152,11 +150,11 @@ WHERE name = "idx_items_vector_rabitq";
 Wait until `state` returns `"online"`.
 
 . Switch query traffic to the new index.
-Update application queries (if using explicit index hints (`USE INDEX`)) or allow the SQL++ query optimizer to evaluate and route requests to the new RaBitQ index.
+Update application queries (if using explicit index hints (`USE INDEX`) or allow the {sqlpp} query optimizer to evaluate and route requests to the new RaBitQ index.
 
 . Drop the old index once traffic has safely transitioned:
 +
-[source,sql]
+[source,sqlpp]
 ----
 DROP INDEX `catalog`.`products`.`items`.`idx_items_vector_legacy`;
 ----
