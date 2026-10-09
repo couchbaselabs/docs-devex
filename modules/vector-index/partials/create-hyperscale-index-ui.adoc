@@ -8,10 +8,10 @@ For information about valid index names, see xref:n1ql:n1ql-language-reference/c
 
 . In the *Bucket*, *Scope*, and *Collection* lists, select the bucket, scope, and collection where you have documents that contain a vector field.
 
-. Under *Vector Field*, in the *Field* list, select the vector field to use in your Hyperscale Vector index.
-
 . In the *Type* list, select *Dense* if the vector field contains dense embeddings, or *Sparse* if the vector field contains sparse term-weight pairs.
 For more information, see xref:vector-index:vectors-and-indexes-overview.adoc#dense-and-sparse-vector-indexes[Dense and Sparse Vector Indexes].
+
+. Under *Vector Field*, in the *Field* list, select the vector field to use in your Hyperscale Vector index.
 
 . [[filter-fields]](Optional) To add a field to use as a filter on the data included in your Hyperscale Vector index, click btn:[+ Add Filter Field].
 
@@ -27,6 +27,7 @@ For example, you could partition your Hyperscale Vector index based on the value
 If you choose *No*, you can still filter using a `WHERE` clause, but your index will not be partitioned based on field values.
 
 .. (Optional) Under *WHERE clause (Optional)*, enter a clause for the specific values that a document must contain in your filter field to be included in your index.
+When adding more than one filter field with a `WHERE` clause, select *AND* or *OR* from the drop-down list.
 +
 For example, you could filter your index so that only documents with `supplier = "HP"` or `brightness > 0.5` are included.
 
@@ -45,12 +46,12 @@ For more information about how to choose quantization on your index, see <<quant
 +
 Your embedding model determines this value, and Couchbase Server automatically configures it based on your chosen *Vector Field*.
 
-.. In the *Replicas* list, select the number of replicas you want to create for your index.
+.. In the *Replicas* field, enter the number of replicas you want to create for your index.
 +
 Replicas affect the query throughput, memory footprint, and fault tolerance for your Hyperscale Vector index.
 More replicas increase the required memory for your index, but can increase query throughput.
 
-.. [[training-list]](Optional) In the *Training List* field, enter or select the number of vectors to consider when searching for centroids in your data.
+.. [[training-list]](Optional) In the *Training List* field, enter the number of vectors to consider when searching for centroids in your data.
 +
 [TIP]
 ======
@@ -62,28 +63,33 @@ Increasing the value can improve recall, but increase build times.
 Decreasing the value can improve build times, but reduces recall.
 ======
 
-.. [[probes]](Optional) In the *Probes to scan* field, enter or select the number of centroids to check for similar vectors for each query.
+.. [[probes]](Optional) In the *Probes to scan* field, enter the number of centroids to check for similar vectors for each query.
 +
 The default value is *1*.
 A higher value increases search times, but also increases accuracy.
 You can also choose to override this value in your queries.
 
-.. (Optional, dense vector indexes only) In the *Number of centroids* field, enter or select the number of centroids to create in your index.
+.. (Optional, dense vector indexes only) In the *Number of centroids* field, enter the number of centroids to create in your index.
 +
 A larger value creates smaller centroids.
-By default, Couchbase sets the *Number of centroids* to the number of vectors in your data divided by 1000.
+For a dense Hyperscale Vector Index, the default number of centroids is the number of vectors in your data divided by 1000.
+For a sparse Hyperscale Vector Index, it's the number of vectors in your data divided by 10000.
 For more information about how to set this value, see <<number-of-centroids>>.
 
-.. (Dense vector indexes only) To store full vectors in the index, select *Persist Full Vector*.
+.. (Dense vector indexes only) To store full vectors in the index, make sure *Persist Full Vector* is selected.
+To opt out, clear this option.
 +
-This increases the storage required for your index but increases accuracy.
+Full vector persistence increases the storage required for your index but increases accuracy.
 
 +
 . (Optional) To confirm your Hyperscale Vector Index configuration:
 
 .. Click btn:[View Index Definition].
 .. To copy the {sqlpp} syntax to create your index in the Query Workbench, click btn:[Copy to Clipboard].
-.. Click close icon:times[] to close the Index Definition tab.
+.. Click close icon:times[] to close the Index Definition panel.
 
 +
 . Click btn:[Create Index] to create your index.
++
+The list of Vector Indexes is displayed.
+The index build continues in the background.

@@ -15,7 +15,7 @@
 :expression: xref:n1ql-language-reference/index.adoc
 :aggregatefun: xref:n1ql:n1ql-language-reference/aggregatefun.adoc
 :flatten-keys: xref:n1ql:n1ql-language-reference/metafun.adoc#flatten_keys
-:base64-decode: xref:n1ql:n1ql-language-reference/metafun.adoc#base64-decode
+:decode_vector: xref:n1ql:n1ql-language-reference/metafun.adoc#decode_vector
 :indexing-arrays: xref:n1ql-language-reference/indexing-arrays.adoc
 :index-partitioning: xref:n1ql-language-reference/index-partitioning.adoc
 :indexing-meta-info: xref:n1ql-language-reference/indexing-meta-info.adoc
@@ -242,8 +242,9 @@ expr::
 A field name or a scalar function over any field in the document.
 This cannot use constant expressions, aggregate functions, or sub-queries.
 +
-For a vector field, the expression may be the field name, or a {base64-decode}[BASE64_DECODE()] function on the vector field --
-this is necessary if the embedded vectors are stored as a base64-encoded string.
+For a vector field, the expression may be the field name.
+If the field contains dense vectors stored as a base64-encoded string, this must be a {decode_vector}[DECODE_VECTOR()] function on the vector field.
+If the field contains sparse term-weight pairs stored as a base64-encoded string, use the {decode_vector}[DECODE_VECTOR()] function with the `"sparse"` option set.
 
 array-expr::
 An array expression.
@@ -537,7 +538,7 @@ SQ:: For scalar quantization -- the number of bits used to store the centroid fo
 PQ:: For product quantization -- the number of subquantizers, and the number of bits in the centroid's index value.
 RaBitQ:: For randomized binary quantization -- the number of bits used to encode each vector dimension.
 
-For sparse vector indexes, the description is always `IVF`.
+For sparse vector indexes, the only available setting is `IVF`.
 
 For more information, see {algo-settings}[Quantization and Centroid Settings].
 

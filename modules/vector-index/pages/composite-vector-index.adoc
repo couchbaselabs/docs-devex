@@ -66,6 +66,12 @@ The sparse term-weight field must contain a sparse term-weight array, or a strin
 
 * A sparse term-weight array must be an array with two items: the first an array of integers representing token IDs, and the second an array of floating point numbers representing the corresponding term weights.
 The number of token IDs must be the same as the number of term weights.
+An empty or all-zero vector is invalid.
+
+* Token IDs must be integers from 0 to 65535, and each token ID must be unique.
+The order of token IDs does not matter.
+
+* Term weights must be non-negative.
 
 * Couchbase {product-name} does not create sparse term-weight pairs itself.
 You must use an external sparse-retrieval model to produce a set of term-weight pairs from your data and add them to your documents.
@@ -137,20 +143,18 @@ The `description` parameter is a string in the following format:
 +
 [source,ebnf]
 ----
-description ::= '"' 'IVF' number-of-centroids? ','
-                ( sq-settings | pq-settings | rabitq-settings ) '"'
+description ::= '"' 'IVF' number-of-centroids?
+              ( ',' ( sq-settings | pq-settings | rabitq-settings ) ) '"'
 ----
 
 +
-* For sparse vector indexes, set the description to `IVF`.
-
-* For dense vector indexes, specify the number of centroids to create in your index by adding an integer value after the `IVF` in the `description` parameter.
+* Specify the number of centroids to create in your index by adding an integer value after the `IVF` in the `description` parameter.
 +
 A larger value creates smaller centroids.
 If you do not provide a value after the `IVF` in your `description` parameter, Couchbase sets the number of centroids to the number of vectors in your data divided by 1000.
 For more information about how to set this value, see <<number-of-centroids>>.
 
-* For dense vector indexes, select the type of quantization to use by adding a comma followed by either `PQ` or `SQ` after the `IVF` setting in the `description` value.
+* For dense vector indexes, select the type of quantization to use by adding the `PQ`, `SQ`, or `RaBitQ` setting to the `description` parameter, separated from the `IVF` setting by a comma.
 +
 For more information about how to choose quantization on your index, see <<quantization-setting>>.
 
@@ -384,8 +388,7 @@ SELECT pass:q[<span contenteditable="plaintext-only">fields</span>]
                 pass:q[<span contenteditable="plaintext-only">queryvec</span>],
                 pass:q[<span contenteditable="plaintext-only">metric</span>],
                 pass:q[<span contenteditable="plaintext-only">nprobes</span>],
-                pass:q[<span contenteditable="plaintext-only">rerank</span>],
-                pass:q[<span contenteditable="plaintext-only">topNScan</span>]
+                pass:q[<span contenteditable="plaintext-only">rerank</span>]
         ) WHERE pass:q[<span contenteditable="plaintext-only">condition</span>]
         LIMIT pass:q[<span contenteditable="plaintext-only">number-of-results</span>];
 ----
@@ -403,8 +406,6 @@ By default, the vector search only probes a single centroid.
 rerank:: An optional Boolean that can only be used when `nprobes` is specified.
 It specifies whether the function should use full vectors to achieve better results.
 For more information, see xref:vector-index:hyperscale-reranking.adoc[].
-topNScan:: An optional positive integer that can only be used when `nprobes` and `rerank` are specified.
-If specified, it sets the number of records to scan.
 
 Using additional scalar fields in your search can improve your results and reduce the overhead of performing a vector search.
 For example, using a `WHERE` clause to filter on an additional scalar field reduces the number of vectors an index scan has to compare.
@@ -434,8 +435,7 @@ SELECT pass:q[<span contenteditable="plaintext-only">fields</span>]
        ORDER BY SPARSE_VECTOR_DISTANCE(
                 pass:q[<span contenteditable="plaintext-only">vec</span>],
                 pass:q[<span contenteditable="plaintext-only">queryvec</span>],
-                pass:q[<span contenteditable="plaintext-only">nprobes</span>],
-                pass:q[<span contenteditable="plaintext-only">topNScan</span>]
+                pass:q[<span contenteditable="plaintext-only">nprobes</span>]
         )  WHERE pass:q[<span contenteditable="plaintext-only">condition</span>]
         LIMIT pass:q[<span contenteditable="plaintext-only">number-of-results</span>];
 ----
@@ -448,8 +448,6 @@ queryvec:: The vector value to search for in the collection field.
 It can be sparse term-weight array or a base64 encoded string.
 nprobes:: An optional integer value that sets the number of centroids to probe for matching vectors.
 By default, the vector search only probes a single centroid.
-topNScan:: An optional positive integer that can only be used when `nprobes` is specified.
-If specified, it sets the number of records to scan.
 
 If necessary, use a `WHERE` clause to filter on an additional scalar field to reduce the number of vectors the index scan has to compare.
 
