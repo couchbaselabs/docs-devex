@@ -11,8 +11,9 @@
 
 RaBitQ targets large-scale vector search workloads.
 It prioritizes reduced memory overhead and faster candidate retrieval over the uncompressed accuracy of a full-precision (FP32) index.
-RaBitQ supports Hyperscale Vector Indexes (HVI), Composite Vector Indexes (CVI), and Search Vector Indexes.
+RaBitQ supports Hyperscale Vector Indexes (HVI) and Composite Vector Indexes (CVI).
 RaBitQ indexes use Hamming similarity for initial candidate search.
+NOTE: RaBitQ is also available for Search Vector Indexes. For more information, see xref:vector-search:vector-search-index-architecture.adoc#ivf-binary[IVF Indexes and Binary Quantization].
 
 At the default setting of `nbit=1`, RaBitQ can provide up to 32x compression compared with unquantized FP32 vectors.
 The actual storage savings and search performance depend on vector dimensionality, dataset distribution, index configuration, and whether full-precision vectors are retained for rescoring.
@@ -44,7 +45,6 @@ The actual storage savings and search performance depend on vector dimensionalit
 
 | *RaBitQ* (Binary)
 | Maximum compression (~32x at `nbit=1` vs. FP32; decreases as `nbit` increases).
-For Search Vector Indexes, nbit is always 1 and cannot be configured to a different value.
 | Lower first-phase recall at `nbit=1`; two-phase rescoring restores high recall.
 | Fast build time (at least 3 times faster than PQ)
 | Fast Hamming candidate search; rescoring adds slight query overhead.
@@ -53,8 +53,6 @@ For Search Vector Indexes, nbit is always 1 and cannot be configured to a differ
 
 NOTE: Compression, recall, build times, and query latency depend on dataset size, vector dimensionality, index configuration, and query workload.
 Always benchmark with representative data before choosing a quantization method in production.
-
-
 
 == Limitations and Scope
 
@@ -115,50 +113,6 @@ HYR0126: Insufficient training data to build index. A minimum of 1000 non-null v
 
 Make sure your collection is populated with representative vector data before creating the index.
 
-=== Migrating Existing Indexes to RaBitQ
-
-You cannot convert an existing vector index (such as an unquantized, SQ8, or PQ index) to use RaBitQ in place.
-Index creation defines quantization parameters, similarity metrics, and nbit values as immutable, and ALTER INDEX cannot modify them.
-
-To migrate an existing production vector index to RaBitQ without application downtime, follow the create-and-swap workflow:
-
-. Create a new RaBitQ index using a temporary name:
-+
-[source,sqlpp]
-----
-CREATE VECTOR INDEX `idx_items_vector_rabitq`
-ON `catalog`.`products`.`items`(`embedding` VECTOR)
-USING GSI
-WITH {
-  "dimension": 768,
-  "description": "IVF,RaBitQ",
-  "similarity": "hamming",
-  "persist_full_vector": true
-};
-----
-
-. Monitor the build status until the index is fully online.
-Check the build progress in the Couchbase Web Console or by querying `system:indexes`:
-+
-[source,sqlpp]
-----
-SELECT name, state, progress
-FROM system:indexes
-WHERE name = "idx_items_vector_rabitq";
-----
-+
-Wait until `state` returns `"online"`.
-
-. Switch query traffic to the new index.
-Update application queries (if using explicit index hints (`USE INDEX`) or allow the {sqlpp} query optimizer to evaluate and route requests to the new RaBitQ index.
-
-. Drop the old index once traffic has safely transitioned:
-+
-[source,sqlpp]
-----
-DROP INDEX `catalog`.`products`.`items`.`idx_items_vector_legacy`;
-----
-
 == Creating a Vector Index with RaBitQ
 
 You can create a Hyperscale Vector Index (HVI) or Composite Vector Index (CVI) that uses Randomized Binary Quantization (RaBitQ) to achieve high compression for large vector datasets.
@@ -210,78 +164,49 @@ WITH {
 ----
 ====
 
-.Search Vector Index with RaBitQ
-====
-The following curl command creates a Search Vector Index on a dense 768-dimensional vector field, optimized for IVF and RaBitQ:
+== Migrating Existing Indexes to RaBitQ
 
-[source,sh]
+You cannot convert an existing vector index (such as an unquantized, SQ8, or PQ index) to use RaBitQ in place.
+Index creation defines quantization parameters, similarity metrics, and nbit values as immutable, and ALTER INDEX cannot modify them.
+
+To migrate an existing production vector index to RaBitQ without application downtime, follow the create-and-swap workflow:
+
+. Create a new RaBitQ index using a temporary name:
++
+[source,sqlpp]
 ----
-curl -s -XPUT -H "Content-Type: application/json" \
-  -u ${CB_USERNAME}:${CB_PASSWORD} \
-  http://${CB_HOSTNAME}:8094/api/bucket/Cohere1M/scope/_default/index/TestVectorIndex \
-  -d '{
-  "name": "TestVectorIndex",
-  "type": "fulltext-index",
-  "params": {
-    "mapping": {
-      "type_field": "_type",
-      "scoring_model": "tf-idf",
-      "default_type": "_default",
-      "default_analyzer": "standard",
-      "default_datetime_parser": "dateTimeOptional",
-      "default_field": "_all",
-      "store_dynamic": false,
-      "index_dynamic": false,
-      "docvalues_dynamic": false,
-      "types": {
-        "_default._default": {
-          "enabled": true,
-          "dynamic": false,
-          "properties": {
-            "emb": {
-              "enabled": true,
-              "dynamic": false,
-              "fields": [
-                {
-                  "name": "emb",
-                  "type": "vector",
-                  "index": true,
-                  "dims": 768,
-                  "similarity": "dot_product",
-                  "vector_index_optimized_for": "ivf,rabitq"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "default_mapping": {
-        "dynamic": false,
-        "enabled": false
-      }
-    },
-    "store": {
-      "indexType": "scorch",
-      "kvStoreName": ""
-    },
-    "doc_config": {
-      "mode": "scope.collection.type_field",
-      "type_field": "type",
-      "docid_prefix_delim": "",
-      "docid_regexp": ""
-    }
-  },
-  "sourceType": "couchbase",
-  "sourceName": "Cohere1M",
-  "sourceParams": {},
-  "planParams": {
-    "maxPartitionsPerPIndex": 1024,
-    "indexPartitions": 1,
-    "numReplicas": 0
-  }
-}'
+CREATE VECTOR INDEX `idx_items_vector_rabitq`
+ON `catalog`.`products`.`items`(`embedding` VECTOR)
+USING GSI
+WITH {
+  "dimension": 768,
+  "description": "IVF,RaBitQ",
+  "similarity": "hamming",
+  "persist_full_vector": true
+};
 ----
-====
+
+. Monitor the build status until the index is fully online.
+Check the build progress in the Couchbase Web Console or by querying `system:indexes`:
++
+[source,sqlpp]
+----
+SELECT name, state, progress
+FROM system:indexes
+WHERE name = "idx_items_vector_rabitq";
+----
++
+Wait until `state` returns `"online"`.
+
+. Switch query traffic to the new index.
+Update application queries (if using explicit index hints (`USE INDEX`) or allow the {sqlpp} query optimizer to evaluate and route requests to the new RaBitQ index.
+
+. Drop the old index once traffic has safely transitioned:
++
+[source,sqlpp]
+----
+DROP INDEX `catalog`.`products`.`items`.`idx_items_vector_legacy`;
+----
 
 == Rescoring and Vector Retention Configuration
 
