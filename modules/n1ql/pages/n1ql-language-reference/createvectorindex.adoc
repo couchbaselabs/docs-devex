@@ -14,7 +14,7 @@
 :expression: xref:n1ql-language-reference/index.adoc
 :aggregatefun: xref:n1ql:n1ql-language-reference/aggregatefun.adoc
 :flatten-keys: xref:n1ql:n1ql-language-reference/metafun.adoc#flatten_keys
-:base64-decode: xref:n1ql:n1ql-language-reference/metafun.adoc#base64-decode
+:decode_vector: xref:n1ql:n1ql-language-reference/metafun.adoc#decode_vector
 :indexing-arrays: xref:n1ql-language-reference/indexing-arrays.adoc
 :index-partitioning: xref:n1ql-language-reference/index-partitioning.adoc
 :indexing-meta-info: xref:n1ql-language-reference/indexing-meta-info.adoc
@@ -117,8 +117,9 @@ The index key is a {sqlpp} {expression}[expression] referring to a vector field,
 
 [horizontal#index-key-args]
 expr::
-The name of a vector field in the document, or a {base64-decode}[BASE64_DECODE()] function on the vector field --
-this is necessary if the embedded vectors are stored as a base64-encoded string.
+The name of a vector field in the document.
+If the field contains dense vectors stored as a base64-encoded string, this must be a {decode_vector}[DECODE_VECTOR()] function on the vector field.
+If the field contains sparse term-weight pairs stored as a base64-encoded string, use the {decode_vector}[DECODE_VECTOR()] function with the `"sparse"` option set.
 
 array-expr::
 An array expression on a vector field in the document.
@@ -127,7 +128,7 @@ The {flatten-keys}[FLATTEN_KEYS()] function is supported, but more than one key 
 For details, see {indexing-arrays}[].
 
 [[include-vector]]
-==== VECTOR Keyword
+==== VECTOR Clause
 
 [source,ebnf]
 ----
@@ -137,6 +138,16 @@ include::partial$grammar/ddl.ebnf[tag=index-vector]
 image::n1ql-language-reference/index-vector.png["Syntax diagram: see source code listing", align=left]
 
 Indicates that the index key is a vector field.
+
+[horizontal]
+`VECTOR`::
+`DENSE VECTOR`::
+The vector field contains dense embeddings.
+
+`SPARSE VECTOR`::
+The vector field contains sparse term-weight pairs.
+
+Synonym: `VECTOR` is a synonym for `DENSE VECTOR`.
 
 [[index-include]]
 === INCLUDE Clause
@@ -212,6 +223,32 @@ Create a Hyperscale Vector index from the example RGB dataset that does not pers
 [source,sqlpp]
 ----
 include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-rgb-no-persist]
+----
+====
+
+[[ex-create-sparse-idx]]
+.Create a sparse Hyperscale Vector index
+====
+For this example, the path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a sparse Hyperscale Vector index for the field named `sparse_vector`.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-sparse-idx]
+----
+====
+
+[[ex-create-sparse-scalar]]
+.Create a sparse Hyperscale Vector index with included scalar values
+====
+For this example, the path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+Create a sparse Hyperscale Vector index for the field named `sparse_vector`, including the scalar `brightness` field.
+
+[source,sqlpp]
+----
+include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=create-sparse-scalar]
 ----
 ====
 

@@ -1,36 +1,31 @@
 [#algo_settings]
-=== Quantization and Centroid Settings
+== Quantization and Centroid Settings
 
 When creating an index that includes a vector field, you choose settings that affect how the index processes vectors.
-The parameter named `description` is the primary setting that controls the quantization and the number of centroids Couchbase {product-name} to create the index.
-Using it, you control how the index subdivides the dataset to improve performance and how it quantizes vectors to reduce memory and processing requirements.
-
-The `description` parameter is a string in the following format:
-
-[source,ebnf]
-----
-description ::= '"' 'IVF' number-of-centroids? ',' ('SQ' sq-settings | 'PQ' pq-settings) '"'
-----
+The number of centroids controls how the index subdivides the dataset to improve performance, and the quantization settings specify how the index quantizes vectors to reduce memory and processing requirements.
 
 The following sections describe the settings for centroids and quantization.
 
-==== Number of Centroids
+=== Number of Centroids
 
-{index-name} uses several algorithms to organize its data to improve its performance.
+{index-name-plural} use several algorithms to organize their data and improve their performance.
 One of these algorithms, xref:vector-index:vectors-and-indexes-overview.adoc#IVF[Inverted File (IVF)], has a setting you can adjust to control how it subdivides the dataset.
-The other algorithms that {index-name} uses do not have settings you can adjust.
+The other algorithms that {index-name-plural} use do not have settings you can adjust.
 
 The key setting for IVF is the number of centroids it allocates for the index.
 This setting controls how large the centroids are.
 Larger centroids have more vectors associated with them.
 
-You can have Couchbase {product-name} choose a number of centroids for you by not providing a value after the `IVF` in your `description` parameter.
-It sets the number of centroids to the number of vectors in the dataset divided by 1000.
-
-You can manually set the number of centroids for the index by adding an integer value after the `IVF` in the `description` parameter.
+You can manually set the number of centroids for the index.
 The number of centroids you set manually must be less than the number of vectors in the dataset.
+The minimum value is 1.
+
+If you do not set the number of centroids manually, Couchbase {product-name} sets the number of centroids as follows:
 
 ifeval::['{index-name}' == 'Composite Vector index']
+* For a dense {index-name}: the number of vectors in the dataset divided by 1000.
+* For a sparse {index-name}: the number of vectors in the dataset divided by 500.
+
 The number of centroids affects the performance of your {index-name} index in two ways:
 
 * If the index has fewer centroids, each centroid is larger (has more vectors associated with it).
@@ -44,6 +39,9 @@ This reduction makes search faster by limiting the number of vector comparisons 
 endif::[]
 
 ifeval::['{index-name}' == 'Hyperscale Vector index']
+* For a dense {index-name}: the number of vectors in the dataset divided by 1000.
+* For a sparse {index-name}: the number of vectors in the dataset divided by 10000.
+
 {index-name-plural} perform better with larger centroids (fewer centroids in the index).
 They use algorithms to skip vectors that are far away from the search vector, making searches faster even with more vectors per centroid.
 Having fewer centroids can also speed up the index training process because Couchbase {product-name} has to identify fewer data clusters.
@@ -63,19 +61,28 @@ You may need to experiment with different numbers of centroids to find the best 
 
 See xref:vector-index:vector-index-best-practices.adoc#nlist[nList] for more guidance on choosing the number of centroids for the index.
 
-==== Quantization Setting
+=== Quantization Setting
 
-{index-name} always uses quantization to reduce the size of vectors stored in the index.
-You must choose whether the index uses xref:vector-index:vectors-and-indexes-overview.adoc#sq[Scalar Quantization (SQ)], xref:vector-index:vectors-and-indexes-overview.adoc#pq[Product Quantization (PQ)], or xref:vector-index:binary-quantization.adoc[RaBitQ binary quantization].
-See xref:vector-index:vector-index-best-practices.adoc#quantization[Quantization] for guidance on choosing the quantization method for the index.
-
-You select the quantization by adding a comma followed by either `PQ` or `SQ` to the `description` parameter after the IVF setting in the `description` value.
+Dense {index-name-plural} always use xref:vector-index:vectors-and-indexes-overview.adoc#quantization[quantization] to reduce the size of vectors stored in the index.
+For dense {index-name-plural} only, you must choose whether the index uses 
+xref:vector-index:vectors-and-indexes-overview.adoc#sq[Scalar Quantization (SQ)],
+xref:vector-index:vectors-and-indexes-overview.adoc#pq[Product Quantization (PQ)], or
+xref:vector-index:binary-quantization.adoc#pq[Randomized Binary Quantization (RaBitQ)].
+For guidance, see xref:vector-index:vectors-and-indexes-overview.adoc#choosing-a-quantization-method[Choosing a Quantization Method] and xref:vector-index:vector-index-best-practices.adoc#quantization[Tuning Index Creation: Quantization].
 
 Each quantization method has additional settings explained in the following sections.
 
-===== SQ Settings
+==== SQ Settings
 
 For SQ, you set the number of bits the SQ algorithm uses for the bin index value, or the number of bits it uses to store the centroid for each bin.
+
+The format for the SQ settings is:
+
+[source,ebnf]
+----
+sq-settings ::= 'SQ' number-of-bits
+----
+
 The values for SQ that Couchbase {product-name} supports are:
 
 [%autowidth]
@@ -101,7 +108,7 @@ The values for SQ that Couchbase {product-name} supports are:
 See xref:vector-index:vectors-and-indexes-overview.adoc#sq[Scalar Quantization] for more information about how SQ works.
 
 
-===== PQ Settings
+==== PQ Settings
 
 If you choose to use PQ in your index, you must set 2 values:
 
@@ -132,7 +139,7 @@ pq-settings ::= 'PQ' subquantizers 'x' number-of-bits
 For example, `PQ32x8` has PQ break the vector's dimensions into 32 subspaces, each of which has 256 centroids.
 See xref:vector-index:vectors-and-indexes-overview.adoc#pq[Product Quantization] for more information about how PQ works.
 
-===== RaBitQ Settings
+==== RaBitQ Settings
 
 RaBitQ (Randomized Binary Quantization) is a binary quantization method that encodes each vector dimension into a small number of bits.
 It provides the highest compression of any quantization method available for Hyperscale Vector indexes, at the cost of requiring a two-phase search to achieve high recall.
@@ -147,8 +154,7 @@ rabitq-settings ::= 'RaBitQ' nbit?
 Where `nbit` is an optional integer from `1` to `9` (default: `1`) that sets the number of bits used to encode each vector dimension.
 For example, `RaBitQ4` uses 4 bits per dimension.
 
-You must also set `"similarity": "hamming"` when using RaBitQ.
-No other similarity metric is supported with this quantization method.
+When using RaBitQ, you can set the similarity metric to Cosine, L2, or Dot product.
 
 [cols="1,3",options="header"]
 |===
@@ -167,17 +173,17 @@ Rescoring is recommended.
 
 Higher `nbit` values improve first-phase recall at the cost of reduced compression.
 
-Constraints::
+===== Constraints
+
 * RaBitQ is only available for Hyperscale Vector Indexes and Composite Vector Indexes with the Dense vector type.
-* You must set `"similarity": "hamming"` when using RaBitQ.
-Cosine, L2, and Dot Product metrics are not supported at the index level.
+* When using RaBitQ, you can set the similarity metric to Cosine, L2, or Dot product.
 * Your dataset must contain at least 1,000 non-null vectors before creating a RaBitQ index.
 
 ===== Two-Phase Search and Rescoring
 
 RaBitQ uses a two-phase search process to balance speed and accuracy:
 
-1. *Phase 1 (coarse search)*: Couchbase {product-name} uses Hamming distance (bitwise comparison) to quickly identify candidate vectors from the binary-encoded index.
+1. *Phase 1 (coarse search)*: Couchbase {product-name} uses the binary-encoded index to quickly identify candidate vectors.
 2. *Phase 2 (rescoring)*: Couchbase {product-name} reranks the candidates using the original full-precision vectors to improve recall accuracy.
 
 By default, Couchbase {product-name} stores full-precision vectors alongside the binary-encoded index (`persist_full_vector: true`).
@@ -187,9 +193,9 @@ Disabling rescoring reduces disk usage but may significantly reduce recall accur
 
 See xref:vector-index:binary-quantization.adoc[Binary Quantization] for guidance on when to choose RaBitQ over SQ or PQ.
 
-==== Algorithm Settings Examples
+=== Algorithm Settings Examples
 
-The following table shows several `description` values along with an explanation.
+The following table shows several centroid and quantization settings, along with an explanation.
 
 [%autowidth]
 |===
@@ -208,11 +214,12 @@ This settings means each subspace has 256 centroids.
 | `IVF,RaBitQ`
 | Couchbase Server chooses the number of centroids.
 The index uses RaBitQ binary quantization at 1 bit per dimension (~32x compression vs FP32).
-Similarity must be set to `"hamming"` and rescoring is recommended.
+Rescoring is recommended.
 
 | `IVF1024,RaBitQ4`
 | IVF uses 1024 centroids.
-The index uses RaBitQ with 4 bits per dimension (~8x compression). Balanced compression and recall.
+The index uses RaBitQ with 4 bits per dimension (~8x compression).
+Balanced compression and recall.
 
 
 |===
