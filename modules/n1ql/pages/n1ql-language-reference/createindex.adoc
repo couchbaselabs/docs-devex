@@ -15,7 +15,7 @@
 :expression: xref:n1ql-language-reference/index.adoc
 :aggregatefun: xref:n1ql:n1ql-language-reference/aggregatefun.adoc
 :flatten-keys: xref:n1ql:n1ql-language-reference/metafun.adoc#flatten_keys
-:base64-decode: xref:n1ql:n1ql-language-reference/metafun.adoc#base64-decode
+:decode_vector: xref:n1ql:n1ql-language-reference/metafun.adoc#decode_vector
 :indexing-arrays: xref:n1ql-language-reference/indexing-arrays.adoc
 :index-partitioning: xref:n1ql-language-reference/index-partitioning.adoc
 :indexing-meta-info: xref:n1ql-language-reference/indexing-meta-info.adoc
@@ -242,8 +242,9 @@ expr::
 A field name or a scalar function over any field in the document.
 This cannot use constant expressions, aggregate functions, or sub-queries.
 +
-For a vector field, the expression may be the field name, or a {base64-decode}[BASE64_DECODE()] function on the vector field --
-this is necessary if the embedded vectors are stored as a base64-encoded string.
+For a vector field, the expression may be the field name.
+If the field contains dense vectors stored as a base64-encoded string, this must be a {decode_vector}[DECODE_VECTOR()] function on the vector field.
+If the field contains sparse term-weight pairs stored as a base64-encoded string, use the {decode_vector}[DECODE_VECTOR()] function with the `"sparse"` option set.
 
 array-expr::
 An array expression.
@@ -279,7 +280,7 @@ See <<index-order>>.
 include-missing:: (Optional) If the leading index key is a non-vector field, it may also include the `INCLUDE MISSING` clause.
 See <<include-missing>>.
 
-include-vector:: (Optional) In a Composite Vector index, one index key must include the `VECTOR` keyword.
+include-vector:: (Optional) In a Composite Vector index, one index key must include the `VECTOR` clause.
 See <<include-vector>>.
 
 [[index-order]]
@@ -331,7 +332,7 @@ The `INCLUDE MISSING` clause can only be applied to the leading index key for no
 The `INCLUDE MISSING` clause may be included before or after the `ASC` or `DESC` keyword.
 
 [[include-vector]]
-===== VECTOR Keyword
+===== VECTOR Clause
 
 [source,ebnf]
 ----
@@ -341,6 +342,18 @@ include::partial$grammar/ddl.ebnf[tag=index-vector]
 image::n1ql-language-reference/index-vector.png["Syntax diagram: see source code listing", align=left]
 
 Indicates that the index key is a vector field.
+
+[horizontal]
+`VECTOR`::
+`DENSE VECTOR`::
+The vector field contains dense embeddings.
+
+`SPARSE VECTOR`::
+The vector field contains sparse term-weight pairs.
+
+Synonym: `VECTOR` is a synonym for `DENSE VECTOR`.
+
+For more information, see xref:vector-index:vectors-and-indexes-overview.adoc#dense-and-sparse-vector-indexes[Dense and Sparse Vector Indexes].
 
 //tag::index-partition[]
 [[index-partition]]
@@ -488,6 +501,8 @@ Composite Vector indexes support the following additional options.
 __required__
 | The number of dimensions in the vector.
 The embedded model you use to embed the vectors determines the number of dimensions in the vector.
+
+This option only applies to dense vector indexes.
 |Integer
 
 |**similarity** +
@@ -500,11 +515,13 @@ Couchbase {product-name} uses the following strings to represent the distance me
 COSINE:: xref:vector-index:vectors-and-indexes-overview.adoc#cosine[Cosine Similarity]
 DOT:: xref:vector-index:vectors-and-indexes-overview.adoc#dot[Dot Product]
 L2::
-EUCLIDEAN:: xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]  
+EUCLIDEAN:: xref:vector-index:vectors-and-indexes-overview.adoc#euclidean[Euclidean Distance]
 L2_SQUARED::
 EUCLIDEAN_SQUARED:: xref:vector-index:vectors-and-indexes-overview.adoc#euclidean-squared[Euclidean Squared Distance]
 
 For the greatest accuracy, use the distance metric you plan to use to query the data.
+
+For sparse vector indexes, the distance metric is always `DOT`.
 
 **Default:** `L2_SQUARED`
 |String
@@ -512,17 +529,20 @@ For the greatest accuracy, use the distance metric you plan to use to query the 
 |**description** +
 __optional__
 | The settings for the quantization and index algorithms.
-The string is made up of the following settings:
+The string can be made up of the following settings:
 
 [horizontal.compact]
 IVF:: The number of centroids allocated for the index.
 SQ:: For scalar quantization -- the number of bits used to store the centroid for each bin.
 PQ:: For product quantization -- the number of subquantizers, and the number of bits in the centroid's index value.
+RaBitQ:: For randomized binary quantization -- the number of bits used to encode each vector dimension.
+
+For sparse vector indexes, the only available setting is `IVF`.
 
 For more information, see {algo-settings}[Quantization and Centroid Settings].
 
 [%hardbreaks]
-**Pattern:** `^IVF[0-9]*,(SQ[468]&vert;PQ[0-9]+x[0-9]+)$`
+**Pattern:** `^IVF([1-9][0-9]*)?(,(SQ[468]&vert;PQ[0-9]+x[0-9]+&vert;RaBitQ[1-9]?))$`
 **Default:** `IVF,SQ8`
 |String
 
@@ -531,6 +551,32 @@ __optional__
 | The number of cells to search for each scan.
 
 **Default:** `1`
+|Integer
+
+|**sparse_max_terms** +
+__optional__
+| Caps how many terms are stored for each document vector in this index.
+The indexer keeps the specified number of terms with the largest absolute weight.
+
+A larger cap raises memory, disk, build time and rebalance transfer size roughly in proportion to the stored term count; a smaller cap lowers recall against the full vectors.
+
+Must be a positive integer.
+When omitted, the index uses the indexer setting.
+
+This option only applies to sparse vector indexes.
+
+**Minimum:** `1`
+|Integer
+
+|**sparsejl_dim** +
+__optional__
+| Enables you to override the dimension for the Sparse Johnson-Lindenstrauss (SparseJL) transform.
+
+Increasing this dimension generally enhances search accuracy, but requires more compute resources and storage space.
+
+This option only applies to sparse vector indexes.
+
+**Default:** `128`
 |Integer
 
 |**train_list** +

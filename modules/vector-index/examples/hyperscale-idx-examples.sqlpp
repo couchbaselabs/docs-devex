@@ -18,6 +18,23 @@ FROM `vector-sample`.`color`.`rgb` AS d
 WHERE d.id = "#87CEEB";
 /* end::rgb-entry[] */
 
+/* tag::sparse-vocabulary[] */
+SELECT id, token
+FROM `vector-sample`.color.vocabulary
+ORDER BY id
+LIMIT 6;
+/* end::sparse-vocabulary[] */
+
+/* tag::sparse-entry[] */
+SELECT
+  s.id,
+  s.color,
+  s.brightness,
+  s.description,
+  s.sparse_vector
+FROM `vector-sample`.color.`rgb-sparse` AS s
+WHERE s.id = "#87CEEB";
+/* end::sparse-entry[] */
 
 /* tag::query-rgb-questions[] */
 SELECT 
@@ -237,3 +254,57 @@ ON  `demo`.`squad`.`context`(`vector` VECTOR)
                "description":"IVF,SQ8", 
                "train_list":15000};
 /* end::train-list[] */
+
+/* tag::create-sparse-idx[] */
+CREATE VECTOR INDEX `color_sparse_hyperscale`
+ON `vector-sample`.color.`rgb-sparse`(`sparse_vector` SPARSE VECTOR)
+WITH { "description": "IVF",
+       "similarity": "dot",
+       "num_replica": 0 }
+/* end::create-sparse-idx[] */
+
+/* tag::create-sparse-scalar[] */
+CREATE VECTOR INDEX `color_sparse_hyperscale_brightness`
+ON `vector-sample`.color.`rgb-sparse`(`sparse_vector` SPARSE VECTOR)
+INCLUDE (`brightness`)
+WITH { "description": "IVF",
+       "similarity": "dot",
+       "num_replica": 0 }
+/* end::create-sparse-scalar[] */
+
+/* tag::sparse-query-single[] */
+WITH query_term_weight AS ([
+  (
+    SELECT RAW id
+    FROM `vector-sample`.color.`vocabulary`
+    WHERE token = "brown"
+  ),
+  [1.0]
+]),
+colors AS (
+  SELECT b.color
+  FROM `vector-sample`.color.`rgb-sparse` AS b
+  ORDER BY SPARSE_VECTOR_DISTANCE(b.sparse_vector, query_term_weight)
+  LIMIT 10)
+SELECT RAW colors;
+/* end::sparse-query-single[] */
+
+/* tag::sparse-query-multiple[] */
+WITH query_term_weights AS ([
+  ARRAY_FLATTEN(
+    ARRAY (
+      SELECT RAW id
+      FROM `vector-sample`.color.`vocabulary`
+      WHERE token = v
+    ) FOR v IN ["light", "sea", "green"] END,
+  1),
+  [1.0, 1.0, 1.0]
+]),
+colors AS (
+  SELECT b.color
+  FROM `vector-sample`.color.`rgb-sparse` AS b
+  ORDER BY SPARSE_VECTOR_DISTANCE(b.sparse_vector, query_term_weights)
+  LIMIT 10 )
+SELECT RAW colors;
+/* end::sparse-query-multiple[] */
+
