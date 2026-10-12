@@ -83,9 +83,7 @@ If your database is running Couchbase Server version 7.6.2 and later, you can al
 If you only need to use the capabilities of a Full Text Search without any {sqlpp} features, consider making use of the Search Service directly, through the user interface, the REST API, or an SDK.
 
 [[search,SEARCH()]]
-== SEARCH(`identifier`, `query`[, `options`])
-
-=== Description
+== SEARCH
 
 This function enables you to use a Full Text Search to filter a result set, or as a join predicate.
 It is only allowed in the xref:n1ql-language-reference/where.adoc[WHERE] clause or the xref:n1ql-language-reference/join.adoc[ON] clause.
@@ -101,17 +99,23 @@ This process may be slower than using a suitable Search index.
 --
 
 If there is no suitable Search index, but you want to return XATTRs data from your documents in another part of your {sqlpp} query, you must use the xref:n1ql-language-reference/metafun.adoc#meta[META function] to select the XATTRs field you want to return.
-{sqlpp} cannot return XATTRs data without a specific field name. 
+{sqlpp} cannot return XATTRs data without a specific field name.
 
-If you do have a Search index available for your query that includes XATTRs data, and you still want to use that data outside of the SEARCH function, you must use the <<search_meta,SEARCH_META() function>> to select the XATTRs field. 
-You must also include the xref:search:search-request-params.adoc#fields[fields property] with the name of the XATTRs field in your Search request. 
+If you do have a Search index available for your query that includes XATTRs data, and you still want to use that data outside of the SEARCH function, you must use the <<search_meta,SEARCH_META() function>> to select the XATTRs field.
+You must also include the xref:search:search-request-params.adoc#fields[fields property] with the name of the XATTRs field in your Search request.
 
-NOTE: From Couchbase Server 7.6 and later, when you use the SEARCH function, you do not need to use the xref:search:default-analyzers-reference.adoc#keyword[keyword analyzer] in your Search index to run a non-analytic query. 
-You also do not need to match the analyzer in a query to the analyzer in the Search index for an analytic query. 
+NOTE: From Couchbase Server 7.6 and later, when you use the SEARCH function, you do not need to use the xref:search:default-analyzers-reference.adoc#keyword[keyword analyzer] in your Search index to run a non-analytic query.
+You also do not need to match the analyzer in a query to the analyzer in the Search index for an analytic query.
 For more information about how to set the analyzer for a Search index, see xref:search:set-advanced-settings.adoc[] or the xref:search:search-index-params.adoc#mapping[Mapping Object].
 
+=== Syntax
+
+....
+SEARCH(`identifier`, `query`[, `options`])
+....
+
 [#search-function-arguments-section]
-=== Arguments
+==== Arguments
 
 identifier::
 [Required] An expression in the form `__keyspaceAlias__[.__path__]`, consisting of the keyspace or keyspace alias in which to search, followed by the path to a field in which to search, using dot notation.
@@ -589,9 +593,7 @@ WHERE SEARCH(T,
 
 
 [[search_meta,SEARCH_META()]]
-== SEARCH_META([`identifier`])
-
-=== Description
+== SEARCH_META
 
 This function is intended to be used in a query which contains a <<search>> function.
 It returns the metadata given by the Search engine for each document found by the <<search>> function.
@@ -599,7 +601,13 @@ If there is no <<search>> function in the query, or if a Search index was not us
 
 If you want to return XATTRs data from a Search index in a <<search,>> function, you must use the `SEARCH_META()` function to select the XATTRs field you want.
 
-=== Arguments
+=== Syntax
+
+....
+SEARCH_META([`identifier`])
+....
+
+==== Arguments
 
 identifier::
 [Optional] An expression in the form `{startsb}__keyspaceAlias__.{endsb}__outname__`, consisting of the keyspace or keyspace alias in which the Full Text Search operation was performed, followed by the outname of the Full Text Search operation, using dot notation.
@@ -718,9 +726,7 @@ This query only uses one data source, so there is no need to specify the keyspac
 ====
 
 [[search_score,SEARCH_SCORE()]]
-== SEARCH_SCORE([`identifier`])
-
-=== Description
+== SEARCH_SCORE
 
 This function is intended to be used in a query which contains a <<search>> function.
 It returns the score given by the Search engine for each document found by the <<search>> function.
@@ -728,7 +734,13 @@ If there is no <<search>> function in the query, or if a Search index was not us
 
 This function is the same as <<search_meta,SEARCH_META().score>>.
 
-=== Arguments
+=== Syntax
+
+....
+SEARCH_SCORE([`identifier`])
+....
+
+==== Arguments
 
 identifier::
 [Optional] An expression in the form `{startsb}__keyspaceAlias__.{endsb}__outname__`, consisting of the keyspace or keyspace alias in which the Full Text Search operation was performed, followed by the outname of the Full Text Search operation, using dot notation.
