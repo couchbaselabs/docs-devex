@@ -15,11 +15,7 @@ Vector functions include similarity functions to find the distance between two v
 For more information about vectors and vector indexes, see xref:vector-index:vectors-and-indexes-overview.adoc[].
 
 [[approx_vector_distance,APPROX_VECTOR_DISTANCE()]]
-== APPROX_VECTOR_DISTANCE(`vec`, `queryvec`, `metric` [,{nbsp}``nprobes`` [,{nbsp}``rerank`` [,{nbsp}``topNScan``]]])
-
-This function has an alias <<aliases,ANN_DISTANCE()>>.
-
-=== Description
+== APPROX_VECTOR_DISTANCE
 
 Finds the approximate distance between a provided vector and the content of a specified field that contains vector embeddings.
 
@@ -37,7 +33,15 @@ If a query contains this function, and all of the following are true:
 This function is faster, but less precise than <<vector_distance>>.
 You should use this function in your production queries.
 
-=== Arguments
+This function has an alias <<aliases,ANN_DISTANCE()>>.
+
+=== Syntax
+
+....
+APPROX_VECTOR_DISTANCE(vec, queryvec, metric [, nprobes [, rerank [, topNScan]]])
+....
+
+==== Arguments
 
 vec:: The name of a field that contains vector embeddings.
 The field must contain an array of floating point numbers, or a base64 encoded string.
@@ -288,15 +292,19 @@ For more information and examples, see xref:vector-index:hyperscale-reranking.ad
 ====
 
 [[decode_vector,DECODE_VECTOR()]]
-== DECODE_VECTOR(`vector` [,{nbsp}``byte_order``])
-
-This function has an alias <<aliases,VECTOR_DECODE()>>.
-
-=== Description
+== DECODE_VECTOR
 
 Reverses the encoding done by the <<encode_vector>> function.
 
-=== Arguments
+This function has an alias <<aliases,VECTOR_DECODE()>>.
+
+=== Syntax
+
+....
+DECODE_VECTOR(vector [, byte_order])
+....
+
+==== Arguments
 
 vector:: String, or any {sqlpp} expression that evaluates to a string, representing the base64 encoding of a vector value.
 
@@ -346,15 +354,19 @@ SELECT DECODE_VECTOR("AACAPwAAAEAAAEBAAACAQA==") AS little_endian,
 ====
 
 [[encode_vector,ENCODE_VECTOR()]]
-== ENCODE_VECTOR(`vector` [,{nbsp}``byte_order``])
-
-This function has an alias <<aliases,VECTOR_ENCODE()>>.
-
-=== Description
+== ENCODE_VECTOR
 
 Returns the https://en.wikipedia.org/wiki/Base64[base64] encoding of a vector value.
 
-=== Arguments
+This function has an alias <<aliases,VECTOR_ENCODE()>>.
+
+=== Syntax
+
+....
+ENCODE_VECTOR(vector [, byte_order])
+....
+
+==== Arguments
 
 vector:: An array of floating point numbers, or any {sqlpp} expression that evaluates to an array of floating point numbers.
 
@@ -395,16 +407,20 @@ SELECT ENCODE_VECTOR([1, 2, 3, 4]) AS little_endian,
 
 // tag::isvector[]
 [[isvector,ISVECTOR()]]
-== ISVECTOR(`vector`, `dimension`, `format`)
+== ISVECTOR
 
 // This function has no alias
-
-=== Description
 
 Checks if the supplied expression is an array of floating point numbers with the specified number of dimensions.
 This can be used to determine whether a field contains a vector value.
 
-=== Arguments
+=== Syntax
+
+....
+ISVECTOR(vector, dimension, format)
+....
+
+==== Arguments
 
 vector::  An array of floating point numbers, or any {sqlpp} expression that evaluates to an array of floating point numbers.
 
@@ -475,11 +491,7 @@ The results show that the `description` field is not a vector field. The `colorv
 // end::isvector[]
 
 [[normalize_vector,NORMALIZE_VECTOR()]]
-== NORMALIZE_VECTOR(`vector`)
-
-This function has aliases <<aliases,NORMALISE_VECTOR()>>, <<aliases,VECTOR_NORMALISE()>>, and <<aliases,VECTOR_NORMALIZE()>>.
-
-=== Description
+== NORMALIZE_VECTOR
 
 Normalizes a vector.
 This function changes the magnitude of a vector, but not its direction, so that the vector has unit length.
@@ -500,7 +512,15 @@ To find the normalized vector, stem:[hat x], the function then divides each comp
 hat x = (x_1/|x|, x_2/|x|, ... x_n/|x|)
 ++++
 
-=== Arguments
+This function has aliases <<aliases,NORMALISE_VECTOR()>>, <<aliases,VECTOR_NORMALISE()>>, and <<aliases,VECTOR_NORMALIZE()>>.
+
+=== Syntax
+
+....
+NORMALIZE_VECTOR(vector)
+....
+
+==== Arguments
 
 vector:: An array of floating point numbers, or any {sqlpp} expression that evaluates to an array of floating point numbers.
 
@@ -536,11 +556,7 @@ SELECT NORMALIZE_VECTOR([1, 2, 3, 4]) AS normalized;
 ====
 
 [[vector_distance,VECTOR_DISTANCE()]]
-== VECTOR_DISTANCE(`vec`, `queryvec`, `metric`)
-
-This function has an alias <<aliases,KNN_DISTANCE()>>.
-
-=== Description
+== VECTOR_DISTANCE
 
 Finds the exact distance between a provided vector and the content of a specified field that contains vector embeddings.
 
@@ -550,7 +566,15 @@ Instead, it performs a brute-force search for similar vectors.
 This function is slower, but more precise than <<approx_vector_distance>>.
 You should use this function to check the accuracy of your production queries, and adjust the index and query settings to improve the recall accuracy.
 
-=== Arguments
+This function has an alias <<aliases,KNN_DISTANCE()>>.
+
+=== Syntax
+
+....
+VECTOR_DISTANCE(vec, queryvec, metric)
+....
+
+==== Arguments
 
 vec:: The name of a field that contains vector embeddings.
 The field must contain an array of floating point numbers, or a base64 encoded string.
@@ -671,4 +695,3 @@ Some vector functions have aliases.
 * `VECTOR_ENCODE()` is an alias for <<encode_vector>>.
 * `VECTOR_NORMALISE()` is an alias for <<normalize_vector>>.
 * `VECTOR_NORMALIZE()` is an alias for <<normalize_vector>>.
-
