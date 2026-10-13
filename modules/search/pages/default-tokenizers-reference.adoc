@@ -12,19 +12,108 @@ Choose a default tokenizer or xref:create-custom-tokenizer.adoc[create your own]
 
 The following default tokenizers are available:
 
-|====
-|Tokenizer |Description 
+* <<hebrew,`hebrew`>>
+* <<letter,`letter`>>
+* <<single,`single`>>
+* <<unicode,`unicode`>>
+* <<web,`web`>>
+* <<whitespace,`whitespace`>>
 
-|hebrew |Separates an input string into tokens that contain only Hebrew alphabet characters. Punctuation marks and numbers are excluded.
+[#hebrew]
+== Hebrew Tokenizer 
 
-|letter |Separates an input string into tokens that contain only Latin alphabet characters. Punctuation marks and numbers are excluded.
+The `hebrew` tokenizer separates an input string into tokens that contain only Hebrew alphabet characters.
+Punctuation marks and numbers are excluded.
 
-|single |Creates a single token from the input string. Special characters and whitespace are preserved.
+[#letter]
+== Letter Tokenizer
 
-|[[unicode]]unicode |Separates input strings into tokens based on http://www.unicode.org/reports/tr29/#Word_Boundaries[Unicode Word Boundaries^]. 
+The `letter` tokenizer separates an input string into tokens that contain only Latin alphabet characters.
+Punctuation marks and numbers are excluded.
 
-|web |Creates tokens from an input string that match email address, URL, Twitter username, and hashtag patterns.
+For example, the `letter` tokenizer turns an input of `aaa:100000@190800` into 1 token: `aaa`.
 
-|[[whitespace]]whitespace |Separates an input string into tokens based on the location of whitespace characters.
+[#single]
+== Single Tokenizer
 
-|====
+The `single` tokenizer creates a single token from the input string.
+Special characters and whitespace are preserved.
+
+For example, the `single` tokenizer turns an input of `aaa:100000@190800` into 1 token: `aaa:100000@190800`.
+
+[#unicode]
+== Unicode Tokenizer
+
+The `unicode` tokenizer separates input strings into tokens based on http://www.unicode.org/reports/tr29/#Word_Boundaries[Unicode Word Boundaries^].
+
+The `unicode` tokenizer uses most punctuation and symbol characters as boundaries between tokens, and removes these characters from its output.
+Some characters separate tokens only when they appear between specific types of characters.
+For example, the `unicode` tokenizer turns an input of `aaa:100000@190800` into 3 tokens: `aaa`, `100000`, and `190800`.
+
+The following examples show how the `unicode` tokenizer handles some common characters:
+
+[cols="1,3,4"]
+|===
+|Character |Behavior |Example
+
+|`@`
+|Always separates tokens.
+|`user@190800` becomes `user` and `190800`.
+
+|`-`
+|Always separates tokens.
+|`ABC-123` becomes `ABC` and `123`.
+
+|`/`
+|Always separates tokens.
+|`orders/2024` becomes `orders` and `2024`.
+
+|`#`
+|Always separates tokens.
+|`item#42` becomes `item` and `42`.
+
+|`:`
+|Separates tokens, unless there is a letter on both sides of the `:` character.
+a|`aaa:100000` becomes `aaa` and `100000`.
+
+`aaa:bbb` stays as 1 token.
+
+|`.`
+|Separates tokens, unless there is a letter on both sides or a digit on both sides of the `.` character.
+|`example.com` stays as 1 token.
+
+|`,`
+|Separates tokens, unless there is a digit on both sides of the `,` character.
+|`1,000` stays as 1 token.
+
+|`_`
+|Never separates tokens.
+|`foo_bar` stays as 1 token.
+|===
+
+If you want to preserve the preceding characters in your tokens instead of removing them:
+
+* Use the <<single,`single` tokenizer>> to match the full input string.
+* Use the <<web,`web` tokenizer>> to keep email addresses and URLs as single tokens.
+* Use the <<whitespace,`whitespace` tokenizer>> to separate tokens only at whitespace characters.
+
+[#web]
+== Web Tokenizer
+
+The `web` tokenizer creates tokens from an input string that match email address, URL, Twitter username, and hashtag patterns.
+
+For example, the `web` tokenizer turns an input of `example@example.com` into a single token: `example@example.com`.
+
+[#whitespace]
+== Whitespace Tokenizer
+
+The `whitespace` tokenizer separates an input string into tokens based on the location of whitespace characters.
+
+For example, the `whitespace` tokenizer turns the input `Couchbase Server` into 2 tokens: `Couchbase` and `Server`.
+
+== See Also
+
+* xref:default-analyzers-reference.adoc[]
+* xref:default-character-filters-reference.adoc[]
+* xref:default-token-filters-reference.adoc[]
+* xref:default-wordlists-reference.adoc[]
