@@ -1,6 +1,7 @@
 curl -s -XPOST -H "Content-Type: application/json" \
-  - u ${CB_USERNAME}:${CB_PASSWORD} http://${CB_HOSTNAME}:8094/api/pindex/landmarks._default.landmark-index_2d7024c7058406b5_162cc76c/query \
-  - d '{
+  -u ${CB_USERNAME}:${CB_PASSWORD} \
+  http://${CB_HOSTNAME}:8094/api/pindex/landmarks._default.landmark-index_2d7024c7058406b5_162cc76c/query \
+  -d '{
         "query":{
             "match": "free",
             "field": "content"
