@@ -55,9 +55,9 @@ The default value depends on the size of the dataset:
 
 * If there are less than 10,000 vectors, Couchbase {product-name} samples all of the vectors.
 * If there are 10,000 or more vectors, Couchbase {product-name} samples the number of vectors divided by 10 or 10 times the number of centroids, whichever is larger.
-Couchbase {product-name} limits the trainlist to a maximum of 1 million vectors.
+Couchbase {product-name} limits the training list to a maximum of 1 million vectors.
 
-Tests show that increasing the `trainlist` improves QPS and reduces latency, but slightly increases memory usage for the index.
+Tests show that increasing the `train_list` improves QPS and reduces latency, but slightly increases memory usage for the index.
  
 *Recommendation:* if you find that increasing the `nList` does not improve your query performance, you can try increasing the `train_list` value.
 
@@ -67,6 +67,15 @@ The following example demonstrates how to set the `train_list` value when creati
 ----
 include::vector-index:example$hyperscale-idx-examples.sqlpp[tag=train-list]
 ----
+
+.Training list greater than the number of qualifying documents
+[IMPORTANT]
+====
+If you encounter an error in index training, stating that the training list is greater than the number of qualifying documents, drop the index and create it again without specifying `train_list`.
+
+As an alternative, to avoid this error you can try increasing the number of centroids, or decreasing `train_list` until the error stops occurring.
+This approach is not deterministic and is not recommended.
+====
 
 === Partitions
 
