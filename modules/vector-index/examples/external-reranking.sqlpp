@@ -1,0 +1,39 @@
+/* tag::hyperscale[] */
+WITH query AS (
+        SELECT question, couchbase_search_query.knn[0].vector
+        FROM `vector-sample`.color.`rgb-questions` 
+        WHERE meta().id = "#FFFFE0"),
+     ann_result AS (
+        SELECT b.color, b.description, b.id
+        FROM `vector-sample`.color.rgb AS b
+        ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, query[0].vector, "l2", 4)
+        LIMIT 3)
+SELECT d.id, d.description, d.color,
+AI_RERANK(d.description,
+  {"uri": "http://host.docker.internal:7997/rerank",
+   "cred_id": ""},
+  query[0].question)
+  OVER() AS score
+FROM ann_result AS d
+ORDER BY score DESC;
+/* end::hyperscale[] */
+
+/* tag::composite[] */
+WITH query AS (
+        SELECT question, couchbase_search_query.knn[0].vector
+        FROM `vector-sample`.color.`rgb-questions` 
+        WHERE meta().id = "#FFEFD5"),
+     ann_result AS (
+        SELECT b.color, b.description, b.id
+        FROM `vector-sample`.color.rgb AS b
+        ORDER BY APPROX_VECTOR_DISTANCE(b.embedding_vector_dot, query[0].vector, "DOT")
+        LIMIT 3)
+SELECT d.id, d.description, d.color,
+AI_RERANK(d.description,
+  {"uri": "http://host.docker.internal:7997/rerank",
+   "cred_id": ""},
+  query[0].question)
+  OVER() AS score
+FROM ann_result AS d
+ORDER BY score DESC;
+/* end::composite[] */

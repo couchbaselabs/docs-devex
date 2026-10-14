@@ -102,6 +102,48 @@ xref:search:simple-search-ui.adoc[Run a search with the {page-ui-name}] to view 
 
 For more information about how to configure a term facet in your Search query, see xref:search-request-params.adoc#facets[facets] or xref:search-request-params.adoc#facet-name[\{facet-name} Object].
 
+[#filter-term-facets]
+=== Filter a Term Facet
+
+[.status]#Couchbase Server 8.5#
+
+From Couchbase Server version 8.5 and later, you can filter the contents of the term facets collected for your documents during a search by configuring an additional filter.
+Using term facet filters can help with search-as-you-type style faceting, improving automatic suggestions for users in your application.
+
+A facet filter can be: 
+
+* A prefix filter (`term_prefix`)
+* A regular expression filter (`term_pattern`)
+
+If you add a filter to a term facet, the Search Service does not add a facet to your search results unless that facet passes your filter.
+Term facet filters do not affect document scoring.
+
+For example, you could configure a `term_prefix` in the facet on a `country` field, to only return facets that start with `united`:
+
+[source,json]
+----
+"facets": {
+    "country": {
+        "size": 5,
+        "field": "country",
+        "term_prefix": "united "
+    }
+}
+----
+
+You could also configure a `term_pattern` in the facet collected on an `email` field, to only return facets that contain an `.edu` domain:
+
+[source,json]
+----
+"facets": {
+    "email": {
+        "size": 5,
+        "field": "email",
+        "term_pattern": "@[\\w.-]+\\.edu$ "
+    }
+}
+----
+
 [#numeric-range-facet]
 == Numeric Range Facet
 
