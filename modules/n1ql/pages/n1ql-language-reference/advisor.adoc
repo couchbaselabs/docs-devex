@@ -21,23 +21,31 @@
 :completed-limit: xref:n1ql:n1ql-manage/query-settings.adoc#completed-limit
 
 {description}
-There are two main scenarios for using this function.
-One is to invoke the index advisor _immediately_ for a given query or set of queries; the other is to start a session in which every query of interest is collected for a set time period, then invoke the index advisor _asynchronously_ for that collection of queries when the session ends.
-Within these two scenarios, this function has several different usages.
-The operation and output of each usage depends on the function's single argument.
-For clarity, each usage is listed separately on this page.
+You can use this function in two main scenarios:
+
+* Immediate analysis: Run the index advisor immediately for a given query or set of queries.
+* Session-based analysis: Start a session that collects queries of interest over a specific time period. 
+When the session ends, invoke the index advisor asynchronously to analyze the collected queries.
+
+The ADVISOR function accepts a single argument. 
+The function's operation and output vary depending on the argument you provide. 
+The following sections detail each specific usage.
 
 [[advisor-string]]
-== ADVISOR(`string`)
-
-=== Description
+== ADVISOR(string)
 
 When used with a string argument, the function invokes the index advisor for a single {sqlpp} query.
 The index advisor works with {select}[SELECT], {update}[UPDATE], {delete}[DELETE], or {merge}[MERGE] queries.
 
-=== Arguments
+=== Syntax
 
-string::
+....
+ADVISOR(`str_value`)
+....
+
+==== Arguments
+
+str_value::
 A string, or an expression which resolves to a string, containing a single {sqlpp} query.
 
 === Return Value
@@ -129,20 +137,22 @@ include::example$functions/advisor-single.n1ql[]
 include::example$functions/advisor-single.jsonc[]
 ----
 
-Only one statement occurs in these results, because the function was called with a single query input.
-In this case, the index advisor identifies one index which is currently used by the query, and recommends one secondary index.
-No covering indexes are recommended.
+Only one statement occurs in these results, because the function was called with a single query input. In this case, the index advisor identifies one index which is currently used by the query, and recommends one secondary index. No covering indexes are recommended.
 ====
 
 [[advisor-array]]
-== ADVISOR(`array`)
-
-=== Description
+== ADVISOR(array)
 
 When used with an array argument, the function invokes the index advisor for multiple {sqlpp} queries.
 The index advisor works with {select}[SELECT], {update}[UPDATE], {delete}[DELETE], or {merge}[MERGE] queries.
 
-=== Arguments
+=== Syntax
+
+....
+ADVISOR(`array`)
+....
+
+==== Arguments
 
 array::
 An array of strings, or an expression which resolves to an array of strings, each of which contains a {sqlpp} query.
@@ -193,9 +203,7 @@ In this case, the index advisor recommends several covering indexes and secondar
 ====
 
 [[advisor-session-start]]
-== ADVISOR(`start_obj`)
-
-=== Description
+== ADVISOR(start_obj)
 
 When used with a `start_obj` object argument, the function can be used to start an index advisor session.
 As long as the session is running, any queries that meet the criteria you specify are collected for later analysis.
@@ -205,7 +213,13 @@ At the end of the duration, the index advisor analyzes any queries that have bee
 The session and any resulting index advice are retained in the _tasks cache_.
 You can then <<advisor-session-get,get the results>> for this session to see the index advice.
 
-=== Arguments
+=== Syntax
+
+....
+ADVISOR(`start_obj`)
+....
+
+==== Arguments
 
 start_obj::
 An object with the following properties:
@@ -269,14 +283,18 @@ include::example$functions/advisor-start.jsonc[]
 ====
 
 [[advisor-session-list]]
-== ADVISOR(`list_obj`)
-
-=== Description
+== ADVISOR(list_obj)
 
 When used with a `list_obj` object argument, the function can be used to list index advisor sessions.
 Each index advisor session is stored as a scheduled task in the {sys-tasks-cache}[system:tasks_cache] catalog.
 
-=== Arguments
+=== Syntax
+
+....
+ADVISOR(`list_obj`)
+....
+
+==== Arguments
 
 list_obj::
 An object with the following properties:
@@ -409,16 +427,20 @@ include::example$functions/advisor-list.jsonc[tags=completed;cancelled;ellipsis]
 ====
 
 [[advisor-session-stop]]
-== ADVISOR(`stop_obj`)
-
-=== Description
+== ADVISOR(stop_obj)
 
 When used with a `stop_obj` object argument, the function can be used to stop an index advisor session.
 In this case, the session is stopped, and the index advisor analyzes any queries that have been collected by this session so far.
 The session and any resulting index advice are retained in the tasks cache.
 You can then <<advisor-session-get,get the results>> for this session to see the index advice.
 
-=== Arguments
+=== Syntax
+
+....
+ADVISOR(`stop_obj`)
+....
+
+==== Arguments
 
 stop_obj::
 An object with the following properties:
@@ -451,14 +473,18 @@ include::example$functions/advisor-stop.jsonc[]
 ====
 
 [[advisor-session-abort]]
-== ADVISOR(`abort_obj`)
-
-=== Description
+== ADVISOR(abort_obj)
 
 When used with an `abort_obj` object argument, the function can be used to abort an index advisor session.
 In this case, the session is stopped, and the session is removed from the tasks cache.
 
-=== Arguments
+=== Syntax
+
+....
+ADVISOR(`abort_obj`)
+....
+
+==== Arguments
 
 abort_obj::
 An object with the following properties:
@@ -491,14 +517,18 @@ include::example$functions/advisor-abort.jsonc[]
 ====
 
 [[advisor-session-get]]
-== ADVISOR(`get_obj`)
-
-=== Description
+== ADVISOR(get_obj)
 
 When used with a `get_obj` object argument, the function can be used to get the results of a completed index advisor session.
 The index advisor is invoked for any collected {select}[SELECT], {update}[UPDATE], {delete}[DELETE], or {merge}[MERGE] queries.
 
-=== Arguments
+=== Syntax
+
+....
+ADVISOR(`get_obj`)
+....
+
+==== Arguments
 
 get_obj::
 An object with the following properties:
@@ -535,13 +565,17 @@ include::example$functions/advisor-get.jsonc[tags=current;covering;recommended;e
 ====
 
 [[advisor-session-purge]]
-== ADVISOR(`purge_obj`)
-
-=== Description
+== ADVISOR(purge_obj)
 
 When used with a `purge_obj` object argument, the function can be used to purge the results of a completed index advisor session from the tasks cache.
 
-=== Arguments
+=== Syntax
+
+....
+ADVISOR(`purge_obj`)
+....
+
+==== Arguments
 
 purge_obj::
 An object with the following properties:
