@@ -1,0 +1,151 @@
+= CREATE EXTERNAL COLLECTION
+:description: The CREATE EXTERNAL COLLECTION statement enables you to create an external collection within a scope.
+:page-topic-type: reference
+:imagesdir: ../../assets/images
+:page-partial:
+
+:identifier: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
+:naming-for-scopes-and-collections: xref:learn:data/scopes-and-collections.adoc#naming-for-scopes-and-collections
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+:scopes-and-collections: xref:learn:data/scopes-and-collections.adoc
+:bucket-expiration: xref:learn:data/expiration.adoc
+:manage-scopes-and-collections: xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc
+:scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
+:couchbase-cli-collection-manage: xref:cli:cbcli/couchbase-cli-collection-manage.adoc
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+The `CREATE EXTERNAL COLLECTION` statement enables you to create a named external collection within a scope.
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=create-external-collection]
+----
+
+image::n1ql-language-reference/create-external-collection.png["Syntax diagram: see source code listing", align=left]
+
+include::createcollection.adoc[tag=keyspace-ref]
+
+include::createcollection.adoc[tag=location]
+
+include::createcollection.adoc[tag=if-not-exists]
+
+[[on]]
+=== ON Clause
+
+Use the optional `WITH` clause to specify additional options for the collection.
+
+[[at]]
+=== AT Clause
+
+Use the optional `WITH` clause to specify additional options for the collection.
+
+[[with]]
+=== WITH Clause
+
+Use the optional `WITH` clause to specify additional options for the collection.
+
+[horizontal]
+with-fields::
+An object representing the options to be set for the collection.
+Only the `maxTTL` attribute is valid; any other attributes generate an error.
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**maxTTL** +
+__required__
+|[.status]#Enterprise Edition# 
+
+The maximum time-to-live for any item in the collection.
+May have any of the following values.
+
+`0` or unspecified: The collection inherits the maximum time-to-live setting from the bucket which contains it.
+
+Positive integer: By default, items in the collection expire after this many seconds.
+Overrides the maximum time-to-live set by the bucket.
+
+`-1`: By default, items in the collection never expire.
+Overrides the maximum time-to-live set by the bucket.
+
+NOTE: `maxTTL` is an Enterprise Edition setting.
+While the attribute is available in Community Edition, it only supports the value `0`.
+Setting `maxTTL` to any other value in Community Edition results in an error.
+
+|integer
+|===
+
+include::createcollection.adoc[tag=usage]
+
+== Examples
+
+.Create collection with full path
+====
+This statement creates a collection called `city` in the `inventory` scope within the `travel-sample` bucket.
+
+[source,sqlpp]
+----
+CREATE COLLECTION `travel-sample`.inventory.city
+----
+====
+
+.Create collection with query context
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
+
+[source,sqlpp]
+----
+CREATE COLLECTION country;
+----
+====
+
+.Create collection if it doesn't exist
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
+
+If the `country` collection already exists, the statement does nothing and no error is generated.
+
+[source,sqlpp]
+----
+CREATE COLLECTION country IF NOT EXISTS;
+----
+====
+
+.Create collection with maximum time-to-live
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
+
+The maximum time-to-live for the collection is set to `123456` seconds, overriding the maximum time-to-live specified by the bucket.
+
+[source,sqlpp]
+----
+CREATE COLLECTION country IF NOT EXISTS WITH {"maxTTL": 123456};
+----
+====
+
+== Related Links
+
+* An overview of scopes and collections is provided in {scopes-and-collections}[Scopes and Collections].
+
+* Step-by-step procedures for management are provided in {manage-scopes-and-collections}[Manage Scopes and Collections].
+
+* See {scopes-and-collections-api}[Scopes and Collections API] to manage scopes and collections with the REST API.
+
+* See the reference page for the {couchbase-cli-collection-manage}[collection-manage] command to manage scopes and collections with the CLI.
+
+* See {bucket-expiration}[Expiration] for information about bucket and collection time-to-live.
