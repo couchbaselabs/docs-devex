@@ -1,0 +1,162 @@
+= Cluster Level Options Reference
+:page-topic-type: reference
+:page-ui-name: {ui-name}
+:page-product-name: {product-name}
+:description: You can change the following cluster level options for the Search Service. 
+
+[abstract]
+{description}
+
+Some options can be changed through the UI.
+Every option can xref:set-cluster-level-options.adoc[be changed through the Search Service REST API].
+
+You can also set the `CBFT_ENV_OPTIONS` environment variable on the command line to change any of the available cluster level options.
+
+[cols="1,1,1,2"]
+|====
+| Option |Data Type |Default Value | Description 
+
+| disableFileTransferRebalance
+| Boolean
+| `false`
+a| Set `disableFileTransferRebalance` to `true` to build all partitions in Search indexes using xref:search-index-architecture.adoc#sync[a DCP connection from the Data Service] instead of creating new partitions during a rebalance using partition file transfers.
+
+| customScriptQueriesEnabled
+| String
+| `"false"`
+a| Set `customScriptQueriesEnabled` to `"true"` to xref:custom-scripts/enable-custom-script.adoc[enable custom script queries] for your cluster.
+
+For more information about custom script queries, see xref:custom-scripts/custom-script-queries.adoc[].
+
+You can also enable this setting through the {page-ui-name}.
+
+| searchHistoryEnabled
+| String
+| `"false"`
+a| Set `searchHistoryEnabled` to `"true"` to xref:view-query-history.adoc#enable[enable Search query history] on your cluster.
+
+You can also enable this setting through the {page-ui-name}.
+
+| searchHistoryMaxRecords
+| String
+| `"8000"`
+a| Set `searchHistoryMaxRecords` to a value between `1` and `20000`, formatted as a string, to control the maximum number of records to keep for a single node's Search query history.
+
+You must set `searchHistoryEnabled` to `"true"` to keep Search query history on a node running the Search Service.
+
+| collectionsLimitPerIndex
+| String
+| `"100"`
+a| Set `collectionsLimitPerIndex` to a string that limits the maximum number of collections that can be added to a single Search index.
+
+Collections are added to a Search index with a xref:about-mappings.adoc#collections[collection mapping], which are also known as type mappings.
+
+If you try to create or edit a Search index with more type mappings than allowed by this limit, the Search Service rejects the request.
+
+| scanPlusNumWorkers
+| String
+| `"10"`
+a| Set `scanPlusNumWorkers` to a string. 
+This string sets the maximum number of workers each node running the Search Service can use to fetch sequence numbers from the Data Service when you run a Search request that uses xref:search-request-params.adoc#consistency[`scan_plus` consistency]. 
+
+You must choose a value greater than `1`.
+
+| scanPlusNumRetries
+| String
+| `"5"`
+a| Set `scanPlusNumRetries` to a string.
+This string sets the maximum number of times the Search Service retries a failed request to fetch sequence numbers from the Data Service when you use xref:search-request-params.adoc#consistency[`scan_plus` consistency]. 
+
+You must choose a value greater than `1`.
+
+| numSamplesPerCentroid
+| String
+| `"39"`
+a| If you have a xref:vector-search:vector-search.adoc[Search Vector Index] that uses xref:set-advanced-settings.adoc#fast-merge[Vector Index Fast Merge], set the number of training samples to take per centroid in those Search Vector Indexes.
+
+If you enter a value less than `"39"`, the Search Service uses `"39"`.
+If you enter a value greater than `"256"`, the Search Service uses `"256"`.
+
+| enableLazyIndexUpdate
+| String
+| N/A
+a| Set `enableLazyIndexUpdate` to `"true"` to allow the Search Service to update a Search index without rebuilding, if any of those changes do not xref:create-search-indexes.adoc#updating[require a full index rebuild].
+
+Otherwise, all Search index updates fully rebuild your Search index.
+
+| [[blevemaxterms]]bleveMaxTerms
+| String
+| `"1024"`
+a| Set `bleveMaxTerms` to a string.
+This string sets the maximum number of term searchers that a Search query can use on each partition in your Search index.
+
+The Search Service uses 1 term searcher per ...
+// How does the Search Service allocate term searchers?
+
+If a Search query tries to use more term searchers than this limit, the Search query fails.
+
+Set this string to a value less than or equal to `0` to not set any limits.
+
+You can override this setting for a specific Search query.
+For more information, see xref:search-request-params.adoc#bleve-maxterms[`bleveMaxTerms`].
+// Check whether the name is accurate.
+
+| maxConcurrentPartitionMovesPerNode
+| String
+| N/A
+a| 
+
+| bleveMaxClauseCount
+| String
+| `"1024"`
+a| This setting is included for backwards compatibility only.
+
+Use <<blevemaxterms,bleveMaxTerms>> instead.
+
+The `bleveMaxClauseCount` setting only imposes a limit on the total number of child clauses, or disjunctions, inside a Search query.
+// Verify?
+
+| bleveMaxResultWindow
+| String
+| `"10000"`
+a| Set `bleveMaxResultWindow` to a string.
+This string sets the maximum number of results that can be returned for a single Search query.
+
+Increasing this value from the default increases the resource usage of the Search Service.
+
+| enableVerboseLogging
+| String
+| `"false"`
+a|
+
+| ftsMemoryQuota
+| String
+| N/A
+a|
+
+| maxFeedsPerDCPAgent
+| String
+| `"6"`
+a| Set `maxFeedsPerDCPAgent` to a string.
+This string controls the maximum number of index partitions that can connect to a single DCP agent when the Search Service xref:search-index-architecture.adoc#sync[syncs with the Data Service].
+
+If you want the maximum indexing throughput, set `maxFeedsPerDCPAgent` to `"1"`. 
+This does increase the resources required for the Search Service.
+
+| maxReplicasAllowed
+| String
+| `"3"`
+a|
+
+| slowQueryLogTimeout
+| String
+| `"5"`
+a|
+
+|====
+
+== See Also
+
+* xref:set-cluster-level-options.adoc[]
+* xref:view-query-history.adoc[]
+* xref:custom-scripts/enable-custom-script.adoc[]
