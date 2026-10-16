@@ -27,7 +27,7 @@ A Search request can contain the following properties:
 An object that contains the properties for one of the supported query types.
 
 The `query` object is required if you want to run a regular search, or a hybrid search that includes a xref:vector-search:vector-search.adoc[Vector Search] query.
-If your cluster is running Couchbase Server version 7.6.2 and later, you do not need to include the `query` object for a pure Vector Search query. 
+You do not need to include the `query` object for a pure Vector Search query. 
 
 For more information about how to configure the `query` object, see <<query-object,>>.
 
@@ -225,7 +225,7 @@ Add the `knn` array with at least one object to run a Vector Search query:
 include::example$run-search-full-request.jsonc[tag=knn]
 ----
 
-NOTE: If your cluster is running Couchbase Server version 7.6.2 and later, to return only results from your Vector Search query, do not include a `query` object with your Search request.
+NOTE: To return only results from your Vector Search query, do not include a `query` object with your Search request.
 To run a hybrid query that uses regular Search Service parameters together with Vector Search to return results, see the <<query-object,Query Object>> section. 
 
 An object in the `knn` array can contain the following properties: 
@@ -239,10 +239,10 @@ An object in the `knn` array can contain the following properties:
 Enter the total number of results that you want to return from your Vector Search query. 
 
 The Search Service returns the `k` closest documents with vectors that are closest to the vector given in `vector`.
-If your cluster is running Couchbase Server version 7.6.2 or later and you want to use `vector_base64`, it uses the `vector_base64` value, instead.
+If you specified `vector_base64`, it uses the `vector_base64` value, instead.
 
-Before Couchbase Server version 7.6.9, the Search Service picked only the top `k` vectors.
-As a result, the Search Service could return the same document multiple times if it had multiple vectors that best matched your query.
+The `k` property returns the top matching documents, not the top matching vectors.
+If a document has multiple vectors that match your query, the Search Service only returns that document once.
 
 NOTE: The <<size-limit,size or limit property>> overrides any value set in `k`.
 
@@ -273,7 +273,7 @@ From Couchbase Server version 8.5 and later, if your Search Vector Index uses xr
 
 |vector_base64 |Base64 Encoded String |Must have `vector` or `vector_base64` a|
 
-If your cluster is running Couchbase Server version 7.6.2 or later, enter a vector, encoded as a base64 string, that you want to compare to the vector data in `field`. 
+Enter a vector, encoded as a base64 string, that you want to compare to the vector data in `field`. 
 
 The Search Service uses the similarity metric defined in the xref:search-index-params.adoc#similarity[Search index definition] to return the `k` closest vectors from the Search index.
 
@@ -605,7 +605,7 @@ For example, `parentField.childField`.
 The Query String syntax does not support SQL++ field syntax.
 For example, you cannot use `[*]` or `[3]` as array locations in a field name path. 
 
-If your cluster is running Couchbase Server version 7.6.2 or later and you want to search your document metadata, you must prefix the metadata field's name with `_$xattrs`.
+If you want to search your document metadata, you must prefix the metadata field's name with `_$xattrs`.
 a| 
 .Query String query for "pool" in the description field
 [source,json]
@@ -669,7 +669,7 @@ Analytic queries use an analyzer to analyze the contents of your Search query, a
 
 For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the  Web Console].
 
-NOTE: From Couchbase Server 7.6 and later, when you run a Search query with the xref:n1ql:n1ql-language-reference/searchfun.adoc[{sqlpp} Search Function], the analyzer used in your Analytic query does not need to match the analyzer used in the Search index.
+NOTE: When you run a Search query with the xref:n1ql:n1ql-language-reference/searchfun.adoc[{sqlpp} Search Function], the analyzer used in your Analytic query does not need to match the analyzer used in the Search index.
 
 [cols="1,1,4,4"]
 |====
@@ -724,7 +724,7 @@ Use Non-Analytic queries to run a search query without using an analyzer on the 
 
 For more information about analyzers, see xref:customize-index.adoc#analyzers[Customize a Search Index with the  Web Console].
 
-NOTE: From Couchbase Server 7.6 and later, when you run a Search query with the xref:n1ql:n1ql-language-reference/searchfun.adoc[{sqlpp} Search Function], you do not need to use the xref:default-analyzers-reference.adoc#keyword[keyword analyzer] in your Search index to run a non-analytic query.
+NOTE: When you run a Search query with the xref:n1ql:n1ql-language-reference/searchfun.adoc[{sqlpp} Search Function], you do not need to use the xref:default-analyzers-reference.adoc#keyword[keyword analyzer] in your Search index to run a non-analytic query.
 
 [cols="1,1,4,4"]
 |====
@@ -2019,7 +2019,7 @@ include::example$query-special.jsonc[tag=match_all]
 a| Use the `match_none` object as the only property in your `query` object to return no documents from the Search index in search results.
  
 If you add a <<knn,knn object>> and a `query` object with the `match_none` object to your request, your search returns only matches to the Vector Search query inside the `knn` object.
-If your cluster is running Couchbase Server version 7.6.2 and later, when running a xref:vector-search:vector-search.adoc[Vector Search] query without a `query` object, the Search Service automatically adds a `query` object with a `match_none` query object to your request.
+When running a xref:vector-search:vector-search.adoc[Vector Search] query without a `query` object, the Search Service automatically adds a `query` object with a `match_none` query object to your request.
 
 a|
 .Return no documents from the Search index
@@ -2231,7 +2231,7 @@ include::example$query-boost.jsonc[tag=long]
 | String
 a| Specify a specific field name, using dot notation, where the Search Service should search for a match to your search query. 
 
-If your cluster is running Couchbase Server version 7.6.2 or later, and you want to search for document metadata held in XATTRs, you must add `_$xattrs` to the start of your metadata field's name. 
+If you want to search for document metadata held in XATTRs, you must add `_$xattrs` to the start of your metadata field's name. 
 For example, `"_$xattrs.description"`.
 a| 
 .Search for documents where the pets_ok field is true
@@ -2303,7 +2303,7 @@ The Search Service uses a consistency vector to synchronize the last document wr
 include::example$run-search-full-request.jsonc[tag=ctl]
 ----
 
-In Couchbase Server 7.6.4 and later, you can also use the `ctl` object with the `validate` property to add an extra check to your queries and get help troubleshooting when a query does not return results. 
+You can also use the `ctl` object with the `validate` property to add an extra check to your queries and get help troubleshooting when a query does not return results. 
 
 The `ctl` object can contain the following properties:
 
