@@ -186,8 +186,36 @@ To create, import, or delete Eventing Functions, you must use one of the followi
 In all the cases, the user must be present in Couchbase RBAC with at least the <<minimal-eventing-rbac-role, Minimal Eventing RBAC role>> privileges.
 ====
 
+[#crl-certificate-revocation]
+== Certificate Revocation Checks
+
+////
+TODO(writer): To confirm the release that introduces Eventing CRL support, and whether to add a release NOTE like the JWT section.
+////
+
+Eventing supports *Certificate Revocation List (CRL)* checks on its connections to other nodes in the cluster.
+For more information, see xref:learn:security/certificate-revocation.adoc[Certificate Revocation].
+
+[NOTE]
+====
+Eventing does not enforce CRL checks on connections made through the following handler bindings:
+
+* xref:eventing-language-constructs.adoc#n1ql_call[`N1qlQuery()`]
+* xref:eventing-language-constructs.adoc#analytics_call[`AnalyticsQuery()`]
+* `searchQuery()`
+
+////
+TODO(writer): link `searchQuery()` to its reference when the Totoro docs publish. 
+//// 
+
+These bindings connect through a shared client library that does not support CRL checks.
+Eventing does not detect a revoked certificate on a node that runs the Query, Analytics, or Search Service.
+Instead, Eventing continues to use the connection to that node.
+====
+
 == See Also
-//* xref:[insert-jwt-file].adoc[JWT Authentication]
+* xref:manage:manage-security/manage-jwt.adoc[JWT Authentication]
+* xref:learn:security/certificate-revocation.adoc[Certificate Revocation]
 * xref:manage:manage-security/manage-authentication.adoc[Manage Authentication]
 * xref:manage:manage-security/manage-users-and-roles.adoc[Manage Users, Groups, and Roles]
 * xref:learn:security/roles.adoc[Role-Based Access Control (RBAC)]
