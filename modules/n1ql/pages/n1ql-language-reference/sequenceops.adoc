@@ -200,6 +200,33 @@ INSERT INTO bookings
   RETURNING META().id, *;
 ----
 
+This query gives different results, depending on the version of Couchbase Server.
+
+'''
+
+[.status]##Couchbase Server 7.6&ndash;7.6.3##
+
+.Results
+[source,json]
+----
+[
+  {
+    "id": "1001",
+    "bookings": {
+      "num": 1002,
+      "user": 1
+    }
+  }
+]
+----
+
+In versions of Couchbase Server prior to 7.6.4, the key is not regarded as part of the document, so this query increments the sequence twice.
+This gives a different sequence number for the document key and the document value.
+
+'''
+
+[.status]#Couchbase Server 7.6.4#
+
 .Results
 [source,json]
 ----
