@@ -1,0 +1,171 @@
+= ALTER CATALOG
+:page-topic-type: reference
+:imagesdir: ../../assets/images
+:description: The ALTER CATALOG statement enables you to alter an external catalog.
+
+// Cross-references
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+:identifiers: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+== Prerequisites
+
+.RBAC Privileges
+To execute the ALTER SEQUENCE statement, you must have the _Query Manage Sequences_ privilege granted on the scope.
+For more details about user roles, see {authorization-overview}[Authorization].
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=alter-catalog]
+----
+
+image::n1ql-language-reference/alter-catalog.png["Syntax diagram: see source code listing", align=left]
+
+// TODO: Automatic links in EBNF.
+
+[horizontal]
+catalog:: (Required) A name that identifies the sequence within a namespace, bucket, and scope.
+
+[[with]]
+=== WITH Clause
+
+Use the `WITH` clause to specify options for the catalog.
+
+[horizontal]
+options::
+An object representing the options to be set for the catalog.
+The options that are available depend on the catalog provider.
+
+include::createcatalog.adoc[tag=catalog-options]
+
+== Examples
+
+include::ROOT:partial$query-context.adoc[tag=section]
+
+[[ex-alter-seq1]]
+.Restart a sequence
+====
+This example assumes that you have created a sequence as follows.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE seq3 IF NOT EXISTS START WITH 5 INCREMENT BY 5 MAXVALUE 1000 MINVALUE 0 CYCLE;
+----
+
+The following statement restarts the sequence at the original starting value.
+
+[source,sqlpp]
+----
+ALTER SEQUENCE seq3 RESTART;
+----
+
+The following query tests the sequence.
+
+[source,sqlpp]
+----
+SELECT NEXT VALUE FOR seq3;
+----
+
+The query returns the specified starting value, 5.
+
+[source,json]
+----
+[
+  {
+    "$1": 5
+  }
+]
+----
+====
+
+[[ex-alter-seq2]]
+.Restart a sequence from a new starting value
+====
+This example assumes that you have created a sequence as follows.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE seq3 IF NOT EXISTS START WITH 5 INCREMENT BY 5 MAXVALUE 1000 MINVALUE 0 CYCLE;
+----
+
+The following statement restarts the sequence at a new starting value.
+
+[source,sqlpp]
+----
+ALTER SEQUENCE seq3 RESTART WITH 25;
+----
+
+The following query tests the sequence.
+
+[source,sqlpp]
+----
+SELECT NEXT VALUE FOR seq3;
+----
+
+The query returns the specified starting value, 25.
+
+[source,json]
+----
+[
+  {
+    "$1": 25
+  }
+]
+----
+====
+
+[[ex-alter-seq3]]
+.Alter the increment and maximum value of a sequence
+====
+This example assumes that you have created a sequence as follows.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE seq3 IF NOT EXISTS START WITH 5 INCREMENT BY 5 MAXVALUE 1000 MINVALUE 0 CYCLE;
+----
+
+The following statement alters the increment and maximum value of the sequence.
+
+[source,sqlpp]
+----
+ALTER SEQUENCE seq3 INCREMENT BY 1 MAXVALUE 250;
+----
+====
+
+
+[[ex-alter-seq4]]
+.Alter the cycling of a sequence
+====
+This example assumes that you have created a descending sequence as follows.
+
+[source,sqlpp]
+----
+CREATE SEQUENCE seq4 IF NOT EXISTS WITH {"start": 10, "increment": -1, "min": 0};
+----
+
+The following statement specifies that the sequence should count down from 10 again when it reaches 0.
+
+[source,sqlpp]
+----
+ALTER SEQUENCE seq4 WITH {"max": 10, "cycle": true};
+----
+
+Note that you must specify the maximum value to be `10`, even though the starting value is already set.
+If you didn't do this, the sequence would cycle to the highest possible value, `2^63^-1`.
+====
+
+== Related Links
+
+* To create a sequence, see xref:n1ql-language-reference/createsequence.adoc[].
+* To drop a sequence, see xref:n1ql-language-reference/dropsequence.adoc[].
+* To use a sequence in an expression, see xref:n1ql-language-reference/sequenceops.adoc[].
+* To monitor sequences, see xref:n1ql:n1ql-intro/sysinfo.adoc#sys-sequences[Monitor Sequences].
