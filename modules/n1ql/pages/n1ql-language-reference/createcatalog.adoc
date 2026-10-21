@@ -1,0 +1,374 @@
+= CREATE CATALOG
+:description: The CREATE CATALOG statement enables you to create a named collection within a scope.
+:page-topic-type: reference
+:imagesdir: ../../assets/images
+:page-partial:
+
+:identifier: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
+:naming-for-scopes-and-collections: xref:learn:data/scopes-and-collections.adoc#naming-for-scopes-and-collections
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+:scopes-and-collections: xref:learn:data/scopes-and-collections.adoc
+:bucket-expiration: xref:learn:data/expiration.adoc
+:manage-scopes-and-collections: xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc
+:scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
+:couchbase-cli-collection-manage: xref:cli:cbcli/couchbase-cli-collection-manage.adoc
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+The `CREATE COLLECTION` statement enables you to create a named collection within a scope.
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=create-catalog]
+----
+
+image::n1ql-language-reference/create-catalog.png["Syntax diagram: see source code listing", align=left]
+
+[horizontal]
+catalog::
+(Required) An {identifier}[identifier] that refers to the name of the catalog that you want to create.
+
+[[if-not-exists]]
+=== IF NOT EXISTS Clause
+
+The optional `IF NOT EXISTS` clause enables the statement to complete successfully when the specified catalog already exists.
+If a catalog with the same name already exists, then:
+
+* If this clause is not present, an error is generated.
+
+* If this clause is present, the statement does nothing and completes without error.
+
+[[type]]
+=== TYPE Clause
+
+Use the `TYPE` clause to specify the type of catalog.
+The only supported catalog type is `ICEBERG`.
+
+[[source]]
+=== SOURCE Clause
+
+Use the `SOURCE` clause to specify the catalog provider for this catalog.
+The following catalog providers are supported.
+
+[source,ebnf]
+----
+include::{partialsdir}/grammar/ddl.ebnf[tag=provider]
+----
+
+image::n1ql-language-reference/provider.png["Syntax diagram: see source code listing", align=left]
+
+The `REST` and `UNITY_CATALOG` catalog providers are synonyms.
+
+[[at]]
+=== AT Clause
+
+Use the `AT` clause to specify the ID of the credential that Couchbase Server uses to authenticate with the catalog provider.
+
+[horizontal]
+credential::
+The name of an existing credential in the credential store.
+For more information about credentials and credential store, see xref:learn:security/credential-store.adoc[].
+
+[[with]]
+=== WITH Clause
+
+Use the `WITH` clause to specify connection options for the catalog.
+This clause is required.
+If you do not need to specify any options, specify an empty object `{}`.
+
+[horizontal]
+options::
+An object representing the options to be set for the catalog.
+The options that are available depend on the catalog provider.
+
+// tag::catalog-options[]
+.icon:bars[fw] Composite Schema
+{blank}
+
+[cols="25,55,20",separator=¦]
+|===
+¦ One{nbsp}of{nbsp}... ¦ ¦ Schema
+
+a¦ 
+a¦ AWS Glue options
+a¦ xref:AWS_GLUE[]
+
+a¦ or
+a¦ AWS GLue REST options
+a¦ xref:AWS_GLUE_REST[]
+
+a¦ or
+a¦ AWS S3 Tables options
+a¦ xref:S3_TABLES[]
+
+a¦ or
+a¦ Google BigLake Metastore options
+a¦ xref:BIGLAKE_METASTORE[]
+
+a¦ or
+a¦ Nessie options
+a¦ xref:NESSIE[]
+
+a¦ or
+a¦ Nessie REST options
+a¦ xref:NESSIE_REST[]
+
+a¦ or
+a¦ Generic REST options, including Unity Catalog
+a¦ xref:REST[]
+
+a¦ or
+a¦ SQL options
+a¦ xref:SQL[]
+|===
+
+[#AWS_GLUE]
+==== AWS_GLUE
+
+No options are available for the `AWS_GLUE` catalog provider.
+
+[#AWS_GLUE_REST]
+==== AWS_GLUE_REST
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+required
+|The catalog URI.|string
+
+|**sigv4SigningRegion** +
+required
+|The AWS Signature Version 4 signing region.
+|string
+|===
+
+[#S3_TABLES]
+==== S3_TABLES
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+required
+|The catalog URI.|string
+
+|**sigv4SigningRegion** +
+required
+|The AWS Signature Version 4 signing region.
+|string
+
+|**sigv4SigningName** +
+required
+|The AWS Signature Version 4 signing name.
+|string
+
+|**warehouse** +
+required
+|The table bucket's ARN, not a plain S3 URI.
+
+[%hardbreaks]
+*Examples:* `"arn:aws:s3tables:us-east-1:123456789012:bucket/flights-bucket"`
+{blank}
+|string
+|===
+
+[#BIGLAKE_METASTORE]
+==== BIGLAKE_METASTORE
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+required
+|The catalog URI.|string
+
+|**warehouse** +
+required
+|A storage location URI.
+
+[%hardbreaks]
+*Examples:* `"s3://bucket/path"`, `"gs://bucket/path"`
+{blank}
+|string
+
+|**quotaProjectId** +
+required
+|The Google Cloud project ID that sets the quota for the catalog.
+|string
+|===
+
+[#NESSIE]
+==== NESSIE
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+required
+|The catalog URI.|string
+
+|**warehouse** +
+required
+|A storage location URI.
+
+[%hardbreaks]
+*Examples:* `"s3://bucket/path"`, `"gs://bucket/path"`
+{blank}
+|string
+|===
+
+[#NESSIE_REST]
+==== NESSIE_REST
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+required
+|The catalog URI.|string
+
+|**branch** +
+optional
+|A specific Nessie branch or ref.
+|string
+
+|**warehouse** +
+optional
+|Accepted, but has no effect.
+
+Nessie's REST configuration endpoint rejects a warehouse value, so Couchbase does not forward it.
+|string
+|===
+
+[#REST]
+==== REST
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+required
+|The catalog URI.|string
+
+|**warehouse** +
+optional
+|A storage location URI.
+
+[%hardbreaks]
+*Examples:* `"s3://bucket/path"`, `"gs://bucket/path"`
+{blank}
+|string
+|===
+
+[#SQL]
+==== SQL
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+required
+|A PostgreSQL or SQLite connection string.
+
+The credentials are supplied by the `AT` clause.
+Do not embed the credentials directly in the connection string.
+|string
+
+|**sqlDialect** +
+optional
+|Forces the dialect explicitly.
+
+Without it, Couchbase Server only recognizes a `postgres://` or `postgresql://`-prefixed URI as PostgreSQL.
+Every other value, including a malformed PostgreSQL connection string, defaults to SQLite.
+
+[%hardbreaks]
+*Values:* `"postgres"`, `"sqlite"`
+{blank}
+|string
+|===
+// end::catalog-options[]
+
+== Examples
+
+.Create catalog for a REST catalog provider
+====
+This statement creates a collection called `city` in the `inventory` scope within the `travel-sample` bucket.
+
+[source,sqlpp]
+----
+CREATE CATALOG sales_catalog TYPE ICEBERG SOURCE REST AT `query/external/iceberg-sales-catalog`
+WITH { "uri": "https://iceberg-catalog.example.com" };
+----
+====
+
+.Create catalog for an AWS Glue catalog provider
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
+
+[source,sqlpp]
+----
+CREATE CATALOG flights_catalog TYPE ICEBERG SOURCE AWS_GLUE AT `query/external/iceberg-flights-catalog` WITH {};
+----
+====
+
+.FIXME: Create collection if it doesn't exist
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
+
+If the `country` collection already exists, the statement does nothing and no error is generated.
+
+[source,sqlpp]
+----
+CREATE COLLECTION country IF NOT EXISTS;
+----
+====
+
+== Related Links
+
+* An overview of scopes and collections is provided in {scopes-and-collections}[Scopes and Collections].
+
+* Step-by-step procedures for management are provided in {manage-scopes-and-collections}[Manage Scopes and Collections].
+
+* See {scopes-and-collections-api}[Scopes and Collections API] to manage scopes and collections with the REST API.
+
+* See the reference page for the {couchbase-cli-collection-manage}[collection-manage] command to manage scopes and collections with the CLI.
+
+* See {bucket-expiration}[Expiration] for information about bucket and collection time-to-live.
