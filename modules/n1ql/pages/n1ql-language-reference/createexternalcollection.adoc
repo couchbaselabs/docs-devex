@@ -1,6 +1,7 @@
 = CREATE EXTERNAL COLLECTION
 :description: The CREATE EXTERNAL COLLECTION statement enables you to create an external collection within a scope.
 :page-topic-type: reference
+:page-status: Couchbase Server 8.5
 :imagesdir: ../../assets/images
 :page-partial:
 
@@ -38,23 +39,32 @@ include::createcollection.adoc[tag=if-not-exists]
 [[on]]
 === ON Clause
 
-Use the optional `WITH` clause to specify additional options for the collection.
+Use the `ON` clause to specify the name of the catalog on which the external collection is based.
+
+[horizontal]
+catalog::
+The name of an existing catalog.
 
 [[at]]
 === AT Clause
 
-Use the optional `WITH` clause to specify additional options for the collection.
+Use the `AT` clause to specify the ID of the credential that Couchbase Server uses to authenticate with the storage backend.
+
+[horizontal]
+credential::
+The name of an existing credential in the credential store.
+For more information about credentials and credential store, see xref:learn:security/credential-store.adoc[].
 
 [[with]]
 === WITH Clause
 
-Use the optional `WITH` clause to specify additional options for the collection.
+Use the `WITH` clause to specify additional options for the collection.
 
 [horizontal]
-with-fields::
+options::
 An object representing the options to be set for the collection.
-Only the `maxTTL` attribute is valid; any other attributes generate an error.
 
+// tag::collection-options[]
 .icon:brackets-curly[fw] Object
 {blank}
 
@@ -62,39 +72,79 @@ Only the `maxTTL` attribute is valid; any other attributes generate an error.
 |===
 |Name|Description|Schema
 
-|**maxTTL** +
-__required__
-|[.status]#Enterprise Edition# 
+|**namespace** +
+required
+|The Iceberg namespace that contains the table.
+|string
 
-The maximum time-to-live for any item in the collection.
-May have any of the following values.
+|**tableName** +
+required
+|The name of the Iceberg table to expose.
+|string
 
-`0` or unspecified: The collection inherits the maximum time-to-live setting from the bucket which contains it.
+|**decimal-to-double** +
+optional
+|Whether Iceberg decimal values are stored in Couchbase as double-precision floats or strings.
 
-Positive integer: By default, items in the collection expire after this many seconds.
-Overrides the maximum time-to-live set by the bucket.
+* `true`: Iceberg decimal values are stored as double-precision floats.
+* `false`: Iceberg decimal values are stored as strings.
 
-`-1`: By default, items in the collection never expire.
-Overrides the maximum time-to-live set by the bucket.
+For more information, see xref:manage:manage-scopes-and-collections:external-collection-options.adoc#convert-decimals-to-doubles[Convert Decimals to Doubles].
 
-NOTE: `maxTTL` is an Enterprise Edition setting.
-While the attribute is available in Community Edition, it only supports the value `0`.
-Setting `maxTTL` to any other value in Community Edition results in an error.
+[%hardbreaks]
+*Default:* `false`
+{blank}
+|boolean
 
+|**snapshotId** +
+optional
+|A snapshot ID.
+Makes all queries on the external collection use the specified snapshot.
+
+For more information, see xref:manage:manage-scopes-and-collections:external-collection-options.adoc#pin-a-collection-to-a-snapshot[Pin a Collection to a Snapshot].
+|string
+
+|**snapshotTimestamp** +
+optional
+|A snapshot timestamp.
+Makes all queries on the external collection use the specified snapshot.
+
+For more information, see xref:manage:manage-scopes-and-collections:external-collection-options.adoc#pin-a-collection-to-a-snapshot[Pin a Collection to a Snapshot].
+
+[%hardbreaks]
+*Example:* `"2026-06-01T00:00:00Z"`
+{blank}
+|string (date-time)
+
+|**parallelScans** +
+optional
+|The number of files that Couchbase Server transfers in parallel from the external collection's storage location.
+
+For more information, see xref:manage:manage-scopes-and-collections:external-collection-options.adoc#adjust-query-parallelism[Adjust Query Parallelism].
+
+[%hardbreaks]
+*Default:* `1`
+{blank}
 |integer
 |===
+// end::collection-options[]
 
 include::createcollection.adoc[tag=usage]
 
 == Examples
 
-.Create collection with full path
+.Create external collection
 ====
-This statement creates a collection called `city` in the `inventory` scope within the `travel-sample` bucket.
+This statement creates an external collection that exposes the `orders` table from `sales_catalog`.
 
 [source,sqlpp]
 ----
-CREATE COLLECTION `travel-sample`.inventory.city
+CREATE EXTERNAL COLLECTION `sales`.`_default`.`orders`
+ON sales_catalog AT `query/external/iceberg-sales-table`
+WITH {
+  "namespace": "sales_db",
+  "tableName": "orders"
+};
 ----
 ====
 
@@ -106,11 +156,16 @@ Assuming that the query context is set, this statement creates a collection call
 
 [source,sqlpp]
 ----
-CREATE COLLECTION country;
+CREATE EXTERNAL COLLECTION `travel-sample`.`external`.`flights`
+ON flights_catalog AT `query/external/iceberg-flights-table`
+WITH {
+  "namespace": "flight_data",
+  "tableName": "flights"
+};
 ----
 ====
 
-.Create collection if it doesn't exist
+.FIXME: Create collection if it doesn't exist
 ====
 include::ROOT:partial$query-context.adoc[tag=example]
 
@@ -120,21 +175,12 @@ If the `country` collection already exists, the statement does nothing and no er
 
 [source,sqlpp]
 ----
-CREATE COLLECTION country IF NOT EXISTS;
-----
-====
-
-.Create collection with maximum time-to-live
-====
-include::ROOT:partial$query-context.adoc[tag=example]
-
-Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
-
-The maximum time-to-live for the collection is set to `123456` seconds, overriding the maximum time-to-live specified by the bucket.
-
-[source,sqlpp]
-----
-CREATE COLLECTION country IF NOT EXISTS WITH {"maxTTL": 123456};
+CREATE EXTERNAL COLLECTION `travel-sample`.`external`.`flights`
+ON flights_catalog AT `query/external/iceberg-flights-table`
+WITH {
+  "namespace": "flight_data",
+  "tableName": "flights"
+};
 ----
 ====
 
