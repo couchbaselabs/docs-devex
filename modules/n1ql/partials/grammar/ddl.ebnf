@@ -60,15 +60,15 @@ create-scope ::= 'CREATE' 'SCOPE' ( namespace ':' )? bucket '.' scope ( 'IF' 'NO
 
 /* tag::create-collection[] */
 create-collection ::= 'CREATE' 'COLLECTION' ( ( namespace ':' )? bucket '.' scope '.' )?
-                      collection ( 'IF' 'NOT' 'EXISTS' )? ( 'WITH' expr )?
+                      collection ( 'IF' 'NOT' 'EXISTS' )? ( 'WITH' options )?
 /* end::create-collection[] */
 
 /* tag::create-external-collection[] */
 create-external-collection ::= 'CREATE' 'EXTERNAL' 'COLLECTION' ( 'IF' 'NOT' 'EXISTS' )?
                                ( ( namespace ':' )? bucket '.' scope '.' )? collection
-                              'ON' perm_ident_or_str
-                              'AT' perm_ident_or_str
-                              'WITH' with-fields
+                              'ON' catalog
+                              'AT' credential
+                              'WITH' options
 /* end::create-external-collection[] */
 
 /* tag::alter-bucket[] */
@@ -77,7 +77,7 @@ alter-bucket ::= 'ALTER' ( 'BUCKET' | 'DATABASE' ) name ( 'WITH' with-fields )?
 
 /* tag::alter-collection[] */
 alter-collection ::= 'ALTER' 'COLLECTION' ( ( namespace ':' )? bucket '.' scope '.' )?
-                     collection 'WITH' with-fields
+                     collection 'WITH' options
 /* end::alter-collection[] */
 
 /* tag::drop-bucket[] */
@@ -104,21 +104,34 @@ flush-collection ::= ( 'FLUSH' | 'TRUNCATE' ) 'COLLECTION'
  ************/
 
 /* tag::create-catalog[] */
-create-catalog ::= 'CREATE' 'CATALOG' ( 'IF' 'NOT' 'EXISTS' )? name
-                   'TYPE' perm_ident_or_str
-                   'SOURCE' perm_ident_or_str
-                   'AT' perm_ident_or_str
-                   'WITH' with-fields
+create-catalog ::= 'CREATE' 'CATALOG' ( 'IF' 'NOT' 'EXISTS' )? catalog
+                   'TYPE' 'ICEBERG'
+                   'SOURCE' provider
+                   'AT' credential
+                   'WITH' options
 /* end::create-catalog[] */
 
+/* tag::provider[] */
+provider ::= 'AWS_GLUE'
+           | 'AWS_GLUE_REST'
+           | 'S3_TABLES'
+           | 'BIGLAKE_METASTORE'
+           | 'NESSIE'
+           | 'NESSIE_REST'
+           | 'REST'
+           | 'UNITY_CATALOG'
+           | 'SQL'
+/* end::provider[] */
+
 /* tag::alter-catalog[] */
-alter-catalog ::= 'ALTER' 'CATALOG' name 'WITH' with-fields
+alter-catalog ::= 'ALTER' 'CATALOG' catalog 'WITH' options
 /* end::alter-catalog[] */
 
 /* tag::drop-catalog[] */
-drop-catalog ::= 'DROP' 'CATALOG' ( 'IF' 'EXISTS' )? name
+drop-catalog ::= 'DROP' 'CATALOG' ( 'IF' 'EXISTS' )? catalog
 /* end::drop-catalog[] */
 
+catalog ::= identifier
 
 /***********
  * Indexes *
