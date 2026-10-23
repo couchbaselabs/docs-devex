@@ -4,46 +4,54 @@ dcl-statement ::= grant
                 | revoke
 
 /* tag::grant[] */
-grant ::= grant-user | grant-group | grant-consume-credentialstore
+grant ::= grant-roles | grant-credentialstore-privilege | grant-catalog-privilege
 /* end::grant[] */
 
-/* tag::grant-user[] */
-grant-user ::= 'GRANT' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
-          'TO' ( 'USER' | 'USERS' )? user ( ',' user )*
-/* end::grant-user[] */
+/* tag::grant-roles[] */
+grant-roles ::= 'GRANT' role ( ',' role )*
+              ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
+                'TO' users-or-groups
+/* end::grant-roles[] */
 
-/* tag::grant-group[] */
-grant-group ::= 'GRANT' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
-          'TO' ( 'GROUP' | 'GROUPS' ) group ( ',' group )*          
-/* end::grant-group[] */   
+/* tag::grant-credentialstore-privilege[] */
+grant-credentialstore-privilege ::= 'GRANT' 'CONSUME' 'CREDENTIALSTORE'
+                                    'ON' credential ( ',' credential )*
+                                    'TO' users-or-groups
+/* end::grant-credentialstore-privilege[] */
 
-/* tag::grant-consume-credentialstore[] */
-grant-consume-credentialstore ::= 'GRANT' 'CONSUME' 'CREDENTIALSTORE' 
-                        'ON' credential ( ',' credential )*
-                        'TO' ( ( 'USER' | 'USERS' )? user ( ',' user )*
-                             | ( 'GROUP' | 'GROUPS' ) group ( ',' group )* )
-/* end::grant-consume-credentialstore[] */
+/* tag::grant-catalog-privilege[] */
+grant-catalog-privilege ::= 'GRANT' 'SELECT' 'CATALOG'
+                            'ON' catalog ( ',' catalog )*
+                            'TO' users-or-groups
+/* end::grant-catalog-privilege[] */
 
 /* tag::revoke[] */
-revoke ::= revoke-user | revoke-group | revoke-consume-credentialstore
+revoke ::= revoke-roles | revoke-credentialstore-privilege | revoke-catalog-privilege
 /* end::revoke[] */
 
-/* tag::revoke-user[] */
-revoke-user ::= 'REVOKE' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
-           'FROM' ( 'USER' | 'USERS' )? user ( ',' user )*
-/* end::revoke-user[] */
+/* tag::revoke-roles[] */
+revoke-roles ::= 'REVOKE' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
+                 'FROM' users-or-groups
+/* end::revoke-roles[] */
 
-/* tag::revoke-group[] */
-revoke-group ::= 'REVOKE' role ( ',' role )* ( 'ON' keyspace-ref ( ',' keyspace-ref )* )?
-           'FROM' ( 'GROUP' | 'GROUPS' ) group ( ',' group )*
-/* end::revoke-group[] */
+/* tag::revoke-credentialstore-privilege[] */
+revoke-credentialstore-privilege ::= 'REVOKE' 'CONSUME' 'CREDENTIALSTORE'
+                                     'ON' credential ( ',' credential )*
+                                     'FROM' users-or-groups
+/* end::revoke-credentialstore-privilege[] */
 
-/* tag::revoke-consume-credentialstore[] */
-revoke-consume-credentialstore ::= 'REVOKE' 'CONSUME' 'CREDENTIALSTORE'
-                        'ON' credential ( ',' credential )*
-                        'FROM' ( ( 'USER' | 'USERS' )? user ( ',' user )*
-                              | ( 'GROUP' | 'GROUPS' ) group ( ',' group )* )
-/* end::revoke-consume-credentialstore[] */
+/* tag::revoke-catalog-privilege[] */
+revoke-catalog-privilege ::= 'REVOKE' 'SELECT' 'CATALOG'
+                             'ON' catalog ( ',' catalog )*
+                             'FROM' users-or-groups
+/* end::revoke-catalog-privilege[] */
+
+/* tag::users-or-groups[] */
+users-or-groups ::= ( ( 'USER' | 'USERS' )? user ( ',' user )*
+                    | ( 'GROUP' | 'GROUPS' ) group ( ',' group )* )
+/* end::users-or-groups[] */
 
 role ::= identifier
 user ::= identifier
+group ::= identifier
+credential ::= identifier
