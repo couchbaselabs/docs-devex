@@ -1,5 +1,5 @@
 function addAirlineWithPositionalParameters(name, callsign, country) {
-    var q = N1QL("insert into `travel-sample`.`inventory`.`airport` values(\"1600\", " +
+    var q = N1QL("insert into `travel-sample`.`inventory`.`airline` values(\"1600\", " +
         "{\"id\": $1, " +
         "\"type\": $2, " +
         "\"name\": $3, " +
