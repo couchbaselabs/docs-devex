@@ -1,24 +1,42 @@
 = CREATE CATALOG
-:description: The CREATE CATALOG statement enables you to create a named collection within a scope.
+:description: The CREATE CATALOG statement enables you to create an external catalog.
 :page-topic-type: reference
+:page-status: Couchbase Server 8.5
 :imagesdir: ../../assets/images
 :page-partial:
 
+:authorization-overview: xref:learn:security/authorization-overview.adoc
 :identifier: xref:n1ql-language-reference/identifiers.adoc
-:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
-:naming-for-scopes-and-collections: xref:learn:data/scopes-and-collections.adoc#naming-for-scopes-and-collections
-:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
-:scopes-and-collections: xref:learn:data/scopes-and-collections.adoc
-:bucket-expiration: xref:learn:data/expiration.adoc
-:manage-scopes-and-collections: xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy.
+:external-catalogs-and-collections: xref:learn:data/external-catalogs-and-collections.adoc
+:create-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/create-external-catalogs-and-collections.adoc
+:maintain-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/maintain-external-catalogs-and-collections.adoc
+:external-collection-options: xref:manage:manage-scopes-and-collections/external-collection-options.adoc
 :scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
-:couchbase-cli-collection-manage: xref:cli:cbcli/couchbase-cli-collection-manage.adoc
 
 // TEMP
 include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 [abstract]
-The `CREATE COLLECTION` statement enables you to create a named collection within a scope.
+{description}
+
+An external catalog uses a catalog provider to let you query data stored in Apache Iceberg tables in a cloud object store.
+
+Catalogs are global: they're not restricted to any particular scope or collection in the Couchbase {logical-hierarchy}[logical hierarchy].
+The CREATE CATALOG statement is not affected by the current query context.
+
+// tag::validation[]
+{product-name} does not validate any of the options for a catalog until you attempt to query an external collection which uses the catalog.
+// end::validation[]
+
+== Prerequisites
+
+You must create a credential in the credential store that {product-name} uses to communicate with the catalog provider.
+For more information, see xref:learn:security/credential-store.adoc[].
+
+.RBAC Privileges
+To execute the CREATE CATALOG statement, clients must have the External Catalog Admin role, or any Administrative role that gives permission to create, read, update, and delete external catalogs.
+For more information, see {authorization-overview}[Authorization].
 
 == Syntax
 
@@ -67,15 +85,17 @@ The `REST` and `UNITY_CATALOG` catalog providers are synonyms.
 [[at]]
 === AT Clause
 
-Use the `AT` clause to specify the ID of the credential that Couchbase Server uses to authenticate with the catalog provider.
+Use the `AT` clause to specify the ID of the credential that {product-name} uses to authenticate with the catalog provider.
 
 [horizontal]
 credential::
 The name of an existing credential in the credential store.
-For more information about credentials and credential store, see xref:learn:security/credential-store.adoc[].
 
 [[with]]
 === WITH Clause
+
+:credentialId: Accepted, but has no effect.
+:required: required
 
 Use the `WITH` clause to specify connection options for the catalog.
 This clause is required.
@@ -99,7 +119,7 @@ a¦ AWS Glue options
 a¦ xref:AWS_GLUE[]
 
 a¦ or
-a¦ AWS GLue REST options
+a¦ AWS Glue REST options
 a¦ xref:AWS_GLUE_REST[]
 
 a¦ or
@@ -130,7 +150,18 @@ a¦ xref:SQL[]
 [#AWS_GLUE]
 ==== AWS_GLUE
 
-No options are available for the `AWS_GLUE` catalog provider.
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**credentialId** +
+optional
+|{credentialId}
+|string
+|===
 
 [#AWS_GLUE_REST]
 ==== AWS_GLUE_REST
@@ -143,12 +174,18 @@ No options are available for the `AWS_GLUE` catalog provider.
 |Name|Description|Schema
 
 |**uri** +
-required
-|The catalog URI.|string
+{required}
+|The catalog URI.
+|string
 
 |**sigv4SigningRegion** +
-required
+{required}
 |The AWS Signature Version 4 signing region.
+|string
+
+|**credentialId** +
+optional
+|{credentialId}
 |string
 |===
 
@@ -163,26 +200,32 @@ required
 |Name|Description|Schema
 
 |**uri** +
-required
-|The catalog URI.|string
+{required}
+|The catalog URI.
+|string
 
 |**sigv4SigningRegion** +
-required
+{required}
 |The AWS Signature Version 4 signing region.
 |string
 
 |**sigv4SigningName** +
-required
+{required}
 |The AWS Signature Version 4 signing name.
 |string
 
 |**warehouse** +
-required
+{required}
 |The table bucket's ARN, not a plain S3 URI.
 
 [%hardbreaks]
 *Examples:* `"arn:aws:s3tables:us-east-1:123456789012:bucket/flights-bucket"`
 {blank}
+|string
+
+|**credentialId** +
+optional
+|{credentialId}
 |string
 |===
 
@@ -197,11 +240,12 @@ required
 |Name|Description|Schema
 
 |**uri** +
-required
-|The catalog URI.|string
+{required}
+|The catalog URI.
+|string
 
 |**warehouse** +
-required
+{required}
 |A storage location URI.
 
 [%hardbreaks]
@@ -210,8 +254,13 @@ required
 |string
 
 |**quotaProjectId** +
-required
+{required}
 |The Google Cloud project ID that sets the quota for the catalog.
+|string
+
+|**credentialId** +
+optional
+|{credentialId}
 |string
 |===
 
@@ -226,11 +275,12 @@ required
 |Name|Description|Schema
 
 |**uri** +
-required
-|The catalog URI.|string
+{required}
+|The catalog URI.
+|string
 
 |**warehouse** +
-required
+{required}
 |A storage location URI.
 
 [%hardbreaks]
@@ -250,8 +300,9 @@ required
 |Name|Description|Schema
 
 |**uri** +
-required
-|The catalog URI.|string
+{required}
+|The catalog URI.
+|string
 
 |**branch** +
 optional
@@ -277,8 +328,9 @@ Nessie's REST configuration endpoint rejects a warehouse value, so Couchbase doe
 |Name|Description|Schema
 
 |**uri** +
-required
-|The catalog URI.|string
+{required}
+|The catalog URI.
+|string
 
 |**warehouse** +
 optional
@@ -287,6 +339,11 @@ optional
 [%hardbreaks]
 *Examples:* `"s3://bucket/path"`, `"gs://bucket/path"`
 {blank}
+|string
+
+|**credentialId** +
+optional
+|{credentialId}
 |string
 |===
 
@@ -301,10 +358,12 @@ optional
 |Name|Description|Schema
 
 |**uri** +
-required
+{required}
 |A PostgreSQL or SQLite connection string.
 
+ifeval::["{docname}" == "n1ql-language-reference/createcatalog"]
 The credentials are supplied by the `AT` clause.
+endif::[]
 Do not embed the credentials directly in the connection string.
 |string
 
@@ -312,63 +371,67 @@ Do not embed the credentials directly in the connection string.
 optional
 |Forces the dialect explicitly.
 
-Without it, Couchbase Server only recognizes a `postgres://` or `postgresql://`-prefixed URI as PostgreSQL.
+Without it, {product-name} only recognizes a `postgres://` or `postgresql://`-prefixed URI as PostgreSQL.
 Every other value, including a malformed PostgreSQL connection string, defaults to SQLite.
 
 [%hardbreaks]
 *Values:* `"postgres"`, `"sqlite"`
 {blank}
 |string
+
+|**credentialId** +
+optional
+|{credentialId}
+|string
 |===
 // end::catalog-options[]
 
+== Usage
+
+You must create an external collection to be able to query the data made available by the catalog.
+For more information, see xref:createexternalcollection.adoc[].
+
+You must grant clients the following roles to use a catalog and external collection:
+
+* The Query External Catalog Select role on the catalog.
+* The Credential Consumer role for the credentials used by the catalog and the external collection.
+* The Query Select role on the external collection.
+
+For more information, see xref:grant.adoc[].
+
 == Examples
 
-.Create catalog for a REST catalog provider
+.Create a catalog
 ====
-This statement creates a collection called `city` in the `inventory` scope within the `travel-sample` bucket.
+The following example creates a catalog for a REST catalog provider.
 
 [source,sqlpp]
 ----
-CREATE CATALOG sales_catalog TYPE ICEBERG SOURCE REST AT `query/external/iceberg-sales-catalog`
+CREATE CATALOG sales_catalog
+TYPE ICEBERG SOURCE REST
+AT `query/external/iceberg-sales-catalog`
 WITH { "uri": "https://iceberg-catalog.example.com" };
 ----
 ====
 
-.Create catalog for an AWS Glue catalog provider
+.Create a catalog if it does not exist
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+The following example creates a catalog for an AWS Glue catalog provider.
 
-Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
+If `flight_catalog` already exists, the statement does nothing and no error is generated.
 
 [source,sqlpp]
 ----
-CREATE CATALOG flights_catalog TYPE ICEBERG SOURCE AWS_GLUE AT `query/external/iceberg-flights-catalog` WITH {};
-----
-====
-
-.FIXME: Create collection if it doesn't exist
-====
-include::ROOT:partial$query-context.adoc[tag=example]
-
-Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
-
-If the `country` collection already exists, the statement does nothing and no error is generated.
-
-[source,sqlpp]
-----
-CREATE COLLECTION country IF NOT EXISTS;
+CREATE CATALOG IF NOT EXISTS flights_catalog
+TYPE ICEBERG SOURCE AWS_GLUE
+AT `query/external/iceberg-flights-catalog`
+WITH {};
 ----
 ====
 
 == Related Links
 
-* An overview of scopes and collections is provided in {scopes-and-collections}[Scopes and Collections].
-
-* Step-by-step procedures for management are provided in {manage-scopes-and-collections}[Manage Scopes and Collections].
-
-* See {scopes-and-collections-api}[Scopes and Collections API] to manage scopes and collections with the REST API.
-
-* See the reference page for the {couchbase-cli-collection-manage}[collection-manage] command to manage scopes and collections with the CLI.
-
-* See {bucket-expiration}[Expiration] for information about bucket and collection time-to-live.
+* For an overview of external catalogs and collections, see {external-catalogs-and-collections}[].
+* To create external catalogs and collections, see {create-external-catalogs-and-collections}[].
+* To maintain external catalogs and collections, see {maintain-external-catalogs-and-collections}[].
+* To manage external catalogs and collections with the REST API, see {scopes-and-collections-api}[].

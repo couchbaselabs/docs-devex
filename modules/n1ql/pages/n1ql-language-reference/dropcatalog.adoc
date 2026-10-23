@@ -4,29 +4,27 @@
 :imagesdir: ../../assets/images
 
 :identifier: xref:n1ql-language-reference/identifiers.adoc
-:roles: xref:learn:security/roles.adoc
-:bucket-parameters: xref:rest-api:rest-bucket-create.adoc#parameter-groups
-:buckets: xref:learn:buckets-memory-and-storage/buckets.adoc
-:manage-buckets: xref:manage:manage-buckets/bucket-management-overview.adoc
-:buckets-api: xref:rest-api:rest-bucket-intro.adoc
-:couchbase-cli-bucket-delete: xref:cli:cbcli/couchbase-cli-bucket-edit.adoc
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy.
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:external-catalogs-and-collections: xref:learn:data/external-catalogs-and-collections.adoc
+:create-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/create-external-catalogs-and-collections.adoc
+:maintain-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/maintain-external-catalogs-and-collections.adoc
+:external-collection-options: xref:manage:manage-scopes-and-collections/external-collection-options.adoc
+:scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
 
 [abstract]
 {description}
 
-== Purpose
+Catalogs are global: they're not restricted to any particular scope or collection in the Couchbase {logical-hierarchy}[logical hierarchy].
+The DROP CATALOG statement is not affected by the current query context.
 
-Use the DROP CATALOG statement to permanently delete an existing catalog from your Couchbase cluster.
+include::server:manage:partial$drop-catalog-info.adoc[]
 
-== RBAC Privileges
+== Prerequisites
 
-FIXME: Only administrators with the following roles can execute the DROP CATALOG statement:
-
-* Full Admin
-* Cluster Admin
-* Bucket Admin (if privileges are extended to the specific bucket or all buckets on the cluster)
-
-For more information about roles and privileges, see {roles}[Roles].
+.RBAC Privileges
+To execute the DROP CATALOG statement, clients must have the External Catalog Admin role, or any Administrative role that gives permission to create, read, update, and delete external catalogs.
+For more information, see {authorization-overview}[Authorization].
 
 == Syntax
 
@@ -53,24 +51,25 @@ If a catalog with the same name does not exist, then:
 
 == Examples
 
-.Drop a catalog named `student-records`
+.Drop a catalog
 ====
 [source,sqlpp]
 ----
-DROP CATALOG `student-records`;
+DROP CATALOG `sales-catalog`;
 ----
 ====
 
-.Drop a catalog named `custom-catalog` if it exists
+.Drop a catalog if it exists
 ====
 [source,sqlpp]
 ----
-DROP CATALOG IF EXISTS `custom-catalog`;
+DROP CATALOG IF EXISTS `flight-catalog`;
 ----
 ====
 
 == Related Links
 
-* For an overview of buckets, see {buckets}[Buckets].
-* For step-by-step procedures for bucket management, see {manage-buckets}[Manage Buckets].
-* For managing buckets with the REST API, see {buckets-api}[Buckets API].
+* For an overview of external catalogs and collections, see {external-catalogs-and-collections}[].
+* To create external catalogs and collections, see {create-external-catalogs-and-collections}[].
+* To maintain external catalogs and collections, see {maintain-external-catalogs-and-collections}[].
+* To manage external catalogs and collections with the REST API, see {scopes-and-collections-api}[].

@@ -1,24 +1,37 @@
 = ALTER COLLECTION
-:description: The ALTER COLLECTION statement enables you to alter the options for a collection.
+:description: The ALTER COLLECTION statement enables you to alter the options for an external collection.
 :page-topic-type: reference
+:page-status: Couchbase Server 8.5
 :imagesdir: ../../assets/images
 :page-partial:
 
+:authorization-overview: xref:learn:security/authorization-overview.adoc
 :identifier: xref:n1ql-language-reference/identifiers.adoc
 :logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
 :naming-for-scopes-and-collections: xref:learn:data/scopes-and-collections.adoc#naming-for-scopes-and-collections
 :query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
-:scopes-and-collections: xref:learn:data/scopes-and-collections.adoc
-:bucket-expiration: xref:learn:data/expiration.adoc
-:manage-scopes-and-collections: xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc
+:external-catalogs-and-collections: xref:learn:data/external-catalogs-and-collections.adoc
+:create-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/create-external-catalogs-and-collections.adoc
+:maintain-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/maintain-external-catalogs-and-collections.adoc
+:external-collection-options: xref:manage:manage-scopes-and-collections/external-collection-options.adoc
 :scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
-:couchbase-cli-collection-manage: xref:cli:cbcli/couchbase-cli-collection-manage.adoc
 
 // TEMP
 include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 [abstract]
-The `ALTER COLLECTION` statement enables you to alter a named collection within a scope.
+{description}
+
+ALTER COLLECTION only enables you to alter the options for an external collection.
+You cannot alter the options for a non-external collection.
+
+include::createexternalcollection.adoc[tag=validation]
+
+== Prerequisites
+
+.RBAC Privileges
+To execute the ALTER COLLECTION statement, clients must have the Bucket Admin or Manage Scopes role on the bucket, or any Administrative role that gives permission to add, edit, and drop scopes and collections in the bucket.
+For more information, see {authorization-overview}[Authorization].
 
 == Syntax
 
@@ -68,95 +81,43 @@ Use the `WITH` clause to specify options for the collection.
 [horizontal]
 options::
 An object representing the options to be set for the collection.
-Couchbase collections and external collections support different options.
-
-.icon:bars[fw] Composite Schema
-{blank}
-
-[cols="25,55,20",separator=¦]
-|===
-¦ One{nbsp}of{nbsp}... ¦ ¦ Schema
-
-a¦ 
-a¦ An object specifying options to be set for a Couchbase collection.
-Only the `maxTTL` attribute is valid; any other attributes generate an error.
-a¦ xref:collection-options[]
-
-a¦ or
-a¦ An object specifying options to be set for an external collection.
-a¦ xref:external-collection-options[]
-|===
-
-[#collection-options]
-==== Couchbase Collection Options
-
-include::createcollection.adoc[tag=collection-options]
-
-[#external-collection-options]
-==== External Collection Options
 
 include::createexternalcollection.adoc[tag=collection-options]
 
 == Examples
 
-.Create collection with full path
+.Alter collection with full path
 ====
-This statement creates a collection called `city` in the `inventory` scope within the `travel-sample` bucket.
+The following example enables the `decimal-to-double` setting a collection called `orders` in the `_default` scope within the `sales` bucket.
 
 [source,sqlpp]
 ----
-CREATE COLLECTION `travel-sample`.inventory.city
+ALTER COLLECTION sales._default.orders
+WITH { "decimal-to-double": true };
 ----
 ====
 
-.Create collection with query context
+.Alter collection with query context
 ====
-include::ROOT:partial$query-context.adoc[tag=example]
+For this example, set the query context to the `external` scope in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
 
-Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
+Assuming that the query context is set, this example updates the external collection called `flights` in the `external` scope within the `travel-sample` bucket.
+
+The statement pins the `flights` external collection to the snapshot that was current at midnight UTC on June 1, 2026, and sets `parallelScans` to `4`.
 
 [source,sqlpp]
 ----
-CREATE COLLECTION country;
-----
-====
-
-.Create collection if it doesn't exist
-====
-include::ROOT:partial$query-context.adoc[tag=example]
-
-Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
-
-If the `country` collection already exists, the statement does nothing and no error is generated.
-
-[source,sqlpp]
-----
-CREATE COLLECTION country IF NOT EXISTS;
-----
-====
-
-.Create collection with maximum time-to-live
-====
-include::ROOT:partial$query-context.adoc[tag=example]
-
-Assuming that the query context is set, this statement creates a collection called `country` in the `inventory` scope within the `travel-sample` bucket.
-
-The maximum time-to-live for the collection is set to `123456` seconds, overriding the maximum time-to-live specified by the bucket.
-
-[source,sqlpp]
-----
-CREATE COLLECTION country IF NOT EXISTS WITH {"maxTTL": 123456};
+ALTER COLLECTION flights
+WITH { "snapshotTimestamp": "2026-06-01T00:00:00Z",
+       "parallelScans": 4 };
 ----
 ====
 
 == Related Links
 
-* An overview of scopes and collections is provided in {scopes-and-collections}[Scopes and Collections].
-
-* Step-by-step procedures for management are provided in {manage-scopes-and-collections}[Manage Scopes and Collections].
-
-* See {scopes-and-collections-api}[Scopes and Collections API] to manage scopes and collections with the REST API.
-
-* See the reference page for the {couchbase-cli-collection-manage}[collection-manage] command to manage scopes and collections with the CLI.
-
-* See {bucket-expiration}[Expiration] for information about bucket and collection time-to-live.
+* For an overview of external catalogs and collections, see {external-catalogs-and-collections}[].
+* To create external catalogs and collections, see {create-external-catalogs-and-collections}[].
+* To maintain external catalogs and collections, see {maintain-external-catalogs-and-collections}[].
+* To manage external catalogs and collections with the REST API, see {scopes-and-collections-api}[].
+* For external collection options, see {external-collection-options}[].

@@ -4,6 +4,7 @@
 :imagesdir: ../../assets/images
 :page-partial:
 
+:authorization-overview: xref:learn:security/authorization-overview.adoc
 :identifier: xref:n1ql-language-reference/identifiers.adoc
 :logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
 :naming-for-scopes-and-collections: xref:learn:data/scopes-and-collections.adoc#naming-for-scopes-and-collections
@@ -18,7 +19,19 @@
 include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 [abstract]
-The `CREATE COLLECTION` statement enables you to create a named collection within a scope.
+{description}
+
+== Prerequisites
+
+// tag::usage[]
+The scope must exist before you can create the collection, whether the scope is specified in the statement itself, or implied by the query context.
+If the scope does not exist, an error is generated.
+You cannot create the scope and the collection in a single statement.
+// end::usage[]
+
+.RBAC Privileges
+To execute the CREATE COLLECTION statement, clients must have the Bucket Admin or Manage Scopes role on the bucket, or any Administrative role that gives permission to add, edit, and drop scopes and collections in the bucket.
+For more information, see {authorization-overview}[Authorization].
 
 == Syntax
 
@@ -117,14 +130,6 @@ Setting `maxTTL` to any other value in Community Edition results in an error.
 |===
 // end::collection-options[]
 
-// tag::usage[]
-== Usage
-
-The scope must exist before you can create the collection, whether the scope is specified in the statement itself, or implied by the query context.
-If the scope does not exist, an error is generated.
-You cannot create the scope and the collection in a single statement.
-// end::usage[]
-
 == Examples
 
 .Create collection with full path
@@ -149,7 +154,7 @@ CREATE COLLECTION country;
 ----
 ====
 
-.Create collection if it doesn't exist
+.Create collection if it does not exist
 ====
 include::ROOT:partial$query-context.adoc[tag=example]
 
