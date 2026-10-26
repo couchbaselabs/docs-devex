@@ -26,12 +26,12 @@ Catalogs are global: they're not restricted to any particular scope or collectio
 The CREATE CATALOG statement is not affected by the current query context.
 
 // tag::validation[]
-{product-name} does not validate any of the options for a catalog until you attempt to query an external collection which uses the catalog.
+Couchbase {product-name} does not validate any of the options for a catalog until you attempt to query an external collection which uses the catalog.
 // end::validation[]
 
 == Prerequisites
 
-You must create a credential in the credential store that {product-name} uses to communicate with the catalog provider.
+You must create a credential in the credential store that Couchbase {product-name} uses to communicate with the catalog provider.
 For more information, see xref:learn:security/credential-store.adoc[].
 
 .RBAC Privileges
@@ -85,7 +85,9 @@ The `REST` and `UNITY_CATALOG` catalog providers are synonyms.
 [[at]]
 === AT Clause
 
-Use the `AT` clause to specify the ID of the credential that {product-name} uses to authenticate with the catalog provider.
+Use the `AT` clause to specify the ID of the credential that Couchbase {product-name} uses to authenticate with the catalog provider.
+This clause is required.
+If you do not need to specify a credential, specify an empty string `""`.
 
 [horizontal]
 credential::
@@ -371,7 +373,7 @@ Do not embed the credentials directly in the connection string.
 optional
 |Forces the dialect explicitly.
 
-Without it, {product-name} only recognizes a `postgres://` or `postgresql://`-prefixed URI as PostgreSQL.
+Without it, Couchbase {product-name} only recognizes a `postgres://` or `postgresql://`-prefixed URI as PostgreSQL.
 Every other value, including a malformed PostgreSQL connection string, defaults to SQLite.
 
 [%hardbreaks]
@@ -388,8 +390,11 @@ optional
 
 == Usage
 
+External catalogs are listed in the `system:catalog` namespace.
+For more information, see xref:n1ql-intro/sysinfo.adoc#sys-catalogs[Monitor Catalogs].
+
 You must create an external collection to be able to query the data made available by the catalog.
-For more information, see xref:createexternalcollection.adoc[].
+For more information, see xref:n1ql-language-reference/createexternalcollection.adoc[].
 
 You must grant clients the following roles to use a catalog and external collection:
 
@@ -397,7 +402,7 @@ You must grant clients the following roles to use a catalog and external collect
 * The Credential Consumer role for the credentials used by the catalog and the external collection.
 * The Query Select role on the external collection.
 
-For more information, see xref:grant.adoc[].
+For more information, see xref:n1ql-language-reference/grant.adoc[].
 
 == Examples
 
