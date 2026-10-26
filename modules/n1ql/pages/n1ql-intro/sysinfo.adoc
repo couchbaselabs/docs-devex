@@ -44,12 +44,11 @@ a| [%hardbreaks]
 <<querying-datastores,system:datastores>>
 <<querying-namespaces,system:namespaces>>
 <<querying-buckets,system:buckets>>
+<<querying-bucket-info, system:bucket_info>>
 <<querying-scopes,system:scopes>>
 <<querying-keyspaces,system:keyspaces>>
 <<querying-indexes,system:indexes>>
 <<querying-dual,system:dual>>
-<<querying-groups, system:group_info>>
-<<querying-bucket-info, system:bucket_info>>
 
 a| [%hardbreaks]
 xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#vitals[system:vitals]
@@ -60,6 +59,7 @@ xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc#sys-history[system:completed_re
 xref:n1ql:n1ql-manage/query-awr.adoc[system:awr]
 
 a| [%hardbreaks]
+<<sys-groups,system:group_info>>
 <<sys_my-user-info,system:my_user_info>>
 <<sys-user-info,system:user_info>>
 <<sys-nodes,system:nodes>>
@@ -74,9 +74,9 @@ a| [%hardbreaks]
 <<sys-transactions,system:transactions>>
 <<sys-sequences,system:sequences>>
 <<sys-all-sequences,system:all-sequences>>
+<<sys-settings,system:settings>>
 xref:n1ql:n1ql-language-reference/auto-update-statistics.adoc#system_aus[system:aus]
 xref:n1ql:n1ql-language-reference/auto-update-statistics.adoc#system_aus_settings[system:aus_settings]
-<<sys-settings,system:settings>>
 |===
 
 == Authentication and Client Privileges
@@ -84,12 +84,12 @@ xref:n1ql:n1ql-language-reference/auto-update-statistics.adoc#system_aus_setting
 Client applications must be authenticated with sufficient privileges to access system keyspaces.
 
 * Users must have the *Query System Catalog* role to access restricted system keyspaces.
-For more details about user roles, see xref:learn:security/authorization-overview.adoc[Authorization].
+For more information about user roles, see xref:learn:security/authorization-overview.adoc[Authorization].
 
 * In addition, users must have permission to access a bucket, scope, or collection to be able to view that item in the system catalog.
 Similarly, users must have SELECT permission on the target of an index to be able to view that index in the system catalog.
 
-* The following system keyspaces are considered open, that is, all users can access them without any special privileges:
+* The following system keyspaces are considered open: in other words, all users can access them without any special privileges:
  ** `system:dual`
  ** `system:datastores`
  ** `system:namespaces`
@@ -111,12 +111,12 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**id** +
-__required__
+required
 |ID of the datastore.
 |String
 
 |**url** +
-__required__
+required
 |URL of the datastore instance.
 |String
 |===
@@ -138,20 +138,35 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**id** +
-__required__
+required
 |ID of the namespace.
 |String
 
 |**name** +
-__required__
+required
 |Name of the namespace.
 |String
 
 |**datastore_id** +
-__required__
+required
 |ID of the datastore to which the namespace belongs.
 |String
 |===
+
+[#querying-bucket-info]
+== Query Bucket Information
+
+The `system:bucket_info` (alias: `system:database_info`) keyspace provides comprehensive information about all buckets, including their metadata, configuration settings, memory usage, and other details.
+
+You can query the keyspace as follows:
+
+[source,sqlpp]
+----
+SELECT * FROM system:bucket_info;
+----
+
+The query returns the same data as the xref:server:rest-api:rest-buckets-summary.adoc[pools/default/buckets] REST API.
+However, the `vBucketServerMap.vBucketMap` field is returned in a more compact format as a pipe-delimited string, rather than an array of arrays.
 
 [#querying-buckets]
 == Query Buckets
@@ -170,27 +185,27 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**datastore_id** +
-__required__
+required
 |ID of the datastore to which the bucket belongs.
 |String
 
 |**name** +
-__required__
+required
 |Name of the bucket.
 |String
 
 |**namespace** +
-__required__
+required
 |Namespace to which the bucket belongs.
 |String
 
 |**namespace_id** +
-__required__
+required
 |ID of the namespace to which the bucket belongs.
 |String
 
 |**path** +
-__required__
+required
 |Path of the bucket.
 |String
 |===
@@ -212,37 +227,37 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**bucket** +
-__required__
+required
 |Bucket to which the scope belongs.
 |String
 
 |**datastore_id** +
-__required__
+required
 |ID of the datastore to which the scope belongs.
 |String
 
 |**name** +
-__required__
+required
 |Name of the scope.
 |String
 
 |**namespace** +
-__required__
+required
 |Namespace to which the scope belongs.
 |String
 
 |**namespace_id** +
-__required__
+required
 |ID of the namespace to which the scope belongs.
 |String
 
 |**path** +
-__required__
+required
 |Path of the scope.
 |String
 |===
 
-NOTE: Querying `system:scopes` only returns named scopes -- that is, non-default scopes.
+NOTE: Querying `system:scopes` only returns named scopes: in other words, non-default scopes.
 To return all scopes, including the default scopes, you can query `system:all_scopes`.
 
 [#querying-keyspaces]
@@ -262,18 +277,18 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**bucket** +
-__optional__
+optional
 |For a named, non-default collection:
 Bucket to which the keyspace belongs.
 |String
 
 |**datastore_id** +
-__required__
+required
 |ID of the datastore to which the keyspace belongs.
 |String
 
 |**id** +
-__required__
+required
 |For the default collection in the default scope:
 ID of the bucket to which the keyspace belongs.
 
@@ -284,7 +299,7 @@ ID of the keyspace.
 |String
 
 |**name** +
-__required__
+required
 |For the default collection in the default scope:
 Bucket to which the keyspace belongs.
 
@@ -295,22 +310,22 @@ Name of the keyspace.
 |String
 
 |**namespace** +
-__required__
+required
 |Namespace to which the keyspace belongs.
 |String
 
 |**namespace_id** +
-__required__
+required
 |ID of the namespace to which the keyspace belongs.
 |String
 
 |**path** +
-__required__
+required
 |Path of the keyspace.
 |String
 
 |**scope** +
-__optional__
+optional
 |For a named, non-default collection:
 Scope to which the keyspace belongs.
 |String
@@ -336,39 +351,39 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**bucket_id** +
-__optional__
+optional
 |For an index on a named, non-default collection:
 ID of the bucket to which the index belongs.
 |String
 
 |**condition** +
-__optional__
+optional
 |Index filter, if present.
 |String
 
 |**datastore_id** +
-__required__
+required
 |ID of the datastore to which the index belongs.
 |String
 
 |**id** +
-__required__
+required
 |ID of the index.
 |String
 
 |**index_key** +
-__required__
+required
 |List of index keys.
 Vector fields are indicated with the `VECTOR` keyword, and the type of vector: `DENSE` (the default) or `SPARSE`.
 |String array
 
 |**is_primary** +
-__required__
+required
 |True if the index is a primary index.
 |Boolean
 
 |**keyspace_id** +
-__required__
+required
 |For an index on the default collection in the default scope:
 ID of the bucket to which the index belongs.
 
@@ -379,29 +394,29 @@ ID of the keyspace to which the index belongs.
 |String
 
 |**name** +
-__required__
+required
 |Name of the index.
 |String
 
 |**metadata** +
-__required__
+required
 |Metadata for the index.
 |<<metadata,Metadata>> object
 
 |**namespace_id** +
-__required__
+required
 |ID of the namespace to which the index belongs.
 |String
 
 |**state** +
-__required__
+required
 |State of index.
 
 *Example*: `online`
 |String
 
 |**using** +
-__required__
+required
 |Type of index.
 
 *Example*: `gsi`
@@ -415,17 +430,17 @@ __required__
 |Name|Description|Schema
 
 |**last_scan_time** +
-__required__
+required
 |The last scan timestamp of the index.
 |String
 
 |**num_replica** +
-__required__
+required
 |The index replica count.
 |String
 
 |**stats** +
-__required__
+required
 |Statistics for the index.
 |<<stats,Stats>> object
 |===
@@ -437,7 +452,7 @@ __required__
 |Name|Description|Schema
 
 |**last_known_scan_time** +
-__required__
+required
 |The index last scan time from the indexer, in UNIX Epoch format.
 |Number
 |===
@@ -457,8 +472,8 @@ SELECT 2+5 FROM system:dual
 
 The query returns the result of the expression, 7 in this case.
 
-[#querying-groups]
-== Query Groups
+[#sys-groups]
+== Monitor Groups
 
 You can query group information using the `system:group_info` keyspace as follows:
 
@@ -474,22 +489,22 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**description** +
-__required__
+required
 |User-defined description associated with the group.
 |String
 
 |**id** +
-__required__
+required
 |ID of the group.
 |String
 
 |**ldap_group_ref** +
-__optional__
-|LDAP mapping associated with the group.  
+optional
+|LDAP mapping associated with the group.
 |String
 
 |**roles** +
-__required__
+required
 |List of RBAC roles for the group.
 |Array of <<roles,roles>> objects
 |===
@@ -501,40 +516,25 @@ __required__
 |Name|Description|Schema
 
 |**bucket_name** +
-__optional__
+optional
 |Name of the bucket to which the role applies.
 |String
 
 |**collection_name** +
-__optional__
+optional
 |Name of the collection to which the role applies.
 |String
 
 |**role** +
-__required__
+required
 |Specifies the RBAC role.
 |String
 
 |**scope_name** +
-__optional__
+optional
 |Name of the scope to which the role applies.
 |String
 |===
-
-[#querying-bucket-info]
-== Query Bucket Information
-
-The `system:bucket_info` (alias: `system:database_info`) keyspace provides comprehensive information about all buckets, including their metadata, configuration settings, memory usage, and other details.
-
-You can query the keyspace as follows:
-
-[source,sqlpp]
-----
-SELECT * FROM system:bucket_info;
-----
-
-The query returns the same data as the xref:server:rest-api:rest-buckets-summary.adoc[pools/default/buckets] REST API.
-However, the `vBucketServerMap.vBucketMap` field is returned in a more compact format as a pipe-delimited string, rather than an array of arrays.
 
 [#sys_my-user-info]
 == Monitor Your User Info
@@ -632,9 +632,9 @@ This will result in a list similar to:
 == Monitor Nodes
 
 The `system:nodes` catalog shows the datastore topology information.
-This is separate from the Query clustering view, in that Query clustering shows a map of the Query cluster, as provided by the cluster manager, while `system:nodes` shows a view of the nodes and services that make up the actual datastore, which may or may not include Query nodes.
+This is separate from the Query clustering view, in that Query clustering shows a map of the Query cluster, as provided by the Cluster Manager, while `system:nodes` shows a view of the nodes and services that make up the actual datastore, which may or may not include Query nodes.
 
-* The dichotomy is important in that Query nodes could be clustered by one entity (e.g. Zookeeper) and be connected to a clustered datastore (e.g. Couchbase) such that each does not have visibility of the other.
+* The dichotomy is important in that Query nodes could be clustered by one entity (such as Zookeeper) and be connected to a clustered datastore (such as Couchbase) such that each does not have visibility of the other.
 * Should {sqlpp} be extended to be able to concurrently connect to multiple datastores, each datastore will report its own topology, so that `system:nodes` offers a complete view of all the storage nodes, whatever those may be.
 * The `system:nodes` keyspace provides a way to report services advertised by each node as well as services that are actually running.
 This is datastore dependent.
@@ -794,52 +794,52 @@ Each dictionary gives the following information:
 |Name|Description|Schema
 
 |**avgDocKeySize** +
-__required__
+required
 |Average doc key size.
 |Integer
 
 |**avgDocSize** +
-__required__
+required
 |Average doc size.
 |Integer
 
 |**bucket** +
-__required__
+required
 |The bucket for which statistics are available.
 |String
 
 |**keyspace** +
-__required__
+required
 |The keyspace for which statistics are available.
 |String
 
 |**namespace** +
-__required__
+required
 |The namespace for which statistics are available.
 |String
 
 |**scope** +
-__required__
+required
 |The scope for which statistics are available.
 |String
 
 |**distributionKeys** +
-__required__
+required
 |Distribution keys for which histograms are available.
 |String array
 
 |**docCount** +
-__required__
+required
 |Document count.
 |Integer
 
 |**indexes** +
-__required__
+required
 |An array of indexes in this keyspace for which statistics are available.
 |<<indexes,Indexes>> array
 
 |**node** +
-__required__
+required
 |The query node where this dictionary cache is resident.
 |String
 |===
@@ -852,17 +852,17 @@ __required__
 |Name|Description|Schema
 
 |**indexId** +
-__required__
+required
 |The index ID.
 |String
 
 |**indexName** +
-__required__
+required
 |The index name.
 |String
 
 |**indexStats** +
-__required__
+required
 |An array of statistics for each index, with one element for each index partition.
 |<<indexStats,Index Statistics>> array
 |===
@@ -875,27 +875,27 @@ __required__
 |Name|Description|Schema
 
 |**avgItemSize** +
-__required__
+required
 |Average item size.
 |Integer
 
 |**avgPageSize** +
-__required__
+required
 |Average page size.
 |Integer
 
 |**numItems** +
-__required__
+required
 |Number of items.
 |Integer
 
 |**numPages** +
-__required__
+required
 |Number of pages.
 |Integer
 
 |**resRatio** +
-__required__
+required
 |Resident ratio.
 |Integer
 |===
@@ -1029,12 +1029,12 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**definition** +
-__required__
+required
 |The definition of the function.
 |<<definition,Definition>> object
 
 |**identity** +
-__required__
+required
 |The identity of the function.
 |<<identity,Identity>> object
 |===
@@ -1047,24 +1047,24 @@ __required__
 |Name|Description|Schema
 
 |**#language** +
-__required__
+required
 |The language of the function.
 
 *Example*: `inline`
 |String
 
 |**parameters** +
-__required__
+required
 |The parameters required by the function.
 |String array
 
 |**expression** +
-__optional__
+optional
 |For inline functions only: the expression defining the function.
 |String
 
 |**text** +
-__optional__
+optional
 |For inline functions: the verbatim text of the function.
 
 '''
@@ -1073,17 +1073,17 @@ For {sqlpp} managed user-defined functions: the external code defining the funct
 |String
 
 |**library** +
-__optional__
+optional
 |For external functions only: the library containing the function.
 |String
 
 |**name** +
-__optional__
+optional
 |For external functions only: the relative name of the library.
 |String
 
 |**object** +
-__optional__
+optional
 |For external functions only: the object defining the function.
 |String
 |===
@@ -1096,31 +1096,31 @@ __optional__
 |Name|Description|Schema
 
 |**name** +
-__required__
+required
 |The name of the function.
 |String
 
 |**namespace** +
-__required__
+required
 |The namespace of the function.
 
 *Example*: `default`
 |String
 
 |**type** +
-__required__
+required
 |The type of the function.
 
 *Example*: `global`
 |String
 
 |**bucket** +
-__optional__
+optional
 |For scoped functions only: the bucket containing the function.
 |String
 
 |**scope** +
-__optional__
+optional
 |For scoped functions only: the scope containing the function.
 |String
 |===
@@ -1128,9 +1128,9 @@ __optional__
 [#sys-functions-cache]
 == Monitor Cached Functions
 
-The `system:functions_cache` catalog maintains a list of recently-used user-defined functions across all nodes.
+The `system:functions_cache` catalog maintains a list of recently used user-defined functions across all nodes.
 The catalog also lists user-defined functions that have been called recently, but do not exist.
-To see the list of recently-used user-defined functions, use:
+To see the list of recently used user-defined functions, use:
 
 [source,sqlpp]
 ----
@@ -1206,48 +1206,48 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**#language** +
-__required__
+required
 |The language of the function.
 
 *Example*: `inline`
 |String
 
 |**name** +
-__required__
+required
 |The name of the function.
 |String
 
 |**namespace** +
-__required__
+required
 |The namespace of the function.
 
 *Example*: `default`
 |String
 
 |**parameters** +
-__required__
+required
 |The parameters required by the function.
 |String array
 
 |**type** +
-__required__
+required
 |The type of the function.
 
 *Example*: `global`
 |String
 
 |**scope** +
-__optional__
+optional
 |For scoped functions only: the scope containing the function.
 |String
 
 |**expression** +
-__optional__
+optional
 |For inline functions only: the expression defining the function.
 |String
 
 |**text** +
-__optional__
+optional
 |For inline functions: the verbatim text of the function.
 
 '''
@@ -1256,58 +1256,58 @@ For {sqlpp} managed user-defined functions: the external code defining the funct
 |String
 
 |**library** +
-__optional__
+optional
 |For external functions only: the library containing the function.
 |String
 
 |**object** +
-__optional__
+optional
 |For external functions only: the object defining the function.
 |String
 
 |**avgServiceTime** +
-__required__
+required
 |The mean service time for the function.
 |String
 
 |**lastUse** +
-__required__
+required
 |The date and time when the function was last used.
 |String
 
 |**maxServiceTime** +
-__required__
+required
 |The maximum service time for the function.
 |String
 
 |**minServiceTime** +
-__required__
+required
 |The minimum service time for the function.
 |String
 
 |**node** +
-__required__
+required
 |The query node where the function is cached.
 |String
 
 |**undefined_function** +
-__required__
+required
 |Whether the function exists or is undefined.
 |Boolean
 
 |**uses** +
-__required__
+required
 |The number of uses of the function.
 |Number
 |===
 
-Each query node keeps its own cache of recently-used user-defined functions, so you may see the same function listed for multiple nodes.
+Each query node keeps its own cache of recently used user-defined functions, so you may see the same function listed for multiple nodes.
 
 [#sys-tasks-cache]
 == Monitor Cached Tasks
 
-The `system:tasks_cache` catalog maintains a list of recently-used scheduled tasks, such as index advisor sessions.
-To see the list of recently-used scheduled tasks, use:
+The `system:tasks_cache` catalog maintains a list of recently used scheduled tasks, such as index advisor sessions.
+To see the list of recently used scheduled tasks, use:
 
 [source,sqlpp]
 ----
@@ -1358,7 +1358,7 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**class** +
-__required__
+required
 |The class of the task.
 
 For tasks related to xref:n1ql:n1ql-language-reference/auto-update-statistics.adoc[Auto Update Statistics (AUS)], the class is `auto_update_statistics`.
@@ -1367,27 +1367,27 @@ For tasks related to xref:n1ql:n1ql-language-reference/auto-update-statistics.ad
 |string
 
 |**delay** +
-__required__
+required
 |The scheduled duration of the task.
 |string
 
 |**id** +
-__required__
+required
 |The internal ID of the task.
 |string
 
 |**name** +
-__required__
+required
 |The name of the task.
 |string
 
 |**node** +
-__required__
+required
 |The node where the task was started.
 |string
 
 |**state** +
-__required__
+required
 |The state of the task.
 
 Possible values are:
@@ -1404,34 +1404,34 @@ Possible values are:
 |string
 
 |**subClass** +
-__required__
+required
 |The subclass of the task.
 
 *Example*: `analyze`
 |string
 
 |**submitTime** +
-__required__
+required
 |The date and time when the task was submitted.
 |string
 
 |**results** +
-__optional__
+optional
 |Not scheduled tasks: the results of the task.
 |Any array
 
 |**startTime** +
-__optional__
+optional
 |Not scheduled tasks: the date and time when the task started.
 |string (date-time)
 
 |**stopTime** +
-__optional__
+optional
 |Not scheduled tasks: the date and time when the task stopped.
 |string (date-time)
 |===
 
-Refer to xref:n1ql:n1ql-language-reference/advisor.adoc[ADVISOR Function] for more information on index advisor sessions.
+For more information on index advisor sessions, see xref:n1ql:n1ql-language-reference/advisor.adoc[ADVISOR Function].
 
 [#sys-transactions]
 == Monitor Transactions
@@ -1477,77 +1477,77 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**durabilityLevel** +
-__required__
+required
 |Durability level for all mutations within a transaction.
 |string
 
 |**durabilityTimeout** +
-__required__
+required
 |Durability timeout per mutation within the transaction.
 |string (duration)
 
 |**expiryTime** +
-__required__
+required
 |
 |string (date-time)
 
 |**id** +
-__required__
+required
 |The transaction ID.
 |string
 
 |**isolationLevel** +
-__required__
+required
 |The isolation level of the transaction.
 |string
 
 |**lastUse** +
-__required__
+required
 |
 |string (date-time)
 
 |**node** +
-__required__
+required
 |The node where the transaction was started.
 |string
 
 |**numAtrs** +
-__required__
+required
 |The total number of active transaction records.
 |integer
 
 |**scanConsistency** +
-__required__
+required
 |The transactional scan consistency.
 |string
 
 |**status** +
-__required__
+required
 |
 |integer
 
 |**timeout** +
-__required__
+required
 |The transaction timeout duration.
 |string (duration)
 
 |**usedMemory** +
-__required__
+required
 |
 |integer
 
 |**uses** +
-__required__
+required
 |
 |integer
 |===
 
-Refer to xref:n1ql:n1ql-language-reference/transactions.adoc[{sqlpp} Support for Couchbase Transactions] for more information.
+For more information, see xref:n1ql:n1ql-language-reference/transactions.adoc[{sqlpp} Support for Couchbase Transactions].
 
 [#sys-sequences]
 == Monitor Sequences
 
-The `system:sequences` catalog maintains a list of loaded sequences on any node: that is, sequences that have been accessed since the last restart.
+The `system:sequences` catalog maintains a list of loaded sequences on any node: in other words, sequences that have been accessed since the last restart.
 To see the list of loaded sequences, use:
 
 [source,sqlpp]
@@ -1590,62 +1590,62 @@ This catalog contains the following attributes:
 |Name|Description|Schema
 
 |**bucket** +
-__required__
+required
 |The bucket containing the sequence.
 |string
 
 |**cache** +
-__required__
+required
 |The sequence's cache size.
 |integer
 
 |**cycle** +
-__required__
+required
 |Whether the sequence is set to cycle.
 |boolean
 
 |**increment** +
-__required__
+required
 |The sequence step value.
 |integer
 
 |**min** +
-__required__
+required
 |The minimum value permitted for the sequence.
 |integer
 
 |**max** +
-__required__
+required
 |The maximum value permitted for the sequence.
 |integer
 
 |**name** +
-__required__
+required
 |The name of the sequence.
 |string
 
 |**namespace** +
-__required__
+required
 |Namespace to which the sequence belongs.
 |string
 
 |**namespace_id** +
-__required__
+required
 |ID of the namespace to which the sequence belongs.
 |string
 
 |**path** +
-__required__
+required
 |The fully qualified sequence name.
 |string
 
 |**scope_id** +
-__required__
+required
 |ID of the scope to which the sequence belongs.
 |string
 
 |**value** +
-__required__
+required
 |The current value of the sequence on each Query node.
 | <<value,Values>> object
 |===
@@ -1658,14 +1658,14 @@ __required__
 |Name|Description|Schema
 
 |**<UUID>** +
-__required__
+required
 |The name of this property is the UUID of a Query node.
 
 The value of this property is the current value of the sequence on that node.
 |Integer
 
 |**~next_block** +
-__optional__
+optional
 |The starting vale of the next block of values that can be reserved for the sequence.
 |Integer
 |===
@@ -1739,9 +1739,9 @@ For further details, see xref:n1ql:n1ql-language-reference/createsequence.adoc[]
 
 [.status]#Couchbase Server 8.5#
 
-The `system:settings` catalog contains cluster-wide settings for the Query Service. 
+The `system:settings` catalog contains cluster-wide settings for the Query Service.
 
-NOTE: Currently, `plan_stability` is the only setting available in the catalog. 
+NOTE: Currently, `plan_stability` is the only setting available in the catalog.
 It controls the xref:n1ql:n1ql-manage/query-plan-stability.adoc[] feature.
 
 === View Settings
@@ -1778,7 +1778,7 @@ The `system:settings` catalog contains the following fields:
 |Name|Description|Schema
 
 | **plan_stability** +
-__required__
+required
 | Settings for the xref:n1ql:n1ql-manage/query-plan-stability.adoc[] feature.
 | <<sys-settings-plan-stability,Plan Stability>>
 |===
@@ -1791,27 +1791,27 @@ __required__
 |Name|Description|Schema
 
 |**mode** +
-__required__
+required
 |The plan stability mode.
 
-Can have one of the following values: 
+Can have one of the following values:
 
 * `"off"`: Keeps prepared statement plans in-memory without saving them to persistent storage.
 * `"prepared_only"`: Saves execution plans to persistent storage only for prepared statements.
-* `"ad_hoc"`: Saves execution plans to persistent storage for all queries, including both ad-hoc and prepared statements. 
+* `"ad_hoc"`: Saves execution plans to persistent storage for all queries, including both ad-hoc and prepared statements.
 * `"ad_hoc_read_only"`: Does not save execution plans to persistent storage for new queries, but uses existing saved plans for matching queries.
 
 |String
 
 |**error_policy** +
-__required__
-|The error policy applied when saved plans encounter errors. 
+required
+|The error policy applied when saved plans encounter errors.
 
 Can have one of the following values:
 
-* `"strict"`: Stops execution and returns the error to the application. 
+* `"strict"`: Stops execution and returns the error to the application.
 * `"moderate"`: Generates a new plan to execute the statement, but keeps the original saved plan intact.
-* `"flexible"`: Generates a new plan to execute the statement and overwrites the saved plan with the new one. 
+* `"flexible"`: Generates a new plan to execute the statement and overwrites the saved plan with the new one.
 
 |String
 |===
@@ -1838,4 +1838,4 @@ For more information about Plan Stability modes and error policies, see xref:n1q
 
 == Related Links
 
-* Refer to xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc[] for more information on the system namespace.
+* For more information on the system namespace, see xref:n1ql:n1ql-manage/monitoring-n1ql-query.adoc[].
