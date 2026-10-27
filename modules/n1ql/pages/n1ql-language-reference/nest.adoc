@@ -4,11 +4,14 @@
 :from-term: pass:q[`NEST` clause]
 :page-topic-type: reference
 
+// Cross-references
+:at: xref:n1ql-language-reference/at.adoc
+
 // TEMP
 include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 [abstract]
-The `NEST` clause creates an input object by producing a single result of nesting keyspaces.
+{description}
 
 == Purpose
 
@@ -17,8 +20,8 @@ It enables you to create an input object by producing a single result of nesting
 
 == Prerequisites
 
-For you to select data from keyspace or expression, you must have the [.param]`query_select` privilege on that keyspace.
-For more details about user roles, see
+To select data from a keyspace or expression, you must have the `query_select` privilege on that keyspace.
+For more information about user roles, see
 xref:learn:security/authorization-overview.adoc[Authorization].
 
 == Syntax
@@ -46,9 +49,9 @@ include::partial$n1ql-language-reference/ansi-join-nest.adoc[]
 ANSI NEST supports more nest types than Lookup NEST or Index NEXT.
 ANSI NEST can nest arbitrary fields of the documents, and can be chained together.
 
-The key difference between ANSI NEST and other supported NEST types is the replacement of the `ON KEYS` or `ON KEY … FOR` clauses with a simple `ON` clause.
+The key difference between ANSI NEST and other supported NEST types is the replacement of the `ON KEYS` or `ON KEY … FOR` clauses with a plain `ON` clause.
 The `ON KEYS` or `ON KEY … FOR` clauses dictate that those nests can only be done on a document key (primary key for a document).
-The `ON` clause can contain any expression, and thus it opens up many more nest possibilities.
+The `ON` clause can contain any expression, and so it opens up many more nest possibilities.
 
 === Syntax
 
@@ -91,7 +94,7 @@ If omitted, the default is `INNER`.
 [#ansi-nest-lateral]
 ==== LATERAL Nest
 
-When an expression on the right-hand side of an ANSI nest references a keyspace that is already specified in the same FROM clause, the expression is said to be correlated.
+When an expression on the right-hand side of an ANSI nest references a keyspace that's already specified in the same FROM clause, the expression is said to be correlated.
 In relational databases, a join which contains correlated expressions is referred to as a lateral join.
 In {sqlpp}, lateral correlations are detected automatically, and there is no need to specify that a nest or join is lateral.
 
@@ -114,19 +117,28 @@ image::n1ql-language-reference/ansi-nest-rhs.png["Syntax diagram", align=left]
 
 [horizontal.compact]
 keyspace-ref:: <<ansi-keyspace-ref>> icon:caret-down[]
+alias:: <<ansi-at-clause>> icon:caret-down[]
 alias:: <<ansi-as-alias>> icon:caret-down[]
 
 [#ansi-keyspace-ref]
 ===== Keyspace Reference
 
 Keyspace reference or expression representing the right-hand side of the NEST clause.
-For details, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
+For more information, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
+
+[#ansi-at-clause]
+===== AT Clause
+
+[.status]#Couchbase Server 8.5#
+
+When the keyspace is an external collection, the AT clause enables you to specify that the query should use data from a specified snapshot.
+For more information, see {at}[].
 
 [#ansi-as-alias]
 ===== AS Alias
 
 Assigns another name to the right-hand side of the NEST clause.
-For details, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
+For more information, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
 
 Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
@@ -224,7 +236,7 @@ include::example$select/ansi-nest-left.jsonc[tags=extract;ellipsis]
 
 Nesting is conceptually the inverse of unnesting.
 Nesting performs a join across two keyspaces.
-But instead of producing a cross-product of the left and right inputs, a single result is produced for each left input, while the corresponding right inputs are collected into an array and nested as a single array-valued field in the result object.
+However, instead of producing a cross-product of the left and right inputs, a single result is produced for each left input, while the corresponding right inputs are collected into an array and nested as a single array-valued field in the result object.
 
 === Syntax
 
@@ -277,19 +289,28 @@ image::n1ql-language-reference/lookup-nest-rhs.png["Syntax diagram", align=left]
 
 [horizontal.compact]
 keyspace-ref:: <<lookup-keyspace-ref>> icon:caret-down[]
+at-clause:: <<lookup-at-clause>> icon:caret-down[]
 alias:: <<lookup-as-alias>> icon:caret-down[]
 
 [#lookup-keyspace-ref]
 ===== Keyspace Reference
 
 Keyspace reference for the right-hand side of the lookup nest.
-For details, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
+For more information, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
+
+[#lookup-at-clause]
+===== AT Clause
+
+[.status]#Couchbase Server 8.5#
+
+When the keyspace is an external collection, the AT clause enables you to specify that the query should use data from a specified snapshot.
+For more information, see {at}[].
 
 [#lookup-as-alias]
 ===== AS Alias
 
 Assigns another name to the right-hand side of the lookup nest.
-For details, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
+For more information, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
 
 Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
@@ -419,19 +440,28 @@ image::n1ql-language-reference/index-nest-rhs.png["Syntax diagram", align=left]
 
 [horizontal.compact]
 keyspace-ref:: <<index-keyspace-ref>> icon:caret-down[]
+at-clause:: <<index-at-clause>> icon:caret-down[]
 alias:: <<index-as-alias>> icon:caret-down[]
 
 [#index-keyspace-ref]
 ===== Keyspace Reference
 
 Keyspace reference or expression representing the right-hand side of the NEST clause.
-For details, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
+For more information, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
+
+[#index-at-clause]
+===== AT Clause
+
+[.status]#Couchbase Server 8.5#
+
+When the keyspace is an external collection, the AT clause enables you to specify that the query should use data from a specified snapshot.
+For more information, see {at}[].
 
 [#index-as-alias]
 ===== AS Alias
 
 Assigns another name to the right-hand side of the NEST clause.
-For details, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
+For more information, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
 
 Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
@@ -446,11 +476,11 @@ include::partial$grammar/dql.ebnf[tag=index-nest-predicate]
 
 image::n1ql-language-reference/index-nest-predicate.png["Syntax diagram", align=left]
 
-`expr`:: Expression in the form `__rhs-expression__.__lhs-expression-key__`:
+`expr`:: Expression in the form `<rhs-expression>.<lhs-expression-key>`:
 
-`__rhs-expression__`;; Keyspace reference for the right-hand side of the index nest.
+`<rhs-expression>`;; Keyspace reference for the right-hand side of the index nest.
 
-`__lhs-expression-key__`;; String or expression representing the attribute in `__rhs-expression__` and referencing the document key for `alias`.
+`<lhs-expression-key>`;; String or expression representing the attribute in `<rhs-expression>` and referencing the document key for `alias`.
 
 `alias`:: Keyspace reference for the left-hand side of the index nest.
 
@@ -466,7 +496,7 @@ include::ROOT:partial$query-context.adoc[tag=section]
 .Use INDEX nest to flip the direction of <<Lookup-NEST-Example-1>> above
 ====
 This example nests the airline routes for each airline after creating the following index.
-(Note that the index will not match if it contains a WHERE clause.)
+(The index does not match if it contains a WHERE clause.)
 
 .Index
 [source,sqlpp]
@@ -490,27 +520,27 @@ If you generalize the same query, it looks like the following:
 
 [subs="normal"]
 ----
-CREATE INDEX _on-key-for-index-name_ _rhs-expression_ (__lhs-expression-key__);
+CREATE INDEX <on-key-for-index-name> <rhs-expression> (<lhs-expression-key>);
 ----
 
 [subs="normal"]
 ----
-SELECT _projection-list_
-FROM _lhs-expression_
-  NEST _rhs-expression_
-  ON KEY __rhs-expression__.__lhs-expression-key__ FOR _lhs-expression_
-[ WHERE _predicates_ ] ;
+SELECT <projection-list>
+FROM <lhs-expression>
+  NEST <rhs-expression>
+  ON KEY <rhs-expression>.<lhs-expression-key> FOR <lhs-expression>
+WHERE <predicates> ;
 ----
 ====
 
-There are three important changes in the index scan syntax example above:
+The index scan syntax example above has three important changes:
 
 * `CREATE INDEX` on the `ON KEY` expression `rte.airlineid` to access `route` documents using `airlineid` (which are produced on the left-hand side).
 * The `ON KEY rte.airlineid FOR aline` enables {sqlpp} to use the index `route_airlineid`.
 * Create any optional index, such as `route_airline`, that can be used on `airline` (left-hand side).
 
-[#as]
-== Appendix: Summary of NEST Types
+[appendix#as]
+== Summary of NEST Types
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
@@ -519,7 +549,7 @@ include::ROOT:partial$query-context.adoc[tag=section]
 [cols="1s,3"]
 |===
 | Left-Hand Side (lhs)
-| Any field or expression that produces a value that will be matched on the right-hand side.
+| Any field or expression that produces a value that's matched on the right-hand side.
 
 | Right-Hand Side (rhs)
 | Anything that can have a proper index on the join expression.
@@ -528,9 +558,9 @@ include::ROOT:partial$query-context.adoc[tag=section]
 a|
 [subs="normal"]
 ----
-_lhs-expr_
-NEST _rhs-keyspace_
-ON _any nest condition_
+<lhs-expr>
+NEST <rhs-keyspace>
+ON <any nest condition>
 ----
 
 | Example
@@ -559,9 +589,9 @@ LIMIT 4;
 a|
 [subs="normal"]
 ----
-_lhs-expr_
-NEST _rhs-keyspace_
-ON KEYS _lhs-expr.foreign_key_
+<lhs-expr>
+NEST <rhs-keyspace>
+ON KEYS <lhs-expr>.<foreign-key>
 ----
 
 | Example
@@ -590,10 +620,10 @@ LIMIT 4;
 a|
 [subs="normal"]
 ----
-_lhs-keyspace_
-NEST _rhs-keyspace_
-ON KEY _rhs-kspace.idx_key_
-FOR _lhs-keyspace_
+<lhs-keyspace>
+NEST <rhs-keyspace>
+ON KEY <rhs-kspace>.<idx-key>
+FOR <lhs-keyspace>
 ----
 
 | Example
