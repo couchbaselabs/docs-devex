@@ -47,6 +47,7 @@ a| [%hardbreaks]
 <<querying-buckets,system:buckets>>
 <<querying-scopes,system:scopes>>
 <<querying-keyspaces,system:keyspaces>>
+<<querying-catalogs,system:catalogs>>
 <<querying-indexes,system:indexes>>
 <<querying-dual,system:dual>>
 
@@ -66,7 +67,6 @@ a| [%hardbreaks]
 <<sys-app-roles,system:applicable_roles>>
 
 a| [%hardbreaks]
-<<sys-catalogs,system:catalogs>>
 <<sys-dictionary,system:dictionary>>
 <<sys-dictionary-cache,system:dictionary_cache>>
 <<sys-functions,system:functions>>
@@ -398,6 +398,137 @@ To return all keyspaces, including the system keyspaces, you can query `system:a
 
 To list external collections only, query the `system:keyspaces` keyspace for collections containing the `catalog` attribute.
 For more information, see xref:manage:manage-scopes-and-collections/maintain-external-catalogs-and-collections.adoc#list-external-collections-using-sqlpp[List External Collections Using {sqlpp}].
+
+[#querying-catalogs]
+== Query Catalogs
+
+[.status]#Couchbase Server 8.5#
+
+The `system:catalogs` keyspace maintains a list of all external catalogs.
+
+To see the list of all external catalogs, use:
+
+[source,sqlpp]
+----
+SELECT * FROM system:catalogs;
+----
+
+This will result in a list similar to:
+
+[source,json]
+----
+[
+  {
+    "catalogSource": "REST",
+    "catalogType": "ICEBERG",
+    "credentialId": "query/external/iceberg-sales-catalog",
+    "name": "sales_catalog",
+    "rev": 7,
+    "uri": "https://iceberg-catalog.example.com"
+  },
+  {
+    "catalogSource": "AWS_GLUE",
+    "catalogType": "ICEBERG",
+    "credentialId": "query/external/iceberg-flights-catalog",
+    "name": "flights_catalog",
+    "rev": 8
+  },
+  {
+    "catalogSource": "NESSIE",
+    "catalogType": "ICEBERG",
+    "name": "nessie_catalog",
+    "rev": 9,
+    "uri": "http://localhost:19120/iceberg",
+    "warehouse": "s3://logistics-bucket/warehouse"
+  }
+]
+----
+
+This keyspace contains the following attributes:
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+|**catalogSource** +
+required
+|The catalog provider for this catalog.
+Possible values are:
+
+* `AWS_GLUE`
+* `AWS_GLUE_REST`
+* `S3_TABLES`
+* `BIGLAKE_METASTORE`
+* `NESSIE`
+* `NESSIE_REST`
+* `REST` (Generic REST, such as Unity Catalog)
+* `SQL`
+|String
+
+|**catalogType** +
+required
+|The type of catalog.
+The only supported catalog type is `ICEBERG`.
+|String
+
+|**name** +
+required
+|The name of the catalog.
+|String
+
+|**rev** +
+required
+|The revision number of the catalog.
+|Integer
+
+|**credentialId** +
+optional
+|For AWS Glue, AWS Glue REST, AWS S3 Tables, Google BigLake Metastore, generic REST, and SQL catalog providers:
+The ID of the credential that Couchbase {product-name} uses to authenticate with the catalog provider.
+|String
+
+|**uri** +
+optional
+|For AWS Glue REST, AWS S3 Tables, Google BigLake Metastore, Nessie, and Nessie REST catalog providers:
+The catalog URI.
+
+'''
+
+For SQL catalog providers:
+The PostgreSQL or SQLite connection string.
+|String
+
+|**sigv4SigningRegion** +
+optional
+|For AWS Glue REST and AWS S3 Tables catalog providers:
+The AWS Signature Version 4 signing region.
+|String
+
+|**sigv4SigningName** +
+optional
+|For AWS S3 Tables catalog providers:
+The AWS Signature Version 4 signing name.
+|String
+
+|**warehouse** +
+optional
+|For AWS S3 Tables catalog providers:
+The table bucket's ARN.
+
+'''
+
+For Google BigLake Metastore, Nessie, and generic REST catalog providers:
+A storage location URI.
+|String
+
+|**quotaProjectId** +
+optional
+|For Google BigLake Metastore catalog providers:
+The Google Cloud project ID that sets the quota for the catalog.
+|String
+|===
+
+For more information, see xref:manage:manage-scopes-and-collections/maintain-external-catalogs-and-collections.adoc#list-external-catalogs-using-sqlpp[List External Catalogs Using {sqlpp}].
 
 [#querying-indexes]
 == Query Indexes
@@ -796,136 +927,6 @@ This will result in a list similar to:
 
 For more examples, take a look at the blog: https://blog.couchbase.com/optimize-n1ql-performance-using-request-profiling/[Optimize {sqlpp} performance using request profiling^].
 
-[#sys-catalogs]
-== Monitor Catalogs
-
-[.status]#Couchbase Server 8.5#
-
-The `system:catalogs` keyspace maintains a list of all external catalogs.
-
-To see the list of all external catalogs, use:
-
-[source,sqlpp]
-----
-SELECT * FROM system:catalogs;
-----
-
-This will result in a list similar to:
-
-[source,json]
-----
-[
-  {
-    "catalogSource": "REST",
-    "catalogType": "ICEBERG",
-    "credentialId": "query/external/iceberg-sales-catalog",
-    "name": "sales_catalog",
-    "rev": 7,
-    "uri": "https://iceberg-catalog.example.com"
-  },
-  {
-    "catalogSource": "AWS_GLUE",
-    "catalogType": "ICEBERG",
-    "credentialId": "query/external/iceberg-flights-catalog",
-    "name": "flights_catalog",
-    "rev": 8
-  },
-  {
-    "catalogSource": "NESSIE",
-    "catalogType": "ICEBERG",
-    "name": "nessie_catalog",
-    "rev": 9,
-    "uri": "http://localhost:19120/iceberg",
-    "warehouse": "s3://logistics-bucket/warehouse"
-  }
-]
-----
-
-This keyspace contains the following attributes:
-
-[options="header", cols="~a,~a,~a"]
-|===
-|Name|Description|Schema
-
-|**catalogSource** +
-required
-|The catalog provider for this catalog.
-Possible values are:
-
-* `AWS_GLUE`: AWS Glue
-* `AWS_GLUE_REST`: AWS Glue REST
-* `S3_TABLES`: AWS S3 Tables
-* `BIGLAKE_METASTORE`: Google BigLake Metastore
-* `NESSIE`: Nessie
-* `NESSIE_REST`: Nessie REST
-* `REST`: Generic REST, such as Unity Catalog
-* `SQL`: PostgreSQL or SQLite
-|String
-
-|**catalogType** +
-required
-|The type of catalog.
-The only supported catalog type is `ICEBERG`.
-|String
-
-|**name** +
-required
-|The name of the catalog.
-|String
-
-|**rev** +
-required
-|The revision number of the catalog.
-|Integer
-
-|**credentialId** +
-optional
-|For AWS Glue, AWS Glue REST, AWS S3 Tables, Google BigLake Metastore, generic REST, and SQL catalog providers:
-The ID of the credential that Couchbase {product-name} uses to authenticate with the catalog provider.
-|String
-
-|**uri** +
-optional
-|For AWS Glue REST, AWS S3 Tables, Google BigLake Metastore, Nessie, and Nessie REST catalog providers:
-The catalog URI.
-
-'''
-
-For SQL catalog providers:
-The PostgreSQL or SQLite connection string.
-|String
-
-|**sigv4SigningRegion** +
-optional
-|For AWS Glue REST and AWS S3 Tables catalog providers:
-The AWS Signature Version 4 signing region.
-|String
-
-|**sigv4SigningName** +
-optional
-|For AWS S3 Tables catalog providers:
-The AWS Signature Version 4 signing name.
-|String
-
-|**warehouse** +
-optional
-|For AWS S3 Tables catalog providers:
-The table bucket's ARN.
-
-'''
-
-For Google BigLake Metastore, Nessie, and generic REST catalog providers:
-A storage location URI.
-|String
-
-|**quotaProjectId** +
-optional
-|For Google BigLake Metastore catalog providers:
-The Google Cloud project ID that sets the quota for the catalog.
-|String
-|===
-
-For more information, see xref:manage:manage-scopes-and-collections/maintain-external-catalogs-and-collections.adoc#list-external-catalogs-using-sqlpp[List External Catalogs Using {sqlpp}].
 
 [#sys-dictionary]
 == Monitor Statistics

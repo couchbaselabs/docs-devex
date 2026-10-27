@@ -36,13 +36,13 @@ For more information, see <<grant-roles>>, <<grant-credentialstore-privilege>>, 
 :section: roles
 
 This syntax grants RBAC roles to a user or group, giving them a predefined set of privileges.
-Roles can be simple or parameterized by a keyspace.
+Roles can be global or parameterized by a keyspace.
 
-* Simple roles, such as `cluster_admin` or `bucket_admin`, apply generically to all keyspaces or resources in the cluster.
+* Global roles, such as `cluster_admin` or `bucket_admin`, apply generically to all keyspaces or resources in the cluster.
 * Parameterized roles, such as `data_reader` or `query_select`, are defined for the context of the specified keyspaces only.
 Use the ON clause to specified the keyspaces.
 
-You cannot mix simple and parameterized roles in the same statement, and doing so results in an error.
+You cannot mix global and parameterized roles in the same statement, and doing so results in an error.
 
 [source,ebnf]
 ----
@@ -62,14 +62,11 @@ For the following roles, you can use their short forms as well:
 * `query_update` → `update`
 * `query_delete` → `delete`
 
-keyspace-ref:: <<keyspace-ref>> icon:caret-down[]
-users-and-groups:: <<{section}-users-or-groups>> icon:caret-down[]
-
 [#keyspace-ref]
 ==== ON Clause
 
 [Optional] Use the ON clause to specify one or more keyspaces for a parameterized role.
-Each keyspace reference may be a simple keyspace name or a fully qualified keyspace name.
+Each keyspace reference may be a plain keyspace name or a fully qualified keyspace name.
 
 [source,ebnf]
 ----
@@ -143,7 +140,6 @@ For example, you can grant a user access to a specific AWS credential.
 
 [horizontal]
 credential:: The name of an existing credential in the credential store.
-users-and-groups:: <<{section}-users-or-groups>> icon:caret-down[]
 
 include::grant.adoc[tags=users-or-groups]
 
@@ -169,13 +165,12 @@ You need this role to run a SELECT query on an external collection which uses th
 
 [horizontal]
 catalog:: The name of an existing external catalog.
-users-and-groups:: <<{section}-users-or-groups>> icon:caret-down[]
 
 include::grant.adoc[tags=users-or-groups]
 
 == Examples
 
-.Grant an unparameterized role
+.Grant a global role
 ====
 The following example grants the role of Cluster Admin to multiple users.
 
@@ -252,6 +247,5 @@ GRANT query_select ON `sales`.`_default`.`orders` TO analyst;
 == Related Links
 
 * xref:n1ql-language-reference/revoke.adoc[]
-* xref:n1ql-language-reference/createcredentialstore.adoc[]
 * xref:learn:security/credential-store.adoc[]
-
+* xref:learn:data/external-catalogs-and-collections.adoc[]
