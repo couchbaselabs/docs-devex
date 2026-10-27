@@ -13,6 +13,7 @@
 :use-clause: {join}#ansi-join-hints
 :where: xref:n1ql-language-reference/where.adoc
 :hints: xref:n1ql-language-reference/optimizer-hints.adoc
+:at: xref:n1ql-language-reference/at.adoc
 :expr: xref:n1ql-language-reference/index.adoc#N1QL_Expressions
 :authorization: xref:learn:security/authorization-overview.adoc
 
@@ -30,15 +31,15 @@ A comma-separated join can combine arbitrary fields from the source documents, a
 
 (((join predicate,comma-separated join)))
 The comma-separated join, by itself, does not specify a join predicate.
-This means that, in its basic form, the comma-separated join would produce all the possible combinations of the combined source objects -- this is known as the _Cartesian product_.
+This means that, in its basic form, the comma-separated join would produce all the possible combinations of the combined source objects -- this is known as the *((Cartesian product))*.
 
-In practice, it is common to use the query's {where}[WHERE] clause to specify a condition for the comma-separated join.
-Refer to the examples below for further details.
+In practice, it's common to use the query's {where}[WHERE] clause to specify a condition for the comma-separated join.
+See the examples later on this page for further details.
 
 == Prerequisites
 
-For you to select data from keyspace or expression, you must have the [.param]`query_select` privilege on that keyspace.
-For more details about user roles, see {authorization}[Authorization].
+For you to select data from keyspace or expression, you must have the `query_select` privilege on that keyspace.
+For more information about user roles, see {authorization}[Authorization].
 
 == Syntax
 
@@ -62,12 +63,12 @@ The comma-separated join is a type of inner join.
 For each joined object produced, both the left-hand side and right-hand side source objects must be non-MISSING and non-NULL.
 
 (((right-hand side,comma-separated join)))
-The _right-hand side_ of a comma-separated join may be a keyspace reference, a subquery, or a generic expression term.
+The *((right-hand side))* of a comma-separated join may be a keyspace reference, a subquery, or a generic expression term.
 
 [#comma-join-lateral]
 === LATERAL Join
 
-When an expression on the right-hand side of a comma-separated join references a keyspace that is already specified in the same FROM clause, the expression is said to be correlated.
+When an expression on the right-hand side of a comma-separated join references a keyspace that's already specified in the same FROM clause, the expression is said to be correlated.
 In relational databases, a join which contains correlated expressions is referred to as a lateral join.
 In {sqlpp}, lateral correlations are detected automatically, and there is no need to specify that a join is lateral.
 
@@ -80,7 +81,7 @@ You can use the optional LATERAL keyword in front of the right-hand side keyspac
 
 NOTE: Using the LATERAL keyword in a comma-separated join implies that the right-hand side of the join must appear after the left-hand side of the join.
 This may prevent the cost-based optimizer from reordering joins in the query to give the optimal join order.
-For details, see xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#join-enumeration[Join Enumeration].
+For more information, see xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#join-enumeration[Join Enumeration].
 
 [[rhs-keyspace]]
 === Right-Hand Side Keyspace
@@ -94,6 +95,7 @@ image::n1ql-language-reference/rhs-keyspace.png["Syntax diagram", align=left]
 
 [horizontal.compact]
 keyspace-ref:: <<rhs-keyspace-ref>> icon:caret-down[]
+at-clause:: <<rhs-keyspace-at>> icon:caret-down[]
 alias:: <<rhs-keyspace-alias>> icon:caret-down[]
 ansi-join-hints:: <<rhs-keyspace-hints>> icon:caret-down[]
 
@@ -101,25 +103,33 @@ ansi-join-hints:: <<rhs-keyspace-hints>> icon:caret-down[]
 ==== Keyspace Reference
 
 Keyspace reference for the right-hand side of the comma-separated join.
-For details, see {from-keyspace}[Keyspace Reference].
+For more information, see {from-keyspace}[Keyspace Reference].
 
 [#rhs-keyspace-alias]
 ==== AS Alias
 
 Assigns another name to the keyspace reference.
-For details, see {as-alias}[AS Clause].
+For more information, see {as-alias}[AS Clause].
 
 Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
+
+[#rhs-keyspace-at]
+==== AT Clause
+
+[.status]#Couchbase Server 8.5#
+
+When the keyspace is an external collection, the AT clause enables you to specify that the query should use data from a specified snapshot.
+For more information, see {at}[].
 
 [#rhs-keyspace-hints]
 ==== USE Clause
 
 Enables you to specify that the join should use particular keys, a particular index, or a particular join method.
-For details, see {use-clause}[ANSI JOIN Hints].
+For more information, see {use-clause}[ANSI JOIN Hints].
 
-TIP: You can also supply a join hint within a specially-formatted {hints}[hint comment].
-Note that you cannot specify a join hint for the same keyspace using both the `USE` clause and a hint comment.
+TIP: You can also supply a join hint within a specially formatted {hints}[hint comment].
+You cannot specify a join hint for the same keyspace using both the `USE` clause and a hint comment.
 If you do this, the `USE` clause and the hint comment are both marked as erroneous and ignored by the optimizer.
 
 [[rhs-subquery]]
@@ -140,16 +150,16 @@ alias:: <<ansi-subquery-alias>> icon:caret-down[]
 ==== Subquery Expression
 
 Use parentheses to specify a subquery for the right-hand side of the comma-separated join.
-For details, see {from-subquery}[Subquery Expression].
+For more information, see {from-subquery}[Subquery Expression].
 
-NOTE: A subquery on the right-hand side of the comma-separated join cannot be *correlated*, i.e. it cannot refer to a keyspace in the outer query block.
+NOTE: A subquery on the right-hand side of the comma-separated join cannot be *correlated*: in other words, it cannot refer to a keyspace in the outer query block.
 This will lead to an error.
 
 [#ansi-subquery-alias]
 ==== AS Alias
 
 Assigns another name to the subquery.
-For details, see {as-alias}[AS Clause].
+For more information, see {as-alias}[AS Clause].
 
 You must assign an alias to a subquery on the right-hand side of the join.
 However, when you assign an alias to the subquery, the `AS` keyword may be omitted.
@@ -173,16 +183,16 @@ alias:: <<ansi-generic-alias>> icon:caret-down[]
 
 A {sqlpp} {expr}[expression] generating JSON documents or objects for the right-hand side of the comma-separated join.
 
-NOTE: An expression on the right-hand side of the comma-separated join may be *correlated*, i.e. it may refer to a keyspace on the left-hand side of the join.
+NOTE: An expression on the right-hand side of the comma-separated join may be *correlated*: in other words, it may refer to a keyspace on the left-hand side of the join.
 In this case, only a <<ansi-join-hints,nested-loop join>> may be used.
 
 [#ansi-generic-alias]
 ==== AS Alias
 
 Assigns another name to the generic expression.
-For details, see {as-alias}[AS Clause].
+For more information, see {as-alias}[AS Clause].
 
-You must assign an alias to the generic expression if it is not an identifier; otherwise, assigning an alias is optional.
+You must assign an alias to the generic expression if it's not an identifier; otherwise, assigning an alias is optional.
 However, when you assign an alias to the generic expression, the `AS` keyword may be omitted.
 
 == Limitations
@@ -191,7 +201,7 @@ However, when you assign an alias to the generic expression, the `AS` keyword ma
 However, you cannot chain comma-separated joins with lookup `JOIN` and `NEST` clauses, or index `JOIN` and `NEST` clauses.
 
 * The right-hand side of a comma-separated join can only be a keyspace identifier, a subquery, or a generic expression.
-This means that comma-separated joins must come _after_ any `JOIN`, `NEST`, or `UNNEST` clauses.
+This means that comma-separated joins must come after any `JOIN`, `NEST`, or `UNNEST` clauses.
 
 == Examples
 
