@@ -4,6 +4,9 @@
 :from-term: pass:q[`JOIN` clause]
 :page-topic-type: reference
 
+// Cross-references
+:at: xref:n1ql-language-reference/at.adoc
+
 // TEMP
 include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
@@ -17,12 +20,12 @@ It creates an input object by combining two or more source objects.
 Couchbase Server supports three types of `JOIN` clause, which are described in the sections below: <<section_ek1_jnx_1db,ANSI JOIN>>, <<lookup-join-clause,Lookup JOIN>>, and <<index-join-clause,Index JOIN>>.
 
 Couchbase Server also supports comma-separated joins.
-For further details, refer to xref:n1ql-language-reference/comma.adoc[].
+For further details, see xref:n1ql-language-reference/comma.adoc[].
 
 == Prerequisites
 
-For you to select data from keyspace or expression, you must have the [.param]`query_select` privilege on that keyspace.
-For more details about user roles, see
+To select data from a keyspace or expression, you must have the `query_select` privilege on that keyspace.
+For more information about user roles, see
 xref:learn:security/authorization-overview.adoc[Authorization].
 
 == Syntax
@@ -44,6 +47,8 @@ include::partial$n1ql-language-reference/from-term.adoc[]
 
 [#section_ek1_jnx_1db]
 == ANSI JOIN Clause
+
+ANSI refers to the American National Standards Institute standard for SQL.
 
 === Purpose
 
@@ -149,7 +154,7 @@ Then the query is transformed internally into an INNER JOIN for greater efficien
 [#ansi-join-lateral]
 ==== LATERAL Join
 
-When an expression on the right-hand side of an ANSI join references a keyspace that is already specified in the same FROM clause, the expression is said to be correlated.
+When an expression on the right-hand side of an ANSI join references a keyspace that's already specified in the same FROM clause, the expression is said to be correlated.
 In relational databases, a join which contains correlated expressions is referred to as a lateral join.
 In {sqlpp}, lateral correlations are detected automatically, and there is no need to specify that a join is lateral.
 
@@ -162,7 +167,9 @@ INNER JOINS and LEFT OUTER JOINS support the optional LATERAL keyword in front o
 
 RIGHT OUTER JOINS do not support the optional LATERAL keyword.
 
-NOTE: Using the LATERAL keyword in an ANSI join implies that the right-hand side of the join must appear after the left-hand side of the join. This may prevent the cost-based optimizer from reordering joins in the query to give the optimal join order. For details, see xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#join-enumeration[Join Enumeration].
+NOTE: Using the LATERAL keyword in an ANSI join implies that the right-hand side of the join must appear after the left-hand side of the join.
+This may prevent the cost-based optimizer from reordering joins in the query to give the optimal join order.
+For more information, see xref:n1ql:n1ql-language-reference/cost-based-optimizer.adoc#join-enumeration[Join Enumeration].
 
 [#ansi-join-predicate]
 ==== Join Predicate
@@ -179,7 +186,7 @@ This expression may contain fields, constant expressions, or any complex {sqlpp}
 
 === Limitations
 
-* A RIGHT OUTER join is only supported when it’s the only join in the query; or when it's the first join in a chain of joins.
+* A RIGHT OUTER join is only supported when it's the only join in the query; or when it's the first join in a chain of joins.
 
 * No mixing of ANSI join syntax with lookup or index join syntax in the same FROM clause.
 
@@ -196,7 +203,7 @@ include::ROOT:partial$query-context.adoc[tag=section]
 [#ANSI-Join-Example-1]
 .Inner Join
 ====
-List the source airports and airlines that fly into SFO, where only the non-null `route` documents join with matching `airline` documents.
+List the source airports and airlines that fly into San Francisco (SFO), where only the non-null `route` documents join with matching `airline` documents.
 
 [source,sqlpp]
 ----
@@ -348,22 +355,31 @@ image::n1ql-language-reference/rhs-keyspace.png["Syntax diagram", align=left]
 [horizontal.compact]
 keyspace-ref:: <<ansi-keyspace-ref>> icon:caret-down[]
 alias:: <<ansi-keyspace-alias>> icon:caret-down[]
+at-clause:: <<ansi-keyspace-at>> icon:caret-down[]
 ansi-join-hints:: <<ansi-join-hints>> icon:caret-down[]
 
 [#ansi-keyspace-ref]
 ==== Keyspace Reference
 
 Keyspace reference for the right-hand side of the ANSI join.
-For details, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
+For more information, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
 
 [#ansi-keyspace-alias]
 ==== AS Alias
 
 Assigns another name to the keyspace reference.
-For details, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
+For more information, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
 
 Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
+
+[#ansi-keyspace-at]
+==== AT Clause
+
+[.status]#Couchbase Server 8.5#
+
+When the keyspace is an external collection, the AT clause enables you to specify that the query should use data from a specified snapshot.
+For more information, see {at}[].
 
 [#ansi-rhs-subquery]
 === Right-Hand Side Subquery
@@ -383,16 +399,16 @@ alias:: <<ansi-subquery-alias>> icon:caret-down[]
 ==== Subquery Expression
 
 Use parentheses to specify a subquery for the right-hand side of the ANSI join.
-For details, see xref:n1ql-language-reference/from.adoc#select-expr-clause[Subquery Expression].
+For more information, see xref:n1ql-language-reference/from.adoc#select-expr-clause[Subquery Expression].
 
-NOTE: A subquery on the right-hand side of the ANSI join cannot be *correlated*, i.e. it cannot refer to a keyspace in the outer query block.
-This will lead to an error.
+NOTE: A subquery on the right-hand side of the ANSI join cannot be *correlated*: in other words, it cannot refer to a keyspace in the outer query block.
+This leads to an error.
 
 [#ansi-subquery-alias]
 ==== AS Alias
 
 Assigns another name to the subquery.
-For details, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
+For more information, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
 
 You must assign an alias to a subquery on the right-hand side of the join.
 However, when you assign an alias to the subquery, the `AS` keyword may be omitted.
@@ -416,16 +432,16 @@ alias:: <<ansi-generic-alias>> icon:caret-down[]
 
 A {sqlpp} xref:n1ql-language-reference/index.adoc[expression] generating JSON documents or objects for the right-hand side of the ANSI join.
 
-NOTE: An expression on the right-hand side of the ANSI join may be *correlated*, i.e. it may refer to a keyspace on the left-hand side of the join.
+NOTE: An expression on the right-hand side of the ANSI join may be *correlated*: in other words, it may refer to a keyspace on the left-hand side of the join.
 In this case, only a <<ansi-join-hints,nested-loop join>> may be used.
 
 [#ansi-generic-alias]
 ==== AS Alias
 
 Assigns another name to the generic expression.
-For details, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
+For more information, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
 
-You must assign an alias to the generic expression if it is not an identifier; otherwise, assigning an alias is optional.
+You must assign an alias to the generic expression if it's not an identifier; otherwise, assigning an alias is optional.
 However, when you assign an alias to the generic expression, the `AS` keyword may be omitted.
 
 === Examples
@@ -487,11 +503,11 @@ Two corresponding join hints are introduced: `USE HASH` and `USE NL`.
 The ANSI join hints are similar to the xref:n1ql-language-reference/hints.adoc#use-index-clause[USE INDEX] or xref:n1ql-language-reference/hints.adoc#use-keys-clause[USE KEYS] hints.
 The ANSI join hints can be specified after the right-hand side of an ANSI join specification.
 
-NOTE: The join hint for the first join should be specified on the first join's right-hand side, and the join hint for the second join should be specified on the second join's right-hand side, etc.
-If a join hint is specified on the first FROM term, i.e. the first join's left-hand side, an error is returned.
+NOTE: The join hint for the first join should be specified on the first join's right-hand side, and the join hint for the second join should be specified on the second join's right-hand side, and so on.
+If a join hint is specified on the first FROM term -- in other words, the first join's left-hand side -- an error is returned.
 
-TIP: You can also supply a join hint within a specially-formatted xref:n1ql-language-reference/optimizer-hints.adoc[hint comment].
-Note that you cannot specify a join hint for the same keyspace using both the `USE` clause and a hint comment.
+TIP: You can also supply a join hint within a specially formatted xref:n1ql-language-reference/optimizer-hints.adoc[hint comment].
+You cannot specify a join hint for the same keyspace using both the `USE` clause and a hint comment.
 If you do this, the `USE` clause and the hint comment are both marked as erroneous and ignored by the optimizer.
 
 [#default-join-method]
@@ -499,11 +515,11 @@ If you do this, the `USE` clause and the hint comment are both marked as erroneo
 ****
 [.edition]#{enterprise}#
 
-In Enterprise Edition, for an ANSI join with a subquery or a generic expression as the right-hand side, the default method is hash.
+In Couchbase Server Enterprise Edition, for an ANSI join with a subquery or a generic expression as the right-hand side, the default method is hash.
 In this case:
 
 * The subquery or expression on the right-hand side of the join is used as the <<use-hash-hint,build side>> of the hash join.
-If `USE HASH(PROBE)` is specified, then the expression or subquery will be used as the <<use-hash-hint,probe side>> of the hash join.
+If `USE HASH(PROBE)` is specified, then the expression or subquery is used as the <<use-hash-hint,probe side>> of the hash join.
 
 * If an expression on the right-hand side is <<ansi-generic-expr,correlated>>, a nested-loop join is used.
 (If a subquery on the right-hand side is <<ansi-subquery-expr,correlated>>, the query returns an error.)
@@ -516,7 +532,7 @@ In this case:
 * Hash join is only considered when the `USE HASH` hint is specified, and it requires at least one equality predicate between the left-hand side and right-hand side.
 
 * If the join meets these conditions, hash join is used.
-If the hash join cannot be generated, then the planner will further consider nested-loop join, and will either generate a nested-loop join or return an error for the join.
+If the hash join cannot be generated, then the planner further considers nested-loop join, and either generates a nested-loop join or returns an error for the join.
 
 * If no join hint is specified, or the `USE NL` hint is specified, then nested-loop join is considered.
 
@@ -524,7 +540,7 @@ If the hash join cannot be generated, then the planner will further consider nes
 
 [.edition]#{community}#
 
-For Community Edition (CE), only nested-loop join is considered by the planner, and any specified `USE HASH` hint will be silently ignored.
+For Couchbase Server Community Edition (CE), only nested-loop join is considered by the planner, and any specified `USE HASH` hint is silently ignored.
 ****
 
 [#use-hash-hint]
@@ -545,20 +561,20 @@ include::partial$grammar/dql.ebnf[tag=use-hash-term]
 
 image::n1ql-language-reference/use-hash-term.png["Syntax diagram", align=left]
 
-There are two versions of the `USE HASH` hint:
+The `USE HASH` hint has two versions:
 
 * `USE HASH(BUILD)` -- The right-hand side of the join is to be used as the build side.
 * `USE HASH(PROBE)` -- The right-hand side of the join is to be used as the probe side.
 
 A hash join has two sides: a *build* side and a *probe* side.
-The build side of the join will be used to create an in-memory hash table.
-The probe side will use that table to find matches and perform the join.
+The build side of the join is used to create an in-memory hash table.
+The probe side uses that table to find matches and perform the join.
 Typically, this means you want the build side to be used on the smaller of the two sets.
 However, you can only supply one hash hint, and only to the right side of the join.
-So if you specify `BUILD` on the right side, then you are implicitly using `PROBE` on the left side (and vice versa).
+If you specify `BUILD` on the right side, then you're implicitly using `PROBE` on the left side (and vice versa).
 
 This clause is equivalent to the `USE_HASH` optimizer hint.
-For more details, refer to xref:n1ql-language-reference/keyspace-hints.adoc#use-hash[Keyspace Hints].
+For more information, see xref:n1ql-language-reference/keyspace-hints.adoc#use-hash[Keyspace Hints].
 
 [#use-nl-hint]
 === USE NL Hint
@@ -581,7 +597,7 @@ image::n1ql-language-reference/use-nl-term.png["Syntax diagram", align=left]
 This join hint instructs the planner to use nested-loop join (NL join) for the join being considered.
 
 This clause is equivalent to the `USE_NL` optimizer hint.
-For more details, refer to xref:n1ql-language-reference/keyspace-hints.adoc#use-hash[Keyspace Hints].
+For more information, see xref:n1ql-language-reference/keyspace-hints.adoc#use-hash[Keyspace Hints].
 
 [#multiple-hints]
 === Multiple Hints
@@ -610,17 +626,17 @@ include::partial$grammar/dql.ebnf[tag=other-hint-terms]
 image::n1ql-language-reference/other-hint-terms.png["Syntax diagram", align=left]
 
 You can use only one join hint (<<use-hash-term,USE HASH>> or <<use-nl-term,USE NL>>) together with only one other hint (xref:n1ql-language-reference/hints.adoc#use-index-term[USE INDEX] or xref:n1ql-language-reference/hints.adoc#use-keys-term[USE KEYS]) for a total of two hints.
-The order of the two hints doesn't matter.
+The order of the two hints does not matter.
 
 When multiple hints are being specified, use only one `USE` keyword with one following the other, as shown in <<Multiple-hint-Example-1>> and <<Multiple-hint-Example-2>>.
 
-When chosen, the hash join will always work; the restrictions are on any USE KEYS hint clause:
+When chosen, the hash join always works; the restrictions are on any USE KEYS hint clause:
 
 * Must not depend on any previous keyspaces.
-* The expression must be constants, host variables, etc.
+* The expression must be constants, host variables, and so on.
 * Must not contain any subqueries.
 
-NOTE: If the USE KEYS hint contains references to other keyspaces or subqueries, then the USE HASH hint will be ignored and nested-loop join will be used instead.
+NOTE: If the USE KEYS hint contains references to other keyspaces or subqueries, then the USE HASH hint is ignored and nested-loop join is used instead.
 
 === Examples
 
@@ -710,8 +726,8 @@ Below are different join scenarios involving arrays and ways to handle each scen
 
 [NOTE]
 ====
-These keyspaces and indexes will be used throughout this section's array scenarios.
-As a convention, when a field name starts with `a` it is an array, so each keyspace has two array fields and two regular fields.
+These keyspaces and indexes are used throughout this section's array scenarios.
+As a convention, when a field name starts with `a` it's an array, so each keyspace has two array fields and two regular fields.
 
 [plantuml,ansi-join-example,svg]
 ....
@@ -773,7 +789,8 @@ JOIN b2
 WHERE b1.c12 = 10;
 ----
 
-In this example, although there is an ANY predicate on the right-hand side array `b2.a21`, the ANY predicate does not involve any joins, and thus, as far as the join is concerned, it is still a 1-to-1 join.
+In this example, although there is an ANY predicate on the right-hand side array `b2.a21`, the ANY predicate does not involve any joins.
+As far as the join is concerned, it's still a 1-to-1 join.
 Similarly:
 
 [source,sqlpp]
@@ -787,8 +804,8 @@ WHERE b1.c11 = 10
   AND ANY v IN b1.a11 SATISFIES v = 20 END;
 ----
 
-In this case the ANY predicate is on the left-hand side array `b1.a11`; however, similar to above, the ANY predicate does not involve any joins, and thus the join is still 1-to-1.
-We can even have ANY predicates on both sides:
+In this case the ANY predicate is on the left-hand side array `b1.a11`; however, similar to above, the ANY predicate does not involve any joins, and so the join is still 1-to-1.
+You can even have ANY predicates on both sides:
 
 [source,sqlpp]
 ----
@@ -807,7 +824,7 @@ Again, the ANY predicates do not involve any join, and the join is still 1-to-1.
 
 === ANSI JOIN with Entire Array as Index Key
 
-As a special case, it is possible to perform ANSI JOIN on an entire array as a join key:
+As a special case, it's possible to perform ANSI JOIN on an entire array as a join key:
 
 [source,sqlpp]
 ----
@@ -839,19 +856,20 @@ JOIN b2
 WHERE b1.c11 = 10;
 ----
 
-In this case, the ANY predicate involves a join, and thus, effectively we are joining `b1` with elements of the `b2.a21` array.
+In this case, the ANY predicate involves a join.
+Effectively the query joins `b1` with elements of the `b2.a21` array.
 This now becomes a 1-to-many join.
-Note that we use an ANY clause for this scenario since it’s a natural extension of the existing support for array indexes; the only difference is for index span generation, we now can have a potential join expression.
+You can use an ANY clause for this scenario since it's a natural extension of the existing support for array indexes; the only difference is that for index span generation, you now can have a potential join expression.
 Array indexes can be used for join in this scenario.
 
 === ANSI JOIN Involving Left-Hand Side Arrays
 
-This is a slightly more complex scenario, where the array reference is on the left-hand side of the join, and it’s a many-to-1 join.
-There are two alternative ways to handle the scenario where the array appears on the left-hand side of the join.
+This is a slightly more complex scenario, where the array reference is on the left-hand side of the join, and it's a many-to-1 join.
+You can handle the scenario where the array is on the left-hand side of the join in two alternative ways.
 
 ==== Use UNNEST
 
-This alternative will flatten the left-hand side array first, before performing the join:
+This alternative flattens the left-hand side array first, before performing the join:
 
 [source,sqlpp]
 ----
@@ -865,7 +883,7 @@ WHERE b1.c11 = 10
 ----
 
 The <<unnest,UNNEST>> operation is used to flatten the array, turning one left-hand side document into multiple documents; and then for each one of them, join with the right-hand side.
-This way, by the time join is being performed, it is a regular join, since the array is already flattened in the UNNEST step.
+This way, by the time join is being performed, it's a regular join, since the array is already flattened in the UNNEST step.
 
 ==== Use IN clause
 
@@ -881,29 +899,29 @@ WHERE b1.c11 = 10 AND b1.c12 = 100;
 ----
 
 By using the xref:n1ql-language-reference/indexing-arrays.adoc[IN] clause, the right-hand side field value can match any of the elements of the left-hand side array.
-Conceptually, we are using each element of the left-hand side array to probe the right-hand side index.
+Conceptually, it uses each element of the left-hand side array to probe the right-hand side index.
 
 ==== Differences Between the Two Alternatives
 
-There is a semantical difference between the two alternatives.
-With UNNEST, we are first turning one left-hand side document into multiple documents and then performing the join.
-With IN-clause, there is still only one left-hand side document, which can then join with one or more right-hand side documents.
-Thus:
+The difference between the two alternatives is semantical.
+With UNNEST, you first turning one left-hand side document into multiple documents and then perform the join.
+With IN clause, there's still only one left-hand side document, which can then join with one or more right-hand side documents.
+Therefore:
 
 * If the array contains duplicate values,
- ** the UNNEST method treats each duplicate as an individual value and thus duplicated results will be returned;
- ** the IN clause method will not duplicate the result.
+ ** the UNNEST method treats each duplicate as an individual value, so duplicated results are returned;
+ ** the IN clause method does not duplicate the result.
 
-* If no duplicate values exists and we are performing inner join,
- ** then the two alternatives will likely give the same result.
+* If no duplicate values exists and you're performing inner join,
+ ** then the two alternatives likely give the same result.
 
 * If outer join is performed, assuming there are N elements in the left-hand side array, and assuming there is at most one matching document from the right-hand side for each element of the array,
- ** the UNNEST method will produce N result documents;
+ ** the UNNEST method produces N result documents;
  ** the IN clause method may produce < N result documents if some of the array elements do not have matching right-hand side documents.
 
 === ANSI JOIN with Arrays on Both Sides
 
-If the join involves arrays on both sides, then we can combine the approaches above, i.e., using ANY clause to handle the right-hand side array and either UNNEST or IN clause to handle the left-hand side array.
+If the join involves arrays on both sides, then you can combine the approaches above, using ANY clause to handle the right-hand side array and either UNNEST or IN clause to handle the left-hand side array.
 For example:
 
 [source,sqlpp]
@@ -936,9 +954,10 @@ WHERE b1.c11 = 10
 [#lookup-join-clause]
 == Lookup JOIN Clause
 
+A *((lookup join))* is a legacy syntax for joins.
+
 === Purpose
 
-A _lookup join_ is a legacy syntax for joins.
 It enables you to join a foreign key field on the left-hand side of the join with the primary xref:learn:data/data.adoc#keys[document key] on the right-hand side of the join.
 Couchbase Server version 4.1 and earlier supported only lookup joins.
 
@@ -994,22 +1013,31 @@ image::n1ql-language-reference/lookup-join-rhs.png["Syntax diagram", align=left]
 
 [horizontal.compact]
 keyspace-ref:: <<lookup-keyspace-ref>> icon:caret-down[]
+at-clause:: <<lookup-at-clause>> icon:caret-down[]
 alias:: <<lookup-as-alias>> icon:caret-down[]
 
 [#lookup-keyspace-ref]
 ===== Keyspace Reference
 
 Keyspace reference for the right-hand side of the lookup join.
-For details, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
+For more information, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
 
 NOTE: The right-hand side of a lookup join must be a keyspace.
 Expressions, subqueries, or other join combinations cannot be on the right-hand side of a lookup join.
+
+[#lookup-at-clause]
+===== AT Clause
+
+[.status]#Couchbase Server 8.5#
+
+When the keyspace is an external collection, the AT clause enables you to specify that the query should use data from a specified snapshot.
+For more information, see {at}[].
 
 [#lookup-as-alias]
 ===== AS Alias
 
 Assigns another name to the right-hand side of the lookup join.
-For details, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
+For more information, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
 
 Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
@@ -1082,9 +1110,10 @@ include::example$select/lookup-join-left.jsonc[]
 [#index-join-clause]
 == Index JOIN Clause
 
+An *((index join))* is another legacy syntax for joins which reverses the direction of a lookup join.
+
 === Purpose
 
-An _index join_ is another legacy syntax for joins which reverses the direction of a lookup join.
 It enables you to join the primary xref:learn:data/data.adoc#keys[document key] on the left-hand side of the join with a foreign key field on the right-hand side of the join.
 
 You can use an index join when a lookup join would be inefficient, and you need to flip the relationship so the join predicate is on the right-hand side of the join.
@@ -1142,22 +1171,31 @@ image::n1ql-language-reference/index-join-rhs.png["Syntax diagram", align=left]
 
 [horizontal.compact]
 keyspace-ref:: <<index-keyspace-ref>> icon:caret-down[]
+at-clause:: <<index-at-clause>> icon:caret-down[]
 alias:: <<index-as-alias>> icon:caret-down[]
 
 [#index-keyspace-ref]
 ===== Keyspace Reference
 
 Keyspace reference for right-hand side of an index join.
-For details, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
+For more information, see xref:n1ql-language-reference/from.adoc#from-keyspace-ref[Keyspace Reference].
 
 NOTE: The right-hand side of an index join must be a keyspace.
 Expressions, subqueries, or other join combinations cannot be on the right-hand side of an index join.
+
+[#index-at-clause]
+===== AT Clause
+
+[.status]#Couchbase Server 8.5#
+
+When the keyspace is an external collection, the AT clause enables you to specify that the query should use data from a specified snapshot.
+For more information, see {at}[].
 
 [#index-as-alias]
 ===== AS Alias
 
 Assigns another name to the right-hand side of the index join.
-For details, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
+For more information, see xref:n1ql-language-reference/from.adoc#section_ax5_2nx_1db[AS Clause].
 
 Assigning an alias to the keyspace reference is optional.
 If you assign an alias to the keyspace reference, the `AS` keyword may be omitted.
@@ -1172,11 +1210,11 @@ include::partial$grammar/dql.ebnf[tag=index-join-predicate]
 
 image::n1ql-language-reference/index-join-predicate.png["Syntax diagram", align=left]
 
-`expr`:: Expression in the form `__rhs-expression__.__lhs-expression-key__`:
+`expr`:: Expression in the form `<rhs-expression>.<lhs-expression-key>`:
 
-`__rhs-expression__`;; Keyspace reference for the right-hand side of the index join.
+`<rhs-expression>`;; Keyspace reference for the right-hand side of the index join.
 
-`__lhs-expression-key__`;; String or expression representing the attribute in `__rhs-expression__` and referencing the document key for `alias`.
+`<lhs-expression-key>`;; String or expression representing the attribute in `<rhs-expression>` and referencing the document key for `alias`.
 
 `alias`:: Keyspace reference for the left-hand side of the index join.
 
@@ -1198,7 +1236,7 @@ Consider the query below, similar to <<Lookup-JOIN-Example-1>> above with route 
 include::example$select/index-join.n1ql[tag=lookup]
 ----
 
-This query gets a list of Southwest Airlines (`SWA`) flights, but getting `SWA` flights cannot be efficiently executed without making a Cartesian product of all route documents (left-hand side) with all airline documents (right-hand side).
+This query gets a list of Southwest Airlines (SWA) flights, but getting SWA flights cannot be efficiently executed without making a Cartesian product of all route documents (left-hand side) with all airline documents (right-hand side).
 
 This query cannot use any index on airline to directly access SWA flights because airline is on the right-hand side.
 
@@ -1234,20 +1272,20 @@ If you generalize the same query, it looks like the following:
 
 [subs="normal"]
 ----
-CREATE INDEX _on-key-for-index-name_ _rhs-expression_ (__lhs-expression-key__);
+CREATE INDEX <on-key-for-index-name> <rhs-expression> (<lhs-expression-key>);
 ----
 
 [subs="normal"]
 ----
-SELECT _projection-list_
-FROM _lhs-expression_
-JOIN _rhs-expression_
-  ON KEY __rhs-expression__.__lhs-expression-key__ FOR _lhs-expression_
-[ WHERE _predicates_ ] ;
+SELECT <projection-list>
+FROM <lhs-expression>
+JOIN <rhs-expression>
+  ON KEY <rhs-expression>.<lhs-expression-key> FOR <lhs-expression>
+[ WHERE <predicates> ] ;
 ----
 ====
 
-There are three important changes in the index scan syntax example above:
+The index scan syntax example above has are three important changes:
 
 * `CREATE INDEX` on the `ON KEY` expression `route.airlineid` to access `route` documents using `airlineid`, which are produced on the left-hand side.
 * The `ON KEY route.airlineid FOR airline` enables {sqlpp} to use the index `route.airlineid`.
@@ -1256,7 +1294,7 @@ There are three important changes in the index scan syntax example above:
 [#Index-JOIN-Example-1]
 .`+ON KEY ... FOR+`
 ====
-The following example counts the number of distinct "AA" airline routes for each airport after creating the following index, if not already created.
+The following example counts the number of distinct American Airlines (AA) airline routes for each airport after creating the following index, if not already created.
 
 [source,sqlpp]
 ----
@@ -1283,7 +1321,8 @@ WHERE airline.iata = "AA";
 ----
 ====
 
-== Appendix: Summary of JOIN Types
+[appendix]
+== Summary of JOIN Types
 
 include::ROOT:partial$query-context.adoc[tag=section]
 
@@ -1292,7 +1331,7 @@ include::ROOT:partial$query-context.adoc[tag=section]
 [cols=".^1s,3"]
 |===
 | Left-Hand Side (lhs)
-| Any field or expression that produces a value that will be matched on the right-hand side.
+| Any field or expression that produces a value that is matched on the right-hand side.
 
 | Right-Hand Side (rhs)
 | Anything that can have a proper index on the join expression.
@@ -1301,9 +1340,9 @@ include::ROOT:partial$query-context.adoc[tag=section]
 a|
 [subs="normal"]
 ----
-_lhs-expr_
-JOIN _rhs-keyspace_
-ON _any join condition_
+<lhs-expr>
+JOIN <rhs-keyspace>
+ON <any join condition>
 ----
 
 | Example
@@ -1317,7 +1356,7 @@ ON r.airlineid = META(a).id
 ----
 |===
 
-Refer also to xref:n1ql-language-reference/comma.adoc[].
+See also xref:n1ql-language-reference/comma.adoc[].
 
 === Lookup
 
@@ -1333,9 +1372,9 @@ Refer also to xref:n1ql-language-reference/comma.adoc[].
 a|
 [subs="normal"]
 ----
-_lhs-expr_
-JOIN _rhs-keyspace_
-ON KEYS _lhs-expr.foreign-key_
+<lhs-expr>
+JOIN <rhs-keyspace>
+ON KEYS <lhs-expr>.<foreign-key>
 ----
 
 | Example
@@ -1363,10 +1402,10 @@ ON KEYS r.airlineid
 a|
 [subs="normal"]
 ----
-_lhs-keyspace_
-JOIN _rhs-keyspace_
-ON KEY _rhs-kspace.idx_key_
-FOR _lhs-keyspace_
+<lhs-keyspace>
+JOIN <rhs-keyspace>
+ON KEY <rhs-kspace>.<idx-key>
+FOR <lhs-keyspace>
 ----
 
 | Example
