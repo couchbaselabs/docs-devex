@@ -13,6 +13,7 @@
 :comma: xref:n1ql-language-reference/comma.adoc
 :identifiers: xref:n1ql-language-reference/identifiers.adoc
 :hints: xref:n1ql-language-reference/hints.adoc
+:at: xref:n1ql-language-reference/at.adoc
 :expressions: xref:n1ql-language-reference/index.adoc
 :curl: xref:n1ql-language-reference/curl.adoc
 
@@ -32,8 +33,8 @@ It specifies the documents to be used as the input for a query.
 
 == Prerequisites
 
-For you to select data from keyspace or expression, you must have the [.param]`query_select` privilege on that keyspace.
-For more details about user roles, see
+To select data from a keyspace or expression, you must have the `query_select` privilege on that keyspace.
+For more information about user roles, see
 {authorization-overview}[Authorization].
 
 == Syntax
@@ -72,7 +73,7 @@ You may additionally include one or more {comma}[comma-separated joins].
 
 [IMPORTANT]
 ====
-`JOIN` clauses, `NEST` clauses, `UNNEST` clauses, and comma-separated joins each have a _left-hand side_ and a _right-hand side_.
+`JOIN` clauses, `NEST` clauses, `UNNEST` clauses, and comma-separated joins each have a *((left-hand side))* and a *((right-hand side))*.
 The left-hand side is defined by the preceding FROM term; the right-hand side is defined by the FROM term itself.
 
 When you chain multiple FROM terms together, the right-hand side of one FROM term acts as the left-hand side of the following FROM term.
@@ -90,7 +91,7 @@ When you chain multiple FROM terms together, the right-hand side of one FROM ter
 However, you cannot chain comma-separated joins with lookup `JOIN` and `NEST` clauses, or index `JOIN` and `NEST` clauses.
 
 * The right-hand side of a comma-separated join can only be a keyspace identifier, a subquery, or a generic expression.
-This means that comma-separated joins must come _after_ any `JOIN`, `NEST`, or `UNNEST` clauses.
+This means that comma-separated joins must come *after* any `JOIN`, `NEST`, or `UNNEST` clauses.
 
 [#sec_from-keyspace]
 == FROM Keyspace
@@ -109,6 +110,7 @@ image::n1ql-language-reference/from-keyspace.png["Syntax diagram", align=left]
 [horizontal.compact]
 keyspace-ref:: <<from-keyspace-ref>> icon:caret-down[]
 alias:: <<from-keyspace-alias>> icon:caret-down[]
+at-clause:: <<from-keyspace-at>> icon:caret-down[]
 use-clause:: <<from-keyspace-hints>> icon:caret-down[]
 
 [#from-keyspace-ref]
@@ -129,7 +131,7 @@ Keyspace reference of the data source.
 The identifiers that make up the keyspace reference are not available as {variables-in-scope}[variables in scope of a subquery].
 
 NOTE: If there is a hyphen (-) inside any part of the keyspace reference, you must wrap that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
-Refer to the examples below.
+See the examples later on this page.
 
 [[keyspace-path]]
 ==== Keyspace Path
@@ -194,6 +196,14 @@ For details, see <<section_ax5_2nx_1db>>.
 
 Assigning an alias is optional for the FROM keyspace.
 If you assign an alias to the FROM keyspace, the `AS` keyword may be omitted.
+
+[#from-keyspace-at]
+==== AT Clause
+
+[.status]#Couchbase Server 8.5#
+
+When the keyspace is an external collection, the AT clause enables you to specify that the query should use data from a specified snapshot.
+For details, see {at}[].
 
 [#from-keyspace-hints]
 ==== USE Clause
@@ -270,7 +280,7 @@ image::n1ql-language-reference/subquery-expr.png["Syntax diagram", align=left]
 
 Use parentheses to specify a subquery.
 
-For more details and examples, see {selectclause}[SELECT Clause] and {subqueries}[Subqueries].
+For more information and examples, see {selectclause}[SELECT Clause] and {subqueries}[Subqueries].
 
 [#select-expr-alias]
 ==== AS Alias
