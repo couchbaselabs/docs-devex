@@ -113,7 +113,7 @@ from-terms ::= ( from-keyspace | from-subquery | from-generic )
 /* end::from-terms[] */
 
 /* tag::from-keyspace[] */
-from-keyspace ::= keyspace-ref ( 'AS'? alias )? use-clause?
+from-keyspace ::= keyspace-ref ( 'AS'? alias )? at-clause? use-clause?
 /* end::from-keyspace[] */
 
 /* tag::keyspace-ref[] */
@@ -179,7 +179,7 @@ ansi-join-rhs ::= rhs-keyspace | rhs-subquery | rhs-generic
 /* end::ansi-join-rhs[] */
 
 /* tag::rhs-keyspace[] */
-rhs-keyspace ::= keyspace-ref ( 'AS'? alias )? ansi-join-hints?
+rhs-keyspace ::= keyspace-ref ( 'AS'? alias )? at-clause? ansi-join-hints?
 /* end::rhs-keyspace[] */
 
 /* tag::rhs-subquery[] */
@@ -239,7 +239,7 @@ lookup-join-type ::= 'INNER' | ( 'LEFT' 'OUTER'? )
 /* end::lookup-join-type[] */
 
 /* tag::lookup-join-rhs[] */
-lookup-join-rhs ::= keyspace-ref ( 'AS'? alias )?
+lookup-join-rhs ::= keyspace-ref at-clause? ( 'AS'? alias )?
 /* end::lookup-join-rhs[] */
 
 /* tag::lookup-join-predicate[] */
@@ -258,7 +258,7 @@ index-join-type ::= 'INNER' | ( 'LEFT' 'OUTER'? )
 /* end::index-join-type[] */
 
 /* tag::index-join-rhs[] */
-index-join-rhs ::= keyspace-ref ( 'AS'? alias )?
+index-join-rhs ::= keyspace-ref at-clause? ( 'AS'? alias )?
 /* end::index-join-rhs[] */
 
 /* tag::index-join-predicate[] */
@@ -291,7 +291,7 @@ ansi-nest-type ::= 'INNER' | ( 'LEFT' 'OUTER'? )
 /* end::ansi-nest-type[] */
 
 /* tag::ansi-nest-rhs[] */
-ansi-nest-rhs ::= keyspace-ref ( 'AS'? alias )?
+ansi-nest-rhs ::= keyspace-ref at-clause? ( 'AS'? alias )?
 /* end::ansi-nest-rhs[] */
 
 /* tag::ansi-nest-predicate[] */
@@ -310,7 +310,7 @@ lookup-nest-type ::= 'INNER' | ( 'LEFT' 'OUTER'? )
 /* end::lookup-nest-type[] */
 
 /* tag::lookup-nest-rhs[] */
-lookup-nest-rhs ::= keyspace-ref ( 'AS'? alias )?
+lookup-nest-rhs ::= keyspace-ref at-clause? ( 'AS'? alias )?
 /* end::lookup-nest-rhs[] */
 
 /* tag::lookup-nest-predicate[] */
@@ -329,7 +329,7 @@ index-nest-type ::= 'INNER' | ( 'LEFT' 'OUTER'? )
 /* end::index-nest-type[] */
 
 /* tag::index-nest-rhs[] */
-index-nest-rhs ::= keyspace-ref ( 'AS'? alias )?
+index-nest-rhs ::= keyspace-ref at-clause? ( 'AS'? alias )?
 /* end::index-nest-rhs[] */
 
 /* tag::index-nest-predicate[] */
@@ -346,6 +346,22 @@ unnest-clause ::= unnest-type? ( 'UNNEST' | 'FLATTEN' ) expr ( 'AS'? alias )?
 /* tag::unnest-type[] */
 unnest-type ::= 'INNER' | ( 'LEFT' 'OUTER'? )
 /* end::unnest-type[] */
+
+
+/* AT Clause */
+
+/* tag::at-clause[] */
+at-clause ::= at-snapshot | at-timestamp
+/* end::at-clause[] */
+
+/* tag::at-snapshot[] */
+at-snapshot ::= 'AT' ( '(' 'SNAPSHOT' expr ')' | 'SNAPSHOT' expr )
+/* end::at-snapshot[] */
+/* end::at-clause[] */
+
+/* tag::at-timestamp[] */
+at-timestamp ::= 'AT' ( '(' 'TIMESTAMP' expr ')' | 'TIMESTAMP' expr )
+/* end::at-timestamp[] */
 
 
 /* USE Clause */
