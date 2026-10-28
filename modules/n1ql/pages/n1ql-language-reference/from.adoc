@@ -13,13 +13,12 @@
 :comma: xref:n1ql-language-reference/comma.adoc
 :identifiers: xref:n1ql-language-reference/identifiers.adoc
 :hints: xref:n1ql-language-reference/hints.adoc
-:at: xref:n1ql-language-reference/from.adoc#at
+:at: xref:n1ql-language-reference/at.adoc
 :expressions: xref:n1ql-language-reference/index.adoc
 :curl: xref:n1ql-language-reference/curl.adoc
 
 :subqueries: xref:n1ql-language-reference/subqueries.adoc
 :variables-in-scope: {subqueries}#section_onz_3tj_mz
-:query-a-snapshot-in-a-single-statement: xref:manage:manage-scopes-and-collections/external-collection-options.adoc#query-a-snapshot-in-a-single-statement
 
 // TEMP
 include::partial$n1ql-language-reference/horizontal-style.adoc[]
@@ -193,7 +192,7 @@ For example, `airline` indicates the `airline` collection, assuming the query co
 ==== AS Alias
 
 Assigns another name to the FROM keyspace.
-For more information, see <<section_ax5_2nx_1db>>.
+For details, see <<section_ax5_2nx_1db>>.
 
 Assigning an alias is optional for the FROM keyspace.
 If you assign an alias to the FROM keyspace, the `AS` keyword may be omitted.
@@ -201,14 +200,16 @@ If you assign an alias to the FROM keyspace, the `AS` keyword may be omitted.
 [#from-keyspace-at]
 ==== AT Clause
 
+[.status]#Couchbase Server 8.5#
+
 When the keyspace is an external collection, the AT clause enables you to specify that the query should use data from a specified snapshot.
-For more information, see <<at>>.
+For details, see {at}[].
 
 [#from-keyspace-hints]
 ==== USE Clause
 
 Enables you to specify that the query should use particular keys, or a particular index.
-For more information, see {hints}[USE clause].
+For details, see {hints}[USE clause].
 
 === Examples
 
@@ -285,7 +286,7 @@ For more information and examples, see {selectclause}[SELECT Clause] and {subque
 ==== AS Alias
 
 Assigns another name to the subquery.
-For more information, see <<section_ax5_2nx_1db>>.
+For details, see <<section_ax5_2nx_1db>>.
 
 Assigning an alias is required for subqueries in the FROM term.
 However, when you assign an alias to the subquery, the `AS` keyword may be omitted.
@@ -419,7 +420,7 @@ alias:: <<generic-expr-alias>> icon:caret-down[]
 ==== AS Alias
 
 Assigns another name to the generic expression.
-For more information, see <<section_ax5_2nx_1db>>.
+For details, see <<section_ax5_2nx_1db>>.
 
 Assigning an alias is optional for generic expressions in the FROM term.
 However, when you assign an alias to the expression, the `AS` keyword is required.
@@ -445,7 +446,7 @@ SELECT CURL("https://maps.googleapis.com/maps/api/geocode/json",
 ----
 ====
 
-Functions such as {curl}[CURL()] can independently produce input data objects for the query.
+Note that functions such as {curl}[CURL()] can independently produce input data objects for the query.
 Similarly, other {sqlpp} functions can also be used in the expressions.
 
 [[ex-var-expr]]
@@ -528,96 +529,6 @@ INNER JOIN landmark l
 ON (h.city = l.city)
 ----
 |===
-
-[#at]
-== AT Clause
-
-[.status]#Couchbase Server 8.5#
-
-Couchbase Server 8.5 and later supports historic queries on external collections.
-If the FROM term is a keyspace reference that refers to an external collection, you can use the AT clause to query the Apache Iceberg table as it was at a specific moment in time.
-
-You can only use the AT clause on external collections, and you cannot use it inside a subquery.
-If your query contains JOIN clauses, NEST clauses, or comma-separated joins which refer to external collections, each external collection can specify its own AT clause.
-
-For more information, see {query-a-snapshot-in-a-single-statement}[Query a Snapshot in a Single Statement].
-
-[#at-syntax]
-=== Syntax
-
-[source,ebnf]
-----
-include::partial$grammar/dql.ebnf[tag=at-clause]
-----
-
-image::n1ql-language-reference/at-clause.png["Syntax diagram", align=left]
-
-The AT clause may take the following forms:
-
-* Use <<at-snapshot>> to specify a snapshot ID.
-* Use <<at-timestamp>> to specify a timestamp.
-
-[#at-snapshot]
-==== AT SNAPSHOT
-
-[source,ebnf]
-----
-include::partial$grammar/dql.ebnf[tag=at-snapshot]
-----
-
-image::n1ql-language-reference/at-snapshot.png["Syntax diagram", align=left]
-
-[horizontal]
-integer:: xref:n1ql-language-reference/literals.adoc#numbers[Integer] representing a snapshot ID.
-
-[#at-timestamp]
-==== AT TIMESTAMP
-
-[source,ebnf]
-----
-include::partial$grammar/dql.ebnf[tag=at-timestamp]
-----
-
-image::n1ql-language-reference/at-timestamp.png["Syntax diagram", align=left]
-
-[horizontal]
-string:: xref:n1ql-language-reference/literals.adoc#strings[String] representing an RFC 3339 timestamp.
-
-integer:: xref:n1ql-language-reference/literals.adoc#numbers[Integer] representing milliseconds since the UNIX epoch.
-
-[#at-examples]
-=== Examples
-
-For the examples in this section, the path to the required keyspace is specified by the query, so you do not need to set the query context.
-
-[#ex-at-timestamp]
-.At timestamp
-====
-The following example queries the `orders` external collection as it existed at midnight UTC on June 1, 2026:
-
-[source,sqlpp]
-----
-SELECT o.*
-FROM `travel-sample`.external.orders AS o
-  AT TIMESTAMP "2026-06-01T00:00:00Z";
-----
-====
-
-[#ex-at-snapshot]
-.At snapshot with join
-====
-The following example joins the `orders` collection at a specific snapshot ID with the `shipments` collection at a specific point in time:
-
-[source,sqlpp]
-----
-SELECT o.*, s.status
-FROM `travel-sample`.external.orders AS o
-  AT SNAPSHOT 5688794825202065870
-JOIN `travel-sample`.external.shipments AS s
-  AT TIMESTAMP "2026-06-01T00:00:00Z"
-ON o.order_id = s.order_id;
-----
-====
 
 == Related Links
 
