@@ -1,5 +1,5 @@
 = Call a JavaScript User-Defined Function
-:description: Call a JavaScript user-defined function from {sqlpp}, and run {sqlpp} statements from inside your JavaScript code.
+:description: Call a JavaScript user-defined function (UDF) from {sqlpp}, and run {sqlpp} statements from inside your JavaScript code.
 :page-topic-type: guide
 :page-toclevels: 2
 :keywords: UDF, user-defined function, SQL++, JavaScript, variadic, N1QL()
@@ -9,29 +9,27 @@
 {description}
 
 A JavaScript user-defined function (UDF) adds your own logic to {sqlpp}.
-You write the logic as a JavaScript function.
-Then you create a {sqlpp} user-defined function that points to the JavaScript function.
 
-After you create the user-defined function, you can:
+After you create a UDF, you can:
 
 * Call the function from a {sqlpp} statement, the same way that you call a built-in function.
 * Run {sqlpp} statements from inside the JavaScript function to read and change data in your operational cluster.
 * Combine both, to build functions that query your data and return processed results to {sqlpp}.
 
-For more information about the types of user-defined functions and how they work, see xref:guides:javascript-udfs.adoc[].
+For more information about the types of UDFs and how they work, see xref:guides:javascript-udfs.adoc[].
 
 [#prerequisites]
 == Prerequisites
 
+To follow along with the following examples, make sure you have the following:
+
 * You have an operational cluster with the `travel-sample` sample dataset loaded.
-For more information about how to create a cluster and load sample data, see xref:get-started:create-account.adoc[].
-* You can run {sqlpp} statements from the Query tab or the cbq shell.
-For more information about these tools, see xref:clusters:query-service/query-workbench.adoc[] and xref:n1ql:n1ql-intro/cbq.adoc[].
+For more information about how to create a cluster and load sample data, see xref:get-started:deploy-first-cluster.adoc[] and xref:clusters:data-service/import-data-documents.adoc#import-sample-data[Import Sample Data].
+
 * You have a UDF library called `my-library` in the `inventory` scope of the `travel-sample` bucket.
-For more information about how to create a library and add JavaScript functions to it, see xref:guides:create-javascript-library.adoc[].
-* Your cluster access credentials have the privileges to execute user-defined functions.
-They must also have the privileges to read or change any data that the function's {sqlpp} statements use.
-For more information about privileges, see xref:clusters:cluster-rbac.adoc[].
+For more information about how to create a library, see xref:guides:create-javascript-library.adoc[].
+
+* If you want to use cbq for these examples, you must have xref:n1ql:n1ql-intro/cbq.adoc#prerequisites[completed the prerequisites for cbq], including cluster access credentials with Read/Write permissions on the `travel-sample.inventory` keyspace.
 
 [#set-up-example]
 == Set Up the Example Function
@@ -155,45 +153,6 @@ include::example$select-get-business-days-qualified.n1ql[]
 For a global function, the full path includes only the namespace, such as `default:GetBusinessDays`.
 
 For more information about global and scoped functions, see xref:n1ql:n1ql-language-reference/createfunction.adoc#context[Global Functions and Scoped Functions].
-
-[#variadic-parameters]
-=== Pass a Variable Number of Arguments
-
-A variadic user-defined function accepts any number of arguments.
-To create a variadic function, use 3 periods (`\...`) in place of the parameter list in the `CREATE FUNCTION` statement.
-
-To pass the arguments to your JavaScript function, use a JavaScript rest parameter.
-For example, the following JavaScript function returns the sum of all the numbers that it receives:
-
-[source,javascript]
-----
-include::example$variadic-sum.js[]
-----
-
-The following statement creates a variadic user-defined function for the JavaScript function:
-
-[source,sqlpp]
-----
-include::example$create-scoped-sum-function.n1ql[]
-----
-
-You can then call the function with as many arguments as you need:
-
-[source,sqlpp]
-----
-include::example$execute-sum-function.n1ql[]
-----
-
-The statement returns the following result:
-
-[source,json]
-----
-include::example$execute-sum-function-result.jsonc[]
-----
-
-A variadic user-defined function can also point to a JavaScript function with named parameters.
-The JavaScript function receives the arguments in order.
-For example, if you create `GetBusinessDays(\...)`, the JavaScript function still receives the 1st argument as `startDate` and the 2nd argument as `endDate`.
 
 [#sqlpp-in-javascript]
 == Run {sqlpp} Statements Inside a JavaScript Function
