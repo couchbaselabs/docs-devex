@@ -12,14 +12,23 @@ CREATE VECTOR INDEX `color_desc_hyperscale`
          "description": "IVF8,SQ4" }
 /* end::fail[] */
 
-/* tag::wait[] */
+/* tag::wait-hyperscale[] */
 CREATE VECTOR INDEX `color_wait_hyperscale` 
   ON `vector-sample`.color.`rgb-empty`(`embedding_vector_dot` VECTOR)
   WITH { "dimension": 1536,
         "similarity": "L2",
         "description": "IVF8,SQ4",
         "train_list_wait": true }
-/* end::wait[] */
+/* end::wait-hyperscale[] */
+
+/* tag::wait-composite[] */
+CREATE INDEX `color_wait_idx` ON `vector-sample`.color.`rgb-empty`
+  (`embedding_vector_dot` VECTOR, color, brightness) 
+  WITH { "dimension": 1536,
+         "similarity": "DOT",
+         "description":" IVF,SQ8",
+         "train_list_wait": true }
+/* end::wait-composite[] */
 
 /* tag::check[] */
 SELECT name, state
