@@ -1,0 +1,28 @@
+/* tag::setup[] */
+CREATE BUCKET IF NOT EXISTS `vector-sample`;
+CREATE SCOPE `vector-sample`.color IF NOT EXISTS;
+CREATE COLLECTION `vector-sample`.color.`rgb-empty`;
+/* end::setup[] */
+
+/* tag::fail[] */
+CREATE VECTOR INDEX `color_desc_hyperscale`
+  ON `vector-sample`.color.`rgb-empty`(`embedding_vector_dot` VECTOR)
+  WITH { "dimension": 1536,
+         "similarity": "L2",
+         "description": "IVF8,SQ4" }
+/* end::fail[] */
+
+/* tag::wait[] */
+CREATE VECTOR INDEX `color_wait_hyperscale` 
+  ON `vector-sample`.color.`rgb-empty`(`embedding_vector_dot` VECTOR)
+  WITH { "dimension": 1536,
+        "similarity": "L2",
+        "description": "IVF8,SQ4",
+        "train_list_wait": true }
+/* end::wait[] */
+
+/* tag::check[] */
+SELECT name, state
+  FROM system:indexes
+  WHERE name = "color_wait_hyperscale";
+/* end::check[] */
