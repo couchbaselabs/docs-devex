@@ -1,0 +1,432 @@
+= Call a JavaScript User-Defined Function
+:description: Call a JavaScript user-defined function (UDF) from {sqlpp}, and run {sqlpp} statements from inside your JavaScript code.
+:page-topic-type: guide
+:page-toclevels: 2
+:keywords: UDF, user-defined function, SQL++, JavaScript, variadic, N1QL()
+:page-aliases: guides:call-user-defined-function.adoc, calling-javascript-from-n1ql.adoc, calling-n1ql-from-javascript.adoc
+
+[abstract]
+{description}
+
+A JavaScript user-defined function (UDF) adds your own logic to {sqlpp}.
+
+After you create a UDF, you can:
+
+* Call the function from a {sqlpp} statement, the same way that you call a built-in function.
+* Run {sqlpp} statements from inside the JavaScript function to read and change data in your operational cluster.
+* Combine both, to build functions that query your data and return processed results to {sqlpp}.
+
+For more information about the types of UDFs and how they work, see xref:guides:javascript-udfs.adoc[].
+
+[#prerequisites]
+== Prerequisites
+
+To follow along with the following examples, make sure you have the following:
+
+* You have an operational cluster with the `travel-sample` sample dataset loaded.
+For more information about how to create a cluster and load sample data, see xref:get-started:deploy-first-cluster.adoc[] and xref:clusters:data-service/import-data-documents.adoc#import-sample-data[Import Sample Data].
+
+* You have a UDF library called `my-library` in the `inventory` scope of the `travel-sample` bucket.
+For more information about how to create a library, see xref:guides:create-javascript-library.adoc[].
+
+* If you want to use cbq for these examples, you must have xref:n1ql:n1ql-intro/cbq.adoc#prerequisites[completed the prerequisites for cbq], including cluster access credentials with Read/Write permissions on the `travel-sample.inventory` keyspace.
+
+[#set-up-example]
+== Set Up the Example Function
+
+Most examples on this page use a JavaScript function called `getBusinessDays`.
+The function counts the business days between a start date and an end date:
+
+[source,javascript,role=no-callouts]
+----
+include::example$get-business-days.js[]
+----
+
+To set up the example function:
+
+. Add the `getBusinessDays` JavaScript function to `my-library`.
+For more information about how to create and add a function to a library, see xref:guides:create-user-defined-function.adoc#creating-the-n1ql-udf-function[Creating a User-Defined Function with a JavaScript Library].
++
+Make sure your library is scoped to `travel-sample.inventory`.
+
+. In the Query tab or the cbq shell, set the query context to the `inventory` scope in the `travel-sample` bucket.
+For more information about how to set the query context, see xref:guides:select.adoc#query-context[Setting the Query Context].
+
+. Run the following `CREATE FUNCTION` statement to create a scoped user-defined function called `GetBusinessDays`:
++
+[source,sqlpp]
+----
+include::example$create-scoped-n1ql-udf.n1ql[]
+----
+
+The `LANGUAGE JAVASCRIPT AS` clause gives the name of the JavaScript function.
+The `AT` clause gives the path to the library that contains it.
+
+You can also create global user-defined functions, or write the JavaScript directly in the `CREATE FUNCTION` statement without a library.
+For more information about these options, see xref:guides:create-user-defined-function.adoc[].
+
+[#call-from-sqlpp]
+== Call a JavaScript Function from {sqlpp}
+
+You can call a user-defined function inside any {sqlpp} expression, the same way that you call a built-in function.
+You can also run a user-defined function on its own with the `EXECUTE FUNCTION` statement.
+
+The name of a user-defined function is case-sensitive.
+You must call the function with the same case that you used to create it.
+
+[#call-in-expression]
+=== Call a Function in a {sqlpp} Statement
+
+To call a user-defined function in a {sqlpp} statement:
+
+. Set the query context to the scope that contains the function.
+For a global function, unset the query context.
+
+. In your {sqlpp} statement, enter the name of the function, followed by its arguments inside parentheses `()`.
+
+For example, the following `SELECT` statement calls `GetBusinessDays`:
+
+[source,sqlpp]
+----
+include::example$select-get-business-days.n1ql[]
+----
+
+The statement returns the following result:
+
+[source,json]
+----
+include::example$select-get-business-days-response.jsonc[]
+----
+
+You can use a user-defined function anywhere that {sqlpp} accepts an expression.
+For example, the following statement uses the result of `GetBusinessDays` in a `CASE` expression:
+
+[source,sqlpp,role=no-callouts]
+----
+include::example$select-true-alias-get-business-days.n1ql[]
+----
+
+The statement returns the following result:
+
+[source,json]
+----
+include::example$true-alias-response.jsonc[]
+----
+
+For more information about `CASE` expressions, see xref:n1ql:n1ql-language-reference/conditionalops.adoc[].
+
+For more information about how to use user-defined functions in expressions, see xref:n1ql:n1ql-language-reference/userfun.adoc[].
+
+[#execute-function]
+=== Run a Function with EXECUTE FUNCTION
+
+Use the `EXECUTE FUNCTION` statement to test a user-defined function outside a query.
+You must also use `EXECUTE FUNCTION` to run a function that changes data.
+For more information, see <<change-data>>.
+
+To run a user-defined function with `EXECUTE FUNCTION`:
+
+. Set the query context to the scope that contains the function.
+For a global function, unset the query context.
+
+. Enter `EXECUTE FUNCTION`, followed by the name of the function and its arguments inside parentheses `()`.
+
+See the following example:
+
+[source,sqlpp]
+----
+include::example$execute-javascript-function.n1ql[]
+----
+
+For more information about the `EXECUTE FUNCTION` statement, see xref:n1ql:n1ql-language-reference/execfunction.adoc[].
+
+[#call-outside-context]
+=== Call a Function Outside the Query Context
+
+When you enter only the name of a function, {sqlpp} uses the current query context to find the function.
+
+To call a function in a different scope, or with no query context set, enter the full path to the function.
+For a scoped function, the full path includes the namespace, bucket, and scope:
+
+[source,sqlpp]
+----
+include::example$select-get-business-days-qualified.n1ql[]
+----
+
+For a global function, the full path includes only the namespace, such as `default:GetBusinessDays`.
+
+For more information about global and scoped functions, see xref:n1ql:n1ql-language-reference/createfunction.adoc#context[Global Functions and Scoped Functions].
+
+[#sqlpp-in-javascript]
+== Run {sqlpp} Statements Inside a JavaScript Function
+
+Inside a JavaScript function, you can run {sqlpp} statements such as `SELECT`, `INSERT`, `UPDATE`, and `DELETE`.
+Use these statements to read data from your operational cluster, or to change it.
+
+You can run a {sqlpp} statement in 2 ways:
+
+* Write the statement inline, directly in your JavaScript code.
+* Pass the statement as a string to the `N1QL()` function.
+
+Both methods return the same results.
+The `N1QL()` function supports more types of query parameters.
+For more information, see <<pass-parameters>>.
+
+For example, the following JavaScript function uses a `SELECT` statement to get the name and callsign of each airline in a given country:
+
+[tabs]
+====
+Inline Statement::
++
+--
+Write the {sqlpp} statement as part of your JavaScript code.
+Do not put the statement in quotation marks.
+
+[source,javascript]
+----
+include::example$select-airline-inline.js[]
+----
+
+The `$country` named parameter gets its value from the `country` argument of the JavaScript function.
+--
+
+N1QL() Function::
++
+--
+Pass the {sqlpp} statement to the `N1QL()` function as a string.
+Pass any parameters as the 2nd argument.
+
+[source,javascript,role=no-callouts]
+----
+include::example$select-airline-n1ql.js[]
+----
+
+The `{country_param: country}` object sets the value of the `$country_param` named parameter in the statement.
+--
+====
+
+To call the `selectAirline` JavaScript function from {sqlpp}:
+
+. Add either version of the `selectAirline` function to `my-library`.
+
+. Run the following statement to create a user-defined function called `SelectAirlines`:
++
+[source,sqlpp]
+----
+include::example$create-select-airlines-function.n1ql[]
+----
+
+. With the query context set to `travel-sample`.`inventory`, run the following statement:
++
+[source,sqlpp]
+----
+include::example$execute-select-airlines-function.n1ql[]
+----
+
+The statement returns the following result:
+
+[source,json]
+----
+include::example$execute-airline-function-response.jsonc[]
+----
+
+For more information about how to write `SELECT` statements, see xref:n1ql:n1ql-language-reference/selectintro.adoc[].
+
+[#keyspace-references]
+=== Keyspace References Inside a Function
+
+A {sqlpp} statement inside a JavaScript function can use a full keyspace path, such as `{backtick}travel-sample{backtick}.{backtick}inventory{backtick}.{backtick}airline{backtick}`.
+It can also use a partial keyspace reference, such as `airline`.
+
+{sqlpp} resolves partial keyspace references against the user-defined function, not the current query context:
+
+* For a scoped function, {sqlpp} resolves partial keyspace references against the function's bucket and scope.
+* For a global function, {sqlpp} resolves partial keyspace references against the `default:` namespace.
+
+For example, `SelectAirlines` is a scoped function in `travel-sample`.`inventory`.
+If its `SELECT` statement uses `FROM airline`, {sqlpp} reads from `travel-sample`.`inventory`.`airline` in any query context.
+
+For more information about keyspace references, see xref:n1ql:n1ql-intro/queriesandresults.adoc#keyspace-reference[Keyspace References].
+
+[#returned-results]
+=== Use the Results of a {sqlpp} Statement
+
+When a {sqlpp} statement returns values, such as a `SELECT` statement, it returns a JavaScript iterable.
+Use a `for...of` loop to work with each document in the results.
+
+In the `selectAirline` function, the variable `q` stores the iterable.
+The function loops through `q`, copies the fields it needs into a new object, and adds each object to the `res` array.
+Then it returns `res` to {sqlpp}.
+
+How the JavaScript runtime runs a {sqlpp} statement depends on whether the statement returns a value:
+
+* If the statement does not return a value, the runtime runs it synchronously.
+The runtime waits for the statement to complete before it moves to the next line of JavaScript.
+
+* If the statement returns a value, the runtime runs it asynchronously.
+Your JavaScript continues to run before the iterable returns.
+The Query Service fetches each document from the bucket when the iterable requests it.
+
+The following diagram shows how the runtime fetches documents for a statement that returns a value:
+
+[plantuml,inline-call-sequence,svg,subs=attributes]
+....
+include::partial$diagrams/inline-call-sequence.puml[]
+....
+
+[#pass-parameters]
+=== Pass Parameters to {sqlpp} Statements
+
+Use query parameters to pass values from your JavaScript code into your {sqlpp} statements.
+You can use positional parameters or named parameters.
+
+Positional parameters::
+Positional parameters use a number, such as `$1`, to set the position of each value.
+Pass the values as an array in the 2nd argument of the `N1QL()` function.
++
+For example, the following function sets `$1` to `1600`, `$2` to `airline`, `$3` to the value of the `name` argument, and so on:
++
+[source,javascript]
+----
+include::example$add-airline-positional-pararamers.js[]
+----
+
+Named parameters::
+Named parameters use a `$` followed by a name, such as `$name`.
+In an inline statement, {sqlpp} gets the value from the JavaScript variable with the same name.
+You do not need to assign the values in a separate step.
++
+For example, the following function uses its `name`, `callsign`, and `country` arguments as named parameters:
++
+[source,javascript]
+----
+include::example$add-airline-named-parameters.js[]
+----
++
+To use named parameters with the `N1QL()` function, pass an object as the 2nd argument, as in the `selectAirline` example.
+
+The following table shows which parameters each method supports:
+
+[cols="2,1,1"]
+|===
+| Method | Named Parameters | Positional Parameters
+
+| `N1QL()` function
+| ✔️
+| ✔️
+
+| Inline statement
+| ✔️
+| ❌
+|===
+
+For more information about query parameters, see xref:n1ql:n1ql-intro/queriesandresults.adoc#named-placeholders[Parameterized Queries].
+
+[#change-data]
+=== Change Data with a JavaScript Function
+
+A JavaScript function can run statements that change data, such as `INSERT`, `UPDATE`, or `DELETE`.
+These changes are side effects of the function.
+
+You cannot call a function with side effects inside a {sqlpp} expression.
+For example, `AddAirline` is a user-defined function for the `addAirlineWithNamedParameters` JavaScript function.
+The following statement calls `AddAirline` in a `SELECT` statement, so it returns an error:
+
+[source,sqlpp]
+----
+include::example$select-add-airline-side-effect.n1ql[]
+----
+
+To run a function that changes data:
+
+. Add the `addAirlineWithNamedParameters` JavaScript function to `my-library`.
+
+. Run the following statement to create the `AddAirline` user-defined function:
++
+[source,sqlpp]
+----
+include::example$create-add-airline-function.n1ql[]
+----
+
+. With the query context set to `travel-sample`.`inventory`, run the function with `EXECUTE FUNCTION`:
++
+[source,sqlpp]
+----
+include::example$execute-add-airline-function.n1ql[]
+----
+
+The function inserts a document with the key `1700` into the `airline` collection.
+If you run the function again, the `INSERT` statement fails because a document with that key already exists.
+For more information about how to catch and handle this type of error, see xref:handling-errors-javascript-udf.adoc[].
+
+For more information about the `INSERT` statement, see xref:n1ql:n1ql-language-reference/insert.adoc[].
+
+[#transactions]
+=== Use Transactions
+
+{sqlpp} statements inside a JavaScript function support Couchbase transactions.
+
+A JavaScript function can:
+
+* Run statements in a transaction that started before the function started.
+* Run a statement that starts a transaction.
+* Run a statement that rolls back a transaction.
+
+A {sqlpp} statement and its iterable must stay entirely inside the scope of a transaction.
+If a transaction starts while your function loops through an iterable, you cannot fully roll back the transaction.
+
+The following diagram shows a transaction that starts before the {sqlpp} statement runs, and ends after the loop completes:
+
+[plantuml,transactions-and-iterators,svg,subs=attributes]
+....
+include::partial$diagrams/transactions-and-iterators.puml[]
+....
+
+For more information about transactions in {sqlpp}, see xref:guides:transactions.adoc[] and xref:n1ql:n1ql-language-reference/transactions.adoc[].
+
+[#nested-calls]
+=== Call Other Functions from a JavaScript Function
+
+A JavaScript function can run a {sqlpp} statement that calls another user-defined function.
+Use nested calls with care.
+
+Each nested function call uses a new JavaScript worker.
+Your operational cluster has 4 JavaScript workers for each CPU.
+The deeper you nest your calls, the fewer workers stay available to run them.
+
+Capella stops recursive calls when fewer than 50% of the total JavaScript workers are available.
+The call chain then fails with an error.
+
+For example, the following `doRecursion` JavaScript function calls its own user-defined function:
+
+[source,javascript]
+----
+include::example$do-recursion.js[]
+----
+
+The following statement starts an infinite recursion:
+
+[source,sqlpp]
+----
+include::example$execute-do-recursion.n1ql[]
+----
+
+After too many nested calls use up the available JavaScript workers, the statement returns the following error:
+
+:number-of-calls: 10
+[source,json,subs="+attributes"]
+----
+include::example$do-recursion-response.jsonc[]
+----
+
+[#next-steps]
+== Next Steps
+
+* xref:handling-errors-javascript-udf.adoc[]
+* xref:javascript-functions-with-couchbase.adoc[]
+* xref:n1ql:n1ql-language-reference/userfun.adoc[]
+* xref:n1ql:n1ql-language-reference/createfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/execfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/explainfunction.adoc[]
+* xref:n1ql:n1ql-language-reference/dropfunction.adoc[]
+* xref:n1ql:n1ql-intro/sysinfo.adoc#sys-functions[Monitor Functions]
