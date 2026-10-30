@@ -200,7 +200,7 @@ The Search Service starts search result pagination before the document with the 
 For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_before` set to `8`, documents 2-6 appear on the same page.
 
 To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array.
-Set the `search_before` property to include the values from the last result on your previous page of search results to effectively paginate.
+To return the previous page, set the `search_before` property to the sort values of the first result on the current page.
 
 Use `search_before` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`.
 `search_before` lets you start your search results back from a specific result, rather than needing to process a number of search results to skip.
@@ -268,7 +268,7 @@ The vector in your Search query must match the dimension of the vectors stored i
 If the dimensions do not match, your Search query does not return any results.
 For more information about the dimension value, see the xref:search-index-params.adoc#dims[dims property] or the xref:child-field-options-reference.adoc#dimension[Dimension option] in the UI. 
 
-From Couchbase Server version 8.5 and later, if your Search Vector Index uses xref:vector-search:vector-search-index-architecture.adoc#index-formats[binary quantization], your query vector does not need to use binary values instead of floats.
+From Couchbase Server version 8.5 and later, if your Search Vector Index uses xref:vector-search:vector-search-index-architecture.adoc#index-formats[binary quantization], you can keep using float values in your query vector. The Search Service converts them for comparison automatically.
 ====
 
 |vector_base64 |Base64 Encoded String |Must have `vector` or `vector_base64` a|
@@ -1915,7 +1915,7 @@ Defines the GeoJSON shape and how the Search Service should find a match in docu
 IMPORTANT: You cannot query a `geoshape_v2` field with the old `geometry` object.
 You must use `geometry_v2`.
 
-|shape
+|[[geoshape-v2-shape]]shape
 |Object
 |Yes
 a| Contains the <<geoshape-v2-type,type property>>, <<geoshape-v2-coordinates,coordinates property>>, and the <<geoshape-v2-radius,radius property>>. 
@@ -2037,7 +2037,7 @@ include::example$query-special.jsonc[tag=match_none]
 
 From Couchbase Server version 8.5 and later, you can use a `custom_filter` query to run a JavaScript user-defined function (UDF) during query execution that adds or removes a document from your search results by returning a `boolean` value.
 
-NOTE: You must xref:custom-scripts/enable-custom-script-queries.adoc[turn on Custom Script Query Execution] on your cluster before you can run a `custom_filter` query.
+NOTE: You must xref:custom-scripts/enable-custom-script.adoc[turn on Custom Script Query Execution] on your cluster before you can run a `custom_filter` query.
 
 For example, the following `custom_filter` query calculates the average `Cleanliness` rating from a `hotel` document's reviews.
 Documents are only added to search results if this average rating is greater than or equal to `3.0`:
@@ -2067,7 +2067,7 @@ a| The JavaScript source code for your UDF, as a single string.
 Your `source` property must include a named function declaration, such as: 
 
 ----
-function my_score(doc, params) { ... }
+function my_filter(doc, params) { ... }
 ----
 
 The function must return a Boolean value.
@@ -2114,7 +2114,7 @@ From Couchbase Server version 8.5 and later, you can use a `custom_score` query 
 Unlike a <<custom-filter-queries,`custom_filter` query>>, a `custom_score` query never removes documents from your search results.
 Every document that matches the inner `query` object keeps its place in your results, with a new score from your UDF.
 
-NOTE: You must xref:custom-scripts/enable-custom-script-queries.adoc[turn on Custom Script Query Execution] on your cluster before you can run a `custom_score` query.
+NOTE: You must xref:custom-scripts/enable-custom-script.adoc[turn on Custom Script Query Execution] on your cluster before you can run a `custom_score` query.
 
 For example, the following `custom_score` query takes the values from the `reviews.ratings.Cleanliness` array and boosts a document's score if the average rating for `Cleanliness` is greater than or equal to `3.0`: 
 
@@ -2146,12 +2146,7 @@ Your `source` property must include a named function declaration, such as:
 function my_score(doc, params) { ... }
 ----
 
-The function must return a numeric value, such as:
-
-* `float64`
-* `int`
-* `int64`
-* `uint64`
+The function must return a JavaScript number.
 
 The Search Service uses the returned value from your UDF as the document's new score in your search results.
 If your UDF returns a runtime error, the Search Service uses the document's original score, instead.
@@ -2187,7 +2182,7 @@ If a field is not stored in your Search index, your UDF receives the value of th
 
 |====
 
-TIP: To reduce the resource costs for custom script queries, consider using a <<custom-filter-query,`custom_filter` query>> to reduce the number of matching documents before you change your document scores with a `custom_score` query.
+TIP: To reduce the resource costs for custom script queries, consider using a <<custom-filter-queries,`custom_filter` query>> to reduce the number of matching documents before you change your document scores with a `custom_score` query.
 
 [#additional-query-properties]
 === Additional Query Object Properties
@@ -2318,9 +2313,18 @@ Set the maximum time, in milliseconds, that a Search query can execute on a Sear
 If the query time exceeds the `timeout`, the Search Service cancels the query. 
 The query might return partial results if any index partitions responded before the timeout.
 
-|consistency |Object |Yes a|
+|[[bleveMaxTerms]]bleveMaxTerms |Integer |No a|
 
-An object that contains a `vectors` object and the `level` and `results` properties.
+[.status]#Couchbase Server 8.5#
+
+The maximum number of term searchers this query can use on each Search index partition.
+It overrides the cluster-wide `bleveMaxTerms` Search Service setting (default `1024`) for this request.
+Set it to `0` or less to remove the limit.
+If a query needs more term searchers than the limit, it fails.
+
+|consistency |Object |No a|
+
+An object that contains the `level` and `results` properties, and a `vectors` object for `at_plus` consistency.
 
 For more information, see <<consistency,>>.
 
@@ -2381,7 +2385,7 @@ A `consistency` object has the following properties:
 |====
 |Property |Type |Required? |Description
 
-|vectors |Object |No a|
+|vectors |Object |Only for `at_plus` a|
 
 An object that contains a `\{search-index-name\}` object for each Search index in the query.
 
@@ -2393,9 +2397,10 @@ Set the consistency to bounded or unbounded consistency:
 
 * `at_plus`: The Search query executes but requires that the Search index matches the timestamp of the last document update. 
 You must provide a `vectors` object.
-* `scan_plus`: The Search query executes but requires that the consistency vectors in the Search index match the consistency vectors in the Search query.
+* `scan_plus` [.status]#Couchbase Server 8.5#: The Search query executes but requires that the consistency vectors in the Search index match the consistency vectors in the Search query.
 In `scan_plus`, the Search Service automatically fetches consistency vectors from the Data Service and adds them to the Search query.
 Do not provide a `vectors` object when using `scan_plus` consistency.
+All nodes running the Search Service must run Couchbase Server 8.5 or later.
 * `not_bounded`: The Search query executes without a consistency requirement. 
 `not_bounded` is faster than `at_plus`, as it doesn't rely on a `vectors` object or wait for the Search index to match the Data Service index.
 
@@ -2715,8 +2720,14 @@ Sets what value to use for the sort:
 * `id`: Uses the document's ID value. 
 * `score`: Uses the document's score. 
 * `field`: Uses the value of a specific field to sort. See <<by-field,field>>.
+* `geo_distance`: Uses the distance between the geopoint in `field` and the point in <<sort-location,location>>.
 
-|[[by-field]]field |String |No |When `by` is set to `field`, specify the name of the field to use to sort search results.
+|[[by-field]]field |String |No |When `by` is set to `field` or `geo_distance`, specify the name of the field to use to sort search results.
+
+|[[sort-location]]location |Object |When `by` is `geo_distance` a|
+
+The point to measure distance from, as an object with `lat` and `lon` properties.
+For example, `{"lat": 40.7128, "lon": -74.0060}`.
 
 |desc |Boolean |Yes a|
 
@@ -2745,11 +2756,14 @@ Set the data type of the field specified in `field`:
 
 * `string`: The field contains a string. 
 * `date`: The field contains date/time data. 
-* `number`: The field contains a number or geographic data, like a latitude or longitude value. 
+* `number`: The field contains a number or geographic data, like a latitude or longitude value. Also use `number` with `geo_distance`.
+
+If you paginate with `search_after` or `search_before` over numeric, date, or geo values, set `type`.
+The Search Service returns a `decoded_sort` array only when `type` is set.
 
 |unit |String |No a|
 
-When running a <<geopoint-queries-distance,Geopoint Distance/Radius query>>, you can set the unit of distance to use when sorting documents. 
+When running a <<geopoint-queries-distance,Geopoint Distance/Radius query>>, or when `by` is `geo_distance`, you can set the unit of distance to use when sorting documents. 
 
 The unit of distance does not have to match the unit specified in the <<query-object,query object>>.
 
