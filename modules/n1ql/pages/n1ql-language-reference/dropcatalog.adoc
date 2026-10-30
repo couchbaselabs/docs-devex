@@ -1,0 +1,81 @@
+= DROP CATALOG
+:description: The DROP CATALOG statement enables you to delete a catalog.
+:page-topic-type: reference
+:page-status: Couchbase Server 8.5
+:page-edition: Enterprise Edition
+:imagesdir: ../../assets/images
+
+:identifier: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy.
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:external-catalogs-and-collections: xref:learn:data/external-catalogs-and-collections.adoc
+:create-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/create-external-catalogs-and-collections.adoc
+:maintain-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/maintain-external-catalogs-and-collections.adoc
+:external-collection-options: xref:manage:manage-scopes-and-collections/external-collection-options.adoc
+:scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
+:createcatalog: xref:n1ql-language-reference/createcatalog.adoc
+:altercatalog: xref:n1ql-language-reference/altercatalog.adoc
+
+[abstract]
+{description}
+
+Catalogs are global: they're not restricted to any particular scope or collection in the Couchbase {logical-hierarchy}[logical hierarchy].
+The DROP CATALOG statement is not affected by the current query context.
+
+include::server:manage:partial$drop-catalog-info.adoc[]
+
+== Prerequisites
+
+.RBAC Privileges
+To execute the DROP CATALOG statement, clients must have the External Catalog Admin role, or any Administrative role that gives permission to create, read, update, and delete external catalogs.
+For more information, see {authorization-overview}[Authorization].
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=drop-catalog]
+----
+
+image::n1ql-language-reference/drop-catalog.png["Syntax diagram: see source code listing", align=left]
+
+[horizontal]
+catalog::
+(Required) An {identifier}[identifier] that represents the name of the catalog that you want to delete.
+
+[[if-exists]]
+=== IF EXISTS Clause
+
+The optional `IF EXISTS` clause enables the statement to complete successfully when the specified catalog does not exist.
+If a catalog with the same name does not exist, then:
+
+* If this clause is not present, an error is generated.
+
+* If this clause is present, the statement does nothing and completes without error.
+
+== Examples
+
+.Drop a catalog
+====
+[source,sqlpp]
+----
+DROP CATALOG `sales-catalog`;
+----
+====
+
+.Drop a catalog if it exists
+====
+[source,sqlpp]
+----
+DROP CATALOG IF EXISTS `flight-catalog`;
+----
+====
+
+== Related Links
+
+* {createcatalog}[]
+| {altercatalog}[]
+* {external-catalogs-and-collections}[]
+* {create-external-catalogs-and-collections}[]
+* {maintain-external-catalogs-and-collections}[]
+* {scopes-and-collections-api}[]

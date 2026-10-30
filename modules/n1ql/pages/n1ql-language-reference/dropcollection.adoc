@@ -1,9 +1,10 @@
 = DROP COLLECTION
-:description: The DROP COLLECTION statement enables you to delete a named collection from a scope.
+:description: The DROP COLLECTION statement enables you to delete a named collection or an external collection from a scope.
 :page-topic-type: reference
 :imagesdir: ../../assets/images
 :page-partial:
 
+:authorization-overview: xref:learn:security/authorization-overview.adoc
 :identifier: xref:n1ql-language-reference/identifiers.adoc
 :logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
 :query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
@@ -11,12 +12,24 @@
 :manage-scopes-and-collections: xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc
 :scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
 :couchbase-cli-collection-manage: xref:cli:cbcli/couchbase-cli-collection-manage.adoc
+:createcollection: xref:n1ql-language-reference/createcollection.adoc
+:createexternalcollection: xref:n1ql-language-reference/createexternalcollection.adoc
+:altercollection: xref:n1ql-language-reference/altercollection.adoc
 
 // TEMP
 include::partial$n1ql-language-reference/horizontal-style.adoc[]
 
 [abstract]
-The `DROP COLLECTION` statement enables you to delete a named collection from a scope.
+{description}
+
+Dropping an external collection does not affect the catalog or credentials the collection referenced.
+Both remain intact and reusable afterwards.
+
+== Prerequisites
+
+.RBAC Privileges
+To execute the DROP COLLECTION statement, clients must have the Bucket Admin or Manage Scopes role on the bucket, or any Administrative role that gives permission to add, edit, and drop scopes and collections in the bucket.
+For more information, see {authorization-overview}[Authorization].
 
 == Syntax
 
@@ -25,7 +38,7 @@ The `DROP COLLECTION` statement enables you to delete a named collection from a 
 include::partial$grammar/ddl.ebnf[tag=drop-collection]
 ----
 
-image::n1ql-language-reference/drop-collection.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/drop-collection.png["Syntax diagram: see source code listing", align=left]
 
 [horizontal]
 namespace::
@@ -50,8 +63,8 @@ For example, `default:{backtick}travel-sample{backtick}` indicates the `travel-s
 
 To specify the location of the collection, you may do one of the following:
 
-* Include its [def]_full path_, containing the namespace, bucket, and scope, followed by the collection name;
-* Include a [def]_relative path_, containing just the bucket and scope, followed by the connection name;
+* Include its *((full path))*, containing the namespace, bucket, and scope, followed by the collection name;
+* Include a *((relative path))*, containing just the bucket and scope, followed by the connection name;
 * Specify just the collection name without a path.
 
 When you specify a collection name without a path, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
@@ -60,7 +73,7 @@ If you specify a collection name by itself without setting a valid query context
 [[if-exists]]
 === IF EXISTS Clause
 
-The optional `IF EXISTS` clause enables the statement to complete successfully when the specified collection doesn't exist.
+The optional `IF EXISTS` clause enables the statement to complete successfully when the specified collection does not exist.
 If the collection does not exist within the specified scope, then:
 
 * If this clause is not present, an error is generated.
@@ -93,10 +106,10 @@ DROP COLLECTION country;
 
 == Related Links
 
-* An overview of scopes and collections is provided in {scopes-and-collections}[Scopes and Collections].
-
-* Step-by-step procedures for management are provided in {manage-scopes-and-collections}[Manage Scopes and Collections].
-
-* Refer to {scopes-and-collections-api}[Scopes and Collections API] to manage scopes and collections with the REST API.
-
-* Refer to the reference page for the {couchbase-cli-collection-manage}[collection-manage] command to manage scopes and collections with the CLI.
+* {createcollection}[]
+| {createexternalcollection}[]
+| {altercollection}[]
+* {scopes-and-collections}[]
+* {manage-scopes-and-collections}[]
+* {scopes-and-collections-api}[]
+* {couchbase-cli-collection-manage}[]
