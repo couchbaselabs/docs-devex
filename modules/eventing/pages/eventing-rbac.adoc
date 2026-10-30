@@ -158,9 +158,9 @@ image::rbac_user_view.png[,%100]
 
 == RBAC with JWT Authentication
 
-NOTE: In the next major release of the Couchbase Server, the Eventing Service supports JWT Authentication.
+[.status]#Couchbase Server 8.5#
 
-In addition to Basic Authentication and mutual TLS(mTLS), Eventing supports *JSON Web Token (JWT) Authentication*. 
+In addition to Basic Authentication and mutual TLS(mTLS), Couchbase Server 8.5 and later supports *JSON Web Token (JWT) Authentication* for Eventing.
 This provides secure, short-lived sessions for crucial operations, consistent with the JWT support available for Indexing, Query, Backup, and XDCR.
 
 JWT Authentication is performed over the REST API by passing a bearer token in the `Authorization` header. 
@@ -186,8 +186,33 @@ To create, import, or delete Eventing Functions, you must use one of the followi
 In all the cases, the user must be present in Couchbase RBAC with at least the <<minimal-eventing-rbac-role, Minimal Eventing RBAC role>> privileges.
 ====
 
+[#crl-certificate-revocation]
+== Certificate Revocation Checks
+
+////
+TODO(writer): To confirm the release that introduces Eventing CRL support, and whether to add a release NOTE like the JWT section.
+////
+
+Eventing supports *Certificate Revocation List (CRL)* checks on its connections to other nodes in the cluster.
+For more information, see xref:learn:security/certificate-revocation.adoc[Certificate Revocation].
+
+[NOTE]
+====
+Eventing does not enforce CRL checks on connections made through the following handler bindings:
+
+* xref:eventing-language-constructs.adoc#n1ql_call[`N1qlQuery()`]
+* xref:eventing-language-constructs.adoc#analytics_call[`AnalyticsQuery()`]
+* xref:eventing-language-constructs.adoc#search_call[`searchQuery()`]
+
+
+These bindings connect through a shared client library that does not support CRL checks. 
+These bindings continue to connect to a Query, Analytics, or Search Service node that has a revoked certificate. 
+Eventing still applies CRL checks to all its other connections.
+====
+
 == See Also
-//* xref:[insert-jwt-file].adoc[JWT Authentication]
+* xref:manage:manage-security/manage-jwt.adoc[JWT Authentication]
+* xref:learn:security/certificate-revocation.adoc[Certificate Revocation]
 * xref:manage:manage-security/manage-authentication.adoc[Manage Authentication]
 * xref:manage:manage-security/manage-users-and-roles.adoc[Manage Users, Groups, and Roles]
 * xref:learn:security/roles.adoc[Role-Based Access Control (RBAC)]

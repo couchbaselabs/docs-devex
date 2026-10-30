@@ -160,20 +160,24 @@ You must provide the values in the same order that they appear in the <<sort_arr
 Your `sort` array must force a total order on your search results.
 
 Values in the `search_after` array must be strings.
-You cannot use `search_after` with numbers or other field data types - if your `sort` array includes fields with a `date` or `number` type, you cannot use `search_after`. 
-Only result relevancy score values can be entered as strings in the array. 
+
+From Couchbase Server version 8.5 and later, you can paginate on numeric, date, and geo fields, in addition to text fields, document IDs, and result scores.
+To paginate on numeric, date, and geo fields, you must sort with <<sort,objects>> that set the field type.
+For more information, see xref:manage-search-pagination.adoc#non-textual[Paginate on Numeric, Date, and Geo Fields].
 
 The Search Service starts search result pagination after the document with the values you provide in the array.
 
 For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_after` set to `8`, documents 9-10 appear on the same page.
 
-To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array. 
+To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array.
 Set the `search_after` property to include the values from the last result on your previous page of search results to effectively paginate.
 
-Use `search_after` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`. 
+Use `search_after` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`.
 `search_after` lets you start your search results from a specific result, rather than needing to process a number of search results to skip.
 
-You cannot use `search_after` if you set your <<score,score object>> to use a xref:score-fusion/about-score-fusion.adoc[score fusion algorithm] for a hybrid search.
+You cannot use `search_after` if you set your <<score,score property>> to use a xref:score-fusion/about-score-fusion.adoc[score fusion algorithm] for a hybrid search.
+
+For more information about how to paginate search results, see xref:manage-search-pagination.adoc[].
 
 |[[search_before]]search_before |Array |No a|
 
@@ -181,25 +185,29 @@ NOTE: If you use `search_before` in a search request, you cannot use `search_aft
 
 Use `search_before` with `from/offset` and `sort` to control pagination in search results.
 
-Give a value for each string or JSON object in the <<sort_arr,sort array>> to the `search_before` array. 
+Give a value for each string or JSON object in the <<sort_arr,sort array>> to the `search_before` array.
 You must provide the values in the same order that they appear in the `sort` array.
 Your `sort` array must force a total order on your search results.
 
 Values in the `search_before` array must be strings.
-You cannot use `search_before` with numbers or other field data types - if your `sort` array includes fields with a `date` or `number` type, you cannot use `search_before`. 
-Only result relevancy score values can be entered as strings in the array.
 
-The Search Service starts search result pagination before the document with the values you provide in the array.   
+From Couchbase Server version 8.5 and later, you can paginate on numeric, date, and geo fields, in addition to text fields, document IDs, and result scores.
+To paginate on numeric, date, and geo fields, you must sort with <<sort,objects>> that set the field type.
+For more information, see xref:manage-search-pagination.adoc#non-textual[Paginate on Numeric, Date, and Geo Fields].
+
+The Search Service starts search result pagination before the document with the values you provide in the array.
 
 For example, if you had a set of 10 documents to sort based on `_id` values of 1-10, with `from` set to `2` and `search_before` set to `8`, documents 2-6 appear on the same page.
 
-To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array. 
-Set the `search_before` property to include the values from the last result on your previous page of search results to effectively paginate. 
+To reduce the resource costs of deeper pagination on your Search queries, try to always include your document ID values as the final sort criteria in your `sort` array.
+Set the `search_before` property to include the values from the last result on your previous page of search results to effectively paginate.
 
 Use `search_before` to make the memory requirements of deeper page searches more manageable, when compared to using only `from`/`offset`.
 `search_before` lets you start your search results back from a specific result, rather than needing to process a number of search results to skip.
 
-You cannot use `search_before` if you set your <<score,score object>> to use a xref:score-fusion/about-score-fusion.adoc[score fusion algorithm] for a hybrid search.
+You cannot use `search_before` if you set your <<score,score property>> to use a xref:score-fusion/about-score-fusion.adoc[score fusion algorithm] for a hybrid search.
+
+For more information about how to paginate search results, see xref:manage-search-pagination.adoc[].
 
 |[[collections]]collections |Array |No |Contains an array of strings that specify the collections where you want to run the query. 
 
@@ -2373,7 +2381,7 @@ A `consistency` object has the following properties:
 |====
 |Property |Type |Required? |Description
 
-|vectors |Object |Yes a|
+|vectors |Object |No a|
 
 An object that contains a `\{search-index-name\}` object for each Search index in the query.
 
@@ -2384,7 +2392,10 @@ For more information about the `\{search-index-name\}` object, see <<vectors,>>.
 Set the consistency to bounded or unbounded consistency: 
 
 * `at_plus`: The Search query executes but requires that the Search index matches the timestamp of the last document update. 
-You must provide a `vectors` object 
+You must provide a `vectors` object.
+* `scan_plus`: The Search query executes but requires that the consistency vectors in the Search index match the consistency vectors in the Search query.
+In `scan_plus`, the Search Service automatically fetches consistency vectors from the Data Service and adds them to the Search query.
+Do not provide a `vectors` object when using `scan_plus` consistency.
 * `not_bounded`: The Search query executes without a consistency requirement. 
 `not_bounded` is faster than `at_plus`, as it doesn't rely on a `vectors` object or wait for the Search index to match the Data Service index.
 
@@ -2426,6 +2437,9 @@ For examples on how to obtain and use a `MutationToken` with the Couchbase SDKs,
  | xref:python-sdk:howtos:full-text-searching-with-sdk.adoc#scan-consistency-and-consistent-with[Python]
  | xref:ruby-sdk:howtos:full-text-searching-with-sdk.adoc#consistency[Ruby]
  | xref:scala-sdk:howtos:full-text-searching-with-sdk.adoc#consistency[Scala]
+
+If you use `scan_plus` consistency, do not include any `\{search-index-name\}` objects or the `vectors` object in your Search request.
+The Search Service automatically fetches and attaches consistency vectors to your Search query.
 
 [cols="1,1,1,2"]
 |====
