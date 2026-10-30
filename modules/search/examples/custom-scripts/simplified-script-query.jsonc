@@ -1,25 +1,24 @@
 {
-  "explain": true,
-  "fields": ["price_per_night", "cancellationPolicy", "rating"],
-  "highlight": {},
+  "size": 10,
+  "from": 0,
   "query": {
-    "custom_filter": {
+    "custom_score": {
       "query": {
-        "must": {
-          "conjuncts": [
-            { "match": "hotel" },
-            { "field": "city", "match": "paris" }
-          ]
+        "custom_filter": {
+          "query": {
+            "match": "sea view"
+          },
+          "fields": ["price_per_night"],
+          "params": {
+            "stay_nights": 5,
+            "budget": 2000
+          },
+          "source": "function within_budget(doc, params) { var price = doc.fields[\"price_per_night\"]; if (price === undefined) return false; return price * params.stay_nights <= params.budget; }"
         }
       },
-      "fields": ["price_per_night", "cancellationPolicy", "rating"],
-      "params": {
-        "stay_nights": 5,
-        "budget": 2000
-      },
-      "source": "function hotel_filter(doc, params){ var f = doc.fields || {}; var price = f.price_per_night; if (price === undefined) return false; var nights = params.stay_nights || 1; var budget = params.budget; if (budget === undefined) return true; return (price * nights) <= budget; }"
+      "fields": ["price_per_night", "distanceFromCenterKm"],
+      "params": {},
+      "source": "function prefer_cheap_central(doc, params) { var s = doc.score; var price = doc.fields[\"price_per_night\"]; var dist = doc.fields[\"distanceFromCenterKm\"]; if (price !== undefined) { if (price < 100) { s = s * 3; } else if (price <= 200) { s = s * 2; } } if (dist !== undefined) { if (dist <= 2) { s = s * 2; } else if (dist <= 5) { s = s * 1.5; } } return s; }"
     }
-  },
-  "size": 10,
-  "from": 0
+  }
 }
