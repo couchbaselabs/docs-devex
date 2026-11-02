@@ -5,7 +5,9 @@ ddl-statement ::= create-statement
                 | other-statement
 
 create-statement ::= create-scope
+                   | create-catalog
                    | create-collection
+                   | create-external-collection
                    | create-primary-index
                    | create-index
                    | create-vector-index
@@ -17,6 +19,7 @@ create-statement ::= create-scope
                    | create-credentialstore
 
 drop-statement ::= drop-scope
+                 | drop-catalog
                  | drop-collection
                  | drop-primary-index
                  | drop-index
@@ -29,6 +32,8 @@ drop-statement ::= drop-scope
                  | drop-credentialstore
 
 other-statement ::= alter-bucket
+                  | alter-catalog
+                  | alter-collection
                   | alter-group
                   | alter-index
                   | alter-vector-index
@@ -39,12 +44,12 @@ other-statement ::= alter-bucket
                   | alter-credentialstore
 
 
-/**************************
+/************************************
  * Buckets, Scopes, and Collections *
- **************************/
+ ************************************/
 
 /* tag::create-bucket[] */
-create-bucket ::= 'CREATE' ( 'BUCKET' | 'DATABASE' ) ( 'IF' 'NOT' 'EXISTS' )? name 
+create-bucket ::= 'CREATE' ( 'BUCKET' | 'DATABASE' ) ( 'IF' 'NOT' 'EXISTS' )? name
                   ( 'WITH' with-fields )?
 /* end::create-bucket[] */
 
@@ -54,12 +59,25 @@ create-scope ::= 'CREATE' 'SCOPE' ( namespace ':' )? bucket '.' scope ( 'IF' 'NO
 
 /* tag::create-collection[] */
 create-collection ::= 'CREATE' 'COLLECTION' ( ( namespace ':' )? bucket '.' scope '.' )?
-                      collection ( 'IF' 'NOT' 'EXISTS' )? ( 'WITH' expr )?
+                      collection ( 'IF' 'NOT' 'EXISTS' )? ( 'WITH' options )?
 /* end::create-collection[] */
+
+/* tag::create-external-collection[] */
+create-external-collection ::= 'CREATE' 'EXTERNAL' 'COLLECTION' ( 'IF' 'NOT' 'EXISTS' )?
+                               ( ( namespace ':' )? bucket '.' scope '.' )? collection
+                               'ON' catalog
+                               'AT' credential
+                               'WITH' options
+/* end::create-external-collection[] */
 
 /* tag::alter-bucket[] */
 alter-bucket ::= 'ALTER' ( 'BUCKET' | 'DATABASE' ) name ( 'WITH' with-fields )?
 /* end::alter-bucket[] */
+
+/* tag::alter-collection[] */
+alter-collection ::= 'ALTER' 'COLLECTION' ( ( namespace ':' )? bucket '.' scope '.' )?
+                     collection 'WITH' options
+/* end::alter-collection[] */
 
 /* tag::drop-bucket[] */
 drop-bucket ::= 'DROP' ( 'BUCKET' | 'DATABASE' ) ('IF' 'EXISTS' )? name
@@ -74,6 +92,40 @@ drop-collection ::= 'DROP' 'COLLECTION' ( ( namespace ':' )? bucket '.' scope '.
                     collection ( 'IF' 'EXISTS' )?
 /* end::drop-collection[] */
 
+
+/************
+ * Catalogs *
+ ************/
+
+/* tag::create-catalog[] */
+create-catalog ::= 'CREATE' 'CATALOG' ( 'IF' 'NOT' 'EXISTS' )? catalog
+                   'TYPE' 'ICEBERG'
+                   'SOURCE' provider
+                   'AT' credential
+                   'WITH' options
+/* end::create-catalog[] */
+
+/* tag::provider[] */
+provider ::= 'AWS_GLUE'
+           | 'AWS_GLUE_REST'
+           | 'S3_TABLES'
+           | 'BIGLAKE_METASTORE'
+           | 'NESSIE'
+           | 'NESSIE_REST'
+           | 'REST'
+           | 'UNITY_CATALOG'
+           | 'SQL'
+/* end::provider[] */
+
+/* tag::alter-catalog[] */
+alter-catalog ::= 'ALTER' 'CATALOG' catalog 'WITH' options
+/* end::alter-catalog[] */
+
+/* tag::drop-catalog[] */
+drop-catalog ::= 'DROP' 'CATALOG' ( 'IF' 'EXISTS' )? catalog
+/* end::drop-catalog[] */
+
+catalog ::= identifier
 
 /***********
  * Indexes *
@@ -364,19 +416,20 @@ alter-sequence-options ::= ( restart-with
 restart-with ::= 'RESTART' ( 'WITH' integer )?
 /* end::restart-with[] */
 
+
 /********************
  * Users and Groups *
  ********************/
 
 /* tag::create-user[] */
-create-user ::= 'CREATE' 'USER' ( 'IF' 'NOT' 'EXISTS' )? username 'PASSWORD' password 
-                ( 'WITH' name )? 
+create-user ::= 'CREATE' 'USER' ( 'IF' 'NOT' 'EXISTS' )? username 'PASSWORD' password
+                ( 'WITH' name )?
                 ( 'GROUP' group | 'GROUPS' group ( ',' group )* | 'NO' 'GROUPS' )?
 /* end::create-user[] */
 
 /* tag::alter-user[] */
-alter-user ::= 'ALTER' 'USER' username ( 'PASSWORD' password )? 
-                ( 'WITH' name )? 
+alter-user ::= 'ALTER' 'USER' username ( 'PASSWORD' password )?
+                ( 'WITH' name )?
                 ( 'GROUP' group | 'GROUPS' group ( ',' group )* | 'NO' 'GROUPS' )?
 /* end::alter-user[] */
 
@@ -385,13 +438,13 @@ drop-user ::= 'DROP' 'USER' ( 'IF' 'EXISTS' )? username
 /* end::drop-user[] */
 
 /* tag::create-group[] */
-create-group ::= 'CREATE' 'GROUP' ( 'IF' 'NOT' 'EXISTS' )? name 
-                 ( 'WITH' description )? 
+create-group ::= 'CREATE' 'GROUP' ( 'IF' 'NOT' 'EXISTS' )? name
+                 ( 'WITH' description )?
                  ( 'ROLE' rbac-role | 'ROLES' rbac-role ( ',' rbac-role )* | 'NO' 'ROLES' )
 /* end::create-group[] */
 
 /* tag::alter-group[] */
-alter-group ::= 'ALTER' 'GROUP' name ( 'WITH' description )? 
+alter-group ::= 'ALTER' 'GROUP' name ( 'WITH' description )?
                 ( 'ROLE' rbac-role | 'ROLES' rbac-role (',' rbac-role )* | 'NO' 'ROLES' )?
 /* end::alter-group[] */
 
@@ -403,17 +456,18 @@ rbac-role ::= role ( 'ON' keyspace-ref )?
 drop-group ::= 'DROP' 'GROUP' ('IF' 'EXISTS' )? groupname
 /* end::drop-group[] */
 
-/**************************
+
+/*********************
  * Credential Stores *
- **************************/
+ *********************/
 
 /* tag::create-credentialstore[] */
-create-credentialstore ::= 'CREATE' 'CREDENTIALSTORE' ( 'IF' 'NOT' 'EXISTS' )? name 
-                            'WITH' with-fields 
+create-credentialstore ::= 'CREATE' 'CREDENTIALSTORE' ( 'IF' 'NOT' 'EXISTS' )? name
+                           'WITH' with-fields
 /* end::create-credentialstore[] */
 
 /* tag::alter-credentialstore[] */
-alter-credentialstore ::= 'ALTER' 'CREDENTIALSTORE' name 'WITH' with-fields 
+alter-credentialstore ::= 'ALTER' 'CREDENTIALSTORE' name 'WITH' with-fields
 /* end::alter-credentialstore[] */
 
 /* tag::drop-credentialstore[] */
