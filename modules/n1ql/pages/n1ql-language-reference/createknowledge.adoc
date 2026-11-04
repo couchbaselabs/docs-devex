@@ -1,0 +1,241 @@
+= CREATE KNOWLEDGE
+:description: The CREATE KNOWLEDGE statement enables you to create free-form, contextual knowledge in a keyspace for later use with natural language requests.
+:page-topic-type: reference
+:imagesdir: ../../assets/images
+
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:identifiers: xref:n1ql-language-reference/identifiers.adoc
+:string: xref:n1ql-language-reference/literals.adoc#strings
+:object: xref:n1ql-language-reference/datatypes.adoc#objects
+:parameters: xref:n1ql:n1ql-manage/query-settings.adoc#section_srh_tlm_n1b
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+Knowledge is made up of entries.
+Each entry has a name and a value.
+The name is a string used to identify the entry.
+The value is a free-form, natural language string, giving a domain or ontology hint: for example, `"ICAO codes represent airports"`.
+
+Knowledge is stored in a collection within a scope.
+Each collection may contain zero, one, or multiple knowledge entries.
+
+You can use knowledge to add contextual information to an LLM request, such as USING AI or BEGIN CHAT.
+The knowledge is concatenated into the prompt sent to the LLM.
+
+== Prerequisites
+
+The keyspace must exist before you create knowledge in it.
+
+.RBAC Privileges
+To execute the CREATE KNOWLEDGE statement, you must have the Full Admin role.
+For more information, see {authorization-overview}[Authorization].
+
+== Syntax
+
+The CREATE KNOWLEDGE statement provides two possible syntaxes: the `FOR` ... `AS` syntax for creating a single entry, and the `FOR` ... `FROM` syntax for creating multiple entries.
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=create-knowledge]
+----
+
+image::n1ql-language-reference/create-knowledge.png["Syntax diagram: see source code listing", align=left]
+
+[horizontal.compact]
+single-entry:: <<as>> icon:caret-down[]
+multiple-entries:: <<from>> icon:caret-down[]
+
+[[or-replace]]
+=== OR REPLACE Clause
+
+The optional `OR REPLACE` clause enables you to redefine knowledge entries if they already exist.
+
+When a knowledge entry with the same name already exists within the same context:
+
+* If the `OR REPLACE` clause is present, the existing knowledge entry is replaced.
+
+* If the `OR REPLACE` clause is not present, an error is generated.
+
+
+[[as]]
+=== FOR ... AS
+
+The `FOR` ... `AS` syntax enables you to create a single knowledge entry in a keyspace.
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=single-entry]
+----
+
+image::n1ql-language-reference/single-entry.png["Syntax diagram: see source code listing", align=left]
+
+[horizontal]
+name::
+[Optional] An {identifiers}[identifier] representing a name for the knowledge entry.
+If you do not specify a name, Couchbase {product-name} generates a name automatically.
+
+keyspace-ref::
+Specifies the keyspace where the knowledge is created.
+See <<keyspace-ref>>.
+
+value::
+A {string}[string literal], or a {parameters}[parameter] resolving to a string, representing the value of the knowledge entry.
+This is a free-form, natural language domain or ontology hint.
+
+[[from]]
+=== FOR ... FROM
+
+The `FOR` ... `FROM` syntax enables you to create multiple knowledge entries in a keyspace.
+
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=multiple-entries]
+----
+
+image::n1ql-language-reference/multiple-entries.png["Syntax diagram: see source code listing", align=left]
+
+[horizontal]
+keyspace-ref::
+Specifies the keyspace where the knowledge is created.
+See <<keyspace-ref>>.
+
+entries::
+An {object}[object], or a {parameters}[parameter] resolving to an object.
+The object must contain one or more attributes.
+For each attribute, the key represents a name for the knowledge entry and the value is a string representing the value of the knowledge entry.
+This is a free-form, natural language domain or ontology hint.
+
+[[keyspace-ref]]
+=== Keyspace Reference
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=keyspace-ref]
+----
+
+image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: see source code listing", align=left]
+
+Specifies the keyspace in which the knowledge needs to be created.
+The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
+
+NOTE: If there is a hyphen (-) inside any part of the keyspace reference, you must wrap that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
+
+[[keyspace-path,keyspace path]]
+==== Keyspace Path
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=keyspace-path]
+----
+
+image::n1ql-language-reference/keyspace-path.png["Syntax diagram: see source code listing", align=left]
+
+If the keyspace is a named collection, or the default collection in the default scope within a bucket, the keyspace reference may be a keyspace path.
+In this case, the {query-context}[query context] should not be set.
+
+[horizontal]
+namespace::
+(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[namespace] of the keyspace.
+Currently, only the `default` namespace is available.
+If the namespace name is omitted, the default namespace in the current session is used.
+
+bucket::
+(Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[bucket name] of the keyspace.
+
+scope::
+(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[scope name] of the keyspace.
+If omitted, the bucket's default scope is used.
+
+collection::
+(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
+If omitted, the default collection in the bucket's default scope is used.
+
+[[keyspace-partial,keyspace partial]]
+==== Keyspace Partial
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=keyspace-partial]
+----
+
+image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: see source code listing", align=left]
+
+Alternatively, if the keyspace is a named collection, the keyspace reference may be just the collection name with no path.
+In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
+
+[horizontal]
+collection::
+(Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
+
+== Usage
+
+Within a conversational chat (started with BEGIN CHAT, continued via its `chatId` or `natural_chatid`), knowledge injection only happens on the chat's first request, when its prompt is first built.
+On every subsequent turn that continues the same chat, the cached prompt is reused directly and knowledge is not gathered or injected again -- even if `AND KNOWLEDGE` / `WITH {"knowledge": true}` is specified again on that later turn.
+To have knowledge entries included, they should exist and be requested on the first message of the chat.
+
+== Examples
+
+.Create knowledge with full path
+====
+This statement creates a knowledge entry called `icao_hint` in the `{backtick}travel-sample{backtick}.inventory.airport` keyspace.
+
+[source,sqlpp]
+----
+CREATE KNOWLEDGE icao_hint FOR `travel-sample`.inventory.airport
+AS "ICAO codes represent airports.";
+----
+====
+
+.Create knowledge with query context
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+This statement creates a knowledge entry called `iata_hint` in the `{backtick}travel-sample{backtick}.inventory.airport` keyspace.
+
+[source,sqlpp]
+----
+CREATE KNOWLEDGE iata_hint FOR airports
+AS "IATA codes represent airports, and cities or metropolitan areas with multiple airports.";
+----
+====
+
+.Create and replace knowledge
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+This statement creates a knowledge entry called `icao_hint` in the `{backtick}travel-sample{backtick}.inventory.airport` keyspace.
+
+If the knowledge entry already exists, it's replaced.
+
+[source,sqlpp]
+----
+CREATE OR REPLACE KNOWLEDGE icao_hint FOR airport
+AS "ICAO codes are 4-letter airport codes used internationally.";
+----
+====
+
+.Create multiple knowledge entries
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+This statement creates multiple knowledge entries in the `{backtick}travel-sample{backtick}.inventory.airport` keyspace.
+
+[source,sqlpp]
+----
+CREATE OR REPLACE KNOWLEDGE FOR airport
+FROM { "icao_hint": "ICAO codes are 4-letter airport codes used internationally",
+       "iata_hint": "IATA codes are 3-letter codes representing airports, and cities or metropolitan areas with multiple airports, around the world."};
+----
+====
+
+== Related Links
+
+* xref:n1ql-language-reference/dropknowledge.adoc[]
+* xref:n1ql-language-reference/using-ai.adoc[]
