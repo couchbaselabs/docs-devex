@@ -17,6 +17,7 @@ create-statement ::= create-scope
                    | create-group
                    | create-bucket
                    | create-credentialstore
+                   | create-knowledge
 
 drop-statement ::= drop-scope
                  | drop-catalog
@@ -30,6 +31,7 @@ drop-statement ::= drop-scope
                  | drop-group
                  | drop-bucket
                  | drop-credentialstore
+                 | drop-knowledge
 
 other-statement ::= alter-bucket
                   | alter-catalog
@@ -474,3 +476,27 @@ alter-credentialstore ::= 'ALTER' 'CREDENTIALSTORE' name 'WITH' with-fields
 drop-credentialstore ::= 'DROP' 'CREDENTIALSTORE' ( 'IF' 'EXISTS' )? name
 /* end::alter-credentialstore[] */
 
+
+/*************
+ * Knowledge *
+ *************/
+
+/* tag::create-knowledge[] */
+create-knowledge ::= 'CREATE' ( 'OR' 'REPLACE' )? 'KNOWLEDGE' 
+                    ( single-entry | multiple-entries )
+/* end::create-knowledge[] */
+
+/* tag::single-entry[] */
+single-entry ::= name? 'FOR' keyspace-ref 'AS' value
+/* end::single-entry[] */
+
+/* tag::multiple-entries[] */
+multiple-entries ::= 'FOR' keyspace-ref 'FROM' entries
+/* end::multiple-entries[] */
+
+/* tag::drop-knowledge[] */
+drop-knowledge ::= 'DROP' 'KNOWLEDGE' ( name ( ',' name )* )?
+                   'FOR' keyspace-ref ( 'IF' 'EXISTS' )?
+/* end::alter-knowledge[] */
+
+entries ::= expr
