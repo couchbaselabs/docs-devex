@@ -1,0 +1,175 @@
+= DROP KNOWLEDGE
+:description: The DROP KNOWLEDGE statement enables you to delete knowledge that was stored in a keyspace for use with natural language requests.
+:page-topic-type: reference
+:page-status: Couchbase Server 8.5
+:imagesdir: ../../assets/images
+
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:identifiers: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+Knowledge is made up of entries.
+Each entry has a name and a value.
+The name is a string used to identify the entry.
+The value is a free-form, natural language string, giving a domain or ontology hint: for example, `"ICAO codes represent airports"`.
+
+Knowledge is stored in a collection within a scope.
+Each collection may contain zero, one, or multiple knowledge entries.
+
+== Prerequisites
+
+.RBAC Privileges
+To execute the DROP KNOWLEDGE statement, you must have the Full Admin role.
+For more information, see {authorization-overview}[Authorization].
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=drop-knowledge]
+----
+
+image::n1ql-language-reference/drop-knowledge.png["Syntax diagram: see source code listing", align=left]
+
+[horizontal]
+name::
+[Optional] An {identifiers}[identifier] representing a name for the knowledge entry.
+You can specify zero, one, or many names, separated by commas.
+If you do not specify a name, Couchbase {product-name} drops all knowledge in the keyspace.
+
+keyspace-ref::
+Specifies the keyspace where the knowledge is stored.
+See <<keyspace-ref>>.
+
+[[if-exists]]
+=== IF EXISTS Clause
+
+The optional `IF EXISTS` clause enables the statement to complete successfully when a specified knowledge entry does not exist.
+If a knowledge entry does not exist within the specified scope, then:
+
+* If this clause is not present, an error is generated.
+
+* If this clause is present, the statement does nothing and completes without error.
+
+[[keyspace-ref]]
+=== Keyspace Reference
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=keyspace-ref]
+----
+
+image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: see source code listing", align=left]
+
+Specifies the keyspace in which the knowledge needs to be deleted.
+The keyspace reference may be a <<keyspace-path>> or a <<keyspace-partial>>.
+
+NOTE: If there is a hyphen (-) inside any part of the keyspace reference, you must wrap that part of the keyspace reference in backticks ({backtick}{nbsp}{backtick}).
+
+[[keyspace-path,keyspace path]]
+==== Keyspace Path
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=keyspace-path]
+----
+
+image::n1ql-language-reference/keyspace-path.png["Syntax diagram: see source code listing", align=left]
+
+If the keyspace is a named collection, or the default collection in the default scope within a bucket, the keyspace reference may be a keyspace path.
+In this case, the {query-context}[query context] should not be set.
+
+[horizontal]
+namespace::
+(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[namespace] of the keyspace.
+Currently, only the `default` namespace is available.
+If the namespace name is omitted, the default namespace in the current session is used.
+
+bucket::
+(Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[bucket name] of the keyspace.
+
+scope::
+(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[scope name] of the keyspace.
+If omitted, the bucket's default scope is used.
+
+collection::
+(Optional) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
+If omitted, the default collection in the bucket's default scope is used.
+
+[[keyspace-partial,keyspace partial]]
+==== Keyspace Partial
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=keyspace-partial]
+----
+
+image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: see source code listing", align=left]
+
+Alternatively, if the keyspace is a named collection, the keyspace reference may be just the collection name with no path.
+In this case, you must set the {query-context}[query context] to indicate the required namespace, bucket, and scope.
+
+[horizontal]
+collection::
+(Required) An {identifiers}[identifier] that refers to the {logical-hierarchy}[collection name] of the keyspace.
+
+== Examples
+
+.Drop knowledge with full path
+====
+This statement drops a knowledge entry called `icao_hint` in the `{backtick}travel-sample{backtick}.inventory.airport` keyspace.
+
+[source,sqlpp]
+----
+DROP KNOWLEDGE icao_hint FOR `travel-sample`.inventory.airport;
+----
+====
+
+.Drop knowledge with query context
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+Assuming that the query context is set, this statement creates a knowledge entry called `iata_hint` in the `{backtick}travel-sample{backtick}.inventory.airport` keyspace.
+
+[source,sqlpp]
+----
+DROP KNOWLEDGE iata_hint FOR airport;
+----
+====
+
+.Drop knowledge if it exists
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+This statement drops multiple knowledge entries in the `{backtick}travel-sample{backtick}.inventory.airport` keyspace, if they exist.
+
+[source,sqlpp]
+----
+DROP KNOWLEDGE iata_hint, icao_hint FOR airport IF EXISTS;
+----
+====
+
+.Drop all knowledge from a keyspace
+====
+include::ROOT:partial$query-context.adoc[tag=example]
+
+This statement drops all knowledge in the `{backtick}travel-sample{backtick}.inventory.airport` keyspace, if any exists.
+
+[source,sqlpp]
+----
+DROP KNOWLEDGE FOR airport IF EXISTS;
+----
+====
+
+== Related Links
+
+* xref:n1ql-language-reference/createknowledge.adoc[]
+* xref:n1ql-language-reference/using-ai.adoc[]
+* xref:n1ql:n1ql-intro/sysinfo.adoc#sys-knowledge[Monitor Knowledge]

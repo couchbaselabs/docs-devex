@@ -1,5 +1,6 @@
 = USING AI
 :page-topic-type: reference
+:imagesdir: ../../assets/images
 :description: The USING AI statement allows you to generate {sqlpp} queries from natural language prompts.
 :example-note: To try this example, use xref:n1ql:n1ql-intro/cbq.adoc[cbq shell] with Couchbase Server version 8.0 or later.
 :query-settings: xref:n1ql:n1ql-manage/query-settings.adoc
@@ -44,6 +45,7 @@ include::partial$grammar/utility.ebnf[tag=using-ai]
 
 image::n1ql-language-reference/using-ai.png["Syntax diagram: see source code listing", align=left]
 
+[horizontal]
 prompt::
 [Required] A natural language request that you want to convert into a {sqlpp} query.
 
@@ -52,6 +54,15 @@ options::
 +
 By default, the statement uses the {natural_orgid}[natural_orgid], {natural_cred}[natural_cred], and {natural_context}[natural_context] request-level parameters to determine the organization ID, credentials, and keyspaces for the request.
 You can override them by specifying the relevant parameters in the <<optional-parameters,options>> object.
+
+=== AND KNOWLEDGE
+
+[.status]#Couchbase Server 8.5#
+
+In Couchbase Server 8.5 and later, you can use the optional `AND KNOWLEDGE` keywords to specify that the prompt sent to the LLM should contain contextual hints from previously stored knowledge entries.
+If this clause is present, any knowledge entries stored in the specified keyspace or keyspaces are folded into the prompt as domain context before the LLM generates the {sqlpp} statement.
+
+Using this clause is equivalent to setting the `knowledge` option to `true`.
 
 === FLEXINDEX / FTS
 
@@ -67,7 +78,7 @@ See <<example-6>>.
 | Name | Description | Schema
 
 | **creds** +
-__optional__
+optional
 | Couchbase Capella account credentials to authenticate the request.
 
 Can be one of the following:
@@ -84,7 +95,7 @@ To ensure your credentials are passed securely, see <<handling-passwords, Handli
 | String or object
 
 | **keyspaces** +
-__optional__
+optional
 
 | One or more keyspaces for the request.
 
@@ -98,7 +109,7 @@ If specified, this value overrides the {natural_context}[natural_context] reques
 | String or an array of strings
 
 | **orgId** +
-__optional__
+optional
 
 | Couchbase Capella organization ID for the request.
 
@@ -112,7 +123,7 @@ For example, in the URL `+++https://cloud.couchbase.com/databases?oid=5c670d3e-1
 | String
 
 | **execute** +
-__optional__
+optional
 
 | Indicates if the generated statement should be executed automatically.
 
@@ -128,7 +139,7 @@ If `FALSE`, the generated statement is returned, but not executed.
 | Boolean
 
 | **output** +
-__optional__
+optional
 | A string specifying the type of output to generate.
 
 Possible values are:
@@ -152,6 +163,23 @@ The statement returns an error if you specify a value not included in this list.
 
 *Default:* `sql`
 | String
+
+| **knowledge** +
+optional
+| [.status]#Couchbase Server 8.5#
+
+In Couchbase Server 8.5 and later, this option specifies whether the prompt sent to the LLM should contain contextual hints from previously stored knowledge entries.
+
+For more information, see xref:n1ql:n1ql-language-reference/createknowledge.adoc[] and xref:n1ql:n1ql-language-reference/dropknowledge.adoc[].
+
+* `true` -- Any knowledge entries stored in the specified keyspace or keyspaces are folded into the prompt as domain context before the LLM generates the {sqlpp} statement.
+
+* `false` -- Knowledge entries are not used.
+
+This option is equivalent to the `AND KNOWLEDGE` clause.
+
+*Default:* `false`
+| Boolean
 
 |===
 
@@ -706,6 +734,62 @@ List the names and cities of hotels with a rating greater than 4;
 }
 ----
 ====
+
+[[example-10]]
+.USING AI AND KNOWLEDGE
+====
+{example-note}
+
+.Preparation
+[source, sqlpp]
+----
+CREATE KNOWLEDGE icao_hint
+  FOR `travel-sample`.inventory.airport
+  AS "ICAO codes are 4-letter airport codes used internationally.";,
+----
+
+.Request
+[source, sqlpp]
+----
+\set -natural_cred <USER>:<PASSWORD>;
+\set -natural_orgid <ORGID>;
+USING AI AND KNOWLEDGE
+  WITH { "keyspaces": ["travel-sample.inventory.airport"] }
+  List airports by their ICAO code;
+----
+
+The knowledge in the keyspace is folded into the prompt as domain context before the LLM generates the {sqlpp} statement.
+====
+
+[[example-11]]
+.USING AI with knowledge option
+====
+{example-note}
+
+This example is equivalent to <<example-10>>, but uses the `knowledge` option instead of the `AND KNOWLEDGE` clause.
+
+.Preparation
+[source, sqlpp]
+----
+CREATE KNOWLEDGE icao_hint
+  FOR `travel-sample`.inventory.airport
+  AS "ICAO codes are 4-letter airport codes used internationally.";,
+----
+
+.Request
+[source, sqlpp]
+----
+\set -natural_cred <USER>:<PASSWORD>;
+\set -natural_orgid <ORGID>;
+USING AI
+  WITH { "keyspaces": ["travel-sample.inventory.airport"],
+          "knowledge": true }
+  List airports by their ICAO code;
+----
+
+The knowledge in the keyspace is folded into the prompt as domain context before the LLM generates the {sqlpp} statement.
+====
+
 
 [[using-ai-limitations]]
 == Limitations
