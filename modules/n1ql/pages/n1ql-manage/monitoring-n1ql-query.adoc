@@ -862,6 +862,22 @@ When set to any size greater than `0`, completed requests are streamed to archiv
 The value of this property determines the size of the data to retain, per node.
 The configuration for completed requests determines which requests are saved.
 
+[.status]#Couchbase Server 8.0#
+
+In Couchbase Server 8.0 and later, you can enable completed request streaming for every Query node in the cluster at once.
+To do so, use the `queryCompletedStreamSize` cluster-level query setting, which takes the same file size in MiB and has the same default of `0`.
+Specify it with the xref:n1ql:n1ql-manage/query-settings.adoc#cluster-level-query-settings[cluster-level query settings] REST API, on the cluster manager port.
+
+[source,sh]
+----
+curl -v -X POST -u $USER:$PASSWORD \
+http://localhost:8091/settings/querySettings \
+-d 'queryCompletedStreamSize=500'
+----
+
+Setting `queryCompletedStreamSize` overwrites the node-level `completed-stream-size` property on all Query nodes in the cluster.
+For more information, see xref:n1ql:n1ql-manage/query-settings.adoc#cluster-level-and-node-level[How Cluster-Level Settings Affect Node-Level Settings].
+
 NOTE: The additional processing required to save completed requests to disk may limit overall request throughput on a Query node, but typically only when every completed request is being recorded, and requests are small or short-lived.
 The speed of the file system on which the server logs directory resides may affect the request throughput also.
 
