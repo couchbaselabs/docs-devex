@@ -1,5 +1,5 @@
 function addAirlineWithNamedParameters(name, callsign, country) {
-    var q = insert into `travel-sample`.`inventory`.`airport` values("1700", 
+    var q = insert into `travel-sample`.`inventory`.`airline` values("1700", 
         {"id": 1700, 
             "type": "airline", 
             "name": $name, 

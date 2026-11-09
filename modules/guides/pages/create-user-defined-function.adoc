@@ -273,6 +273,45 @@ For more information, see xref:n1ql:n1ql-language-reference/createfunction.adoc[
 --
 ====
 
+[#variadic-parameters]
+== Example: Create a Variadic User-Defined Function
+
+A variadic user-defined function accepts any number of arguments.
+To create a variadic function, use 3 periods (`\...`) in place of the parameter list in the `CREATE FUNCTION` statement.
+
+To pass the arguments to your JavaScript function, use a JavaScript rest parameter.
+For example, the following JavaScript function returns the sum of all the numbers that it receives:
+
+[source,javascript]
+----
+include::example$variadic-sum.js[]
+----
+
+The following statement creates a variadic user-defined function for the JavaScript function:
+
+[source,sqlpp]
+----
+include::example$create-scoped-sum-function.n1ql[]
+----
+
+You can then call the function with as many arguments as you need:
+
+[source,sqlpp]
+----
+include::example$execute-sum-function.n1ql[]
+----
+
+The statement returns the following result:
+
+[source,json]
+----
+include::example$execute-sum-function-result.jsonc[]
+----
+
+A variadic user-defined function can also point to a JavaScript function with named parameters.
+The JavaScript function receives the arguments in order.
+For example, if you create `GetBusinessDays(\...)`, the JavaScript function still receives the 1st argument as `startDate` and the 2nd argument as `endDate`.
+
 == Related Links
 
 Reference:
