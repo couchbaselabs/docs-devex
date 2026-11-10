@@ -178,9 +178,16 @@ collection::
 
 == Usage
 
-Within a conversational chat (started with BEGIN CHAT, continued via its `chatId` or `natural_chatid`), knowledge injection only happens on the chat's first request, when its prompt is first built.
-On every subsequent turn that continues the same chat, the cached prompt is reused directly and knowledge is not gathered or injected again -- even if `AND KNOWLEDGE` / `WITH {"knowledge": true}` is specified again on that later turn.
-To have knowledge entries included, they should exist and be requested on the first message of the chat.
+You can use knowledge in the following ways:
+
+* Within a conversational chat, started with the BEGIN CHAT statement.
+When you begin the chat, you can specify that knowledge entries for the chat's keyspaces are injected into the chat's prompt.
+
+* With the USING AI statement, to convert a natural language prompt into a {sqlpp} query.
+Knowledge injection is only effective in one-shot USING AI requests.
+When the request is part of an ongoing chat using the `natural_chatid` parameter or `chatId` setting, knowledge is not injected.
+
+The knowledge entries must exist before you begin the chat or issue the one-shot USING AI request.
 
 == Examples
 
@@ -241,4 +248,5 @@ FROM { "icao_hint": "ICAO codes are 4-letter airport codes used internationally"
 
 * xref:n1ql-language-reference/dropknowledge.adoc[]
 * xref:n1ql-language-reference/using-ai.adoc[]
+// TODO: Include links to CHAT commands
 * xref:n1ql:n1ql-intro/sysinfo.adoc#sys-knowledge[Monitor Knowledge]

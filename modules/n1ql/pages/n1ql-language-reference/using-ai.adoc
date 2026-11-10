@@ -16,7 +16,7 @@
 You can use the USING AI statement to convert a natural language prompt into a {sqlpp} query.
 When executed, the statement passes the input to Large Language Models (LLMs), which interpret the request and return the equivalent {sqlpp} query.
 
-For example, you can input prompts such as `How many airlines are based in Europe` or `List the names of all hotels in the same city as an airport`, and the statement generates the corresponding SQL++ query.
+For example, you can input prompts such as `How many airlines are based in Europe` or `List the names of all hotels in the same city as an airport`, and the statement generates the corresponding {sqlpp} query.
 
 If the generated statement is a SELECT query, the Query Service automatically executes it and returns the results.
 For all other query types, it returns the generated statement as a string without executing it.
@@ -61,6 +61,9 @@ You can override them by specifying the relevant parameters in the <<optional-pa
 
 In Couchbase Server 8.5 and later, you can use the optional `AND KNOWLEDGE` keywords to specify that the prompt sent to the LLM should contain contextual hints from previously stored knowledge entries.
 If this clause is present, any knowledge entries stored in the specified keyspace or keyspaces are folded into the prompt as domain context before the LLM generates the {sqlpp} statement.
+
+The `AND KNOWLEDGE` clause is only effective in one-shot USING AI requests.
+When the request is part of an ongoing chat using the `natural_chatid` parameter or `chatId` setting, the `AND KNOWLEDGE` clause is ignored.
 
 Using this clause is equivalent to setting the `knowledge` option to `true`.
 
@@ -145,16 +148,16 @@ optional
 Possible values are:
 --
 * `sql` --
-Generates a standard SQL++ query.
+Generates a standard {sqlpp} query.
 
 * `jsudf` --
 Generates a CREATE FUNCTION statement.
-You can use this to create a SQL++ managed JavaScript user-defined function.
+You can use this to create a {sqlpp} managed JavaScript user-defined function.
 The Query Service does not execute the CREATE FUNCTION, even if `execute` is `TRUE`.
 You must run the generated statement separately to create the function.
 
 * `ftssql` --
-Generates a SQL++ query optimized for FTS or flex indexes.
+Generates a {sqlpp} query optimized for FTS or flex indexes.
 The Query Service appends a `USE INDEX (USING FTS)` clause to all `FROM` keyspaces in the generated query.
 This enables the query to use a flex index if it's available.
 --
@@ -175,6 +178,9 @@ For more information, see xref:n1ql:n1ql-language-reference/createknowledge.adoc
 * `true` -- Any knowledge entries stored in the specified keyspace or keyspaces are folded into the prompt as domain context before the LLM generates the {sqlpp} statement.
 
 * `false` -- Knowledge entries are not used.
+
+The `knowledge` option is only effective in one-shot USING AI requests.
+When the request is part of an ongoing chat using the `natural_chatid` option or the `chatId` setting, the `knowledge` option is ignored.
 
 This option is equivalent to the `AND KNOWLEDGE` clause.
 
