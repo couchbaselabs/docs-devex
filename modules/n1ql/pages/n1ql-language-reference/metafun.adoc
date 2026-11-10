@@ -716,6 +716,90 @@ SELECT extractddl("",{"flags":["bucket","scope"]});
 ----
 ====
 
+[[extract-ddl-ex7,EXTRACTDDL() Example 7]]
+.Extract CREATE CATALOG statements from a bucket
+====
+[.status]#Couchbase Server 8.5#
+
+In Couchbase Server 8.5 and later, the options may be a bare string array.
+
+.Query
+[source,sqlpp]
+----
+SELECT extractddl("travel-sample",["catalog"]);
+----
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "CREATE CATALOG IF NOT EXISTS `sales_catalog` TYPE `ICEBERG` SOURCE `AWS_GLUE` AT `query/external/iceberg-sales-catalog`;"
+    ]
+  }
+]
+----
+====
+
+[[extract-ddl-ex8,EXTRACTDDL() Example 8]]
+.Extract CREATE COLLECTION statements from a bucket
+====
+[.status]#Couchbase Server 8.5#
+
+.Query
+[source,sqlpp]
+----
+SELECT extractddl("travel-sample",["collection"]);
+----
+
+In Couchbase Server 8.5 and later, extracting collections also extracts external catalogs.
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "CREATE CATALOG IF NOT EXISTS `sales_catalog` TYPE `ICEBERG` SOURCE `AWS_GLUE` AT `query/external/iceberg-sales-catalog`;"
+      "CREATE COLLECTION `travel-sample`.`inventory`.`airline;",
+      "CREATE COLLECTION `travel-sample`.`inventory`.`airport;",
+      "CREATE COLLECTION `travel-sample`.`inventory`.`hotel;",
+      "CREATE COLLECTION `travel-sample`.`inventory`.`landmark;",
+      "CREATE COLLECTION `travel-sample`.`inventory`.`route;",
+      // ...
+    ]
+  }
+]
+----
+====
+
+[[extract-ddl-ex9,EXTRACTDDL() Example 9]]
+.Extract CREATE KNOWLEDGE statements from a bucket
+====
+[.status]#Couchbase Server 8.5#
+
+.Query
+[source,sqlpp]
+----
+SELECT extractddl("travel-sample",["knowledge"]);
+----
+
+Each knowledge entry produces its own statement, so that you can recreate knowledge entries individually.
+
+.Results
+[source,json]
+----
+[
+  {
+    "$1": [
+      "CREATE OR REPLACE KNOWLEDGE `iata_hint` FOR `travel-sample`.`inventory`.`airport` AS \"IATA codes represent airports, and cities or metropolitan areas with multiple airports.\";",
+      "CREATE OR REPLACE KNOWLEDGE `icao_hint` FOR `travel-sample`.`inventory`.`airport` AS \"ICAO codes represent airports.\";"
+    ]
+  }
+]
+----
+====
 
 
 [[finderr,FINDERR()]]
