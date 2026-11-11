@@ -76,19 +76,24 @@ a| [%hardbreaks]
 <<sys-sequences,system:sequences>>
 <<sys-all-sequences,system:all-sequences>>
 <<sys-settings,system:settings>>
+<<sys-knowledge,system:natural_knowledge>>
 xref:n1ql:n1ql-language-reference/auto-update-statistics.adoc#system_aus[system:aus]
 xref:n1ql:n1ql-language-reference/auto-update-statistics.adoc#system_aus_settings[system:aus_settings]
 |===
 
+[#authentication]
 == Authentication and Client Privileges
 
 Client applications must be authenticated with sufficient privileges to access system keyspaces.
 
-* Users must have the *Query System Catalog* role to access restricted system keyspaces.
+* Users must have the *Query System Catalog* role to query restricted system keyspaces.
 For more information about user roles, see xref:learn:security/authorization-overview.adoc[Authorization].
 
 * In addition, users must have permission to access a bucket, scope, or collection to be able to view that item in the system catalog.
 Similarly, users must have SELECT permission on the target of an index to be able to view that index in the system catalog.
+
+* Users may need a different role to perform queries other than SELECT on a system catalog.
+For more information, see the descriptions of individual catalogs on this page.
 
 * The following system keyspaces are considered open: in other words, all users can access them without any special privileges:
  ** `system:dual`
@@ -2033,6 +2038,119 @@ UPDATE system:settings SET plan_stability.error_policy = "moderate";
 ----
 
 For more information about Plan Stability modes and error policies, see xref:n1ql:n1ql-manage/query-plan-stability.adoc[].
+
+[#sys-knowledge]
+== Monitor Knowledge
+
+[.status]#Couchbase Server 8.5#
+
+The `system:natural_knowledge` catalog contains free-form, contextual knowledge, stored in a keyspace for later use with natural language requests.
+Knowledge is made up of knowledge entries.
+
+=== View Knowledge
+
+To view the current knowledge entries, run the following query:
+
+====
+.Query
+[source,sqlpp]
+----
+SELECT * FROM system:natural_knowledge;
+----
+
+.Result
+[source,json]
+----
+[
+  {
+    "natural_knowledge": {
+      "bucket": "travel-sample",
+      "collection": "airport",
+      "keyspace": "default:travel-sample.inventory.airport",
+      "name": "icao_hint",
+      "namespace": "default",
+      "scope": "inventory",
+      "value": "ICAO codes represent airports."
+    }
+  },
+  {
+    "natural_knowledge": {
+      "bucket": "travel-sample",
+      "collection": "airport",
+      "keyspace": "default:travel-sample.inventory.airport",
+      "name": "iata_hint",
+      "namespace": "default",
+      "scope": "inventory",
+      "value": "IATA codes represent airports, and cities or metropolitan areas with multiple airports."
+    }
+  }
+]
+----
+====
+
+The `system:natural_knowledge` catalog contains the following fields:
+
+[options="header", cols="~a,~a,~a"]
+|===
+|Name|Description|Schema
+
+| **namespace** +
+optional
+|Namespace to which the knowledge entry belongs.
+|String
+
+|**bucket** +
+optional
+|Bucket to which the knowledge entry belongs.
+|String
+
+|**scope** +
+optional
+|Scope to which the knowledge entry belongs.
+|String
+
+|**collection** +
+required
+|Collection to which the knowledge entry belongs.
+|String
+
+|**keyspace** +
+required
+|The full path of the keyspace to which the knowledge entry belongs.
+|String
+
+|**name** +
+required
+|The name of the knowledge entry.
+|String
+
+|**value** +
+required
+|The value of the knowledge entry.
+This is a free-form, natural language domain or ontology hint.
+|String
+|===
+
+For more information, see xref:n1ql:n1ql-language-reference/createknowledge.adoc[].
+
+=== Delete Knowledge
+
+To delete a knowledge entry, run a DELETE statement against `system:natural_knowledge`.
+
+You must have the *Full Admin* role to perform a DELETE query on this catalog.
+For more information, see <<authentication>>.
+
+For example, to delete the knowledge entry called `icao_hint`:
+
+[source,sqlpp]
+----
+DELETE FROM system:natural_knowledge
+  WHERE bucket = "orders"
+    AND scope = "knowledge_test"
+    AND name = "icao_hint";
+----
+
+For more information, see xref:n1ql:n1ql-language-reference/dropknowledge.adoc[].
 
 == Related Links
 
