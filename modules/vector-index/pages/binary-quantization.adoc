@@ -95,20 +95,21 @@ Higher `nbit` values improve candidate retrieval accuracy in Phase 1 at the expe
 [#training-data-reqs]
 === Training Data Requirements
 
-Building a RaBitQ index trains the IVF centroids and quantization parameters on sample vectors from the collection.
+Building a RaBitQ index trains the IVF centroids on a sample of vectors from the collection.
 RaBitQ has no minimum document count of its own.
-It uses the same training minimum as the other quantization types:
+It uses the same training minimum as Scalar Quantization:
 
-* If you do not set the number of centroids, the minimum is 1 document.
-Couchbase Server creates one centroid for every 1,000 documents, so `IVF,RaBitQ` builds on any collection that contains at least one document.
-* If you set the number of centroids in the `description`, such as `IVF256,RaBitQ`, the collection must contain at least that many documents.
-* If you set `train_list`, the collection must contain at least `train_list` documents.
+* If you do not set the number of centroids, Couchbase Server creates one centroid for every 1,000 documents.
+`IVF,RaBitQ` builds if at least one document has a valid vector for the index.
+* If you set the number of centroids in the `description`, such as `IVF256,RaBitQ`, at least that many documents must have a valid vector for the index.
+* If you set `train_list`, at least `train_list` documents must have a valid vector for the index, and `train_list` must be at least the number of centroids.
 
-If the collection contains fewer documents than the minimum, the index build fails, unless you create the index without data.
+A document has a valid vector for the index if it matches the index's `WHERE` clause and its vector field holds a vector of the index's `dimension`.
+
+If there are too few documents, the index build fails, unless you create the index without data.
 See xref:vector-index:vector-index-without-data.adoc[].
 
-The minimum only decides whether the build can start.
-For good recall, populate the collection with representative vector data before you create the index.
+The minimum only decides whether training can succeed.
 
 [#creating]
 == Creating a Vector Index with RaBitQ
