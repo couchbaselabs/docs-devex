@@ -1,76 +1,153 @@
-= Statistics
-:description: Eventing Statistics, for each deployed Function, can be fetched from an Eventing node using the Web Console or using the REST API.
+= Eventing Statistics
+:description: View statistics for your Eventing Functions on the Eventing page, on custom dashboards, or with the REST API.
+:page-topic-type: concept
 :page-edition: Enterprise Edition
 
 [abstract]
 {description}
 
-*Via the Web Console's Eventing page*
+[#function-statistics]
+== Function Statistics on the Eventing Page
 
-As of 7.0.0, Eventing Statistics can be displayed in the Eventing main UI page for each deployed Function by clicking on the Function name to expand the Function controls. These three key metrics or Deployment Statistics are updated every 10 seconds by default and displayed as numeric values:
+The Eventing page shows Deployment Statistics for each deployed Function.
+To see them, click the Function's name on the *Eventing* page.
 
-* *success*	- displays the number of processed Functions and also Eventing timer callbacks.	   
-* *failure*	- displays the number of failures while processing the Eventing Function code.
-* *timeout*	- displays the number of Functions which have encountered a timeout condition.   	
+The statistics update every 10 seconds by default:
 
-image::stats_00_counts.png[,100%]
+[cols="1,3"]
+|====
+| Statistic | Description
 
-In addition to the per Function numeric statistics above as of 7.0.0 there are the rate charts that can be accessed from any deployed function.  These charts are lagged by 30 seconds.
+| success
+| The number of Function invocations that succeeded, including timer callbacks.
 
-* *success*	- displays the rate of processed Functions and also Eventing timer callbacks.	   
-* *failure*	- displays the rate of failures while processing the Function Eventing Function code.
-* *timeout*	- displays the rate of Functions which have encountered a timeout condition.   	
+| failure
+| The number of Function invocations that failed while running the Function's code.
 
-image::stats_01_counts_and_charts.png[,100%]
+| timeout
+| The number of Function invocations that exceeded the Function's script timeout.
+|====
 
-In addition, per Function Statistics the Web Console or using the REST API.
+image::stats_00_counts.png["The Deployment Statistics for a deployed Function, showing the success, failure, and timeout counts",100%]
 
-*Via the Web Console's custom Dashboards*
+For more information about the script timeout, see xref:eventing-Terminologies.adoc#function-settings[Eventing Function Settings].
 
-Eventing Statistics, for each deployed Function, can be fetched from an Eventing node using the Web Console.
+[#function-charts]
+=== Rate Charts
 
-You can make custom dashboards for a node or a cluster to get aggregated Eventing statistics. Access the *Couchbase Web Console* > *Dashboard* page.  Then select "_new dashboard..._" from the  *Choose Dashboard* dropdown, then "Add Group" and finally "Add a Chart" (you of course are interested in Eventing charts).  
-
-There are six Eventing measures (three rates + three counts) these Dashboard statistics are NOT per bucket and are NOT per function.
+Click *Charts* to show rate charts for the same 3 statistics:
 
 * Successful Function Invocations Rate
 * Failed Function Invocations Rate
 * Eventing Timeouts Rate
-* Successful Function Invocations
-* Failed Function Invocations
-* Eventing Timeouts
 
-image::stats_02_add_charts.png[,100%]
+The charts lag 30 seconds behind the current time.
+To change the time range, use the list next to *Charts*.
 
-An example of all the possible dashboard charts is shown below:
+image::stats_01_counts_and_charts.png["The Deployment Statistics with the 3 rate charts expanded",100%]
 
-image::stats_02_system_charts.png[,100%]
+You can expand any chart to see it in more detail.
 
-Note, you may click and expand any of the above graphs for any deployed Eventing Function or any Dashboard chart.
+[#dashboard-statistics]
+== Eventing Statistics on Custom Dashboards
 
-*Via the REST API*
+Add Eventing charts to a custom dashboard to see Eventing statistics for a node or for the whole cluster.
+Dashboard statistics combine all buckets and all Functions.
+They do not show statistics for individual buckets or Functions.
 
-NOTE: The Functions REST API endpoints on this page are fully supported, as long as the content of the Eventing Function body is not created or modified externally (as the internal format of the body is not yet standardized).
+The following Eventing statistics are available for dashboards:
 
-Eventing statistics can be fetched from each eventing node using REST API bound to localhost. The resulting
-JSON based responses are local to the node, and suitable for further aggregation across nodes of the cluster.
+[cols="1,1"]
+|====
+| Count | Rate
 
-You must have appropriate RBAC privileges to view an Eventing Function's Application log in the UI or via the REST API. 
-The role of either "Full Admin" or "Eventing Full Admin" can access any Eventing Function endpoint. For more information refer to xref:eventing-rbac.adoc[Eventing Role-Based Access Control].
+| Successful Function Invocations
+| Successful Function Invocations Rate
 
-The following REST endpoint could be used to get the full set of Eventing statistics:
-[source,shell]
+| Failed Function Invocations
+| Failed Function Invocations Rate
+
+| Eventing Timeouts
+| Eventing Timeouts Rate
+|====
+
+// TODO(writer): verify the dashboard steps and labels against the 8.5 Web Console.
+
+To add Eventing charts to a new dashboard:
+
+. In the Couchbase Web Console, go to the *Dashboard* page.
+. In the *Choose Dashboard* list, select *new dashboard...*.
+. Click btn:[Add Group].
+. Click btn:[Add a Chart].
+. In the *Add Chart* dialog, click the *Eventing* tab.
+. Select the statistics that you want to chart.
++
+image::stats_02_add_charts.png["The Add Chart dialog with the Eventing tab selected, listing the 6 Eventing statistics",100%]
+. Click btn:[Save Chart].
+
+The following example shows a dashboard with all 6 Eventing charts:
+
+image::stats_02_system_charts.png["A custom dashboard showing all 6 Eventing charts",100%]
+
+For more information about dashboards, see xref:manage:manage-statistics/manage-statistics.adoc[Manage Statistics].
+
+[#rest-api-statistics]
+== Eventing Statistics with the REST API
+
+Each Eventing node provides statistics through a REST API that listens on `localhost`, port 8096.
+Each response contains statistics for that node only.
+To get statistics for the whole cluster, collect the responses from every Eventing node and combine them.
+
+To use these endpoints, you need the appropriate RBAC privileges.
+Users with the Full Admin or Eventing Full Admin role can access any Eventing Function endpoint.
+For more information, see xref:eventing-rbac.adoc[Eventing Role-Based Access Control].
+
+To get the full set of Eventing statistics, run the following command on an Eventing node:
+
+[source,sh]
 ----
-curl http://user:pass@localhost:8096/api/v1/stats?type=full
+curl -u $CB_USERNAME:$CB_PASSWORD "http://localhost:8096/api/v1/stats?type=full"
 ----
-This will return the full statistics set inclusive of events processing, events remaining, execution, failure, latency, worker PIDs and sequence processed.
 
-Note, omitting the parameter `type=full` will exclude `dcp_event_backlog_per_vb`, `doc_timer_debug_stats`, `latency_stats`, `plasma_stats` and `seqs_processed` from the response.
+The response includes the following statistics:
 
-The above statistics can also be individually obtained through the following REST endpoints:
-[source,shell]
+* Event processing and events remaining
+* Execution
+* Failures
+* Latency
+* Worker process IDs
+* Sequence numbers processed
+
+If you omit `type=full`, the response excludes the following statistics:
+
+* `dcp_event_backlog_per_vb`
+* `doc_timer_debug_stats`
+* `latency_stats`
+* `plasma_stats`
+* `seqs_processed`
+
+// TODO(writer): confirm with Hiren (Eventing) that this list is current for 8.5, for example whether plasma_stats still exists.
+
+To get individual statistics for a Function, use the following endpoints:
+
+[source,sh]
 ----
-curl http://user:pass@localhost:8096/getExecutionStats?name=function_name
-curl http://user:pass@localhost:8096/getLatencyStats?name=function_name
-curl http://user:pass@localhost:8096/getFailureStats?name=function_name
+curl -u $CB_USERNAME:$CB_PASSWORD "http://localhost:8096/getExecutionStats?name=$FUNCTION_NAME"
+curl -u $CB_USERNAME:$CB_PASSWORD "http://localhost:8096/getLatencyStats?name=$FUNCTION_NAME"
+curl -u $CB_USERNAME:$CB_PASSWORD "http://localhost:8096/getFailureStats?name=$FUNCTION_NAME"
 ----
+
+// TODO(writer): confirm with Hiren that these endpoints are still supported in 8.5.
+
+For more information, see xref:eventing-rest-api:index.adoc[Eventing REST API].
+
+[#see-also]
+== See Also
+
+* xref:metrics-reference:eventing-service-metrics.adoc[Eventing Service Metrics]
+* xref:manage:manage-statistics/manage-statistics.adoc[Manage Statistics]
+* xref:eventing-debugging-and-diagnosability.adoc[Debugging and Diagnosability]
+* xref:troubleshooting-best-practices.adoc[Troubleshooting and Best Practices]
+* xref:eventing-Terminologies.adoc#function-settings[Eventing Function Settings]
+* xref:eventing-rbac.adoc[Eventing Role-Based Access Control]
+* xref:eventing-rest-api:index.adoc[Eventing REST API]
