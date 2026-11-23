@@ -95,18 +95,21 @@ Higher `nbit` values improve candidate retrieval accuracy in Phase 1 at the expe
 [#training-data-reqs]
 === Training Data Requirements
 
-Building a RaBitQ index requires sufficient sample data to train the IVF centroid clusters and quantization parameters:
+Building a RaBitQ index trains the IVF centroids on a sample of vectors from the collection.
+RaBitQ has no minimum document count of its own.
+It uses the same training minimum as Scalar Quantization:
 
-* The target collection must contain at least 1,000 non-null vector documents before index creation begins.
-* If index creation is attempted on an empty collection or a dataset with fewer than 1,000 non-null vectors, the index build fails and returns the error:
-+
-[source,text]
-----
-HYR0126: Insufficient training data to build index.
-A minimum of 1000 non-null vectors is required.
-----
+* If you do not set the number of centroids, Couchbase Server creates one centroid for every 1,000 documents.
+`IVF,RaBitQ` builds if at least one document has a valid vector for the index.
+* If you set the number of centroids in the `description`, such as `IVF256,RaBitQ`, at least that many documents must have a valid vector for the index.
+* If you set `train_list`, at least `train_list` documents must have a valid vector for the index, and `train_list` must be at least the number of centroids.
 
-Make sure your collection is populated with representative vector data before creating the index.
+A document has a valid vector for the index if it matches the index's `WHERE` clause and its vector field holds a vector of the index's `dimension`.
+
+If there are too few documents, the index build fails, unless you create the index without data.
+See xref:vector-index:vector-index-without-data.adoc[].
+
+The minimum only decides whether training can succeed.
 
 [#creating]
 == Creating a Vector Index with RaBitQ
