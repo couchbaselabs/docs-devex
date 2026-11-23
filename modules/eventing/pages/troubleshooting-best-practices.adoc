@@ -267,8 +267,10 @@ The application log shows an error similar to the following:
 ----
 
 This error means that the system does not have enough resources for the load.
-Eventing tries each Data Service operation 5 times, with a 200{nbsp}ms pause between attempts.
-If all attempts fail, the Function, `MyEventingFunction` in this example, throws an `LCB_ETMPFAIL` error from `libcouchbase`.
+Eventing retries the failed Data Service operation every 200{nbsp}ms until the Function reaches its script timeout.
+If you set `lcb_retry_count`, Eventing stops after that number of retries instead.
+When the retries run out, the Function, `MyEventingFunction` in this example, throws an `LCB_ETMPFAIL` error from `libcouchbase`.
+For more information about retries, see xref:eventing-faq.adoc[Frequently Asked Questions].
 
 Do not catch this error and retry the same operation in your Function, because retries make the problem worse.
 Your Function can take other actions, such as sending a notification.
