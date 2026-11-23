@@ -1,97 +1,158 @@
-= Buckets vs Collections
-:description: Now in Couchbase version 7.0 the concept of scopes and collections have been introduced allowing greater \
-flexibility in grouping data and also the ability to support multitenancy.
+= Scopes and Collections in Eventing
+:description: Learn how Eventing works with scopes and collections and how to organize your keyspaces for the best Eventing performance.
+:page-topic-type: concept
 :page-edition: Enterprise Edition
 
+[abstract]
 {description}
 
-In older versions of Couchbase, data was organized like this (documents exist only in Buckets):
+[#data-hierarchy]
+== Data Organization
+
+Couchbase Server organizes data in the following hierarchy:
 
 * Cluster
-* Bucket
-* Document
+** Bucket
+*** Scope
+**** Collection
+***** Document
 
-In Couchbase 7.0, there are two new organizational layers, Scope and Collection, thus the hierarchy now looks like the following (documents exist only in Collections):
+A bucket contains scopes, a scope contains collections, and a collection contains documents.
+Every bucket has a `_default` scope that contains a `_default` collection.
 
-* Cluster
-* Bucket
-* Scope
-* Collection
-* Document
+In Couchbase Server versions earlier than 7.0, documents existed directly in buckets, with no scopes or collections.
 
-Scopes are the level of organization below a buckets. Scopes contain collections and collections contain documents. There are 
-different ways to use scopes, depending on what the Couchbase cluster is being used for. If it is supporting many different internal 
-applications for a company, each application should have a scope of its own. If the cluster is being used to serve many client 
-organizations, each running its own copy of an application, each copy should have a scope of its own. Similarly, if a cluster is 
-being used by dev groups, perhaps for testing, the unit of allocation should be a scope. In each case, the owner can then create 
-whatever collections they want under the scope they are assigned.
+For more information, see xref:learn:data/scopes-and-collections.adoc[Scopes and Collections].
 
-Collections are the lowest level of document organization, and directly contain documents. They are useful because they let you group 
-documents more precisely than was possible before. Rather than dumping all different types of documents (products, orders, customers) 
-into a single bucket and distinguishing them by a type field, you can instead create a collection for each type. And when you query, 
-you can query against the collection, not just the whole bucket. You will also eventually be able to control access at the collection level.
+[#scopes-and-collections]
+== Scope and Collection Design
 
-Prior to Couchbase version 7.0 all services, including Eventing, were Bucket oriented where multiple sets of documents were 
-written to a limited set of buckets (typically no more than 30 buckets).  Non-homogeneous documents within the same bucket 
-were typically differentiated by an additional type property.
+Use a scope as the unit you allocate to an application, a customer, or a team:
 
-[source,javascript]
+* If the cluster supports several internal applications, give each application its own scope.
+* If the cluster serves several client organizations that each run a copy of an application, give each copy its own scope.
+* If development or test groups share the cluster, give each group its own scope.
+
+The owner of a scope can then create the collections they need in it.
+
+Use collections to group documents of the same type.
+Create separate `products`, `orders`, and `customers` collections instead of storing all 3 document types in 1 bucket with a `type` field.
+You can then query a single collection instead of the whole bucket and grant access at the collection level.
+
+For more information about access control, see xref:eventing-rbac.adoc[Eventing Role-Based Access Control].
+
+[#migrate-to-collections]
+== Migrate from Buckets to Collections
+
+In versions earlier than 7.0, applications stored different types of documents in the same bucket and used a `type` property to tell them apart.
+The following examples show shortened documents:
+
+[source,json]
 ----
 {
   "id": 10025,
   "type": "hotel",
-  "brand": "Hilton",
-      *
-      *
+  "brand": "Hilton"
 }
 ----
 
-[source,javascript]
+[source,json]
 ----
 {
   "id": 10,
   "type": "airline",
-  "iata": "Q5",
-    *
-    *
+  "iata": "Q5"
 }
 ----
 
-Every created bucket is automatically given a default scope, and within it, a default collection. Each is named *_default*.  
-This allows a simple seamless migration from a Cluster/Bucket/Document model to a Cluster/Bucket/Scope/Collection/Document model without concern to any reorganization.
+When you upgrade, a bucket's documents move to its `_default._default` collection, so you do not need to reorganize your data.
+For example, a bucket named `travelinfo` becomes the keyspace `travelinfo._default._default`.
 
-Thus a bucket called `travelinfo` prior to 7.0 essentially becomes a single collection `travelinfo._default._default` and the data set can remain unchanged after upgrading your cluster to 7.0.  
+You can then split the documents into collections by type.
+For example, you can move airline documents to `travelinfo.data.airline` and hotel documents to `travelinfo.data.hotel`.
 
-However all types could be split up and moved into individual collections perhaps all airline documents to a keyspace of `travelinfo.data.airline` and all hotel documents to a keyspace of `travelinfo.data.hotel`.  
+TIP: You can use an Eventing Function to migrate a bucket into a set of collections.
+For an example that migrates the `beer-sample` bucket, see xref:eventing-handler-ConvertBucketToCollections.adoc[Function: Convert Bucket to Collections].
 
-NOTE: The Eventing Service can be used to quickly and efficiently migrate a bucket into a set of collections. An example scriptlet xref:eventing:eventing-handler-ConvertBucketToCollections.adoc[ConvertBucketToCollections] has been provided to demonstrate the migration of the `beer-sample` data set from a bucket paradigm to a collection paradigm.
+[#benefits]
+=== Benefits of Collections
 
-The benefits of reorganizing to collections are numerous:
+Organizing documents into collections has the following benefits:
 
-* We no longer need the type property.  
-* Operations such as query, XDCR, and backup and restore.
-* Increased efficiency of indexing, due to the Data Service being able to provide documents from specific collections to the Index Service.
-* Simplified querying, since query statements are able to easily specify particular subsets of documents.
-* Easier migration from relational databases to Couchbase Server, since collections can be designed to correspond to pre-existing relational tables.
-* Secure isolation of different document-types, within a bucket; allowing applications to be specifically authorized to use only their appropriate subsets of data.
+* You no longer need a `type` property to tell document types apart.
+* {sqlpp} queries, XDCR, and backup and restore can work on individual collections.
+* Indexing is more efficient because the Data Service sends only documents from specific collections to the Index Service.
+* Queries are simpler because statements can target a specific collection.
+* Migration from relational databases is easier because collections can map to existing tables.
+* You can authorize each application to use only the collections it needs.
 
-For complete details on how to set up your keyspaces refer to xref:manage:manage-buckets/create-bucket.adoc[creating buckets] and 
-xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.add[creating scopes and collections].  
+[#eventing-keyspaces]
+== Organize Eventing Keyspaces
 
-Eventing in the collections world can just use the _default scope and the _default collection and essentially run without and changes.  However there are opportunities for reorganizing the groupings of your data to lower the needed resources or increase throughput.
+An Eventing Function can keep using the `_default` scope and collection and run without changes after an upgrade.
+To use fewer resources or increase throughput, you can reorganize your keyspaces.
+
+Eventing performance depends on the residency of the bucket that holds the Eventing storage collection.
+Put the Eventing storage collection in a bucket that's 100% memory-resident, separate from your bulk data.
 
 [#single-tenancy]
-*Eventing with Full Collections Support: Single Tenancy*
+=== Single-Tenant Layout
 
-image::eventing-collections-single-tenant.jpg[,%100]
+In a single-tenant cluster, 1 application or organization owns all the data.
+The following diagram shows a recommended layout:
 
-*Eventing with Full Collections Support: Multi Tenancy*
+image::eventing-collections-single-tenant.jpg["Single-tenant layout: an rr100 bucket at 100% residency holds the eventing and profiles scopes, and a bulk bucket at 20% or more residency holds the logistics and profiles scopes",100%]
+
+* The `rr100` bucket is 100% memory-resident.
+Its `eventing` scope holds the `metadata` collection for Eventing storage and the `lkuptable` collection for lookup data.
+* The `bulk` bucket has a residency of 20% or more and holds the business data, such as the `orders` and `shipments` collections in the `logistics` scope.
+* The `profiles` scope exists in both buckets.
+Frequently accessed collections, `active` and `provision`, stay in `rr100`.
+Less frequently accessed collections, `suspended` and `archived`, go in `bulk`.
 
 [#multi-tenancy]
-image::eventing-collections-multi-tenant.jpg[,%100]
+=== Multi-Tenant Layout
 
-If we put the put ‘Eventing Storage’ (in collections) in the same bucket as with data with non 100% residency the Evening performance can easily drop by a factor of five (5) or more. 
+In a multi-tenant cluster, each customer gets its own scope in each bucket.
+The following diagram shows a recommended layout:
 
-Of course you can put everything including the ‘Eventing Storage’ collection into a single bucket, if the bucket is 100% resident you will not suffer slowdowns but as the residency rate of this bucket drops you will start accessing your underlying disk for Eventing control documents (definitions, timers, and checkpoints).  This behavior is analogous to swapping to disk when your active computer's programs combined are larger than your computer's memory.
+image::eventing-collections-multi-tenant.jpg["Multi-tenant layout: the rr100 and bulk buckets each contain 1 scope per customer, cust1 to custN",100%]
 
-Typically the overhead of the Eventing housekeeping area "Eventing Storage" is quite small, just 1024 documents per Function and occasional check point documents.   However if Timers are used the size of this collection can grow to about 1K bytes x number of active timers (_for 1M active timers this is 1.5G bytes_).  As such the enclosing bucket holding the ‘Eventing Storage’ needs to be sized appropriately.
+* In the `rr100` bucket, each customer scope, `cust1` to `custN`, has its own `metadata` and `lkuptable` collections.
+* In the `bulk` bucket, each customer scope has its own `orders` and `shipments` collections.
+
+This layout keeps each customer's data and Eventing storage separate.
+
+[#eventing-storage-sizing]
+=== Size the Eventing Storage Collection
+
+Eventing performance can drop by a factor of 5 or more when the Eventing storage collection shares a bucket with partly resident data.
+
+// TODO(writer): confirm with Hiren (Eventing) that the factor-of-5 figure is still accurate for 8.5.
+
+You can keep all collections, including Eventing storage, in 1 bucket.
+If that bucket is 100% resident, performance does not suffer.
+As residency drops, Eventing reads its control documents from disk instead of memory.
+Control documents include Function definitions, timers, and checkpoints.
+
+Without timers, the Eventing storage collection stays small.
+Each Function stores 1 checkpoint document per vBucket, plus occasional additional checkpoint documents.
+If your Functions use timers, the collection also grows with the number of active timers.
+Size the bucket that holds the Eventing storage collection to match.
+
+// TODO(writer): the original says 1024 documents per Function.
+// Magma buckets can use 128 or 1024 vBuckets, so confirm with Hiren that the count is 1 per vBucket.
+// TODO(writer): the original says about 1 KB per active timer, but 1.5 GB for 1 million timers.
+// Confirm the per-timer size and add it back.
+
+For more information about vBuckets, see xref:learn:buckets-memory-and-storage/vbuckets.adoc[vBuckets].
+
+[#see-also]
+== See Also
+
+* xref:learn:data/scopes-and-collections.adoc[Scopes and Collections]
+* xref:manage:manage-buckets/create-bucket.adoc[Create a Bucket]
+* xref:manage:manage-scopes-and-collections/manage-scopes-and-collections.adoc[Manage Scopes and Collections]
+* xref:eventing-Terminologies.adoc#eventing-storage[Eventing Storage]
+* xref:eventing-rbac.adoc[Eventing Role-Based Access Control]
+* xref:eventing-handler-ConvertBucketToCollections.adoc[Function: Convert Bucket to Collections]
