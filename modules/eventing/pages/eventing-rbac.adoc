@@ -1,189 +1,210 @@
-= Eventing Role-Based Access Control (RBAC)
-:description: pass:q[Full Administrators or users with proper _Role-Based Access Control_ (RBAC) roles can create and manage Eventing Functions.]
+= Eventing Role-Based Access Control
+:description: Learn which roles let users create and manage Eventing Functions, and how Function Scope keeps each user's Functions separate.
+:page-topic-type: concept
+:page-edition: Enterprise Edition
 
 [abstract]
 {description}
 
 [#description]
-== Description: What is RBAC
+== RBAC Overview
 
-Couchbase provides _Role-Based Access Control_ (RBAC), in which access privileges are assigned to fixed roles, which are in turn assigned to users, (each of which may be an administrator or an application) either _directly_; or _indirectly_, by means of _user-groups_.
+Couchbase Server uses Role-Based Access Control (RBAC) to control what each user can do.
+Each role grants privileges on specific resources.
+You can assign a role to a user directly, or assign it to a group that the user belongs to.
+A user can be an administrator or an application.
+You can assign roles in the Couchbase Server Web Console or with the REST API.
 
-Couchbase Server Enterprise Edition provides RBAC with multiple roles for finer access control.
-Community Edition provides multiple users that can be assigned to a limited set of roles.
-There are three fixed roles in the community edition of Couchbase providing coarser access control: Bucket Full Access (`bucket_full_access[*]`), Admin (`admin`), and Read Only Admin (`ro_admin`).
+For more information, see xref:learn:security/authorization-overview.adoc[Authorization] and xref:learn:security/roles.adoc[Roles].
 
-A Couchbase-Server _role_ permits one or more _resources_ to be accessed according to defined _privileges_.
-Roles can be assigned to individual users, and to groups, by means of either the UI or the REST API.
+[#eventing-roles]
+== Eventing Roles
 
-For a complete list of roles, see xref:learn:security/roles.adoc[Roles].
-Note that most roles can be assigned only on the _Enterprise Edition_ of Couchbase Server: on the _Community Edition_ of Couchbase Server, only the `bucket_full_access`,
-`admin`, and `ro_admin` roles can be assigned.
+The following roles control access to the Eventing Service:
 
-For more information, see xref:learn:security/authorization-overview.adoc[Authorization], and xref:manage:manage-security/manage-users-and-roles.adoc[Manage Users, Groups, and Roles].
+[cols="1,3"]
+|====
+| Role | Access
 
+| Full Admin
+| Full access to every resource in the cluster, including all Eventing Functions.
+This role can also create users and change their roles.
+
+| xref:learn:security/roles.adoc#eventing-full-admin[Eventing Full Admin]
+| Full access to every resource that the Eventing Service needs, including all Eventing Functions.
+This role cannot create users or change their roles.
+
+| xref:learn:security/roles.adoc#eventing-manage-functions[Eventing Manage Scope Functions]
+| Access to the Eventing Functions in the scopes that you choose when you grant the role.
+|====
+
+Couchbase Server 7.0 introduced the Eventing Full Admin role.
+In earlier versions, Eventing Functions always ran with Full Admin privileges.
+Assign Eventing Full Admin instead of Full Admin to users who only manage Eventing, so they cannot create users or escalate privileges.
+
+[#function-scope]
 == Function Scope
 
-A bucket.scope combination is used for identifying functions belonging to the same group.
+A Function Scope is a `bucket.scope` combination that groups Eventing Functions for access control.
 
-Only the "Eventing Full Admin" role and also the "Full Admin" role can set the bucket.scope to  *+*+.+*+*; all other Eventing non-privileged users need to define a *Function Scope* for their Eventing functions that references an existing resource of bucket.scope. 
-This provides role-based isolation of Eventing functions between non-privileged users
+Only users with the Full Admin or Eventing Full Admin role can set the Function Scope to `+*.*+`.
+All other users must set the Function Scope to an existing `bucket.scope` that their Eventing Manage Scope Functions role covers.
+This keeps each user's Functions separate from other users' Functions.
 
 include::cloud:eventing:partial$rbac-warning.adoc[]
 
-Typically, you should set Function Scope to the bucket.scope that holds the collection that is the source of your mutations to your Eventing Function.  This best practice ensures that you _do not_  inadvertently cause an Eventing Function to undeploy by removing a *Function Scope* pointing to a resource that is not required for the function to run.
+Set the Function Scope to the `bucket.scope` that holds the Function's source collection.
+Otherwise, removing a Function Scope that points to a resource the Function does not need can undeploy the Function by accident.
 
-NOTE: A user can be assigned multiple "Eventing/Manage Scope Function" RBAC roles.
-If any of these roles match an existing Eventing Function's *Function Scope*, then that user can manage, modify, or delete the Eventing Function even if it was created or imported by someone else.
+NOTE: A user can have more than 1 Eventing Manage Scope Functions role.
+If any of these roles matches the Function Scope of an existing Eventing Function, the user can manage, change, or delete that Function, even if another user created or imported it.
 
+IMPORTANT: When you upgrade from a version earlier than 7.1, Couchbase Server sets the Function Scope of every existing Eventing Function to `+*.*+` and runs the Function as a privileged user.
+This keeps your existing Functions running after the upgrade.
+
+[#privileged-users]
 == Privileged Users
 
-If a user role of either "Full Admin" or "Eventing Full Admin", then by default this user has all the necessary access to every resource in a cluster required to run the Eventing Service and create and manage Eventing Functions.
+A user with the Full Admin or Eventing Full Admin role has every privilege that the Eventing Service needs on every resource in the cluster.
+This user can create and manage any Eventing Function and can set the Function Scope to `+*.*+`.
 
-When creating an Eventing Function, either of these roles can set the *Function Scope* to *+*+.+*+*;  no other RBAC role is allowed to use this *Function Scope*.
+[#non-privileged-users]
+== Non-Privileged Users
 
-NOTE: When upgrading to 7.1, all Eventing Functions are assumed to be running as a privileged user and have their *Function Scope* set to *+*+.+*+* to ensure continuity of your Eventing Functions.
+A user without the Full Admin or Eventing Full Admin role needs roles that cover each resource their Functions use.
 
-=== Full Admin v. Eventing Full Admin
+TIP: Assign roles to a group instead of to each user.
+You can then reuse the group for other users.
 
-Prior to 7.0.0, Eventing always runs as "Full Admin". This blocked some use cases and adoption as this role allowed creation of new users and the ability to escalate privilege sets. The  "Eventing Full Admin" role introduced in 7.0 simply removes the capability of creating users and assigning/modifying RBAC credentials, thus providing a bit more security.
+[#minimal-eventing-rbac-role]
+=== Minimal Eventing Roles
 
-For the Function Scope or RBAC grouping, we will use the 'bulk.data' assuming you have the role of either "Full Admin" or "Eventing Full Admin". 
-For standard or non-privileged users, refer to Role-Based Access Control.
+To create and manage Eventing Functions, a non-privileged user needs at least the following roles:
 
-== Eventing and RBAC for Non-privileged Users
+[cols="1,2"]
+|====
+| Role | Resource
 
-NOTE: If a user role of either "Full Admin" or "Eventing Full Admin", then this user, by default, has all the necessary access privileges to every resource in a cluster required to run the Eventing Service and create and manage Eventing Functions.
+| Data Reader
+| The Eventing storage keyspace
 
-_In RBAC, although you can assign rolls directly to a *USER*, it is generally more flexible to define a *GROUP* and then assign that group or set of roles to a *USER*.
-This allows reusing a *GROUP* across multiple users._
+| Data Writer
+| The Eventing storage keyspace
 
-== Minimal Eventing RBAC role
+| Data DCP Reader
+| The source keyspace
 
-The following minimal resources are required for a non-privileged user to access the Eventing Service and create and manage Eventing Functions.
+| Eventing Manage Scope Functions
+| The Function Scope, as a `bucket.scope` or a `bucket`
+|====
 
-* Data Reader
-** Eventing Storage keyspace or Scratchpad
-* Data Writer
-** Eventing Storage keyspace or Scratchpad
-* Data DCP reader
-** Mutation Source
-* Eventing / Manage Scope Function
-** bucket.scope or bucket.
+[#additional-roles]
+=== Additional Roles
 
-== Minimal Eventing RBAC role example
+Depending on what your Functions do, a non-privileged user might also need the following roles:
 
-* Access the Couchbase Web Console > Security and Select "ADD GROUP".
+* Data Reader and Data Writer on the source keyspace.
+* Data Monitor on the source keyspace and the Eventing storage keyspace.
+* Data Reader and Data Writer on the keyspace of each bucket alias, if the Function has bucket bindings.
+* Query Select on the source keyspace, if the Function runs {sqlpp} statements.
+
+// TODO(writer): confirm with Hiren (Eventing) when a user needs Data Reader, Data Writer, and Data Monitor on the source keyspace, and which keyspaces need Query Select.
+
+For more information about bucket bindings, see xref:eventing-Terminologies.adoc#section_mzd_l1p_m2b[Bindings].
+
+[#minimal-role-example]
+=== Example: Create a Group and User with the Minimal Roles
+
+This example creates a group named `eventing_min` and a user named `user_min`.
+The user can manage Eventing Functions that listen to any collection in the `bulk.data` scope.
+
+// TODO(writer): verify the Security page labels and dialog fields against the 8.5 Web Console.
+
+To create the group:
+
+. In the Couchbase Web Console, go to the *Security* page.
+. Click btn:[Add Group].
 +
-image::rbac_min_add_add_group.png[,%100]
-
-* Configure the group as follows:
-** `Data Reader` and `Data Writer` are required for the Eventing Storage or scratchpad.
-** `Data DCP Reader` is required to fetch the mutations from DCP.
+image::rbac_min_add_add_group.png["The Security page with the Add Group control",100%]
+. In the group name field, enter `eventing_min`.
+. Grant Data Reader and Data Writer on the Eventing storage keyspace.
+. Grant Data DCP Reader on `bulk.data`.
 +
-NOTE: this item was defined as `bulk.data` which would allow building Evening functions that can listen to any collection under `bulk.data`.
+image::rbac_min_a.png["The Add Group dialog with Data Reader, Data Writer, and Data DCP Reader selected",538,align=center]
+. Grant Eventing Manage Scope Functions on `bulk.data`.
 +
-image::rbac_min_a.png[,538,align=middle]
+image::rbac_min_b.png["The Add Group dialog with Eventing Manage Scope Functions selected for bulk.data",538,align=center]
+. Click btn:[Save].
+
+To create the user:
+
+. On the *Security* page, click btn:[Add User].
 +
-The final item required is defining the *Function Scope* under "Eventing / Manage Scope Function". Since we will be listing to mutations in a collection under `bulk.data`, it makes sense to use this as our grouping.
+image::rbac_min_add_add_user.png["The Security page with the Add User control",100%]
+. In the username field, enter `user_min`.
+. In the groups list, select `eventing_min`.
 +
-image::rbac_min_b.png[,538,align=middle]
-
-* Hit *Save* to store the GROUP to the system.
-
-* Access the Couchbase Web Console > Security and Select "ADD USER".
+The user gets all the roles in the group.
 +
-image::rbac_min_add_add_user.png[,%100]
+image::rbac_min_c.png["The Add User dialog with the eventing_min group selected",538,align=center]
+. Enter a password in both password fields.
+. Click btn:[Save].
 
-* Associate the GROUP to the user so the user can inherit all the roles in the group.
+To verify the group and user:
+
+. On the *Security* page, click *Groups*.
 +
-image::rbac_min_c.png[,538,align=middle]
-
-* Add your password and verify it in the lower two boxes
-
-* Hit *Save* to store the USER to the system.
-
-* Access the Couchbase Web Console > Security 
-
-* Select GROUPS on the right, you should see your definition for GROUP `eventing_min`.
+The list includes the `eventing_min` group.
 +
-image::rbac_min_groups.png[,%100]
-
-* Select USERS on the right, you should see your definition for USER `user_min`.
+image::rbac_min_groups.png["The Groups list showing the eventing_min group",100%]
+. Click *Users*.
 +
-image::rbac_min_users.png[,%100]
+The list includes the `user_min` user.
++
+image::rbac_min_users.png["The Users list showing the user_min user",100%]
 
-== Beyond a Minimal Eventing RBAC role
+[#multi-tenancy]
+== Multi-Tenancy in Eventing
 
-You may consider adding
+The Function Scope works with the Eventing Manage Scope Functions role to keep tenants separate in both the Web Console and the REST API.
+A tenant can be a company department, such as sales or support.
 
-* Data Reader
-** Mutation Source
-* Data Writer
-** Mutation Source
-* Data Monitor
-** Mutation Source
-** Eventing Storage keyspace or Scratchpad
+The following example has 4 Eventing Functions, each with a different Function Scope.
+A user with the Full Admin or Eventing Full Admin role sees all 4 Functions:
 
-If you have any Bindings in your Eventing Function of type `Bucket Alias`,
-you will need to have one or more additional settings if not already allowed.
+image::rbac_admin_view.png["The Eventing page for an administrator, showing 4 Functions with different Function Scopes",100%]
 
-* Data Reader
-** Bucket Alias
-* Data Writer
-** Bucket Alias
+The `user_min` user from the previous example sees only the Function with a Function Scope of `bulk.data`:
 
-If you plan to use {sqlpp} consider adding at lease SELECT privileges
+image::rbac_user_view.png["The Eventing page for user_min, showing only the Function with a Function Scope of bulk.data",100%]
 
-* Query & Index / Query Select
-** Mutation Source
-
-== Multi-tenancy in Eventing
-
-The "Function Scope" in an Eventing Function works with the RBAC selection in "Eventing / Manage Scope Function" to limit access to between tenants in both the UI and the REST API. 
-
-A tenant might be based on company departments such as administration, sales, production and support.
-
-Below we have two tenants example (an admin and a limited user) and four Eventing Functions each with a different *Function Scope*. 
-We logged into the UI with either an Eventing Full Admin" or "Full Admin" role, and thus we can access all the Eventing Functions.
-
-image::rbac_admin_view.png[,%100]
-
-Now log out of the UI console and log back in as a non-privileged user,
-(for example, we use the USER `user_min` as defined above).
-Because of the privileges defined, we are only allowed access to Eventing Functions that have a *Function Scope* of `bulk.data`.
-
-image::rbac_user_view.png[,%100]
-
-
+[#jwt-authentication]
 == RBAC with JWT Authentication
 
 [.status]#Couchbase Server 8.5#
 
-In addition to Basic Authentication and mutual TLS(mTLS), Couchbase Server 8.5 and later supports *JSON Web Token (JWT) Authentication* for Eventing.
-This provides secure, short-lived sessions for crucial operations, consistent with the JWT support available for Indexing, Query, Backup, and XDCR.
+Couchbase Server 8.5 and later supports JSON Web Token (JWT) authentication for Eventing, in addition to Basic Authentication and mutual TLS (mTLS).
+JWT authentication provides short-lived sessions, and matches the JWT support in the Index, Query, Backup, and XDCR services.
 
-JWT Authentication is performed over the REST API by passing a bearer token in the `Authorization` header. 
+To use JWT authentication, pass a bearer token in the `Authorization` header of each REST API request.
 
-It operates in two distinct provisioning modes: 
+JWT authentication has 2 provisioning modes:
 
-* `jitProvisioning=true`: The user is just-in-time (JIT) provisioned from an external Identity Provider (IdP). 
-
-* `jitProvisioning=false`: The user already exists in Couchbase RBAC.
+* `jitProvisioning=true`: Couchbase Server provisions the user just in time (JIT) from an external identity provider (IdP).
+* `jitProvisioning=false`: the user already exists in Couchbase Server RBAC.
 
 [NOTE]
 ====
-When JWT Authentication is active with `jitProvisioning=true`, guardrails in the Eventing codebase restrict certain operations. 
-Specifically, you cannot *create, import, or delete* Eventing Functions through the REST API. 
-All other Eventing REST API operations remain fully functional under this mode.
+With `jitProvisioning=true`, you cannot create, import, or delete Eventing Functions through the REST API.
+All other Eventing REST API operations still work.
 
-To create, import, or delete Eventing Functions, you must use one of the following authentication methods instead:
+Use 1 of the following authentication methods to create, import, or delete Eventing Functions:
 
 * Basic Authentication
 * mTLS
-* JWT Authentication with `jitProvisioning=false`
+* JWT authentication with `jitProvisioning=false`
 
-In all the cases, the user must be present in Couchbase RBAC with at least the <<minimal-eventing-rbac-role, Minimal Eventing RBAC role>> privileges.
+In all cases, the user must exist in Couchbase Server RBAC and have at least the <<minimal-eventing-rbac-role,minimal Eventing roles>>.
 ====
 
 [#crl-certificate-revocation]
@@ -193,27 +214,29 @@ In all the cases, the user must be present in Couchbase RBAC with at least the <
 TODO(writer): To confirm the release that introduces Eventing CRL support, and whether to add a release NOTE like the JWT section.
 ////
 
-Eventing supports *Certificate Revocation List (CRL)* checks on its connections to other nodes in the cluster.
+Eventing checks Certificate Revocation Lists (CRLs) on its connections to other nodes in the cluster.
 For more information, see xref:learn:security/certificate-revocation.adoc[Certificate Revocation].
 
 [NOTE]
 ====
-Eventing does not enforce CRL checks on connections made through the following handler bindings:
+Eventing does not apply CRL checks to connections that the following handler functions make:
 
 * xref:eventing-language-constructs.adoc#n1ql_call[`N1qlQuery()`]
 * xref:eventing-language-constructs.adoc#analytics_call[`AnalyticsQuery()`]
 * xref:eventing-language-constructs.adoc#search_call[`searchQuery()`]
 
-
-These bindings connect through a shared client library that does not support CRL checks. 
-These bindings continue to connect to a Query, Analytics, or Search Service node that has a revoked certificate. 
-Eventing still applies CRL checks to all its other connections.
+These functions connect through a shared client library that does not support CRL checks.
+They can still connect to a Query, Analytics, or Search Service node that has a revoked certificate.
+Eventing applies CRL checks to all its other connections.
 ====
 
+[#see-also]
 == See Also
+
+* xref:eventing-Terminologies.adoc#function-scope[Function Scope]
 * xref:manage:manage-security/manage-jwt.adoc[JWT Authentication]
 * xref:learn:security/certificate-revocation.adoc[Certificate Revocation]
 * xref:manage:manage-security/manage-authentication.adoc[Manage Authentication]
 * xref:manage:manage-security/manage-users-and-roles.adoc[Manage Users, Groups, and Roles]
-* xref:learn:security/roles.adoc[Role-Based Access Control (RBAC)]
-* xref:learn:security/security-overview.adoc[Security Management Overview]
+* xref:learn:security/roles.adoc[Roles]
+* xref:learn:security/security-overview.adoc[Security]
