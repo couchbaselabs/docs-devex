@@ -1,0 +1,91 @@
+= ALTER CATALOG
+:page-topic-type: reference
+:page-status: Couchbase Server 8.5
+:page-edition: Enterprise Edition
+:imagesdir: ../../assets/images
+:description: The ALTER CATALOG statement enables you to alter an external catalog.
+
+// Cross-references
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:identifier: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
+:external-catalogs-and-collections: xref:learn:data/external-catalogs-and-collections.adoc
+:create-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/create-external-catalogs-and-collections.adoc
+:maintain-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/maintain-external-catalogs-and-collections.adoc
+:external-collection-options: xref:manage:manage-scopes-and-collections/external-collection-options.adoc
+:scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
+:createcatalog: xref:n1ql-language-reference/createcatalog.adoc
+:dropcatalog: xref:n1ql-language-reference/dropcatalog.adoc
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+You can change any of an external catalog's provider-specific connection parameters.
+However, you cannot change a catalog's name, type, or source after you create it.
+If you want to change any of these values, you must create a new catalog and drop the old one.
+
+Catalogs are global: they're not restricted to any particular scope or collection in the Couchbase {logical-hierarchy}[logical hierarchy].
+The ALTER CATALOG statement is not affected by the current query context.
+
+include::createcatalog.adoc[tag=validation]
+
+== Prerequisites
+
+.RBAC Privileges
+To execute the ALTER CATALOG statement, clients must have the External Catalog Admin role, or any Administrative role that gives permission to create, read, update, and delete external catalogs.
+For more information, see {authorization-overview}[Authorization].
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=alter-catalog]
+----
+
+image::n1ql-language-reference/alter-catalog.png["Syntax diagram: see source code listing", align=left]
+
+// TODO: Automatic links in EBNF.
+
+[horizontal]
+catalog:: (Required) An {identifier}[identifier] that represents the name of the catalog that you want to alter.
+
+[[with]]
+=== WITH Clause
+
+:credentialId: The ID of the credential that Couchbase {product-name} uses to authenticate with the catalog provider.
+:required: optional
+
+Use the `WITH` clause to specify options for the catalog.
+
+[horizontal]
+options::
+An object representing the options to be set for the catalog.
+The options that are available depend on the catalog provider.
+
+include::createcatalog.adoc[tag=catalog-options]
+
+== Example
+
+[[ex-alter-catalog]]
+.Alter a catalog
+====
+The following example changes the warehouse location for `sales_catalog`.
+
+[source,sqlpp]
+----
+ALTER CATALOG sales_catalog WITH
+      { "warehouse": "s3://sales-bucket/warehouse2" };
+----
+====
+
+== Related Links
+
+* {createcatalog}[]
+| {dropcatalog}[]
+* {external-catalogs-and-collections}[]
+* {create-external-catalogs-and-collections}[]
+* {maintain-external-catalogs-and-collections}[]
+* {scopes-and-collections-api}[]

@@ -1,6 +1,7 @@
 = GRANT
-:description: Use the GRANT statement to assign Role-Based Access Control (RBAC) roles or credential access to a user or group.
+:description: Use the GRANT statement to assign Role-Based Access Control (RBAC) roles, credential privileges, or external catalog privileges to a user or group.
 :page-topic-type: reference
+:page-toclevels: 2
 :imagesdir: ../../assets/images
 
 :authorization-overview: xref:learn:security/authorization-overview.adoc
@@ -10,72 +11,45 @@
 [abstract]
 {description}
 
-You can use `GRANT` to provide two types of access:
+== Prerequisites
 
-Roles:: Grants RBAC roles to a user or group, giving them a predefined set of privileges.
-Roles can be simple or parameterized by a keyspace.
-For more information, see <<role-types>>.
-
-Credentials:: Grants a user or group permission to use a specific credential from the credential store.
-+
-To grant access to a credential, use the `GRANT CONSUME CREDENTIALSTORE` statement.
-This statement grants the Credential Consumer RBAC role to the user or group. 
-For example, you can grant a user access to a specific AWS credential.
-+ 
-For more information about credentials and the credential store, see xref:learn:security/credential-store.adoc[].
-
-[NOTE]
-====
-* Only Full Administrators can run the `GRANT` statement.
+.RBAC Privileges
+Only Full Administrators can run the GRANT statement.
 For more information about user roles, see {authorization-overview}[Authorization].
-* The `GRANT CONSUME CREDENTIALSTORE` statement is available only in Couchbase Server 8.5 and later (Enterprise Edition).
-====
-
-== Role Types
-
-Roles can be of the following two types:
-
-simple::
-Roles that apply generically to all keyspaces or resources in the cluster.
-+
-For example: `cluster_admin` or `bucket_admin`
-
-parameterized by a keyspace::
-Roles that are defined for the context of the specified keyspace only.
-Specify the keyspace name after the keyword `ON`.
-+
-For example: `pass:c[data_reader ON `travel-sample`]` +
-or `pass:c[query_select ON `travel-sample`.`inventory`.`airline`]`
 
 == Syntax
+
+The GRANT statement takes a different syntax depending on the permission being granted.
+You cannot mix different syntaxes in the same statement.
 
 [source,ebnf]
 ----
 include::partial$grammar/dcl.ebnf[tag=grant]
 ----
 
-image::n1ql-language-reference/grant.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/grant.png["Syntax diagram: see source code listing", align=left]
+
+For more information, see <<grant-roles>>, <<grant-credentialstore-privilege>>, or <<grant-catalog-privilege>>.
+
+[#grant-roles]
+=== Roles
+:section: roles
+
+This syntax grants RBAC roles to a user or group, giving them a predefined set of privileges.
+Roles can be global or parameterized by a keyspace.
+
+* Global roles, such as `cluster_admin` or `bucket_admin`, apply generically to all keyspaces or resources in the cluster.
+* Parameterized roles, such as `data_reader` or `query_select`, are defined for the context of the specified keyspaces only.
+Use the ON clause to specified the keyspaces.
+
+You cannot mix global and parameterized roles in the same statement, and doing so results in an error.
 
 [source,ebnf]
 ----
-include::partial$grammar/dcl.ebnf[tag=grant-user]
+include::partial$grammar/dcl.ebnf[tag=grant-roles]
 ----
 
-image::n1ql-language-reference/grant-user.png["Syntax diagram: refer to source code listing", align=left]
-
-[source,ebnf]
-----
-include::partial$grammar/dcl.ebnf[tag=grant-group]
-----
-
-image::n1ql-language-reference/grant-group.png["Syntax diagram: refer to source code listing", align=left]
-
-[source,ebnf]
-----
-include::partial$grammar/dcl.ebnf[tag=grant-consume-credentialstore]
-----
-
-image::n1ql-language-reference/grant-consume-credentialstore.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/grant-roles.png["Syntax diagram: see source code listing", align=left]
 
 [horizontal]
 role::
@@ -88,111 +62,147 @@ For the following roles, you can use their short forms as well:
 * `query_update` → `update`
 * `query_delete` → `delete`
 
-keyspace-ref::
-<<keyspace-ref,Keyspace Reference>>
+[#keyspace-ref]
+==== ON Clause
 
-user::
-A user name created by the Couchbase Server RBAC system.
-
-group::
-A group name created by the Couchbase Server RBAC system.
-
-credential-name::
-The name of an existing credential in the credential store.
-For more information about credentials and credential store, see xref:learn:security/credential-store.adoc[].
-
-NOTE: When granting roles or credentials to users, the keyword `USER` or `USERS` is optional.
-However, when granting roles or credentials to groups, you must include the keyword `GROUP` or `GROUPS`.
-You can use either the singular or plural form of these keywords as this does not affect the number of users or groups the role applies to.
-
-[[keyspace-ref,keyspace-ref]]
-=== Keyspace Reference
+[Optional] Use the ON clause to specify one or more keyspaces for a parameterized role.
+Each keyspace reference may be a plain keyspace name or a fully qualified keyspace name.
 
 [source,ebnf]
 ----
 include::partial$grammar/dql.ebnf[tag=keyspace-ref]
 ----
 
-image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: see source code listing", align=left]
 
 [source#keyspace-path,ebnf,reftext="keyspace path"]
 ----
 include::partial$grammar/dql.ebnf[tag=keyspace-path]
 ----
 
-image::n1ql-language-reference/keyspace-path.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-path.png["Syntax diagram: see source code listing", align=left]
 
 [source#keyspace-partial,ebnf,reftext="keyspace partial"]
 ----
 include::partial$grammar/dql.ebnf[tag=keyspace-partial]
 ----
 
-image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: see source code listing", align=left]
 
-The simple name or fully qualified name of a keyspace.
 For more information about the syntax, see the {keyspace-ref}[CREATE INDEX] statement.
 
-== Usage
+// tag::users-or-groups[]
+[id='{section}-users-or-groups']
+==== TO Clause
 
-The GRANT statements have three forms: 
+The TO clause enables you to specify the users or groups that the statement applies to.
 
-.{counter:form}. Unparameterized Roles
-[source,sqlpp]
+[source,ebnf]
 ----
-GRANT replication_admin, query_external_access
-   TO cchaplan, jgleason;
-----
-
-.{counter:form}. Parameterized Roles
-[source,sqlpp]
-----
-GRANT query_select, views_admin
-   ON orders, customers
-   TO bill, linda;
+include::partial$grammar/dcl.ebnf[tag=users-or-groups]
 ----
 
-.{counter:form}. Credentials Access
-[source, sqlpp]
+image::n1ql-language-reference/users-or-groups.png["Syntax diagram: see source code listing", align=left]
+
+[horizontal]
+user::
+A user name created by the Couchbase {product-name} RBAC system.
+When specifying users, the keyword `USER` or `USERS` is optional.
+
+group::
+A group name created by the Couchbase {product-name} RBAC system.
+When specifying groups, you must include the keyword `GROUP` or `GROUPS`.
+
+You can use either the singular or plural form of these keywords.
+This does not affect the number of users or groups the statement applies to.
+// end::users-or-groups[]
+
+[#grant-credentialstore-privilege]
+=== Credential Stores
+:section: credentialstore
+
+[.status]#Couchbase Server 8.5#
+[.edition]#{enterprise}#
+
+In Couchbase Server Enterprise Edition 8.5 and later, this syntax grants a user or group privileges to use a specific credential from the credential store.
+For more information, see xref:learn:security/credential-store.adoc[].
+
+[source,ebnf]
 ----
-GRANT CONSUME CREDENTIALSTORE ON `aws_key`
-   TO linda;
+include::partial$grammar/dcl.ebnf[tag=grant-credentialstore-privilege]
 ----
 
-[NOTE]
-====
-* You cannot mix parameterized and unparameterized roles or syntax in the same statement, and doing so results in an error. 
-* `GRANT CONSUME CREDENTIALSTORE` grants access to a named credential in the credential store rather than an RBAC role, and you cannot mix it with role-based `GRANT` syntax in the same statement.
-====
+image::n1ql-language-reference/grant-credentialstore-privilege.png["Syntax diagram: see source code listing", align=left]
+
+Currently, only one credential store privilege is available: `CONSUME CREDENTIALSTORE`.
+Granting this privilege adds the Credential Consumer RBAC role to the user or group.
+For example, you can grant a user access to a specific AWS credential.
+
+[horizontal]
+credential:: The name of an existing credential in the credential store.
+
+include::grant.adoc[tags=users-or-groups]
+
+[#grant-catalog-privilege]
+=== Catalogs
+:section: catalog
+
+[.status]#Couchbase Server 8.5#
+[.edition]#{enterprise}#
+
+In Couchbase Server 8.5 and later, this syntax grants a user or group permission to use a specific external catalog.
+For more information, see xref:learn:data/external-catalogs-and-collections.adoc[].
+
+[source,ebnf]
+----
+include::partial$grammar/dcl.ebnf[tag=grant-catalog-privilege]
+----
+
+image::n1ql-language-reference/grant-catalog-privilege.png["Syntax diagram: see source code listing", align=left]
+
+Currently, only one catalog privilege is available: `SELECT CATALOG`.
+Granting this privilege adds the Query External Catalog Select RBAC role to the user or group.
+You need this role to run a SELECT query on an external collection which uses the specified catalog.
+
+[horizontal]
+catalog:: The name of an existing external catalog.
+
+include::grant.adoc[tags=users-or-groups]
 
 == Examples
 
-.Grant the role of Cluster Admin to multiple users
+.Grant a global role
 ====
+The following example grants the role of Cluster Admin to multiple users.
+
 [source,sqlpp]
 ----
 GRANT cluster_admin TO david, michael, robin;
 ----
 ====
 
-.Grant Query Select and Data Reader roles on the `travel-sample` keyspace to a specific user
+.Grant parameterized roles
 ====
+The following example grants Query Select and Data Reader roles on the `travel-sample` keyspace to a specific user.
+
 [source,sqlpp]
 ----
 GRANT query_select, data_reader ON `travel-sample` TO debby;
 ----
 ====
 
-.Grant the role of Data Reader on the `travel-sample` keyspace to a specific group
+.Grant a parameterized role to a group
 ====
+The following example grants the role of Data Reader on the `travel-sample` keyspace to a specific group.
+
 [source,sqlpp]
 ----
 GRANT data_reader ON `travel-sample` TO GROUP sales;
 ----
 ====
 
-.Grant a specific user permission to consume an AWS credential
+.Grant a user permission to consume a credential
 ====
-
 The following statement grants a user permission to consume the credential `awsid`.
 To create this credential, see the examples in xref:n1ql:n1ql-language-reference/createcredentialstore.adoc#examples[CREATE CREDENTIALSTORE].
 
@@ -204,7 +214,6 @@ GRANT CONSUME CREDENTIALSTORE ON `awsid` TO debby;
 
 .Grant a group permission to consume multiple credentials
 ====
-
 The following statement grants a group permission to consume the credentials `awsid` and `backup_s3`.
 To create these credentials, see the examples in xref:n1ql:n1ql-language-reference/createcredentialstore.adoc#examples[CREATE CREDENTIALSTORE].
 
@@ -214,9 +223,30 @@ GRANT CONSUME CREDENTIALSTORE ON `awsid`, `backup_s3` TO GROUP sales;
 ----
 ====
 
+.Grant permission to query using an external catalog
+====
+The following example grants the user `analyst`:
+
+* The Query External Catalog Select role on `sales_catalog`.
+* The Credential Consumer role for the `query/external/iceberg-sales-catalog`.
+and `query/external/iceberg-sales-table` credentials.
+* The Query Select role on the `orders` collection.
+
+[source,sqlpp]
+----
+GRANT SELECT CATALOG ON sales_catalog TO analyst;
+
+GRANT CONSUME CREDENTIALSTORE
+  ON `query/external/iceberg-sales-catalog`,
+     `query/external/iceberg-sales-table`
+  TO analyst;
+
+GRANT query_select ON `sales`.`_default`.`orders` TO analyst;
+----
+====
+
 == Related Links
 
 * xref:n1ql-language-reference/revoke.adoc[]
-* xref:n1ql-language-reference/createcredentialstore.adoc[]
 * xref:learn:security/credential-store.adoc[]
-
+* xref:learn:data/external-catalogs-and-collections.adoc[]

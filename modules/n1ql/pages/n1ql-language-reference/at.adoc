@@ -1,0 +1,150 @@
+= AT Clause
+:page-topic-type: reference
+:page-status: Couchbase Server 8.5
+:page-edition: Enterprise Edition
+:imagesdir: ../../assets/images
+:description: When querying an external collection, the AT clause enables you use data from a specified snapshot.
+
+// Cross-references
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:from: xref:n1ql-language-reference/from.adoc
+:join: xref:n1ql-language-reference/join.adoc
+:nest: xref:n1ql-language-reference/nest.adoc
+:unnest: xref:n1ql-language-reference/unnest.adoc
+:comma: xref:n1ql-language-reference/comma.adoc
+:hints: xref:n1ql-language-reference/hints.adoc
+:external-catalogs-and-collections: xref:learn:data/external-catalogs-and-collections.adoc
+:historic-query: xref:manage:manage-scopes-and-collections/external-collection-options.adoc#query-a-snapshot-in-a-single-statement
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+== Purpose
+
+Couchbase Server 8.5 and later supports historic queries on external collections.
+If you're querying an external collection, you can use the AT clause to query the Apache Iceberg table as it was at a specific moment in time.
+
+You can use the AT clause with a keyspace reference in any of the following locations:
+
+* The FROM clause.
+* The right-hand side of a JOIN clause.
+* The right-hand side of a NEST clause.
+* The right-hand side of a comma-separated join.
+
+You can only use the AT clause on external collections, and you cannot use it inside a subquery.
+
+For more information, see {historic-query}[Query a Snapshot in a Single Statement].
+
+== Prerequisites
+
+The external collection, and the external catalog that it depends on, must both exist.
+For more information, see {external-catalogs-and-collections}[].
+
+.Credentials
+You must have the following credentials in the credential store:
+
+* A credential that Couchbase {product-name} uses to communicate with the catalog provider.
+
+* A credential that Couchbase {product-name} uses to communicate with the storage backend.
+
+For more information, see xref:learn:security/credential-store.adoc[].
+
+.RBAC Privileges
+You must have the following roles to use a catalog and external collection:
+
+* The Query External Catalog Select role on the catalog.
+* The Credential Consumer role for the credentials used by the catalog and the external collection.
+* The Query Select role on the external collection.
+
+For more information about user roles, see
+{authorization-overview}[Authorization].
+
+[#syntax]
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=at-clause]
+----
+
+image::n1ql-language-reference/at-clause.png["Syntax diagram", align=left]
+
+The AT clause may take the following forms:
+
+* Use <<at-snapshot>> to specify a snapshot ID.
+* Use <<at-timestamp>> to specify a timestamp.
+
+[#at-snapshot]
+=== AT SNAPSHOT
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=at-snapshot]
+----
+
+image::n1ql-language-reference/at-snapshot.png["Syntax diagram", align=left]
+
+[horizontal]
+integer:: xref:n1ql-language-reference/literals.adoc#numbers[Integer] representing a snapshot ID.
+
+If the snapshot has expired, the query returns an error.
+
+[#at-timestamp]
+=== AT TIMESTAMP
+
+[source,ebnf]
+----
+include::partial$grammar/dql.ebnf[tag=at-timestamp]
+----
+
+image::n1ql-language-reference/at-timestamp.png["Syntax diagram", align=left]
+
+[horizontal]
+string:: xref:n1ql-language-reference/literals.adoc#strings[String] representing an RFC 3339 timestamp.
+integer:: xref:n1ql-language-reference/literals.adoc#numbers[Integer] representing milliseconds since the UNIX epoch.
+
+Couchbase {product-name} queries the most recent snapshot committed at or before that timestamp.
+
+[#examples]
+== Examples
+
+For the examples on this page, the path to the required keyspace is specified by the query, so you do not need to set the query context.
+
+[#ex-at-timestamp]
+.At timestamp
+====
+The following example queries the `orders` external collection as it existed at midnight UTC on June 1, 2026:
+
+[source,sqlpp]
+----
+SELECT o.*
+FROM `travel-sample`.external.orders AS o
+  AT TIMESTAMP "2026-06-01T00:00:00Z";
+----
+====
+
+[#ex-at-snapshot]
+.At snapshot with join
+====
+The following example joins the `orders` collection at a specific snapshot ID with the `shipments` collection at a specific point in time:
+
+[source,sqlpp]
+----
+SELECT o.*, s.status
+FROM `travel-sample`.external.orders AS o
+  AT SNAPSHOT 5688794825202065870
+JOIN `travel-sample`.external.shipments AS s
+  AT TIMESTAMP "2026-06-01T00:00:00Z"
+ON o.order_id = s.order_id;
+----
+====
+
+== Related Links
+
+* {from}[]
+* {join}[]
+* {nest}[]
+* {comma}[]

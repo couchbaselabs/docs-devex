@@ -1,0 +1,447 @@
+= CREATE CATALOG
+:description: The CREATE CATALOG statement enables you to create an external catalog.
+:page-topic-type: reference
+:page-status: Couchbase Server 8.5
+:page-edition: Enterprise Edition
+:imagesdir: ../../assets/images
+:page-partial:
+
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:identifier: xref:n1ql-language-reference/identifiers.adoc
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy.
+:external-catalogs-and-collections: xref:learn:data/external-catalogs-and-collections.adoc
+:create-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/create-external-catalogs-and-collections.adoc
+:maintain-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/maintain-external-catalogs-and-collections.adoc
+:external-collection-options: xref:manage:manage-scopes-and-collections/external-collection-options.adoc
+:scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
+:altercatalog: xref:n1ql-language-reference/altercatalog.adoc
+:dropcatalog: xref:n1ql-language-reference/dropcatalog.adoc
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+An external catalog uses a catalog provider to let you query data stored in Apache Iceberg tables in a cloud object store.
+
+Catalogs are global: they're not restricted to any particular scope or collection in the Couchbase {logical-hierarchy}[logical hierarchy].
+The CREATE CATALOG statement is not affected by the current query context.
+
+// tag::validation[]
+Couchbase {product-name} does not validate any of the options for a catalog until you attempt to query an external collection which uses the catalog.
+// end::validation[]
+
+== Prerequisites
+
+You must create a credential in the credential store that Couchbase {product-name} uses to communicate with the catalog provider.
+For more information, see xref:learn:security/credential-store.adoc[].
+
+.RBAC Privileges
+To execute the CREATE CATALOG statement, clients must have the External Catalog Admin role, or any Administrative role that gives permission to create, read, update, and delete external catalogs.
+For more information, see {authorization-overview}[Authorization].
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=create-catalog]
+----
+
+image::n1ql-language-reference/create-catalog.png["Syntax diagram: see source code listing", align=left]
+
+[horizontal]
+catalog::
+(Required) An {identifier}[identifier] that refers to the name of the catalog that you want to create.
+
+[[if-not-exists]]
+=== IF NOT EXISTS Clause
+
+The optional `IF NOT EXISTS` clause enables the statement to complete successfully when the specified catalog already exists.
+If a catalog with the same name already exists, then:
+
+* If this clause is not present, an error is generated.
+
+* If this clause is present, the statement does nothing and completes without error.
+
+[[type]]
+=== TYPE Clause
+
+Use the `TYPE` clause to specify the type of catalog.
+The only supported catalog type is `ICEBERG`.
+
+[[source]]
+=== SOURCE Clause
+
+Use the `SOURCE` clause to specify the catalog provider for this catalog.
+The following catalog providers are supported.
+
+[source,ebnf]
+----
+include::{partialsdir}/grammar/ddl.ebnf[tag=provider]
+----
+
+image::n1ql-language-reference/provider.png["Syntax diagram: see source code listing", align=left]
+
+The `REST` and `UNITY_CATALOG` catalog providers are synonyms.
+
+[[at]]
+=== AT Clause
+
+Use the `AT` clause to specify the ID of the credential that Couchbase {product-name} uses to authenticate with the catalog provider.
+This clause is required.
+If you do not need to specify a credential, specify an empty string `""`.
+
+[horizontal]
+credential::
+The name of an existing credential in the credential store.
+
+[[with]]
+=== WITH Clause
+
+:credentialId: Accepted, but has no effect.
+:required: required
+
+Use the `WITH` clause to specify connection options for the catalog.
+This clause is required.
+If you do not need to specify any options, specify an empty object `{}`.
+
+[horizontal]
+options::
+An object representing the options to be set for the catalog.
+The options that are available depend on the catalog provider.
+
+// tag::catalog-options[]
+.icon:bars[fw] Composite Schema
+{blank}
+
+[cols="25,55,20",separator=¦]
+|===
+¦ One{nbsp}of{nbsp}... ¦ ¦ Schema
+
+a¦ 
+a¦ AWS Glue options
+a¦ xref:AWS_GLUE[]
+
+a¦ or
+a¦ AWS Glue REST options
+a¦ xref:AWS_GLUE_REST[]
+
+a¦ or
+a¦ AWS S3 Tables options
+a¦ xref:S3_TABLES[]
+
+a¦ or
+a¦ Google BigLake Metastore options
+a¦ xref:BIGLAKE_METASTORE[]
+
+a¦ or
+a¦ Nessie options
+a¦ xref:NESSIE[]
+
+a¦ or
+a¦ Nessie REST options
+a¦ xref:NESSIE_REST[]
+
+a¦ or
+a¦ Generic REST options, including Unity Catalog
+a¦ xref:REST[]
+
+a¦ or
+a¦ SQL options
+a¦ xref:SQL[]
+|===
+
+[#AWS_GLUE]
+==== AWS_GLUE
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**credentialId** +
+optional
+|{credentialId}
+|string
+|===
+
+[#AWS_GLUE_REST]
+==== AWS_GLUE_REST
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+{required}
+|The catalog URI.
+|string
+
+|**sigv4SigningRegion** +
+{required}
+|The AWS Signature Version 4 signing region.
+|string
+
+|**credentialId** +
+optional
+|{credentialId}
+|string
+|===
+
+[#S3_TABLES]
+==== S3_TABLES
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+{required}
+|The catalog URI.
+|string
+
+|**sigv4SigningRegion** +
+{required}
+|The AWS Signature Version 4 signing region.
+|string
+
+|**sigv4SigningName** +
+{required}
+|The AWS Signature Version 4 signing name.
+|string
+
+|**warehouse** +
+{required}
+|The table bucket's ARN, not a plain S3 URI.
+
+[%hardbreaks]
+*Examples:* `"arn:aws:s3tables:us-east-1:123456789012:bucket/flights-bucket"`
+{blank}
+|string
+
+|**credentialId** +
+optional
+|{credentialId}
+|string
+|===
+
+[#BIGLAKE_METASTORE]
+==== BIGLAKE_METASTORE
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+{required}
+|The catalog URI.
+|string
+
+|**warehouse** +
+{required}
+|A storage location URI.
+
+[%hardbreaks]
+*Examples:* `"s3://bucket/path"`, `"gs://bucket/path"`
+{blank}
+|string
+
+|**quotaProjectId** +
+{required}
+|The Google Cloud project ID that sets the quota for the catalog.
+|string
+
+|**credentialId** +
+optional
+|{credentialId}
+|string
+|===
+
+[#NESSIE]
+==== NESSIE
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+{required}
+|The catalog URI.
+|string
+
+|**warehouse** +
+{required}
+|A storage location URI.
+
+[%hardbreaks]
+*Examples:* `"s3://bucket/path"`, `"gs://bucket/path"`
+{blank}
+|string
+|===
+
+[#NESSIE_REST]
+==== NESSIE_REST
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+{required}
+|The catalog URI.
+|string
+
+|**branch** +
+optional
+|A specific Nessie branch or ref.
+|string
+
+|**warehouse** +
+optional
+|Accepted, but has no effect.
+
+Nessie's REST configuration endpoint rejects a warehouse value, so Couchbase does not forward it.
+|string
+|===
+
+[#REST]
+==== REST
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+{required}
+|The catalog URI.
+|string
+
+|**warehouse** +
+optional
+|A storage location URI.
+
+[%hardbreaks]
+*Examples:* `"s3://bucket/path"`, `"gs://bucket/path"`
+{blank}
+|string
+
+|**credentialId** +
+optional
+|{credentialId}
+|string
+|===
+
+[#SQL]
+==== SQL
+
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**uri** +
+{required}
+|A PostgreSQL or SQLite connection string.
+
+ifeval::["{docname}" == "n1ql-language-reference/createcatalog"]
+The credentials are supplied by the `AT` clause.
+endif::[]
+Do not embed the credentials directly in the connection string.
+|string
+
+|**sqlDialect** +
+optional
+|Forces the dialect explicitly.
+
+Without it, Couchbase {product-name} only recognizes a `postgres://` or `postgresql://`-prefixed URI as PostgreSQL.
+Every other value, including a malformed PostgreSQL connection string, defaults to SQLite.
+
+[%hardbreaks]
+*Values:* `"postgres"`, `"sqlite"`
+{blank}
+|string
+
+|**credentialId** +
+optional
+|{credentialId}
+|string
+|===
+// end::catalog-options[]
+
+== Usage
+
+External catalogs are listed in the `system:catalog` namespace.
+For more information, see xref:n1ql-intro/sysinfo.adoc#querying-catalogs[Query Catalogs].
+
+You must create an external collection to be able to query the data made available by the catalog.
+For more information, see xref:n1ql-language-reference/createexternalcollection.adoc[].
+
+You must grant clients the following roles to use a catalog and external collection:
+
+* The Query External Catalog Select role on the catalog.
+* The Credential Consumer role for the credentials used by the catalog and the external collection.
+* The Query Select role on the external collection.
+
+For more information, see xref:n1ql-language-reference/grant.adoc[].
+
+== Examples
+
+.Create a catalog
+====
+The following example creates a catalog for a REST catalog provider.
+
+[source,sqlpp]
+----
+CREATE CATALOG sales_catalog
+TYPE ICEBERG SOURCE REST
+AT `query/external/iceberg-sales-catalog`
+WITH { "uri": "https://iceberg-catalog.example.com" };
+----
+====
+
+.Create a catalog if it does not exist
+====
+The following example creates a catalog for an AWS Glue catalog provider.
+
+If `flight_catalog` already exists, the statement does nothing and no error is generated.
+
+[source,sqlpp]
+----
+CREATE CATALOG IF NOT EXISTS flights_catalog
+TYPE ICEBERG SOURCE AWS_GLUE
+AT `query/external/iceberg-flights-catalog`
+WITH {};
+----
+====
+
+== Related Links
+
+* {altercatalog}[]
+| {dropcatalog}[]
+* {external-catalogs-and-collections}[]
+* {create-external-catalogs-and-collections}[]
+* {maintain-external-catalogs-and-collections}[]
+* {scopes-and-collections-api}[]

@@ -1,0 +1,265 @@
+= CREATE EXTERNAL COLLECTION
+:description: The CREATE EXTERNAL COLLECTION statement enables you to create an external collection within a scope.
+:page-topic-type: reference
+:page-status: Couchbase Server 8.5
+:page-edition: Enterprise Edition
+:imagesdir: ../../assets/images
+:page-partial:
+
+:authorization-overview: xref:learn:security/authorization-overview.adoc
+:identifier: xref:n1ql-language-reference/identifiers.adoc
+:select: xref:n1ql-language-reference/selectintro.adoc
+:logical-hierarchy: xref:n1ql-intro/queriesandresults.adoc#logical-hierarchy
+:naming-for-scopes-and-collections: xref:learn:data/scopes-and-collections.adoc#naming-for-scopes-and-collections
+:query-context: xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context
+:external-catalogs-and-collections: xref:learn:data/external-catalogs-and-collections.adoc
+:create-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/create-external-catalogs-and-collections.adoc
+:maintain-external-catalogs-and-collections: xref:manage:manage-scopes-and-collections/maintain-external-catalogs-and-collections.adoc
+:external-collection-options: xref:manage:manage-scopes-and-collections/external-collection-options.adoc
+:scopes-and-collections-api: xref:rest-api:scopes-and-collections-api.adoc
+:createcollection: xref:n1ql-language-reference/createcollection.adoc
+:altercollection: xref:n1ql-language-reference/altercollection.adoc
+:dropcollection: xref:n1ql-language-reference/dropcollection.adoc
+
+// TEMP
+include::partial$n1ql-language-reference/horizontal-style.adoc[]
+
+[abstract]
+{description}
+
+This page is about external collections.
+To create a regular, non-external collection, see {createcollection}[].
+
+An external collection enables you to query an Apache Iceberg table.
+The collection itself does not store any data.
+It uses a Couchbase catalog to point to the Iceberg table's metadata and storage location.
+
+External collections are read-only.
+You can only perform queries on them using the {select}[SELECT] statement.
+
+// tag::validation[]
+Couchbase {product-name} does not validate any of the options for an external collection until you attempt to query the collection. 
+// end::validation[]
+
+== Prerequisites
+
+You must create the catalog before you can create the external collection.
+For more information, see xref:n1ql-language-reference/createcatalog.adoc[].
+
+You must create a credential in the credential store that Couchbase {product-name} uses to communicate with the storage backend.
+For more information, see xref:learn:security/credential-store.adoc[].
+
+include::createcollection.adoc[tag=usage]
+
+.RBAC Privileges
+To execute the CREATE EXTERNAL COLLECTION statement, clients must have the Bucket Admin or Manage Scopes role on the bucket, or any Administrative role that gives permission to add, edit, and drop scopes and collections in the bucket.
+For more information, see {authorization-overview}[Authorization].
+
+== Syntax
+
+[source,ebnf]
+----
+include::partial$grammar/ddl.ebnf[tag=create-external-collection]
+----
+
+image::n1ql-language-reference/create-external-collection.png["Syntax diagram: see source code listing", align=left]
+
+include::createcollection.adoc[tag=keyspace-ref]
+
+include::createcollection.adoc[tag=location]
+
+include::createcollection.adoc[tag=if-not-exists]
+
+[[on]]
+=== ON Clause
+
+Use the `ON` clause to specify the name of the catalog on which the external collection is based.
+
+[horizontal]
+catalog::
+The name of an existing catalog.
+
+[[at]]
+=== AT Clause
+
+Use the `AT` clause to specify the ID of the credential that Couchbase Server uses to authenticate with the storage backend.
+
+[horizontal]
+credential::
+The name of an existing credential in the credential store.
+
+[[with]]
+=== WITH Clause
+
+Use the `WITH` clause to specify additional options for the collection.
+
+[horizontal]
+options::
+An object representing the options to be set for the collection.
+
+// tag::collection-options[]
+.icon:brackets-curly[fw] Object
+{blank}
+
+[options="header", cols="25a,55a,20a"]
+|===
+|Name|Description|Schema
+
+|**namespace** +
+required
+|The Iceberg namespace that contains the table.
+|string
+
+|**tableName** +
+required
+|The name of the Iceberg table to expose.
+|string
+
+|**decimal-to-double** +
+optional
+|Whether Iceberg `decimal` values are stored in Couchbase as double-precision floats or strings.
+
+* `true`: Iceberg `decimal` values are stored as double-precision floats.
+* `false`: Iceberg `decimal` values are stored as strings.
+
+For more information, see {external-collection-options}#convert-decimals-to-doubles[Convert Decimals to Doubles].
+
+[%hardbreaks]
+*Default:* `false`
+{blank}
+|boolean
+
+|**temporal-to-string** +
+optional
+|Whether Iceberg temporal values (`date`, `time`, `timestamp`, or `timestamptz`) are stored in Couchbase as strings or double-precision floats.
+
+* `true`: Iceberg temporal values are stored as ISO-8601 strings.
+* `false`: Iceberg temporal values are stored as double-precision floats.
+
+For more information, see {external-catalogs-and-collections}#data-conversion[Data Type Conversion].
+
+[%hardbreaks]
+*Default:* `false`
+{blank}
+|boolean
+
+|**snapshotId** +
+optional
+|A snapshot ID.
+Makes all queries on the external collection use the specified snapshot.
+
+For more information, see {external-collection-options}#pin-a-collection-to-a-snapshot[Pin a Collection to a Snapshot].
+|string
+
+|**snapshotTimestamp** +
+optional
+|A snapshot timestamp.
+Makes all queries on the external collection use the specified snapshot.
+
+For more information, see {external-collection-options}#pin-a-collection-to-a-snapshot[Pin a Collection to a Snapshot].
+
+[%hardbreaks]
+*Example:* `"2026-06-01T00:00:00Z"`
+{blank}
+|string (date-time)
+
+|**parallelScans** +
+optional
+|The number of files that Couchbase Server transfers in parallel from the external collection's storage location.
+
+For more information, see {external-collection-options}#adjust-query-parallelism[Adjust Query Parallelism].
+
+[%hardbreaks]
+*Default:* `1`
+{blank}
+|integer
+|===
+// end::collection-options[]
+
+== Usage
+
+External collections are listed in the `system:keyspaces` keyspace.
+For more information, see xref:n1ql-intro/sysinfo.adoc#querying-keyspaces[Query Collections].
+
+You must grant clients the following roles to use a catalog and external collection:
+
+* The Query External Catalog Select role on the catalog.
+* The Credential Consumer role for the credentials used by the catalog and the external collection.
+* The Query Select role on the external collection.
+
+For more information, see xref:n1ql-language-reference/grant.adoc[].
+
+== Examples
+
+[#ex-create-external-collection]
+.Create an external collection
+====
+This statement creates an external collection that exposes the `orders` table from `sales_catalog`.
+
+[source,sqlpp]
+----
+CREATE EXTERNAL COLLECTION sales._default.orders
+ON sales_catalog
+AT `query/external/iceberg-sales-table`
+WITH {
+  "namespace": "sales_db",
+  "tableName": "orders"
+};
+----
+====
+
+[#ex-create-external-collection-context]
+.Create an external collection with query context
+====
+For this example, set the query context to a scope called `external` in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+
+Assuming that the query context is set, this example creates an external collection called `flights` in a scope called `external` within the `travel-sample` bucket.
+
+The external collection exposes the `flights` table from `flights_catalog`.
+
+[source,sqlpp]
+----
+CREATE EXTERNAL COLLECTION flights
+ON flights_catalog
+AT `query/external/iceberg-flights-table`
+WITH {
+  "namespace": "flight_data",
+  "tableName": "flights"
+};
+----
+====
+
+[#ex-create-external-collection-not-exist]
+.Create an external collection if it does not exist
+====
+For this example, set the query context to a scope called `external` in the travel sample dataset.
+For more information, see xref:n1ql:n1ql-intro/queriesandresults.adoc#query-context[Query Context].
+
+Assuming that the query context is set, this statement creates a collection called `flights` in a scope called `external` within the `travel-sample` bucket.
+
+Unlike <<ex-create-external-collection-context>>, if the `flights` collection already exists, the statement does nothing and no error is generated.
+
+[source,sqlpp]
+----
+CREATE EXTERNAL COLLECTION IF NOT EXISTS flights
+ON flights_catalog
+AT `query/external/iceberg-flights-table`
+WITH {
+  "namespace": "flight_data",
+  "tableName": "flights"
+};
+----
+====
+
+== Related Links
+
+* {createcollection}[]
+| {altercollection}[]
+| {dropcollection}[]
+* {external-catalogs-and-collections}[]
+* {create-external-catalogs-and-collections}[]
+* {maintain-external-catalogs-and-collections}[]
+* {external-collection-options}[]
+* {scopes-and-collections-api}[]

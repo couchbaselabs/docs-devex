@@ -1,6 +1,7 @@
 = REVOKE
-:description: Use the REVOKE statement to remove Role-Based Access Control (RBAC) roles or credential access from a user or group.
+:description: Use the REVOKE statement to remove Role-Based Access Control (RBAC) roles, credential privileges, or external catalog privileges from a user or group.
 :page-topic-type: reference
+:page-toclevels: 2
 :imagesdir: ../../assets/images
 
 :authorization-overview: xref:learn:security/authorization-overview.adoc
@@ -10,72 +11,45 @@
 [abstract]
 {description}
 
-You can use `REVOKE` to remove two types of access:
+== Prerequisites
 
-Roles:: Revokes RBAC roles from a user or group, removing a predefined set of privileges.
-Roles can be simple or parameterized by a keyspace.
-For more information, see <<role-types>>.
-
-Credentials:: Revokes a user or group's permission to use a specific credential from the credential store.
-+
-To revoke access to a credential, use the `REVOKE CONSUME CREDENTIALSTORE` statement.
-This statement revokes the Credential Consumer RBAC role from the user or group.
-For example, you can revoke a user's access to a specific AWS credential.
-+
-For more information about credentials and the credential store, see xref:learn:security/credential-store.adoc[].
-
-[NOTE]
-====
-* Only Full Administrators can run the `REVOKE` statement.
+.RBAC Privileges
+Only Full Administrators can run the REVOKE statement.
 For more information about user roles, see {authorization-overview}[Authorization].
-* The `REVOKE CONSUME CREDENTIALSTORE` statement is available only in Couchbase Server 8.5 and later (Enterprise Edition).
-====
-
-== Role Types
-
-Roles can be of the following two types:
-
-simple::
-Roles which apply generically to all keyspaces/resources in the cluster.
-+
-For example: `cluster_admin` or `bucket_admin`
-
-parameterized by a keyspace::
-Roles which are defined for the context of the specified keyspace only.
-Specify the keyspace name after the keyword ON.
-+
-For example: `pass:c[data_reader ON `travel-sample`]` +
-or `pass:c[query_select ON `travel-sample`.`inventory`.`airline`]`
 
 == Syntax
+
+The REVOKE statement takes a different syntax depending on the permission being revoked.
+You cannot mix different syntaxes in the same statement.
 
 [source,ebnf]
 ----
 include::partial$grammar/dcl.ebnf[tag=revoke]
 ----
 
-image::n1ql-language-reference/revoke.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/revoke.png["Syntax diagram: see source code listing", align=left]
+
+For more information, see <<revoke-roles>>, <<revoke-credentialstore-privilege>>, or <<revoke-catalog-privilege>>.
+
+[#revoke-roles]
+=== Roles
+:section: roles
+
+This syntax revokes RBAC roles from a user or group, removing a predefined set of privileges.
+Roles can be global or parameterized by a keyspace.
+
+* Global roles, such as `cluster_admin` or `bucket_admin`, apply generically to all keyspaces or resources in the cluster.
+* Parameterized roles, such as `data_reader` or `query_select`, are defined for the context of the specified keyspaces only.
+Use the ON clause to specified the keyspaces.
+
+You cannot mix global and parameterized roles in the same statement, and doing so results in an error.
 
 [source,ebnf]
 ----
-include::partial$grammar/dcl.ebnf[tag=revoke-user]
+include::partial$grammar/dcl.ebnf[tag=revoke-roles]
 ----
 
-image::n1ql-language-reference/revoke-user.png["Syntax diagram: refer to source code listing", align=left]
-
-[source,ebnf]
-----
-include::partial$grammar/dcl.ebnf[tag=revoke-group]
-----
-
-image::n1ql-language-reference/revoke-group.png["Syntax diagram: refer to source code listing", align=left]
-
-[source,ebnf]
-----
-include::partial$grammar/dcl.ebnf[tag=revoke-consume-credentialstore]
-----
-
-image::n1ql-language-reference/revoke-consume-credentialstore.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/revoke-roles.png["Syntax diagram: see source code listing", align=left]
 
 [horizontal]
 role::
@@ -88,94 +62,134 @@ For the following roles, you can use their short forms as well:
 * `query_update` → `update`
 * `query_delete` → `delete`
 
-keyspace-ref::
-<<keyspace-ref,Keyspace Reference>>
+keyspace-ref:: <<keyspace-ref>> icon:caret-down[]
+users-and-groups:: <<{section}-users-or-groups>> icon:caret-down[]
 
-user::
-A user name created by the Couchbase Server RBAC system.
+[#keyspace-ref]
+==== ON Clause
 
-group::
-A group name created by the Couchbase Server RBAC system.
-
-credential-name::
-The name of an existing credential in the credential store.
-For more information about credentials and credential store, see xref:learn:security/credential-store.adoc[].
-
-NOTE: When revoking roles or credentials from users, the keyword `USER` or `USERS` is optional.
-However, when revoking roles or credentials from groups, you must include the keyword `GROUP` or `GROUPS`.
-You can use either the singular or plural form of these keywords as this does not affect the number of users or groups from which the role or credential access is revoked.
-
-[[keyspace-ref,keyspace-ref]]
-=== Keyspace Reference
+[Optional] Use the ON clause to specify one or more keyspaces for a parameterized role.
+Each keyspace reference may be a plain keyspace name or a fully qualified keyspace name.
 
 [source,ebnf]
 ----
 include::partial$grammar/dql.ebnf[tag=keyspace-ref]
 ----
 
-image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-ref.png["Syntax diagram: see source code listing", align=left]
 
 [source#keyspace-path,ebnf,reftext="keyspace path"]
 ----
 include::partial$grammar/dql.ebnf[tag=keyspace-path]
 ----
 
-image::n1ql-language-reference/keyspace-path.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-path.png["Syntax diagram: see source code listing", align=left]
 
 [source#keyspace-partial,ebnf,reftext="keyspace partial"]
 ----
 include::partial$grammar/dql.ebnf[tag=keyspace-partial]
 ----
 
-image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: refer to source code listing", align=left]
+image::n1ql-language-reference/keyspace-partial.png["Syntax diagram: see source code listing", align=left]
 
-The simple name or fully qualified name of a keyspace.
 For more information about the syntax, see the {keyspace-ref}[CREATE INDEX] statement.
 
-== Usage
+// tag::users-or-groups[]
+[id='{section}-users-or-groups']
+==== TO Clause
 
-The REVOKE statements have three forms:
+The TO clause enables you to specify the users or groups that the statement applies to.
 
-.{counter:form}. Unparameterized Roles
-[source,sqlpp]
+[source,ebnf]
 ----
-REVOKE replication_admin, query_external_access
-   FROM cchaplan, jgleason;
-----
-
-.{counter:form}. Parameterized Roles
-[source,sqlpp]
-----
-REVOKE query_select, views_admin
-   ON orders, customers
-   FROM bill, linda;
+include::partial$grammar/dcl.ebnf[tag=users-or-groups]
 ----
 
-.{counter:form}. Credentials Access
-[source, sqlpp]
+image::n1ql-language-reference/users-or-groups.png["Syntax diagram: see source code listing", align=left]
+
+[horizontal]
+user::
+A user name created by the Couchbase {product-name} RBAC system.
+When specifying users, the keyword `USER` or `USERS` is optional.
+
+group::
+A group name created by the Couchbase {product-name} RBAC system.
+When specifying groups, you must include the keyword `GROUP` or `GROUPS`.
+
+You can use either the singular or plural form of these keywords.
+This does not affect the number of users or groups the statement applies to.
+// end::users-or-groups[]
+
+[#revoke-credentialstore-privilege]
+=== Credential Stores
+:section: credentialstore
+
+[.status]#Couchbase Server 8.5#
+[.edition]#{enterprise}#
+
+In Couchbase Server Enterprise Edition 8.5 and later, this syntax revokes a user or group privileges to use a specific credential from the credential store.
+For more information, see xref:learn:security/credential-store.adoc[].
+
+[source,ebnf]
 ----
-REVOKE CONSUME CREDENTIALSTORE ON `aws_key`
-   FROM linda;
+include::partial$grammar/dcl.ebnf[tag=revoke-credentialstore-privilege]
 ----
 
-[NOTE]
-====
-* You cannot mix parameterized and unparameterized roles or syntax in the same statement, and doing so results in an error.
-* `REVOKE CONSUME CREDENTIALSTORE` revokes access to a named credential in the credential store rather than an RBAC role, and you cannot mix it with role-based `REVOKE` syntax in the same statement.
-====
+image::n1ql-language-reference/revoke-credentialstore-privilege.png["Syntax diagram: see source code listing", align=left]
+
+Currently, only one credential store privilege is available: `CONSUME CREDENTIALSTORE`.
+Revoking this privilege removes the Credential Consumer RBAC role from the user or group.
+For example, you can revoke a user's access to a specific AWS credential.
+
+[horizontal]
+credential:: The name of an existing credential in the credential store.
+users-and-groups:: <<{section}-users-or-groups>> icon:caret-down[]
+
+include::revoke.adoc[tags=users-or-groups]
+
+[#revoke-catalog-privilege]
+=== Catalogs
+:section: catalog
+
+[.status]#Couchbase Server 8.5#
+[.edition]#{enterprise}#
+
+In Couchbase Server 8.5 and later, this syntax revokes a user or group permission to use a specific external catalog.
+For more information, see xref:learn:data/external-catalogs-and-collections.adoc[].
+
+[source,ebnf]
+----
+include::partial$grammar/dcl.ebnf[tag=revoke-catalog-privilege]
+----
+
+image::n1ql-language-reference/revoke-catalog-privilege.png["Syntax diagram: see source code listing", align=left]
+
+Currently, only one catalog privilege is available: `SELECT CATALOG`.
+Revoking this privilege removes the Query External Catalog Select RBAC role from the user or group.
+You need this role to run a SELECT query on an external collection which uses the specified catalog.
+
+[horizontal]
+catalog:: The name of an existing external catalog.
+users-and-groups:: <<{section}-users-or-groups>> icon:caret-down[]
+
+include::revoke.adoc[tags=users-or-groups]
 
 == Examples
 
-.Revoke the Cluster Admin role from multiple users
+.Revoke a global role
 ====
+The following statement revokes the Cluster Admin role from multiple users.
+
 [source,sqlpp]
 ----
 REVOKE cluster_admin FROM david, michael, robin
 ----
 ====
 
-.Revoke Query Select and Data Reader roles on the `travel-sample` keyspace from a specific user
+.Revoke parameterized roles
 ====
+The following statement revokes Query Select and Data Reader roles on the `travel-sample` keyspace from a specific user.
+
 [source,sqlpp]
 ----
 REVOKE query_select, data_reader
@@ -184,8 +198,10 @@ REVOKE query_select, data_reader
 ----
 ====
 
-.Revoke the Data Reader role on the `travel-sample` keyspace from a specific group
+.Revoke a parameterized role from a group
 ====
+The following statement revokes the Data Reader role on the `travel-sample` keyspace from a specific group.
+
 [source,sqlpp]
 ----
 REVOKE query_update
@@ -194,7 +210,7 @@ REVOKE query_update
 ----
 ====
 
-.Revoke a specific user's permission to consume an AWS credential
+.Revoke a user's permission to consume a credential
 ====
 The following statement revokes a user's permission to consume the credential `awsid`.
 
@@ -214,8 +230,18 @@ REVOKE CONSUME CREDENTIALSTORE ON `awsid`, `backup_s3` FROM GROUP sales;
 ----
 ====
 
+.Revoke permission to query using an external catalog
+====
+The following example revokes a user's Query External Catalog Select role on `sales_catalog`.
+
+[source,sqlpp]
+----
+REVOKE SELECT CATALOG ON sales_catalog FROM analyst;
+----
+====
+
 == Related Links
 
 * xref:n1ql-language-reference/grant.adoc[]
-* xref:n1ql-language-reference/createcredentialstore.adoc[]
 * xref:learn:security/credential-store.adoc[]
+* xref:learn:data/external-catalogs-and-collections.adoc[]
