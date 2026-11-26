@@ -248,11 +248,18 @@ RIGHT OUTER JOINs are rewritten as LEFT OUTER JOINs.
 
 * If the SEARCH() function is evaluated on the `true` condition in positive cases: for example, `SEARCH(_field_, _query_, _options_)`, `SEARCH(_field_, _query_, _options_) = true`, `SEARCH(_field_, _query_, _options_) IN [true, true, true]`, or a condition including one of these with `AND` or `OR`.
 
+* If the search does not specify a field, so that it searches the `{underscore}all` field, and the Search index includes content in the `{underscore}all` field for the queried collection.
+The Search index does this if it has a dynamic mapping for that collection, or if it sets xref:search:search-index-params.adoc#include-in-all[`include_in_all`] on at least 1 field it indexes for that collection.
+
 The Query service cannot select a Search index for efficient search in the following cases:
 
 * If a USE KEYS hint is present; or if the SEARCH() function is used on the inner side of a nested-loop JOIN, a lookup JOIN or lookup NEST, an index JOIN or index NEST, an UNNEST clause, a subquery expression, a subquery result, or a correlated query.
 
 * If the SEARCH() function is evaluated on the `false` condition, or in negative cases: for example, `NOT SEARCH(_field_, _query_, _options_)`, `SEARCH(_field_, _query_, _options_) = false`, `SEARCH(_field_, _query_, _options_) != false`, `SEARCH(_field_, _query_, _options_) IN [false, true, 1, "a"]`, or in a condition using the relation operators `<`, `{lt}=`, `>`, `>=`, `BETWEEN`, `NOT`, `LIKE`, or `NOT LIKE`.
+
+* If the search does not specify a field, so that it searches the `{underscore}all` field, and the Search index has type mappings for more than 1 collection.
+The `{underscore}all` field in such an index holds content from every mapped collection, so the Query service does not use it for a search that does not specify a field.
+A search that specifies a field can still use the Search index.
 
 In these cases, the Query service must fetch the documents, and the Search service creates a temporary index in memory to perform the search.
 This may affect performance.
