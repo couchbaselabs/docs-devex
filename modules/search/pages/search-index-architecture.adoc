@@ -96,6 +96,26 @@ The Search Service does not encrypt the contents of a query, and only decrypts d
 During a rebalance, encrypted data remains encrypted.
 The key files necessary to decrypt Search data are copied into a temporary directory until the rebalance completes.
 
+[#encryption-segment-version]
+=== Encryption and the Segment Version
+
+The Search Service encrypts a Search index when the index uses a xref:search-index-params.adoc#segmentVersion[segmentVersion] of `17`.
+On a cluster where all nodes run Couchbase Server 8.5 or later, a new Search index uses `17` by default.
+
+Some Search indexes use an earlier segment version.
+These include indexes created before all nodes in the cluster ran version 8.5, and indexes whose definition sets a lower `segmentVersion`.
+When you enable encryption at rest for the bucket of an index with an earlier segment version:
+
+* The Search Service writes all files for the index unencrypted, including data added after you enabled encryption.
+* The bucket's encryption status stays partially encrypted, including after you force encryption.
+* When Couchbase Server asks the Search Service to encrypt the index's existing data, the Search Service writes a warning to its log that names the index and its segment version.
+* The Search Service still re-encrypts the bucket's other Search indexes when you rotate or drop encryption keys.
+
+To find the segment version of a Search index, see the `segmentVersion` property in the `store` object of the index's JSON definition.
+
+To encrypt the index, recreate it with `segmentVersion` set to `17`.
+If you copy the JSON definition of the existing index, change its `segmentVersion` before you create the new index.
+
 For more information about encryption at rest in Couchbase Server, see xref:learn:security:native-encryption-at-rest-overview.adoc[].
 
 == Search Request Processing 
